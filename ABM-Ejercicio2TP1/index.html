@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABM - Panel de Gestión</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Estilos básicos para ocultar pantallas */
+        .pantalla-abm { display: none; }
+        .pantalla-abm.activa { display: block; }
+    </style>
+</head>
+<body class="bg-light">
+
+    <!-- ========================================== -->
+    <!-- NAVBAR PRINCIPAL                           -->
+    <!-- ========================================== -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">ABM - Panel de Gestión</a>
+            
+            <!-- Botón hamburguesa para móviles -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Opciones del menú -->
+            <div class="collapse navbar-collapse" id="menuPrincipal">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" onclick="mostrarPantalla('pantalla-empresa', this)">🏢 Empresas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="mostrarPantalla('pantalla-sucursal', this)">📍 Sucursales</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="mostrarPantalla('pantalla-empleado', this)">👥 Empleados</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
+<div class="container">
+        
+        <!-- PANTALLA 1: ABM EMPRESAS -->
+        <div id="pantalla-empresa" class="pantalla-abm activa">
+            <h3 class="mb-4 text-secondary border-bottom pb-2">Gestión de Empresas</h3>
+            <div class="row">
+                <!-- Formulario -->
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-primary text-white fw-semibold">
+                            Registrar Nueva Empresa
+                        </div>
+                        <div class="card-body bg-white">
+                            <form id="formEmpresa">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">Razón Social</label>
+                                    <input type="text" class="form-control" id="razonSocial" placeholder="Ej: Mi Segurito SA">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">CUIT</label>
+                                    <input type="text" class="form-control" id="cuit" placeholder="Ej: 30-12345678-9">
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Guardar Empresa</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <!-- Tabla -->
+                <div class="col-md-8">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Razón Social</th>
+                                        <th>CUIT</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaEmpresas">
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted py-3">No hay empresas registradas.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<div id="pantalla-sucursal" class="pantalla-abm">
+             <h3 class="mb-4 text-secondary border-bottom pb-2">Gestión de Sucursales</h3>
+             <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-success text-white fw-semibold">
+                            Registrar Sucursal
+                        </div>
+                        <div class="card-body bg-white">
+                            <form id="formSucursal">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">Empresa Propietaria</label>
+                                    <select class="form-select" id="selectEmpresa">
+                                        <option value="">Seleccione primero una empresa...</option>
+                                    </select>
+                                </div>
+                                
+                                <h6 class="border-bottom pb-1 mt-4 mb-3 text-secondary small fw-bold">📍 DATOS DE DIRECCIÓN</h6>
+                                
+                                <div class="row g-2 mb-3">
+                                    <div class="col-8">
+                                        <label class="form-label text-muted small fw-bold text-uppercase">Calle</label>
+                                        <input type="text" class="form-control form-control-sm" id="calleSucursal" placeholder="Ej: Salta">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label text-muted small fw-bold text-uppercase">Altura</label>
+                                        <input type="number" class="form-control form-control-sm" id="alturaSucursal" placeholder="Ej: 45">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label text-muted small fw-bold text-uppercase">Localidad</label>
+                                        <input type="text" class="form-control form-control-sm" id="localidadSucursal" placeholder="Ej: Villa Nueva">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label text-muted small fw-bold text-uppercase">Departamento</label>
+                                        <input type="text" class="form-control form-control-sm" id="departamentoSucursal" placeholder="Ej: Guaymallén">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label text-muted small fw-bold text-uppercase">Provincia</label>
+                                        <input type="text" class="form-control form-control-sm" id="provinciaSucursal" placeholder="Ej: Mendoza">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label text-muted small fw-bold text-uppercase">País</label>
+                                        <input type="text" class="form-control form-control-sm" id="paisSucursal" placeholder="Ej: Argentina">
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-success w-100">Guardar Sucursal</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Empresa</th>
+                                        <th>Dirección</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaSucursales">
+                                     <tr>
+                                        <td colspan="3" class="text-center text-muted py-3">No hay sucursales registradas.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+<!-- PANTALLA 3: ABM EMPLEADOS -->
+        <div id="pantalla-empleado" class="pantalla-abm">
+             <h3 class="mb-4 text-secondary border-bottom pb-2">Gestión de Empleados</h3>
+             <div class="row">
+                <!-- Formulario -->
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-info text-dark fw-semibold">
+                            Registrar Nuevo Empleado
+                        </div>
+                        <div class="card-body bg-white">
+                            <form id="formEmpleado">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">Sucursal (Lugar de trabajo)</label>
+                                    <select class="form-select" id="selectSucursal">
+                                        <option value="">Seleccione primero una sucursal...</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">Nombre</label>
+                                    <input type="text" class="form-control" id="nombreEmpleado" placeholder="Ej: Juan">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">Apellido</label>
+                                    <input type="text" class="form-control" id="apellidoEmpleado" placeholder="Ej: Pérez">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">Legajo</label>
+                                    <input type="text" class="form-control" id="legajoEmpleado" placeholder="Ej: EMP-001">
+                                </div>
+                                <button type="submit" class="btn btn-info w-100 fw-bold text-dark">Guardar Empleado</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <!-- Tabla -->
+                <div class="col-md-8">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Legajo</th>
+                                        <th>Apellido y Nombre</th>
+                                        <th>Sucursal</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaEmpleados">
+                                     <tr>
+                                        <td colspan="4" class="text-center text-muted py-3">No hay empleados registrados.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<!-- ========================================== -->
+    <!-- MODALES DE EDICIÓN                         -->
+    <!-- ========================================== -->
+
+    <!-- Modal Editar Empresa -->
+    <div class="modal fade" id="modalEditarEmpresa" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title text-dark fw-bold">Editar Empresa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Razón Social</label>
+                        <input type="text" class="form-control" id="editRazonSocial">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">CUIT</label>
+                        <input type="text" class="form-control" id="editCuit">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning fw-bold" onclick="guardarEdicionEmpresa()">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Sucursal -->
+    <div class="modal fade" id="modalEditarSucursal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title text-dark fw-bold">Editar Sucursal</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Empresa Propietaria</label>
+                        <select class="form-select" id="editSelectEmpresa"></select>
+                    </div>
+                    
+                    <h6 class="border-bottom pb-1 mt-4 mb-3 text-secondary small fw-bold">📍 DATOS DE DIRECCIÓN</h6>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <label class="form-label text-muted small">Calle</label>
+                            <input type="text" class="form-control form-control-sm" id="editCalleSucursal">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label text-muted small">Altura</label>
+                            <input type="number" class="form-control form-control-sm" id="editAlturaSucursal">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label text-muted small">Localidad</label>
+                            <input type="text" class="form-control form-control-sm" id="editLocalidadSucursal">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label text-muted small">Departamento</label>
+                            <input type="text" class="form-control form-control-sm" id="editDepartamentoSucursal">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label text-muted small">Provincia</label>
+                            <input type="text" class="form-control form-control-sm" id="editProvinciaSucursal">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label text-muted small">País</label>
+                            <input type="text" class="form-control form-control-sm" id="editPaisSucursal">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning fw-bold" onclick="guardarEdicionSucursal()">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Empleado -->
+    <div class="modal fade" id="modalEditarEmpleado" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title text-dark fw-bold">Editar Empleado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Sucursal</label>
+                        <select class="form-select" id="editSelectSucursal"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Nombre</label>
+                        <input type="text" class="form-control" id="editNombreEmpleado">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Apellido</label>
+                        <input type="text" class="form-control" id="editApellidoEmpleado">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Legajo</label>
+                        <input type="text" class="form-control" id="editLegajoEmpleado">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning fw-bold" onclick="guardarEdicionEmpleado()">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
