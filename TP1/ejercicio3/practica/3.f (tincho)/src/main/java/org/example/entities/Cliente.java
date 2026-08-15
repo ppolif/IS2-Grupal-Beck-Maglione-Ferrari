@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import lombok.*;
 
+import java.math.BigInteger;
+
 @Entity
 @Getter
 @Setter
@@ -15,7 +17,7 @@ public class Cliente {
 
     @Id
     @EqualsAndHashCode.Include
-    private int dni;
+    private String dni;
 
     private String nombre;
     private String apellido;

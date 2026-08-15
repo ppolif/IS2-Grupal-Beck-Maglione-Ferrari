@@ -2,6 +2,8 @@ package org.example.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -16,7 +18,7 @@ public class Proveedor {
 
     @Id
     @EqualsAndHashCode.Include
-    private int cuit;
+    private String cuit;
 
     private String razonSocial;
 
