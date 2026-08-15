@@ -8,7 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "articulo")
+@Table(name = "articulo", indexes = {
+        @Index(name = "idx_id_art", columnList = "id"),
+        @Index(name = "idx_denom_art", columnList = "denominacion")
+})
 @Audited
 
 public class Articulo implements Serializable {
