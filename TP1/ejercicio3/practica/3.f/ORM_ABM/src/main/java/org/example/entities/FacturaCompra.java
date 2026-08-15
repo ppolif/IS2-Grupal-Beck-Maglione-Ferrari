@@ -16,7 +16,8 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class FacturaCompra extends Factura {
-    @ManyToOne
-    @JoinColumn(name = "proveedor_id")
-    private Proveedor proveedor;
+//    @ManyToOne
+//    @JoinColumn(name = "proveedor_id")
+//    private Proveedor proveedor;
+    private String nombreProveedorTemporal;
 }

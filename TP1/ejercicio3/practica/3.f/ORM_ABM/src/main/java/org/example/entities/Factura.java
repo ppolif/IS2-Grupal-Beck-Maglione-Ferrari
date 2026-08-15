@@ -33,7 +33,8 @@ public abstract class Factura {
     @Enumerated(EnumType.STRING)
     private EstadoFactura estado;
 
-    @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true)
+    // En tu clase Factura.java
+    @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true, targetEntity = Detalle.class)
     private List<Detalle> detalles;
 
     @Column(nullable = false)

@@ -15,6 +15,10 @@ import java.util.Date;
 @AllArgsConstructor
 @Builder
 public class Stock {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
+
     private Detalle detalle;
 
     @Enumerated(EnumType.STRING)
