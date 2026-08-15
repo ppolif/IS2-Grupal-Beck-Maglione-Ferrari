@@ -1,4 +1,4 @@
-package main;
+package app;
 
 import entidades.*;
 import jakarta.persistence.EntityManager;
@@ -7,8 +7,6 @@ import jakarta.persistence.Persistence;
 
 // Yo uso h2 asi que para la consola web necesito importar:
 import org.h2.tools.Server;
-
-import javax.lang.model.type.ArrayType;
 
 public class PersistenceApp {
     public static void main(String[] args) {
@@ -92,7 +90,7 @@ public class PersistenceApp {
 
         em.close();
         emf.close();
-        //h2Server.stop();
+        h2Server.stop();
 
 //        Factura factura = Factura.builder().numero(15).fecha("15/8/26").build();
 //        Factura factura2 = Factura.builder().total(200).fecha("15/8/26").build();
