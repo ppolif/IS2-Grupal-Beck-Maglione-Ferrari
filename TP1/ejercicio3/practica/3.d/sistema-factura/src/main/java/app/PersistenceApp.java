@@ -76,17 +76,56 @@ public class PersistenceApp {
             em.persist(factura1);
 
             Factura factura2 = em.find(Factura.class, 1L);
-            factura2.setNumero(35);
+            //factura2.setNumero(35);
 
-            em.merge(factura2);
+            //em.merge(factura2);
 
 
-            //em.flush();
+            em.flush();
 
             em.getTransaction().commit();
         } catch (Exception e) {
             em.getTransaction().rollback();
         }
+
+//        try {
+//            em.getTransaction().begin();
+//
+//            //cargamos 50mil clientes random
+//            for (int i = 1; i <= 50000; i++) {
+//                Cliente cliente = new Cliente();
+//                cliente.setNombre("nombre" + i);
+//                cliente.setApellido("apellido" + i);
+//                cliente.setDni(30000000 + i);
+//
+//                em.persist(cliente);
+//
+//                //hacemos batch porque sino explota la compu
+//                if (i % 1000 == 0) {
+//                    em.flush();
+//                    em.clear();
+//                }
+//            }
+//
+//            //ahora cargamos los productos
+//            for (int i = 1; i <= 50000; i++) {
+//                Articulo articulo = new Articulo();
+//                articulo.setDenominacion("generico" + i);
+//                articulo.setCantidad(3);
+//                articulo.setPrecio(20 + i);
+//
+//                em.persist(articulo);
+//
+//                if (i % 1000 == 0) {
+//                    em.flush();
+//                    em.clear();
+//                }
+//            }
+//
+//            em.getTransaction().commit();
+//        }catch (Exception e) {
+//            em.getTransaction().rollback();
+//        }
 
         em.close();
         emf.close();

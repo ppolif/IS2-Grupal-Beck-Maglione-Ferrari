@@ -8,7 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "cliente")
+@Table(name = "cliente", indexes = {
+        @Index(name = "idx_id_cliente", columnList = "id"),
+        @Index(name = "idx_cliente_dni", columnList = "dni")
+})
 @Audited
 public class Cliente implements Serializable {
 
@@ -22,7 +25,7 @@ public class Cliente implements Serializable {
     @Column(name = "apellido")
     private String apellido;
 
-    @Column(name = "dni", unique = true)
+    @Column(name = "dni")
     private int dni;
 
     @OneToOne(cascade = CascadeType.ALL)
@@ -34,6 +37,12 @@ public class Cliente implements Serializable {
 
     public Cliente() {
 
+    }
+
+    public Cliente(String nombre, String apellido, int dni) {
+        this.nombre = nombre;
+        this.apellido = apellido;
+        this.dni = dni;
     }
 
     public Cliente(String nombre, String apellido, int dni, Domicilio domicilio) {
