@@ -11,15 +11,8 @@ import java.util.Date;
 @Builder
 public class Vigencia {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     private double precio;
     private Date desde;
     private Date hasta;
 
-    @ManyToOne
-    @JoinColumn(name = "id")
-    private Producto producto;
 }
