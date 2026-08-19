@@ -8,6 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <!--ICONOS-->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="styles/styles.css">
 </head>
 <body>
     <nav class="navbar navbar-expand-md navbar-light bg-light fixed-top">
@@ -126,7 +127,188 @@
             <span class="visually-hidden">Next</span>
         </button>
     </div>
-    
+
+    <main>
+        <!--PRODUCTOS-->
+        <!--SELECTOR DE CATEGORIAS-->
+        <section class="container" id="selector-categorias">
+            <p class="fs-2" style="text-align: center;">Select categoria</p>
+            <div class="row gap-4">
+                <!--MOBILE-->
+                <div class="col d-flex justify-content-center p-0">
+                    <a href="#pizzas" class="m-4 border border-1 border-black d-flex gap-1 align-items-center rounded p-1 text-decoration-none">
+                        <img src="/assets/categorias/porcion-de-pizza.png" 
+                        alt=""
+                        style="width: 25px; height: 25px">
+                        <span class="fs-4 text-dark-emphasis">Pizza</span>
+                    </a>
+                </div> 
+                <div class="col d-flex justify-content-center p-0">
+                    <a href="#empanadas" class="m-4 border border-1 border-black d-flex gap-1 align-items-center rounded p-1 text-decoration-none">
+                        <img src="/assets/categorias/empanada.png" alt=""
+                        style="width: 25px; height: 25px">
+                        <span class="fs-4 text-dark-emphasis">Empanadas</span>
+                    </a>
+                </div> 
+                <div class="col d-flex justify-content-center p-0">
+                    <a href="#bebidas" class="m-4 border border-1 border-black d-flex gap-1 align-items-center rounded p-1 text-decoration-none">
+                        <img src="/assets/categorias/bebidas-sin-alcohol.png" alt=""
+                        style="width: 25px; height: 25px">
+                        <span class="fs-4 text-dark-emphasis">Bebidas</span>
+                    </a>
+                </div> 
+            </div>
+        </section>
+
+        <!--CATEGORIAS PRODUCTOS-->
+        <section class="containter-fluid" id="categorias">
+            <section class="text-center mb-5" id="pizzas">
+                <h3 class="display-6">Pizzas</h3>
+                <div class="row gap-4 gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
+                    
+                    <!--PRODUCTO-->
+                    <div class="col">
+                        <div class="card h-100">
+                            <img src="https://cdn2.hubspot.net/hub/1986236/file-3951248662-jpg/blog-files/web-browser-wars-illustration-400x350.jpg" class="card-img-top">
+                            <div class="card-body p-4">
+                                <div class="text-center">
+                                    <h5 class="fw-bolder">Item</h5>
+                                    <span>$20.000</span>
+                                </div>
+                            </div>
+                            <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+                                <div class="text-center">
+                                    <a href="" class="btn btn-outline-success mt-auto">
+                                        Aniadir al carrito
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--PRODUCTO-->
+                    <div class="col">
+                        <div class="card h-100">
+                            <img src="https://cdn2.hubspot.net/hub/1986236/file-3951248662-jpg/blog-files/web-browser-wars-illustration-400x350.jpg" class="card-img-top">
+                            <div class="card-body p-4">
+                                <div class="text-center">
+                                    <h5 class="fw-bolder">Item</h5>
+                                    <span>$20.000</span>
+                                </div>
+                            </div>
+                            <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+                                <div class="text-center">
+                                    <a href="" class="btn btn-outline-success mt-auto">
+                                        Aniadir al carrito
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="text-center mb-5" id="empanadas">
+                <h3 class="display-6">Empanadas</h3>
+                <div class="row gap-4 gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
+                    
+                    <!--PRODUCTO-->
+                    <div class="col">
+                        <div class="card h-100">
+                            <img src="https://cdn2.hubspot.net/hub/1986236/file-3951248662-jpg/blog-files/web-browser-wars-illustration-400x350.jpg" class="card-img-top">
+                            <div class="card-body p-4">
+                                <div class="text-center">
+                                    <h5 class="fw-bolder">Item</h5>
+                                    <span>$10.000</span>
+                                </div>
+                            </div>
+                            <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+                                <div class="text-center">
+                                    <a href="" class="btn btn-outline-success mt-auto">
+                                        Aniadir al carrito
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--PRODUCTO-->
+                    <div class="col">
+                        <div class="card h-100">
+                            <img src="https://cdn2.hubspot.net/hub/1986236/file-3951248662-jpg/blog-files/web-browser-wars-illustration-400x350.jpg" class="card-img-top">
+                            <div class="card-body p-4">
+                                <div class="text-center">
+                                    <h5 class="fw-bolder">Item</h5>
+                                    <span>$10.000</span>
+                                </div>
+                            </div>
+                            <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+                                <div class="text-center">
+                                    <a href="" class="btn btn-outline-success mt-auto">
+                                        Aniadir al carrito
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="text-center mb-5" id="bebidas">
+                <h3 class="display-6">Bebidas</h3>
+                <div class="row gap-4 gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
+                    
+                    <!--PRODUCTO-->
+                    <div class="col">
+                        <div class="card h-100">
+                            <img src="https://cdn2.hubspot.net/hub/1986236/file-3951248662-jpg/blog-files/web-browser-wars-illustration-400x350.jpg" class="card-img-top">
+                            <div class="card-body p-4">
+                                <div class="text-center">
+                                    <h5 class="fw-bolder">Item</h5>
+                                    <span>$5.000</span>
+                                </div>
+                            </div>
+                            <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+                                <div class="text-center">
+                                    <a href="" class="btn btn-outline-success mt-auto">
+                                        Aniadir al carrito
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--PRODUCTO-->
+                    <div class="col">
+                        <div class="card h-100">
+                            <img src="https://cdn2.hubspot.net/hub/1986236/file-3951248662-jpg/blog-files/web-browser-wars-illustration-400x350.jpg" class="card-img-top">
+                            <div class="card-body p-4">
+                                <div class="text-center">
+                                    <h5 class="fw-bolder">Item</h5>
+                                    <span>$5.000</span>
+                                </div>
+                            </div>
+                            <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+                                <div class="text-center">
+                                    <a href="" class="btn btn-outline-success mt-auto">
+                                        Aniadir al carrito
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </section>
+    </main>
+    <div class="containter">
+       <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
+            <div class="d-flex align-items-center text-secondary">
+                <a href="/" class="text-secondary text-decoration-none fw-bold me-2">Gran Sabor</a>
+                <span>&copy; 2026 LCC Maglione-Ferrari-CeredaBeck</span>
+            </div>
+
+            <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
+                <li class="ms-3"><a class="text-body-secondary">icono facebook</a></li>
+                <li class="ms-3"><a class="text-body-secondary">icono instagram</a></li>
+            </ul>
+        </footer>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 </body>
