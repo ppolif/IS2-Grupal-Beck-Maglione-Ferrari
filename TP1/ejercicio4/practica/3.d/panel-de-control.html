@@ -37,7 +37,7 @@
                 </ul>
 
                 <div class="d-md-none">
-                    <ul class="navbar-nav me-auto-mb-2 mb-md-0">
+                    <ul class="navbar me-auto-mb-2 mb-md-0">
                         <li class="nav-item">
                             <a class="nav-link" href="">Carrito</a>
                         </li>
@@ -48,7 +48,7 @@
                 </div>
 
                 <div class="d-none d-md-flex gap-2">
-                    <a class="nav-item nav-link p-1" href="">
+                    <a class="nav-item nav-link p-1" href="/panel-de-control.html">
                         <i class="bi bi-basket" style="font-size: 1.2rem"></i>
                     </a>
                     <a class="nav-item nav-link p-1" href="/iniciar-sesion.html">
@@ -57,70 +57,29 @@
                 </div>
             </div>
         </div>
-
     </nav>
-
-    <main class="container row mx-auto d-flex align-items-center justify-content-center" style="height: calc(100vh - 56px); margin-top: 56px;">
-        <form class="col-12 col-md-6" id="form">
-            <h3 class="mb-3 fw-normal">Registrarse</h3>
-            <div class="d-flex flex-column gap-1">
-                <div class="form-floating">
-                    <input type="text" class="form-control" id="name" placeholder="Pablo">
-                    <label for="user">Nombre</label>
-                </div>
-                <div class="form-floating">
-                    <input type="text" class="form-control" id="last-name" placeholder="Gonzales">
-                    <label for="user">Apellido</label>
-                </div>
-                <div class="form-floating">
-                    <input type="text" class="form-control" id="user" placeholder="Pablito123Gonz">
-                    <label for="user">Nombre de usuario</label>
-                </div>
-                <div class="form-floating">
-                    <input type="text" class="form-control" id="email" placeholder="pgonzales@gmail.com">
-                    <label for="user">Email</label>
-                </div>
-                <div class="form-floating">
-                    <input type="password" class="form-control" id="password" placeholder="Ejemplo de contraseñak">
-                    <label for="password">Password</label>
-                </div>
-                <div class="form-floating">
-                    <input type="password" class="form-control" id="_password" placeholder="Ejemplo de contraseñak">
-                    <label for="password">Repeat Password</label>
-                </div>
-                <p class="my-2">Ya tienes una cuenta? <a href="iniciar-sesion.html">Iniciar sesion</a></p>
-                <button class="btn btn-primary w-100 py-2" type="submit">Registrarse</button>
-                <span style="font-size: 12px;">*sus datos no se guardaran (inicio de sesion con credenciales genericas)</span>
+    <main class="mt-5 d-flex flex-column gap-5" style="min-height: calc(100vh - 10rem);">
+        <section class="p-3">
+            <div class="d-flex gap-1 justify-content-between">
+                <h3>Administracion de productos</h3>
+                <button class="btn btn-primary d-flex gap-1 align-items-center"><i class="bi bi-plus"></i><span class="d-none d-md-block">Agregar productos</span></button>
+            </div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
+            <div>
+                <table class="table mb-0 align-middle">
+                    <thead class="bg-light">
+                        <th>Producto</th>
+                        <th>Categoria</th>
+                        <th>Precio</th>
+                        <th>Acciones</th>
+                    </thead>
+                    <tbody id="productTableBody">
+                    </tbody>
+                </table>
             </div>
-        </form>
+        </section>
     </main>
 
-     <!--TOAST-->
-    <div class="toast-container position-fixed bottom-0 end-0 p-3">
-        <div class="toast" role="alert" id="successToast">
-            <div class="toast-header">
-                <strong class="me-auto">Registro</strong>
-                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-            </div>
-            <div class="toast-body bg-success-subtle">
-                Registro exitoso
-            </div>
-        </div>
-    </div>
-    <div class="toast-container position-fixed bottom-0 end-0 p-3">
-        <div class="toast" role="alert" id="errorToast">
-            <div class="toast-header">
-                <strong class="me-auto">Registro</strong>
-                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-            </div>
-            <div class="toast-body bg-danger-subtle">
-                Completa todos los campos
-            </div>
-        </div>
-    </div>
-
-    <!--FOOTER-->
-    <div class="container">
+       <div class="container">
        <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
             <div class="d-flex align-items-center text-secondary">
                 <a href="/" class="text-secondary text-decoration-none fw-bold me-2">Gran Sabor</a>
@@ -136,6 +95,6 @@
 
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
-    <script type="module" src="lib/pages/registrarse.js"></script>
+    <script type="module" src="lib/pages/panel-de-control.js"></script>
 </body>
 </html>

@@ -74,10 +74,34 @@
                 </div>
                 <p class="my-2">New User? <a href="registrarse.html">Registrarse</a></p>
                 <button class="btn btn-primary w-100 py-2" type="submit">Iniciar sesion</button>
+                <span style="font-size: 12px;">*credenciales autorizadas: donero(user) - ewedon(password)</span>
             </div>
         </form>
     </main>
     
+    <!--TOAST-->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div class="toast" role="alert" id="successToast">
+            <div class="toast-header">
+                <strong class="me-auto">Inicio de sesion</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body bg-success-subtle">
+                Sesion iniciada con exito
+            </div>
+        </div>
+    </div>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div class="toast" role="alert" id="errorToast">
+            <div class="toast-header">
+                <strong class="me-auto">Inicio de sesion</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body bg-danger-subtle">
+                Nombre de usuario y/o contraseña incorrectos
+            </div>
+        </div>
+    </div>
     <div class="container">
        <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
             <div class="d-flex align-items-center text-secondary">
