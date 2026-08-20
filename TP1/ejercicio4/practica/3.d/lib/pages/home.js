@@ -22,7 +22,7 @@ const fillProducts = async()=>{
             container.innerHTML += 
                     `<div class="col">
                         <div class="card h-100">
-                            <img src="${product.image}" class="card-img-top">
+                            <img src="${product.image}" class="card-img-top" style="min-height: 300px; max-height:300px;">
                             <div class="card-body p-4">
                                 <div class="text-center">
                                     <h5 class="fw-bolder">${product.title}</h5>
@@ -30,9 +30,12 @@ const fillProducts = async()=>{
                                 </div>
                             </div>
                             <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
-                                <div class="text-center">
+                                <div class="text-center d-flex gap-1">
+                                    <a href="/detalle.html?id=${product.id}" class="btn btn-outline-secondary mt-auto">
+                                        Ver mas
+                                    </a>
                                     <a href="" class="btn btn-outline-success mt-auto">
-                                        Aniadir al carrito
+                                        Añadir al carrito
                                     </a>
                                 </div>
                             </div>

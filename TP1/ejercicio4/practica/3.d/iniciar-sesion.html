@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gran Sabor</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <!--ICONOS-->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="styles/styles.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-light fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Gran Sabor</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 md-md-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">Inicio</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Categorias
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="categoriasDropdown">
+                            <a class="dropdown-item" href="">Pizzas</a>
+                            <a class="dropdown-item" href="">Empanadas</a>
+                            <a class="dropdown-item" href="">Bebidas</a>
+                        </div>
+                    </li>
+                </ul>
+
+                <div class="d-md-none">
+                    <ul class="navbar-nav me-auto-mb-2 mb-md-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="">Carrito</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/iniciar-sesion.html">Iniciar Sesion</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="d-none d-md-flex gap-2">
+                    <a class="nav-item nav-link p-1" href="/iniciar-sesion.html">
+                        <i class="bi bi-basket" style="font-size: 1.2rem"></i>
+                    </a>
+                    <a class="nav-item nav-link p-1" href="">
+                        <i class="bi bi-person" style="font-size: 1.2rem"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </nav>
+
+    <main class="container row m-auto d-flex align-items-center justify-content-center" style="height: calc(100vh - 56px);">
+        <form class="col-12 col-md-6" id="form">
+            <h3 class="mb-3 fw-normal">Iniciar sesion</h3>
+            <div class="d-flex flex-column gap-1">
+                <div class="form-floating">
+                    <input type="text" class="form-control" name="user" id="user" placeholder="Ejemplo de nombre">
+                    <label for="user">Nombre de Usuario</label>
+                </div>
+                <div class="form-floating">
+                    <input type="password" class="form-control" name="password" id="password" placeholder="Ejemplo de contraseñak">
+                    <label for="password">Password</label>
+                </div>
+                <p class="my-2">New User? <a href="registrarse.html">Registrarse</a></p>
+                <button class="btn btn-primary w-100 py-2" type="submit">Iniciar sesion</button>
+            </div>
+        </form>
+    </main>
+    
+    <div class="container">
+       <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
+            <div class="d-flex align-items-center text-secondary">
+                <a href="/" class="text-secondary text-decoration-none fw-bold me-2">Gran Sabor</a>
+                <span>&copy; 2026 LCC Maglione-Ferrari-CeredaBeck</span>
+            </div>
+
+            <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
+                <li class="ms-3"><a class="text-body-secondary">icono facebook</a></li>
+                <li class="ms-3"><a class="text-body-secondary">icono instagram</a></li>
+            </ul>
+        </footer>
+    </div>
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script type="module" src="lib/pages/iniciar-sesion.js"></script>
+</body>
+</html>
