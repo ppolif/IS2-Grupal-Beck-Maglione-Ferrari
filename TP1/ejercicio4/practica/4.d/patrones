@@ -1,0 +1,10 @@
+PATRONES USADOS
+1. VIDEOJUEGOS
+	Arquitectura en capas: El sistema se encuentra separado en las capas de controlador, servicio y repositorio. 
+	Modelo vista controlador(MVC): Existencia de la capa web representada por los controladores
+	Repository: Emulamos una coleccion de objetos en memoria (puente entre la capa de dominio y la de persistencia).
+	Inyección de dependencias: Dejamos que el framework cree objetos y los inyectamos en los constructores de los controladores.
+
+2. PRIMER GUIA DE VIDEOS (springboot + bootstrap) ECOMMERCE
+	Separación de servicios: Tenemos archivos de JS asociados a la manipulación del DOM y eventos de las vistas HTML, y por otro, módulos específicos de servicio (products.js, user.js) que exportan funciones dedicadas exclusivamente a obtener o enviar datos.
+	Consumo de Backend-as-a-Service (BaaS): Para el login, registro y ABM de productos, el proyecto no gestiona una base de datos propia en el mismo código, sino que implementa peticiones asíncronas (fetch) para comunicarse con una API externa (fake store).
