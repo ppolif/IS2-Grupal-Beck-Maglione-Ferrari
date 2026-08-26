@@ -2,38 +2,46 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
-    <title>Detalle videojuego</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameStore - Detalle</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 </head>
-<body>
-    <nav th:replace="components/navbar :: nav_bar"></nav>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark mb-4">
     <div class="container">
-        <div class="row mt-5" th:object="${videojuego}">
-            <div class="col-4">
-                <img th:src="@{'/imagenes/'}+*{imagen}" alt="" class="img-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/inicio}"><i class="bi bi-controller me-2"></i>GameStore</a>
+        <a class="btn btn-outline-light btn-sm" th:href="@{/inicio}">Volver a la Tienda</a>
+    </div>
+</nav>
+
+<div class="container my-5">
+    <div class="card shadow-sm p-4">
+        <div class="row align-items-center">
+            <div class="col-md-6 text-center">
+                <img th:src="${videojuego.imagen != null and !videojuego.imagen.isEmpty()} ? @{'/imagenes/' + ${videojuego.imagen}} : 'https://dummyimage.com/600x500/dee2e6/6c757d.jpg'"
+                     class="img-fluid rounded shadow" style="max-height: 400px; width: 100%; object-fit: cover;" th:alt="${videojuego.titulo}">
             </div>
-            <div class="col-8">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title"th:text="*{titulo}">Card title</h5>
-                        <p class="card-text">Precio : <span th:text="*{precio}">1</span></p>
-                        <p class="card-text" th:if="*{stock}">
-                            Cantidad: <span th:text="*{stock}"></span>
-                        </p>
-                        <p class="card-text" th:unless="*{stock}">
-                            <span class="text-danger">No hay stock</span>
-                        </p>
-                    </div>
-                    <hr>
-                    <div class="card-body">
-                        <p class="card-text" th:text="*{descripcion}"></p>
-                    </div>
+            <div class="col-md-6 mt-4 mt-md-0">
+                <div class="mb-2">
+                    <span class="badge bg-secondary me-1" th:text="${videojuego.categoria.nombre}"></span>
+                    <span class="badge bg-info text-dark" th:text="${videojuego.estudio.nombre}"></span>
                 </div>
-            </div>
-            <div class="col-12 mt-5">
-                <a th:href="@{/inicio}" class="btn btn-outline-dark">Volver</a>
+                <h1 class="display-6 fw-bold" th:text="${videojuego.titulo}">Título del Juego</h1>
+                <div class="fs-4 text-primary fw-bold my-3" th:text="'$' + ${#numbers.formatDecimal(videojuego.precio, 1, 2)}">$0.00</div>
+                <p class="lead text-secondary" th:text="${videojuego.descripcion}">Descripción completa del videojuego.</p>
+                <p class="text-muted small"><strong>Fecha de Lanzamiento:</strong> <span th:text="${#dates.format(videojuego.fechaLanzamiento, 'dd/MM/yyyy')}"></span></p>
+                <p class="text-muted small"><strong>Stock Disponible:</strong> <span th:text="${videojuego.stock} + ' unidades'"></span></p>
+
+                <div class="d-flex gap-3 mt-4">
+                    <input class="form-control text-center" type="number" value="1" min="1" th:max="${videojuego.stock}" style="max-width: 4.5rem">
+                    <button class="btn btn-dark" type="button"><i class="bi bi-cart-fill me-2"></i>Añadir al Carrito</button>
+                </div>
             </div>
         </div>
     </div>
+</div>
+
 </body>
 </html>
