@@ -126,8 +126,8 @@ public class UsuarioServicio implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String mail) throws UsernameNotFoundException {
-        Usuario usuario = usuarioRepositorio.buscarPorMail(mail);
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        Usuario usuario = usuarioRepositorio.buscarPorMail(email);
         if (usuario != null) {
             List<GrantedAuthority> permisos = new ArrayList<>();
 

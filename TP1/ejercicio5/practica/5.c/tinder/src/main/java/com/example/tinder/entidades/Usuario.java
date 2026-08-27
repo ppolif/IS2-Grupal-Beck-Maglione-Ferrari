@@ -12,7 +12,7 @@ public class Usuario {
     private String id;
     private String nombre;
     private String apellido;
-    private String email;
+    private String mail;
     private String clave;
 
     @ManyToOne
@@ -60,11 +60,11 @@ public class Usuario {
     }
 
     public String getEmail() {
-        return email;
+        return mail;
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.mail = email;
     }
 
     public String getClave() {
