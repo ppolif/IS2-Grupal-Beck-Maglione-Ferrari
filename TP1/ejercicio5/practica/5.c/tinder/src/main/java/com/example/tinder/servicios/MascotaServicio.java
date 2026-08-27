@@ -7,6 +7,7 @@ import com.example.tinder.enumeraciones.Sexo;
 import com.example.tinder.errores.ErrorServicio;
 import com.example.tinder.repositorios.MascotaRepositorio;
 import com.example.tinder.repositorios.UsuarioRepositorio;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,6 +27,7 @@ public class MascotaServicio {
     @Autowired
     private FotoServicio fotoServicio;
 
+    @Transactional
     public void agregarMascota(MultipartFile archivo, String idUsuario, String nombre, Sexo sexo) throws ErrorServicio{
 
         Usuario usuario = usuarioRepositorio.findById(idUsuario).get();
@@ -46,6 +48,7 @@ public class MascotaServicio {
 
     }
 
+    @Transactional
     public void modificar(MultipartFile archivo, String idUsuario, String idMascota, String nombre, Sexo sexo) throws ErrorServicio {
         validar(nombre, sexo);
 
@@ -77,6 +80,7 @@ public class MascotaServicio {
         }
     }
 
+    @Transactional
     public void eliminarMascota(String idUsuario, String idMascota)throws ErrorServicio {
         Optional<Mascota> optional = mascotaRepositorio.findById(idMascota);
 

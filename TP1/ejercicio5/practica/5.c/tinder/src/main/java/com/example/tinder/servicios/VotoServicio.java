@@ -5,6 +5,7 @@ import com.example.tinder.entidades.Voto;
 import com.example.tinder.errores.ErrorServicio;
 import com.example.tinder.repositorios.MascotaRepositorio;
 import com.example.tinder.repositorios.VotoRepositorio;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,11 @@ public class VotoServicio {
     @Autowired
     private MascotaRepositorio mascotaRepositorio;
 
+    @Autowired
+    private NotificacionServicio notificacionServicio;
+
+
+    @Transactional
     public void votar(String idUsuario, String idMascota1, String idMascota2) throws ErrorServicio{
         Voto voto = new Voto();
         voto.setFecha(new Date());
@@ -46,6 +52,9 @@ public class VotoServicio {
 
         if (respuesta2.isPresent()) {
             Mascota mascota2 = respuesta.get();
+
+            notificacionServicio.enviar("Tu mascota ha sido votada", "Tinder de Mascota", mascota2.getUsuario().getEmail());
+
             voto.setMascota2(mascota2);
 
         } else {
@@ -55,6 +64,7 @@ public class VotoServicio {
 
     }
 
+    @Transactional
     public void responder(String idUsuario, String idVoto) throws ErrorServicio {
         Optional<Voto> respuesta = votoRepositorio.findById(idVoto);
 
@@ -63,6 +73,8 @@ public class VotoServicio {
             voto.setRespuesta(new Date());
 
             if (voto.getMascota2().getUsuario().getId().equals(idUsuario)) {
+                notificacionServicio.enviar("Tu voto fue correspondido", "Tinder de Mascota", voto.getMascota2().getUsuario().getEmail());
+
                 votoRepositorio.save(voto);
             } else {
                 throw new ErrorServicio("No tiene permisos para realizar esta accion");

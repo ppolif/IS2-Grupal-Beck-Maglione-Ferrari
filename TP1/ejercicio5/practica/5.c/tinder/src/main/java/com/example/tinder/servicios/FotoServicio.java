@@ -3,6 +3,7 @@ package com.example.tinder.servicios;
 import com.example.tinder.entidades.Foto;
 import com.example.tinder.errores.ErrorServicio;
 import com.example.tinder.repositorios.FotoRepositorio;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,6 +17,7 @@ public class FotoServicio {
     @Autowired
     private FotoRepositorio fotoRepositorio;
 
+    @Transactional
     public Foto guardar(MultipartFile archivo) throws ErrorServicio{
         if (archivo != null && !archivo.isEmpty()) {
             try {
@@ -34,6 +36,7 @@ public class FotoServicio {
         return null;
     }
 
+    @Transactional
     public Foto actualizar(String idFoto, MultipartFile archivo)throws ErrorServicio {
         try {
             if (archivo != null) {

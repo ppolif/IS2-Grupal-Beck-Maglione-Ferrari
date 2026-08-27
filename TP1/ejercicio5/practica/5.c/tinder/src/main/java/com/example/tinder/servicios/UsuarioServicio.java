@@ -4,15 +4,25 @@ import com.example.tinder.entidades.Foto;
 import com.example.tinder.entidades.Usuario;
 import com.example.tinder.errores.ErrorServicio;
 import com.example.tinder.repositorios.UsuarioRepositorio;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 @Service
-public class UsuarioServicio {
+public class UsuarioServicio implements UserDetailsService {
 
     @Autowired
     private UsuarioRepositorio usuarioRepositorio;
@@ -20,6 +30,11 @@ public class UsuarioServicio {
     @Autowired
     private FotoServicio fotoServicio;
 
+    @Autowired
+    private NotificacionServicio notificacionServicio;
+
+
+    @Transactional
     public void registrar(MultipartFile archivo, String nombre, String apellido, String mail, String clave) throws ErrorServicio {
         validar(nombre, apellido, mail, clave);
 
@@ -28,7 +43,8 @@ public class UsuarioServicio {
         usuario.setNombre(nombre);
         usuario.setApellido(apellido);
         usuario.setEmail(mail);
-        usuario.setClave(clave);
+        String claveEncriptada = new BCryptPasswordEncoder().encode(clave);
+        usuario.setClave(claveEncriptada);
         usuario.setAlta(new Date());
 
         Foto foto = fotoServicio.guardar(archivo);
@@ -36,8 +52,10 @@ public class UsuarioServicio {
 
         usuarioRepositorio.save(usuario);
 
+        notificacionServicio.enviar("Bienvenido", "Tinder de Mascotas", usuario.getEmail());
     }
 
+    @Transactional
     public void modificar(MultipartFile archivo, String id, String nombre, String apellido, String mail, String clave) throws ErrorServicio {
 
         validar(nombre, apellido, mail, clave);
@@ -49,7 +67,9 @@ public class UsuarioServicio {
             usuario.setNombre(nombre);
             usuario.setApellido(apellido);
             usuario.setEmail(mail);
-            usuario.setClave(clave);
+
+            String claveEncriptada = new BCryptPasswordEncoder().encode(clave);
+            usuario.setClave(claveEncriptada);
 
             String idFoto = null;
             if (usuario.getFoto() != null){
@@ -65,6 +85,7 @@ public class UsuarioServicio {
         }
     }
 
+    @Transactional
     public void deshabilitar(String id) throws ErrorServicio {
 
         Optional<Usuario> respuesta = usuarioRepositorio.findById(id);
@@ -77,6 +98,7 @@ public class UsuarioServicio {
 
     }
 
+    @Transactional
     public void habilitar(String id) throws ErrorServicio {
         Optional<Usuario> respuesta = usuarioRepositorio.findById(id);
         if (respuesta.isPresent()) {
@@ -101,5 +123,25 @@ public class UsuarioServicio {
             throw new ErrorServicio("La clave no puede ser nula, debe tener mas de 6 caracteres.");
         }
 
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String mail) throws UsernameNotFoundException {
+        Usuario usuario = usuarioRepositorio.buscarPorMail(mail);
+        if (usuario != null) {
+            List<GrantedAuthority> permisos = new ArrayList<>();
+
+            GrantedAuthority p1 = new SimpleGrantedAuthority("MODULO_FOTOS");
+            permisos.add(p1);
+            GrantedAuthority p2 = new SimpleGrantedAuthority("MODULO_FOTOS");
+            permisos.add(p2);
+            GrantedAuthority p3 = new SimpleGrantedAuthority("MODULO_VOTOS");
+            permisos.add(p3);
+
+            User user = new User(usuario.getEmail(), usuario.getClave(),permisos);
+            return user;
+        } else {
+            return null;
+        }
     }
 }
