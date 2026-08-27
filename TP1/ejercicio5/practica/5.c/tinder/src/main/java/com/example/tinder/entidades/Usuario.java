@@ -8,6 +8,7 @@ import java.util.Date;
 public class Usuario {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     private String nombre;
     private String apellido;
@@ -16,6 +17,9 @@ public class Usuario {
 
     @ManyToOne
     private Zona zona;
+
+    @OneToOne
+    private Foto foto;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date alta;
@@ -69,6 +73,14 @@ public class Usuario {
 
     public void setClave(String clave) {
         this.clave = clave;
+    }
+
+    public Foto getFoto() {
+        return foto;
+    }
+
+    public void setFoto(Foto foto) {
+        this.foto = foto;
     }
 
     public Date getAlta() {

@@ -8,6 +8,7 @@ import java.util.Date;
 public class Voto {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Temporal(TemporalType.TIMESTAMP)

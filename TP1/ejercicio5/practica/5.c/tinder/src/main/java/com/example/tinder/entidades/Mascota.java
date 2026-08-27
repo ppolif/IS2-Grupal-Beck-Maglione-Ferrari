@@ -9,6 +9,7 @@ import java.util.Date;
 public class Mascota {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     private String nombre;
 
@@ -17,6 +18,9 @@ public class Mascota {
 
     @Enumerated(EnumType.STRING)
     private Sexo sexo;
+
+    @OneToOne
+    private Foto foto;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date alta;
@@ -54,6 +58,14 @@ public class Mascota {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
+    }
+
+    public Foto getFoto() {
+        return foto;
+    }
+
+    public void setFoto(Foto foto) {
+        this.foto = foto;
     }
 
     public Date getAlta() {

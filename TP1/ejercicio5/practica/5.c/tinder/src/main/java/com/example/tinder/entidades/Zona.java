@@ -1,12 +1,15 @@
 package com.example.tinder.entidades;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
 public class Zona {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     private String nombre;
     private String descripcion;
