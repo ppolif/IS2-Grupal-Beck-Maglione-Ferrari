@@ -18,4 +18,9 @@ public class PortalControlador {
     public String registro(){
         return "registro.html";
     }
+
+    @GetMapping("/login")
+    public String login(){
+        return "login.html";
+    }
 }
