@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -39,30 +39,44 @@
             <div class="col-lg-5 col-md-6 pe-md-4">
                 <h2 class="view-heading">Registrate</h2>
 
-                <form class="custom-form" action="#" method="POST">
+                <form class="custom-form" action="/registrar" method="POST" enctype="multipart/form-data">
+                    <p th:if="${error != null}" th:text="${error}" style="color: red"></p>
+
                     <div>
                         <label for="nombre" class="form-label">Nombre</label>
-                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required th:value="${nombre}">
                     </div>
 
                     <div>
                         <label for="apellido" class="form-label">Apellido</label>
-                        <input type="text" class="form-control" id="apellido" name="apellido" required>
+                        <input type="text" class="form-control" id="apellido" name="apellido" required th:value="${apellido}">
                     </div>
 
                     <div>
                         <label for="email" class="form-label">E-Mail</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
+                        <input type="email" class="form-control" id="email" name="email" required th:value="${email}">
+                    </div>
+
+                    <div>
+                        <label>Foto</label>
+                        <input type="file" class="form-control" name="archivo" />
+                    </div>
+
+                    <div>
+                        <label>Zona</label>
+                        <select class="form-control" name="idZona">
+                            <option th:each="zona : ${zonas}" th:value="${zona.id}" th:text="${zona.nombre}"></option>
+                        </select>
                     </div>
 
                     <div>
                         <label for="clave" class="form-label">Clave</label>
-                        <input type="password" class="form-control" id="clave" name="clave" required>
+                        <input type="password" class="form-control" id="clave" name="clave" required th:value="${clave}">
                     </div>
 
                     <div>
                         <label for="repetirClave" class="form-label">Repetir Clave</label>
-                        <input type="password" class="form-control" id="repetirClave" name="repetirClave" required>
+                        <input type="password" class="form-control" id="repetirClave" name="repetirClave" required th:value="${repetirClave}">
                     </div>
 
                     <button type="submit" class="btn-submit-pink mt-2">Registrarme</button>

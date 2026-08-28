@@ -2,8 +2,10 @@ package com.example.tinder.servicios;
 
 import com.example.tinder.entidades.Foto;
 import com.example.tinder.entidades.Usuario;
+import com.example.tinder.entidades.Zona;
 import com.example.tinder.errores.ErrorServicio;
 import com.example.tinder.repositorios.UsuarioRepositorio;
+import com.example.tinder.repositorios.ZonaRepositorio;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -31,18 +33,24 @@ public class UsuarioServicio implements UserDetailsService {
     private FotoServicio fotoServicio;
 
     @Autowired
+    private ZonaRepositorio zonaRepositorio;
+
+    @Autowired
     private NotificacionServicio notificacionServicio;
 
 
     @Transactional
-    public void registrar(MultipartFile archivo, String nombre, String apellido, String mail, String clave) throws ErrorServicio {
-        validar(nombre, apellido, mail, clave);
+    public void registrar(MultipartFile archivo, String nombre, String apellido, String mail, String clave, String repetirClave, String idZona) throws ErrorServicio {
+        Zona zona = zonaRepositorio.getOne(idZona);
+
+        validar(nombre, apellido, mail, clave, repetirClave, zona);
 
         Usuario usuario = new Usuario();
 
         usuario.setNombre(nombre);
         usuario.setApellido(apellido);
         usuario.setEmail(mail);
+        usuario.setZona(zona);
         String claveEncriptada = new BCryptPasswordEncoder().encode(clave);
         usuario.setClave(claveEncriptada);
         usuario.setAlta(new Date());
@@ -52,13 +60,14 @@ public class UsuarioServicio implements UserDetailsService {
 
         usuarioRepositorio.save(usuario);
 
-        notificacionServicio.enviar("Bienvenido", "Tinder de Mascotas", usuario.getEmail());
+        //notificacionServicio.enviar("Bienvenido", "Tinder de Mascotas", usuario.getEmail());
     }
 
     @Transactional
-    public void modificar(MultipartFile archivo, String id, String nombre, String apellido, String mail, String clave) throws ErrorServicio {
+    public void modificar(MultipartFile archivo, String id, String nombre, String apellido, String mail, String clave, String repetirClave, String idZona) throws ErrorServicio {
+        Zona zona = zonaRepositorio.getOne(idZona);
 
-        validar(nombre, apellido, mail, clave);
+        validar(nombre, apellido, mail, clave, repetirClave, zona);
 
         Optional<Usuario> respuesta = usuarioRepositorio.findById(id);
 
@@ -67,6 +76,7 @@ public class UsuarioServicio implements UserDetailsService {
             usuario.setNombre(nombre);
             usuario.setApellido(apellido);
             usuario.setEmail(mail);
+            usuario.setZona(zona);
 
             String claveEncriptada = new BCryptPasswordEncoder().encode(clave);
             usuario.setClave(claveEncriptada);
@@ -110,7 +120,7 @@ public class UsuarioServicio implements UserDetailsService {
 
     }
 
-    public void validar(String nombre, String apellido, String mail, String clave) throws ErrorServicio {
+    public void validar(String nombre, String apellido, String mail, String clave, String repetirClave, Zona zona) throws ErrorServicio {
         if (nombre == null || nombre.isEmpty()) {
             throw new ErrorServicio("Debe indicar un nombre.");
         }
@@ -121,6 +131,14 @@ public class UsuarioServicio implements UserDetailsService {
 
         if (clave == null || clave.isEmpty() || clave.length() <= 6) {
             throw new ErrorServicio("La clave no puede ser nula, debe tener mas de 6 caracteres.");
+        }
+
+        if (!clave.equals(repetirClave)) {
+            throw new ErrorServicio("Las claves deben ser iguales");
+        }
+
+        if (zona == null) {
+            throw new ErrorServicio("No se encontró la zona solicitada");
         }
 
     }

@@ -28,7 +28,7 @@ public class SecurityConfig {
                         // Vistas públicas
                         .requestMatchers("/", "/index", "/index.html", "/registro", "/registro.html", "/login", "/login.html").permitAll()
                         // Rutas de procesamiento de registro
-                        .requestMatchers("/registro/guardar", "/usuario/registrar").permitAll()
+                        .requestMatchers("/registro/guardar", "/usuario/registrar", "/registrar").permitAll()
                         // Cualquier otra petición requiere login
                         .anyRequest().authenticated()
                 )
