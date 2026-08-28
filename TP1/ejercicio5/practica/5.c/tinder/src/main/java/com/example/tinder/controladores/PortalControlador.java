@@ -6,6 +6,7 @@ import com.example.tinder.errores.ErrorServicio;
 import com.example.tinder.repositorios.ZonaRepositorio;
 import com.example.tinder.servicios.UsuarioServicio;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,6 +34,14 @@ public class PortalControlador {
         return "index.html";
     }
 
+    //Spring security añade el prefijo "ROLE_" a la hora de leer el rol necesario para acceder a la URL por lo tanto en usuario servicio se escribe con ROLE_ y aca no
+    @PreAuthorize("hasAnyRole('USUARIO_REGISTRADO')")
+    @GetMapping("/inicio")
+    public String inicio(){
+
+        return "inicio.html";
+    }
+
     @GetMapping("/registro")
     public String registro(ModelMap model){
         List<Zona> zonas = zonaRepositorio.findAll();
@@ -42,7 +51,15 @@ public class PortalControlador {
     }
 
     @GetMapping("/login")
-    public String login(){
+    public String login(@RequestParam(required = false) String error, @RequestParam(required = false) String logout, ModelMap model){
+        if(error!=null){
+
+            model.put("error","Usuario o clave incorrectos");
+        }
+
+        if(logout != null){
+            model.put("logout", "ha salido correctamente");
+        }
         return "login.html";
     }
 

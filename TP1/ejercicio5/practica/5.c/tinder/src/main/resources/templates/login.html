@@ -40,6 +40,8 @@
                 <h2 class="view-heading">Ingresá a Tinder</h2>
 
                 <form class="custom-form" th:action="@{/logincheck}" method="POST">
+                    <p th:if="${error!=null}" th:text="${error}" style="color: red"></p>
+                    <p th:if="${logout!=null}" th:text="${logout}" style="color: green"></p>
                     <div>
                         <label for="email" class="form-label">E-Mail</label>
                         <input type="email" class="form-control" id="email" name="email" required>

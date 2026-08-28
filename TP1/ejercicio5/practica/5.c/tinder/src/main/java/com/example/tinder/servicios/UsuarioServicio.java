@@ -6,6 +6,7 @@ import com.example.tinder.entidades.Zona;
 import com.example.tinder.errores.ErrorServicio;
 import com.example.tinder.repositorios.UsuarioRepositorio;
 import com.example.tinder.repositorios.ZonaRepositorio;
+import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -16,6 +17,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
@@ -143,18 +146,30 @@ public class UsuarioServicio implements UserDetailsService {
 
     }
 
+    @Transactional
+    public Usuario buscarPorId(String id) throws ErrorServicio {
+        Optional<Usuario> respuesta = usuarioRepositorio.findById(id);
+
+        if (respuesta.isPresent()) {
+            return respuesta.get();
+        } else {
+            throw new ErrorServicio("No se encontró el usuario");
+        }
+    }
+
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         Usuario usuario = usuarioRepositorio.buscarPorMail(email);
         if (usuario != null) {
             List<GrantedAuthority> permisos = new ArrayList<>();
 
-            GrantedAuthority p1 = new SimpleGrantedAuthority("MODULO_FOTOS");
+            GrantedAuthority p1 = new SimpleGrantedAuthority("ROLE_USUARIO_REGISTRADO");
             permisos.add(p1);
-            GrantedAuthority p2 = new SimpleGrantedAuthority("MODULO_FOTOS");
-            permisos.add(p2);
-            GrantedAuthority p3 = new SimpleGrantedAuthority("MODULO_VOTOS");
-            permisos.add(p3);
+
+
+            ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+            HttpSession session = attr.getRequest().getSession(true);
+            session.setAttribute("usuariosession",usuario);
 
             User user = new User(usuario.getEmail(), usuario.getClave(),permisos);
             return user;
