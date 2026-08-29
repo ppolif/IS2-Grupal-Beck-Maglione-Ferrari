@@ -7,10 +7,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MascotaRepositorio extends JpaRepository<Mascota, String> {
 
-    @Query("SELECT m FROM Mascota m WHERE m.usuario.id = :id")
+
+    @Query("SELECT m FROM Mascota m WHERE m.usuario.id = :id AND m.baja IS NULL")
     public List<Mascota> buscarMascotaPorUsuario(@Param("id") String id);
 }

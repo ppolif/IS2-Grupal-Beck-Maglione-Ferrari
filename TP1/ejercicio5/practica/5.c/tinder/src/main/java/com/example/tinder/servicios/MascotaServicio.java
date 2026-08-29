@@ -4,6 +4,7 @@ import com.example.tinder.entidades.Foto;
 import com.example.tinder.entidades.Mascota;
 import com.example.tinder.entidades.Usuario;
 import com.example.tinder.enumeraciones.Sexo;
+import com.example.tinder.enumeraciones.Tipo;
 import com.example.tinder.errores.ErrorServicio;
 import com.example.tinder.repositorios.MascotaRepositorio;
 import com.example.tinder.repositorios.UsuarioRepositorio;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -28,7 +30,7 @@ public class MascotaServicio {
     private FotoServicio fotoServicio;
 
     @Transactional
-    public void agregarMascota(MultipartFile archivo, String idUsuario, String nombre, Sexo sexo) throws ErrorServicio{
+    public void agregarMascota(MultipartFile archivo, String idUsuario, String nombre, Sexo sexo, Tipo tipo) throws ErrorServicio{
 
         Usuario usuario = usuarioRepositorio.findById(idUsuario).get();
 
@@ -39,6 +41,7 @@ public class MascotaServicio {
         mascota.setSexo(sexo);
         mascota.setAlta(new Date());
         mascota.setUsuario(usuario);
+        mascota.setTipo(tipo);
 
         Foto foto = fotoServicio.guardar(archivo);
         mascota.setFoto(foto);
@@ -49,7 +52,7 @@ public class MascotaServicio {
     }
 
     @Transactional
-    public void modificar(MultipartFile archivo, String idUsuario, String idMascota, String nombre, Sexo sexo) throws ErrorServicio {
+    public void actualizar(MultipartFile archivo, String idUsuario, String idMascota, String nombre, Sexo sexo, Tipo tipo) throws ErrorServicio {
         validar(nombre, sexo);
 
         Optional<Mascota> respuesta = mascotaRepositorio.findById(idMascota);
@@ -68,6 +71,7 @@ public class MascotaServicio {
 
                 Foto foto = fotoServicio.actualizar(idFoto, archivo);
                 mascota.setFoto(foto);
+                mascota.setTipo(tipo);
 
                 mascotaRepositorio.save(mascota);
             }else {
@@ -108,5 +112,20 @@ public class MascotaServicio {
         if (sexo == null) {
             throw new ErrorServicio("Ingrese el sexo de la mascota");
         }
+    }
+
+    @Transactional
+    public Mascota buscarPorId(String id) throws ErrorServicio {
+        Optional<Mascota> respuesta = mascotaRepositorio.findById(id);
+
+        if (respuesta.isPresent()) {
+            return respuesta.get();
+        } else {
+            throw new ErrorServicio("La mascota solicitada no existe. ");
+        }
+    }
+
+    public List<Mascota> buscarMascotasPorUsuario(String id) {
+        return mascotaRepositorio.buscarMascotaPorUsuario(id);
     }
 }

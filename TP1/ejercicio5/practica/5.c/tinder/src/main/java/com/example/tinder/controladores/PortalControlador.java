@@ -64,7 +64,7 @@ public class PortalControlador {
     }
 
     @PostMapping("/registrar")
-    public String registrar(ModelMap model, MultipartFile archivo, @RequestParam String nombre, @RequestParam String apellido, @RequestParam String email, @RequestParam String clave, @RequestParam String repetirClave, @RequestParam String idZona) {
+    public String registrar(ModelMap model, MultipartFile archivo, @RequestParam String nombre, @RequestParam String apellido, @RequestParam String email, @RequestParam String clave, @RequestParam String repetirClave, @RequestParam(required = false) String idZona) {
 
         try {
             usuarioServicio.registrar(archivo, nombre, apellido, email, clave, repetirClave, idZona);

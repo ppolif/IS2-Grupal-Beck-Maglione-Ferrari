@@ -8,7 +8,7 @@
   <meta name="description" content="">
   <meta name="author" content="">
 
-  <title>Tinder de Mascota - Registro</title>
+  <title>Crear Mascota</title>
 
   <!-- Bootstrap core CSS -->
   <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -48,7 +48,7 @@
   </nav>
 
   <header>
-      <h1 style="margin-top:80px; text-align: center;">Editar Perfil</h1>
+      <h1 style="margin-top:80px; text-align: center;"><span th:text="${accion}"></span> Mascota</h1>
   </header>
 
   <section>
@@ -56,44 +56,41 @@
       <div class="row align-items-center">
         <div class="col-lg-6 order-lg-2">
           <div class="p-5">
-              <img th:if="${perfil.foto != null}" class="img-fluid rounded-circle" th:src="${'/foto/usuario/' + perfil.id}" alt="">
-              <img th:if="${perfil.foto == null}" class="img-fluid rounded-circle" th:src="/img/m1.jpeg" alt="">
+              <img th:if="${perfil.foto != null}" class="img-fluid rounded-circle" th:src="@{/foto/usuario(id=${perfil.id})}" alt="">
+              <img th:if="${perfil.foto == null}" class="img-fluid rounded-circle" th:src="@{/img/m1.jpeg}" alt="">
 
           </div>
         </div>
         <div class="col-lg-6 order-lg-1">
           <div class="p-5">
-            <form action="/usuario/actualizar-perfil" method="POST" enctype="multipart/form-data">
+            <form enctype="multipart/form-data">
                 
                <p th:if="${error != null}" th:text="${error}" style="color:red;"></p> 
                
                <input type="hidden" name="id" th:value="${perfil.id}"/>
                 
-              <label>Nombre</label>
-              <input type="text" class="form-control" name="nombre" th:value="${perfil.nombre}"/>
+              <label>Nombre de la mascota</label>
+              <input type="text" class="form-control" name="nombre" th:value="${perfil.nombre}" th:disabled="${accion == 'Eliminar'}"/>
 
-              <label>Apellido</label>
-              <input type="text" class="form-control" name="apellido" th:value="${perfil.apellido}"/>
-              
-              <label>E-Mail</label>
-              <input type="email" class="form-control" name="mail" th:value="${perfil.email}"/>
-                     
-              <label>Foto</label>
-              <input type="file" class="form-control" name="archivo"/>
-              
-              <label>Zona</label>
-              <select class="form-control" name="idZona"> 
-                   <option th:each="zona : ${zonas}" th:value="${zona.id}" th:text="${zona.nombre}" th:selected="${perfil.zona != null && zona.id == perfil.zona.id}"></option> 
+              <label>Tipo</label>
+              <select class="form-control" name="tipo" th:disabled="${accion == 'Eliminar'}">
+                <option th:each="tipo : ${tipos}" th:value="${tipo}" th:text="${tipo}" th:selected="${perfil.tipo != null && tipo == perfil.tipo}"></option>
               </select>
+
+              <label>Sexo</label>
+              <select class="form-control" name="sexo" th:disabled="${accion == 'Eliminar'}">
+                <option th:each="sexo : ${sexos}" th:value="${sexo}" th:text="${sexo}" th:selected="${perfil.sexo != null && sexo == perfil.sexo}"></option>
+              </select>
+
+              <label>Foto</label>
+              <input type="file" class="form-control" name="archivo" th:if="${accion != 'Eliminar'}"/>
               
-              
-              <label>Clave</label>
-              <input type="password" class="form-control" name="clave1" th:value="${clave1}"/>
-              
-              <label>Repetir Clave</label>
-              <input type="password" class="form-control" name="clave2" th:value="${clave2}"/>
-              
-              <br/><button type="submit" class="btn btn-primary">Actualizar Perfil</button>
+              <br/>
+                <button type="button" class="btn btn-dark" formaction="/mascota/mis-mascotas" formmethod="GET" >Volver</button>
+
+                <button th:if="${accion == 'Crear'}" type="submit" class="btn btn-primary" formaction="/mascota/actualizar-perfil" formmethod="POST" >Crear Mascota</button>
+                <button th:if="${accion == 'Actualizar'}" type="submit" class="btn btn-primary" formaction="/mascota/actualizar-perfil" formmethod="POST" >Actualizar Mascota</button>
+                <button th:if="${accion == 'Eliminar'}" type="submit" class="btn btn-danger" formaction="/mascota/eliminar-perfil" formmethod="DELETE" >Eliminar Mascota</button>
             </form>
           </div>
         </div>

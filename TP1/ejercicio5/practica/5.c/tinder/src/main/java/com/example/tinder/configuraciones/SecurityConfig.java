@@ -16,13 +16,13 @@ import jakarta.servlet.DispatcherType;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    // 1. Encriptador de contraseñas
+    // Encriptador de contraseñas
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 2. Cadena de filtros y permisos
+    // Cadena de filtros y permisos
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -31,9 +31,19 @@ public class SecurityConfig {
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
 
                         // Recursos estáticos públicos (CSS, JS, imágenes)
-                        .requestMatchers("/css/**", "/js/**", "/img/**", "/imagenes/**", "/styles.css").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/img/**", "/imagenes/**", "/styles.css", "/*.css", "/vendor/**").permitAll()
                         // Vistas públicas
-                        .requestMatchers("/", "/index", "/index.html", "/registro", "/registro.html", "/login", "/login.html", "/error", "/error.html").permitAll()
+                        .requestMatchers(
+                                "/",
+                                "/index",
+                                "/index.html",
+                                "/registro",
+                                "/registro.html",
+                                "/login",
+                                "/login.html",
+                                "/error",
+                                "/error.html"
+                        ).permitAll()
                         // Rutas de procesamiento de registro
                         .requestMatchers("/registro/guardar", "/usuario/registrar", "/registrar").permitAll()
                         // Cualquier otra petición requiere login

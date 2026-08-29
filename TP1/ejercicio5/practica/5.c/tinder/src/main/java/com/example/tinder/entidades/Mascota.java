@@ -1,6 +1,7 @@
 package com.example.tinder.entidades;
 
 import com.example.tinder.enumeraciones.Sexo;
+import com.example.tinder.enumeraciones.Tipo;
 import jakarta.persistence.*;
 
 import java.util.Date;
@@ -21,6 +22,10 @@ public class Mascota {
 
     @OneToOne
     private Foto foto;
+
+    @Enumerated(EnumType.STRING)
+    private Tipo tipo;
+
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date alta;
@@ -82,5 +87,13 @@ public class Mascota {
 
     public void setBaja(Date baja) {
         this.baja = baja;
+    }
+
+    public Tipo getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(Tipo tipo) {
+        this.tipo = tipo;
     }
 }
