@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca | Mi Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" th:href="@{/inicio}">Mi Biblioteca</a>
+
+        <div class="d-flex align-items-center">
+                <span class="text-light me-3 small">
+                    <!-- Protección XSS: Thymeleaf escapa automáticamente el output -->
+                    Hola, <span class="fw-bold" sec:authentication="name">Usuario</span>
+                </span>
+
+            <!-- Logout seguro por POST -->
+            <form th:action="@{/logout}" method="POST" class="m-0">
+                <button type="submit" class="btn btn-outline-light btn-sm">Cerrar Sesión</button>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-5">
+
+    <div th:if="${param.error}" class="alert alert-danger" role="alert">
+        No tienes permisos para acceder a la sección solicitada.
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <h2 class="fw-light mb-4">Panel de Control</h2>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center p-4">
+                    <h5 class="card-title fw-bold">Catálogo de Libros</h5>
+                    <p class="card-text text-muted small">Explora todos los títulos disponibles y solicita préstamos.</p>
+                    <a href="/libros" class="btn btn-dark w-100 mt-2">Ver Libros</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center p-4">
+                    <h5 class="card-title fw-bold">Mis Préstamos</h5>
+                    <p class="card-text text-muted small">Revisa el estado de los libros que tienes en tu poder.</p>
+                    <a href="/prestamos" class="btn btn-dark w-100 mt-2">Ver Historial</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Renderizado condicional seguro. Si sos USUARIO, este HTML ni siquiera se envía al navegador -->
+        <div class="col-md-4" sec:authorize="hasRole('ADMINISTRADOR')">
+            <div class="card shadow-sm border-0 bg-dark text-white h-100">
+                <div class="card-body text-center p-4">
+                    <h5 class="card-title fw-bold">Gestión Interna</h5>
+                    <p class="card-text text-light small">Administrar Autores, Editoriales, Libros y Usuarios.</p>
+                    <a th:href="@{/gestion}" class="btn btn-light w-100 mt-2">Ir a Administración</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

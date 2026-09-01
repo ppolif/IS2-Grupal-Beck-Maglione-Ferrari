@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Biblioteca | Catálogo de Libros</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light pb-5">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" th:href="@{/inicio}">Mi Biblioteca</a>
+        <div class="d-flex align-items-center">
+            <a th:href="@{/inicio}" class="btn btn-outline-light btn-sm me-3">Volver al Panel</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-light">Catálogo de Libros</h2>
+        <!-- Este botón SOLO lo ve el Administrador -->
+        <a th:href="@{/libros/nuevo}" class="btn btn-dark" sec:authorize="hasRole('ADMINISTRADOR')">
+            + Nuevo Libro
+        </a>
+    </div>
+
+    <!-- Alertas de éxito y error -->
+    <div th:if="${param.exito}" class="alert alert-success mt-2 mb-4" role="alert" th:text="${param.exito}"></div>
+    <div th:if="${param.error}" class="alert alert-danger mt-2 mb-4" role="alert" th:text="${param.error}"></div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-dark">
+                <tr>
+                    <th class="text-center">Portada</th>
+                    <th>ISBN</th>
+                    <th>Título</th>
+                    <th>Año</th>
+                    <th>Editorial</th>
+                    <th>Ejemplares Restantes</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="libro : ${libros}" class="align-middle">
+
+                    <!-- Celda de la Imagen -->
+                    <td class="text-center">
+                        <img th:if="${libro.imagen != null}"
+                             th:src="@{/api/v1/imagenes/{id}/contenido(id=${libro.imagen.id})}"
+                             alt="Portada" class="img-thumbnail shadow-sm" style="width: 50px; height: 75px; object-fit: cover;">
+
+                        <div th:if="${libro.imagen == null}"
+                             class="bg-secondary text-white d-flex align-items-center justify-content-center rounded shadow-sm mx-auto"
+                             style="width: 50px; height: 75px; font-size: 0.7rem;">Sin Foto</div>
+                    </td>
+
+                    <!-- Atributos del Libro -->
+                    <td th:text="${libro.isbn}"></td>
+                    <td th:text="${libro.titulo}" class="fw-bold"></td>
+                    <td th:text="${libro.anio}"></td>
+                    <td th:text="${libro.editorial.nombre}"></td>
+                    <td>
+                        <span class="badge bg-success" th:if="${libro.ejemplaresRestantes > 0}" th:text="${libro.ejemplaresRestantes} + ' disponibles'"></span>
+                        <span class="badge bg-danger" th:if="${libro.ejemplaresRestantes == 0}">Sin stock</span>
+                    </td>
+
+                    <!-- Celda de Acciones Dinámicas -->
+                    <td class="text-center">
+                        <!-- Botones SOLO para el Administrador -->
+                        <div sec:authorize="hasRole('ADMINISTRADOR')" class="d-flex justify-content-center gap-1">
+                            <a th:href="@{/libros/editar/{isbn}(isbn=${libro.isbn})}" class="btn btn-sm btn-outline-primary">Editar</a>
+                            <form th:action="@{/libros/eliminar/{isbn}(isbn=${libro.isbn})}" method="POST" class="m-0" onsubmit="return confirm('¿Seguro que deseas eliminar este libro?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                            </form>
+                        </div>
+
+                        <!-- Botón SOLO para el Usuario -->
+                        <div sec:authorize="hasRole('USUARIO')" class="d-flex justify-content-center">
+                            <form th:action="@{/prestamos/solicitar/{isbn}(isbn=${libro.isbn})}" method="POST" class="m-0">
+                                <button type="submit" class="btn btn-sm btn-outline-success" th:disabled="${libro.ejemplaresRestantes == 0}">
+                                    Solicitar Préstamo
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

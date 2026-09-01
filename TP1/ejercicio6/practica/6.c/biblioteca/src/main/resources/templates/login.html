@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca | Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex align-items-center" style="min-height: 100vh;">
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4">
+
+            <div class="text-center mb-4">
+                <a th:href="@{/}" class="text-decoration-none text-dark">
+                    <h2 class="fw-bold">Biblioteca</h2>
+                </a>
+            </div>
+
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-body p-4">
+                    <h4 class="text-center mb-4 fw-light">Iniciar Sesión</h4>
+
+                    <!-- Alertas de error/éxito controladas por ControladorVistas -->
+                    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+                    <div th:if="${exito}" class="alert alert-success" role="alert" th:text="${exito}"></div>
+
+                    <!-- Formulario hacia Spring Security. Thymeleaf inyecta CSRF auto -->
+                    <form th:action="@{/logincheck}" method="POST">
+                        <div class="mb-3">
+                            <label for="mail" class="form-label text-muted small">Correo Electrónico</label>
+                            <!-- Nombre de campo DEBE coincidir con usernameParameter en SeguridadWeb -->
+                            <input type="email" class="form-control" id="mail" name="mail" required autofocus>
+                        </div>
+                        <div class="mb-4">
+                            <label for="clave" class="form-label text-muted small">Contraseña</label>
+                            <!-- Nombre de campo DEBE coincidir con passwordParameter en SeguridadWeb -->
+                            <input type="password" class="form-control" id="clave" name="clave" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-dark btn-lg">Ingresar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mt-3">
+                <p class="text-muted small">¿No tienes cuenta? <a th:href="@{/registro}" class="text-dark fw-bold text-decoration-none">Regístrate aquí</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

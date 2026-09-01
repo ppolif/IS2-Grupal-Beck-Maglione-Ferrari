@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Biblioteca | Préstamos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" th:href="@{/inicio}">Mi Biblioteca</a>
+        <div class="d-flex align-items-center">
+            <a th:href="@{/inicio}" class="btn btn-outline-light btn-sm me-3">Volver al Panel</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-light" sec:authorize="hasRole('USUARIO')">Mis Préstamos</h2>
+        <h2 class="fw-light" sec:authorize="hasRole('ADMINISTRADOR')">Gestión de Préstamos (Todos)</h2>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <a th:href="@{/libros}" class="btn btn-dark" sec:authorize="hasRole('USUARIO')">
+                Solicitar Nuevo
+            </a>
+        </div>
+
+        <div th:if="${param.exito}" class="alert alert-success mt-2 mb-4" role="alert" th:text="${param.exito}"></div>
+        <div th:if="${param.error}" class="alert alert-danger mt-2 mb-4" role="alert" th:text="${param.error}"></div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-dark">
+                <tr>
+                    <th>Libro</th>
+                    <th sec:authorize="hasRole('ADMINISTRADOR')">Usuario (Email)</th>
+                    <th>Fecha de Inicio</th>
+                    <th>Fecha de Fin (Devolución)</th>
+                    <th>Estado</th>
+                    <th sec:authorize="hasRole('ADMINISTRADOR')" class="text-center">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="prestamo : ${prestamos}">
+                    <td th:text="${prestamo.libro.titulo}" class="fw-bold"></td>
+                    <td sec:authorize="hasRole('ADMINISTRADOR')" th:text="${prestamo.usuario.mail}"></td>
+
+                    <!-- Fecha de Inicio -->
+                    <td th:text="${prestamo.fechaPrestamo}"></td>
+
+                    <!-- Fecha de Fin -->
+                    <td>
+                        <span th:if="${prestamo.fechaDevolucion == null}" class="text-muted fst-italic">Pendiente (En curso)</span>
+                        <span th:if="${prestamo.fechaDevolucion != null}" th:text="${prestamo.fechaDevolucion}"></span>
+                    </td>
+
+                    <!-- Estado con colores -->
+                    <td>
+                        <span class="badge bg-warning text-dark" th:if="${prestamo.fechaDevolucion == null}">Activo</span>
+                        <span class="badge bg-success" th:if="${prestamo.fechaDevolucion != null}">Devuelto</span>
+                    </td>
+
+                    <td sec:authorize="hasRole('ADMINISTRADOR')" class="text-center">
+                        <form th:if="${prestamo.fechaDevolucion == null}"
+                              th:action="@{/prestamos/devolver/{id}(id=${prestamo.id})}"
+                              method="POST" class="m-0"
+                              onsubmit="return confirm('¿Confirmar la devolución de este libro?');">
+                            <button type="submit" class="btn btn-sm btn-outline-success">Registrar Devolución</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
