@@ -23,7 +23,6 @@
                 <div class="card-body p-4 p-md-5">
                     <h4 class="mb-4 fw-light" th:text="${modoEdicion != null} ? 'Editar Usuario' : 'Nuevo Usuario'"></h4>
 
-                    <!-- Alerta para errores de negocio (ej. mail o DNI duplicados) -->
                     <div th:if="${errorNegocio}" class="alert alert-danger" role="alert" th:text="${errorNegocio}"></div>
 
                     <form th:action="${modoEdicion != null} ? @{/usuarios/editar/{id}(id=${idUsuario})} : @{/usuarios/nuevo}"

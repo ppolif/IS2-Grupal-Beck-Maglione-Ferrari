@@ -25,13 +25,10 @@ public class ManejadorGlobalErrores {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Object manejarValidaciones(MethodArgumentNotValidException ex, HttpServletRequest request) throws MethodArgumentNotValidException {
 
-        // Si la petición viene de un formulario web normal, dejamos que el framework haga su magia
-        // (En ControladorVistas capturamos el BindingResult antes de llegar acá)
         if (esPeticionHtml(request)) {
-            throw ex; // Lo relanzamos para que Spring lo resuelva (o podríamos retornar una vista de error)
+            throw ex;
         }
 
-        // Si es una llamada REST, agrupamos los campos fallidos en un Map
         Map<String, String> errores = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String campo = ((FieldError) error).getField();
@@ -55,7 +52,7 @@ public class ManejadorGlobalErrores {
     public Object manejarAccesoDenegado(AccessDeniedException ex, HttpServletRequest request, Model model) {
 
         if (esPeticionHtml(request)) {
-            // Redirige al inicio indicando un error (como configuraste en inicio.html)
+            // Redirige al inicio indicando un error
             return "redirect:/inicio?error=true";
         }
 
@@ -95,7 +92,7 @@ public class ManejadorGlobalErrores {
     public Object manejarRutaNoEncontrada(Exception ex, HttpServletRequest request) {
 
         if (esPeticionHtml(request)) {
-            // Retorna la vista 404.html que creaste
+            // Retorna la vista 404.html
             return "error/404";
         }
 
@@ -131,7 +128,7 @@ public class ManejadorGlobalErrores {
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error("Internal Server Error")
-                .message(mensajeSeguro) // ¡Nunca exponemos el `ex.getMessage()` o StackTrace crudo aquí!
+                .message(mensajeSeguro)
                 .path(request.getRequestURI())
                 .traceId(traceId)
                 .build();

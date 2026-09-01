@@ -59,7 +59,6 @@ public class ControladorVistas {
         return "formulario-libro";
     }
 
-    // MODIFICADO PARA RECIBIR LA IMAGEN
     @PostMapping("/libros/nuevo")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     public String procesarNuevoLibro(@Valid @ModelAttribute("libroDTO") LibroRequestDTO libroDTO,
@@ -114,7 +113,6 @@ public class ControladorVistas {
         return "formulario-libro";
     }
 
-    // MODIFICADO PARA ACTUALIZAR LA IMAGEN
     @PostMapping("/libros/editar/{isbn}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     public String procesarEditarLibro(@PathVariable Long isbn,
@@ -132,7 +130,7 @@ public class ControladorVistas {
             // Lógica de Imagen en Edición
             if (archivo != null && !archivo.isEmpty()) {
                 if (libroDTO.getIdImagen() != null && !libroDTO.getIdImagen().isEmpty()) {
-                    // Si ya tenía imagen, la pisamos (actualizamos)
+                    // Si ya tenía imagen, la pisamos
                     imagenServicio.actualizar(libroDTO.getIdImagen(), archivo);
                 } else {
                     // Si no tenía, creamos una nueva y la vinculamos

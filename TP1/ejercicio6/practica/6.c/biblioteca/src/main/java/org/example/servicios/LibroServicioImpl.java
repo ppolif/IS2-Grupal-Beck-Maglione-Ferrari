@@ -139,7 +139,7 @@ public class LibroServicioImpl implements LibroServicio {
     }
 
     private LibroResponseDTO mapearADTO(Libro libro) {
-        // Mapeo manual (si usáramos MapStruct esto sería automático, pero lo hacemos explícito)
+        // Mapeo manual
         EditorialResponseDTO editorialDTO = EditorialResponseDTO.builder()
                 .id(libro.getEditorial().getId())
                 .nombre(libro.getEditorial().getNombre())

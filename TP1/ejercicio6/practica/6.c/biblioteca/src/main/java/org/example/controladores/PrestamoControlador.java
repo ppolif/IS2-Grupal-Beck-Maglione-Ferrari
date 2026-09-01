@@ -29,13 +29,13 @@ public class PrestamoControlador {
         return new ResponseEntity<>(nuevoPrestamo, HttpStatus.CREATED);
     }
 
-    // Endpoint para registrar la devolución de un préstamo existente (PATCH porque modificamos parcialmente)
+    // Endpoint para registrar la devolución de un préstamo existente
     @PatchMapping("/{id}/devolucion")
     public ResponseEntity<PrestamoResponseDTO> registrarDevolucion(@PathVariable String id) {
         return ResponseEntity.ok(prestamoServicio.registrarDevolucion(id));
     }
 
-    // Endpoint para ver todo el historial de préstamos (ideal para el Administrador)
+    // Endpoint para ver todo el historial de préstamos
     @GetMapping
     public ResponseEntity<List<PrestamoResponseDTO>> obtenerTodos() {
         return ResponseEntity.ok(prestamoServicio.obtenerTodosActivos());

@@ -34,15 +34,15 @@ public class SeguridadWeb {
                         // 2. Rutas que requieren rol ADMINISTRADOR específicamente (Gestión interna)
                         .requestMatchers( "/autores/**", "/editoriales/**", "/imagenes/**", "/gestion", "/usuarios/**", "/prestamos/devolver/**").hasRole("ADMINISTRADOR")
 
-                        // 3. Rutas que requieren estar autenticado (Panel, mis préstamos, catálogo de consulta)
+                        // 3. Rutas que requieren estar autenticado
                         .requestMatchers("/inicio", "/libros", "/prestamos").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/prestamos/usuario/**").authenticated() // Mis préstamos
 
-                        // 4. Red de seguridad (Cierre por defecto)
+                        // 4. Red de seguridad
                         .anyRequest().permitAll()
                 )
 
-                // Configuración del Form Login (Mitiga accesos no autorizados guiando al flujo correcto)
+                // Configuración del Form Login
                 .formLogin(login -> login
                         .loginPage("/login") // Vista personalizada
                         .loginProcessingUrl("/logincheck") // Action del formulario
@@ -53,7 +53,7 @@ public class SeguridadWeb {
                         .permitAll()
                 )
 
-                // Configuración de Logout (Cierre seguro de sesión)
+                // Configuración de Logout
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout=true")

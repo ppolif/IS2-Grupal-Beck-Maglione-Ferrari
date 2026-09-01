@@ -68,9 +68,7 @@
                         <span class="badge bg-danger" th:if="${libro.ejemplaresRestantes == 0}">Sin stock</span>
                     </td>
 
-                    <!-- Celda de Acciones Dinámicas -->
                     <td class="text-center">
-                        <!-- Botones SOLO para el Administrador -->
                         <div sec:authorize="hasRole('ADMINISTRADOR')" class="d-flex justify-content-center gap-1">
                             <a th:href="@{/libros/editar/{isbn}(isbn=${libro.isbn})}" class="btn btn-sm btn-outline-primary">Editar</a>
                             <form th:action="@{/libros/eliminar/{isbn}(isbn=${libro.isbn})}" method="POST" class="m-0" onsubmit="return confirm('¿Seguro que deseas eliminar este libro?');">
@@ -78,7 +76,6 @@
                             </form>
                         </div>
 
-                        <!-- Botón SOLO para el Usuario -->
                         <div sec:authorize="hasRole('USUARIO')" class="d-flex justify-content-center">
                             <form th:action="@{/prestamos/solicitar/{isbn}(isbn=${libro.isbn})}" method="POST" class="m-0">
                                 <button type="submit" class="btn btn-sm btn-outline-success" th:disabled="${libro.ejemplaresRestantes == 0}">

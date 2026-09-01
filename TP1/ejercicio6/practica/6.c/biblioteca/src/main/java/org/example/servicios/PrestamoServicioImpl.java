@@ -122,8 +122,7 @@ public class PrestamoServicioImpl implements PrestamoServicio {
                 .rol(prestamo.getUsuario().getRol())
                 .build();
 
-        // Mapeo simple de Libro (omitiendo anidados complejos por rendimiento si no se necesitan,
-        // pero respetando la estructura de tu DTO)
+        // Mapeo de Libro
         LibroResponseDTO libroDTO = LibroResponseDTO.builder()
                 .isbn(prestamo.getLibro().getIsbn())
                 .titulo(prestamo.getLibro().getTitulo())

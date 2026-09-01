@@ -19,7 +19,6 @@
                     Hola, <span class="fw-bold" sec:authentication="name">Usuario</span>
                 </span>
 
-            <!-- Logout seguro por POST -->
             <form th:action="@{/logout}" method="POST" class="m-0">
                 <button type="submit" class="btn btn-outline-light btn-sm">Cerrar Sesión</button>
             </form>
@@ -60,7 +59,6 @@
             </div>
         </div>
 
-        <!-- Renderizado condicional seguro. Si sos USUARIO, este HTML ni siquiera se envía al navegador -->
         <div class="col-md-4" sec:authorize="hasRole('ADMINISTRADOR')">
             <div class="card shadow-sm border-0 bg-dark text-white h-100">
                 <div class="card-body text-center p-4">

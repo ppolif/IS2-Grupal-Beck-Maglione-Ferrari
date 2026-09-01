@@ -49,16 +49,13 @@
                     <td th:text="${prestamo.libro.titulo}" class="fw-bold"></td>
                     <td sec:authorize="hasRole('ADMINISTRADOR')" th:text="${prestamo.usuario.mail}"></td>
 
-                    <!-- Fecha de Inicio -->
                     <td th:text="${prestamo.fechaPrestamo}"></td>
 
-                    <!-- Fecha de Fin -->
                     <td>
                         <span th:if="${prestamo.fechaDevolucion == null}" class="text-muted fst-italic">Pendiente (En curso)</span>
                         <span th:if="${prestamo.fechaDevolucion != null}" th:text="${prestamo.fechaDevolucion}"></span>
                     </td>
 
-                    <!-- Estado con colores -->
                     <td>
                         <span class="badge bg-warning text-dark" th:if="${prestamo.fechaDevolucion == null}">Activo</span>
                         <span class="badge bg-success" th:if="${prestamo.fechaDevolucion != null}">Devuelto</span>

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class UsuarioServicioImpl implements UserDetailsService { // Acá también podés implementar tu interfaz UsuarioServicio
+public class UsuarioServicioImpl implements UserDetailsService {
 
     @Autowired
     private final UsuarioRepositorio usuarioRepositorio;
