@@ -2,11 +2,13 @@ package org.example.entidades;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.envers.Audited;
 
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "prestamos")
+@Audited
 @Getter
 @Setter
 @NoArgsConstructor

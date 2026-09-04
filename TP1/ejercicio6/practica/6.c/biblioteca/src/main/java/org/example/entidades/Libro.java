@@ -2,11 +2,14 @@ package org.example.entidades;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
 
 import java.util.List;
 
 @Entity
 @Table(name = "libros")
+@Audited
 @Getter
 @Setter
 @NoArgsConstructor
@@ -39,6 +42,7 @@ public class Libro {
     // Relaciones
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "editorial_id")
+    @NotAudited
     private Editorial editorial;
 
     @ManyToMany(fetch = FetchType.LAZY)
@@ -47,9 +51,11 @@ public class Libro {
             joinColumns = @JoinColumn(name = "libro_isbn"),
             inverseJoinColumns = @JoinColumn(name = "autor_id")
     )
+    @NotAudited
     private List<Autor> autores;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "imagen_id")
+    @NotAudited
     private Imagen imagen;
 }

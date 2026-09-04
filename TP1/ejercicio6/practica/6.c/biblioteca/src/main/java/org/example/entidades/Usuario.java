@@ -3,9 +3,11 @@ package org.example.entidades;
 import org.example.entidades.enumeraciones.Rol;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.envers.Audited;
 
 @Entity
 @Table(name = "usuarios")
+@Audited
 @Getter
 @Setter
 @NoArgsConstructor
