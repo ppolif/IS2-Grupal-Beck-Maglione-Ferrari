@@ -31,7 +31,7 @@ public class UsuarioController {
     @Autowired
     private ZonaRepositorio zonaRepositorio;
 
-    @PreAuthorize("hasAnyRole('USUARIO_REGISTRADO')")
+    @PreAuthorize("hasAnyRole('USER')")
     @GetMapping("/editar-perfil")
     public String editarPerfil( HttpSession session, @RequestParam String id, ModelMap model){
 
@@ -52,7 +52,7 @@ public class UsuarioController {
         return "perfil.html";
     }
 
-    @PreAuthorize("hasAnyRole('USUARIO_REGISTRADO')")
+    @PreAuthorize("hasAnyRole('USER')")
     @PostMapping("/actualizar-perfil")
     public String registrar(ModelMap modelo, HttpSession session, MultipartFile archivo, @RequestParam String id, @RequestParam String nombre, @RequestParam String apellido, @RequestParam String mail, @RequestParam String clave1, @RequestParam String clave2, @RequestParam String idZona){
 

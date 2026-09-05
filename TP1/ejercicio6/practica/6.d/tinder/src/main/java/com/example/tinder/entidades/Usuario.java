@@ -2,10 +2,12 @@ package com.example.tinder.entidades;
 
 import com.example.tinder.enumeraciones.Rol;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Audited;
 
 import java.util.Date;
 
 @Entity
+@Audited
 public class Usuario {
 
     @Id
