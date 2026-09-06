@@ -80,7 +80,7 @@ public class CalculadoraTest {
 
         System.out.println("resultado " + resultado);
     }
-    
+
     @Order(4)
     @RepeatedTest(3)
     public void testDividirException() {
