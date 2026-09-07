@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,7 +67,16 @@ public class ServicioVideojuegoTest {
     @Test
     public void testGuardarDesdeDTO() throws Exception {
         VideojuegoRequestDTO dto = new VideojuegoRequestDTO();
-        dto.setId(1L);
+        //dto.setId(1L);
+
+        dto.setId(null);
+        dto.setTitulo("Silent Hill 2");
+        dto.setDescripcion("da miedo");
+        dto.setPrecio(20000F);
+        dto.setStock((short) 30);
+        dto.setFechaLanzamiento(new Date());
+        dto.setImagen(null);
+
 
         when(repositorioVideojuego.save(any(Videojuego.class))).thenReturn(new Videojuego());
 
