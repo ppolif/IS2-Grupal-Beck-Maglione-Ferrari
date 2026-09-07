@@ -84,5 +84,65 @@ public class ServicioVideojuegoTest {
 
         verify(repositorioVideojuego, times(1)).save(any(Videojuego.class));
     }
+
+    //tests de update
+    @Test
+    public void testUpdateOne() throws Exception {
+        Videojuego juegoOriginal = new Videojuego();
+        juegoOriginal.setId(1L);
+
+        Videojuego juegoModificado = new Videojuego();
+        juegoModificado.setId(1L);
+        juegoModificado.setTitulo("cambio");
+
+        when(repositorioVideojuego.findById(1L)).thenReturn(Optional.of(juegoOriginal));
+        when(repositorioVideojuego.save(any(Videojuego.class))).thenReturn(juegoModificado);
+
+        Videojuego resultado = servicioVideojuego.updateOne(juegoModificado, 1L);
+
+        verify(repositorioVideojuego, times(1)).findById(1L);
+        verify(repositorioVideojuego, times(1)).save(any(Videojuego.class));
+    }
+
+    @Test
+    public void testUpdateOneException() {
+        Videojuego juegoData = new Videojuego();
+
+        when(repositorioVideojuego.findById(1L)).thenReturn(Optional.empty());
+
+        Exception exception = assertThrows(Exception.class, () -> {
+            servicioVideojuego.updateOne(juegoData, 1L);
+        });
+
+        assertNotNull(exception);
+    }
+
+    // tests de borrado
+    @Test
+    public void testDeleteById() throws Exception {
+        Videojuego juegoAEliminar = new Videojuego();
+        juegoAEliminar.setId(1L);
+
+        when(repositorioVideojuego.findById(1L)).thenReturn(Optional.of(juegoAEliminar));
+
+        boolean resultado = servicioVideojuego.deleteById(1L);
+
+        assertTrue(resultado);
+
+        verify(repositorioVideojuego, times(1)).delete(juegoAEliminar);
+    }
+
+    @Test
+    public void testDeleteByIdException() {
+        when(repositorioVideojuego.findById(1L)).thenReturn(Optional.empty());
+
+        Exception exception = assertThrows(Exception.class, () -> {
+            servicioVideojuego.deleteById(1L);
+        });
+
+        assertNotNull(exception);
+        
+        verify(repositorioVideojuego, never()).delete(any(Videojuego.class));
+    }
 }
 
