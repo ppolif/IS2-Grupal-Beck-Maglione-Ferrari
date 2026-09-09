@@ -1,4 +1,4 @@
-package com.example.zero.compraCliente;
+package com.example.zero.entidades.compraCliente;
 
 public class OrdenDeCompra {
 }

@@ -1,4 +1,4 @@
-package com.example.zero.compraProveedor;
+package com.example.zero.entidades.compraProveedor;
 
 public class Proveedor {
 }
