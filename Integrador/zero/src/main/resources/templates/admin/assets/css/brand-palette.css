@@ -1,0 +1,276 @@
+/* ==========================================================================
+   BRAND PALETTE & BOOTSTRAP OVERRIDES (ZERO ADMIN & SHOP)
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap');
+
+:root {
+    /* Paleta cromática oficial */
+    --brand-bg-main: #FFF4E0;       /* Beige cálido base */
+    --brand-bg-surface: #FAF2E6;    /* Crema claro */
+    --brand-card: #FFFFFF;          /* Blanco de contenedores */
+    --brand-dark: #141212;          /* Negro grafito principal */
+    --brand-dark-subtle: #2B2525;   /* Carbón oscuro */
+    --brand-soft: #D65959;          /* Rojo apagado / Terracota */
+    --brand-bold: #E51A24;          /* Rojo deportivo de impacto */
+    --brand-energy: #FCA311;        /* Naranja enérgico */
+    --brand-neon: #CCFF00;          /* Volt / Lima acento */
+    --brand-border: #E8D8C0;        /* Borde divisorio sutil */
+
+    /* Configuración de dimensiones */
+    --sidebar-width: 280px;
+
+    /* Sobrescritura de variables nativas de Bootstrap 5 */
+    --bs-body-bg: var(--brand-bg-main);
+    --bs-body-color: var(--brand-dark);
+    --bs-body-font-family: 'Poppins', sans-serif;
+    --bs-primary: var(--brand-dark);
+    --bs-primary-rgb: 20, 18, 18;
+    --bs-secondary: var(--brand-soft);
+    --bs-secondary-rgb: 214, 89, 89;
+    --bs-danger: var(--brand-bold);
+    --bs-danger-rgb: 229, 26, 36;
+    --bs-warning: var(--brand-energy);
+    --bs-warning-rgb: 252, 163, 17;
+    --bs-border-color: var(--brand-border);
+}
+
+body {
+    font-family: var(--bs-body-font-family);
+    background-color: var(--bs-body-bg) !important;
+    color: var(--bs-body-color);
+    overflow-x: hidden;
+}
+
+/* ==========================================================================
+   UTILIDADES Y CLASES DE MARCA
+   ========================================================================== */
+.bg-brand-surface { background-color: var(--brand-bg-surface) !important; }
+.bg-brand-dark    { background-color: var(--brand-dark) !important; color: #ffffff !important; }
+.text-brand-soft  { color: var(--brand-soft) !important; }
+.text-brand-bold  { color: var(--brand-bold) !important; }
+.border-brand     { border-color: var(--brand-border) !important; }
+
+/* Botones con paleta Zero */
+.btn-primary {
+    background-color: var(--brand-dark) !important;
+    border-color: var(--brand-dark) !important;
+    color: #ffffff !important;
+}
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--brand-bold) !important;
+    border-color: var(--brand-bold) !important;
+    color: #ffffff !important;
+}
+
+/* ==========================================================================
+   SIDEBAR COMPONENT (.sidebar-wrapper)
+   ========================================================================== */
+.sidebar-wrapper {
+    width: var(--sidebar-width);
+    background-color: var(--brand-bg-surface);
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1040;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1.25rem;
+    border-right: 2px solid var(--brand-border);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Identidad y logotipo */
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: var(--brand-dark) !important;
+    text-decoration: none !important;
+    margin-bottom: 2rem;
+    padding-left: 0.5rem;
+}
+
+.sidebar-brand img {
+    height: 36px;
+    width: auto;
+}
+
+/* Grupos y títulos de sección */
+.sidebar-menu-section {
+    margin-bottom: 1.5rem;
+}
+
+.sidebar-menu-title {
+    font-size: 0.725rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--brand-soft);
+    padding-left: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-menu-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu-item {
+    margin-bottom: 0.25rem;
+}
+
+/* Enlaces del Sidebar */
+.sidebar-menu-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+    color: var(--brand-dark);
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.sidebar-menu-link i {
+    font-size: 1.1rem;
+}
+
+.sidebar-menu-link:hover {
+    background-color: var(--brand-bg-main);
+    color: var(--brand-bold);
+}
+
+.sidebar-menu-link.active {
+    background-color: var(--brand-dark);
+    color: #ffffff !important;
+    border-left: 4px solid var(--brand-neon);
+}
+
+.sidebar-menu-link.active i {
+    color: var(--brand-neon);
+}
+
+/* Perfil inferior del Sidebar */
+.sidebar-profile {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background-color: #ffffff;
+    padding: 0.75rem;
+    border-radius: 12px;
+    border: 1px solid var(--brand-border);
+}
+
+.sidebar-profile-img {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.sidebar-profile-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--brand-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-profile-email {
+    font-size: 0.725rem;
+    color: var(--brand-dark-subtle);
+    opacity: 0.75;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Overlay para fondo oscuro al desplegar en móviles */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(20, 18, 18, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 1035;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.25s ease;
+}
+
+.sidebar-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ==========================================================================
+   LAYOUT DEL CONTENIDO PRINCIPAL (.main-wrapper)
+   ========================================================================== */
+.main-wrapper,
+.main-content-offset {
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================================================
+   RESPONSIVIDAD (PANTALLAS GRANDES VS MÓVILES)
+   ========================================================================== */
+
+/* 1. Escritorio (>= 1200px): Sidebar siempre anclado y visible */
+@media (min-width: 1200px) {
+    .sidebar-wrapper {
+        transform: none !important;
+    }
+
+    /* Soporte para modo minimizado al pulsar el botón de desktop */
+    body.sidebar-minimized {
+        --sidebar-width: 80px;
+    }
+    body.sidebar-minimized .sidebar-brand span,
+    body.sidebar-minimized .sidebar-menu-title,
+    body.sidebar-minimized .sidebar-menu-link span,
+    body.sidebar-minimized .sidebar-profile-info {
+        display: none !important;
+    }
+    body.sidebar-minimized .sidebar-brand,
+    body.sidebar-minimized .sidebar-menu-link,
+    body.sidebar-minimized .sidebar-profile {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+/* 2. Tablet y Móvil (< 1200px): Se esconde a la izquierda y se despliega con .show */
+@media (max-width: 1199.98px) {
+    .sidebar-wrapper {
+        transform: translateX(-100%);
+        box-shadow: none;
+    }
+
+    .sidebar-wrapper.show {
+        transform: translateX(0) !important;
+        box-shadow: 0 10px 40px rgba(20, 18, 18, 0.25);
+    }
+
+    .main-wrapper,
+    .main-content-offset {
+        margin-left: 0 !important;
+        padding: 1rem !important;
+    }
+}
