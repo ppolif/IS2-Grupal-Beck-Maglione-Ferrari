@@ -51,7 +51,7 @@ public class VotoServicio {
         Optional<Mascota> respuesta2 = mascotaRepositorio.findById(idMascota2);
 
         if (respuesta2.isPresent()) {
-            Mascota mascota2 = respuesta.get();
+            Mascota mascota2 = respuesta2.get();
 
             notificacionServicio.enviar("Tu mascota ha sido votada", "Tinder de Mascota", mascota2.getUsuario().getEmail());
 
@@ -73,7 +73,7 @@ public class VotoServicio {
             voto.setRespuesta(new Date());
 
             if (voto.getMascota2().getUsuario().getId().equals(idUsuario)) {
-                notificacionServicio.enviar("Tu voto fue correspondido", "Tinder de Mascota", voto.getMascota2().getUsuario().getEmail());
+                notificacionServicio.enviar("Tu voto fue correspondido", "Tinder de Mascota", voto.getMascota1().getUsuario().getEmail());
 
                 votoRepositorio.save(voto);
             } else {

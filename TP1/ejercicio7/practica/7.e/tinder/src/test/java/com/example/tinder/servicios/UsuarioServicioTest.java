@@ -13,11 +13,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Date;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -200,5 +199,83 @@ class UsuarioServicioTest {
 
         // También podemos verificar que se haya intentado guardar la foto
         verify(fotoServicio, times(1)).guardar(archivoFalso);
+    }
+
+    @Test
+    void modificar_DatosValidos_ActualizaYGuardaUsuario() throws Exception {
+        // 1. Arrange (Preparar)
+        String idUsuario = "ID-USER-1";
+        String idZona = "ID-ZONA-1";
+
+        Usuario usuarioExistente = new Usuario();
+        usuarioExistente.setId(idUsuario);
+
+        Zona zonaFalsa = new Zona();
+        zonaFalsa.setId(idZona);
+
+        // Simulamos que el usuario y la zona existen
+        when(zonaRepositorio.getOne(idZona)).thenReturn(zonaFalsa);
+        when(usuarioRepositorio.findById(idUsuario)).thenReturn(Optional.of(usuarioExistente));
+
+        // Simulamos la actualización de la foto (devuelve una foto vacía para no romper el test)
+        when(fotoServicio.actualizar(any(), any())).thenReturn(new Foto());
+
+        // 2. Act (Ejecutar)
+        assertDoesNotThrow(() -> {
+            usuarioServicio.modificar(
+                    archivoFalso,
+                    idUsuario,
+                    "Juan Modificado",
+                    "Perez",
+                    "nuevo@correo.com",
+                    "1234567",
+                    "1234567",
+                    idZona
+            );
+        });
+
+        // 3. Assert (Validar)
+        // Verificamos que los datos del objeto en memoria se hayan actualizado
+        assertEquals("Juan Modificado", usuarioExistente.getNombre());
+        assertEquals("nuevo@correo.com", usuarioExistente.getEmail());
+
+        // Verificamos que se haya llamado al método save() del repositorio para guardar los cambios
+        verify(usuarioRepositorio, times(1)).save(usuarioExistente);
+    }
+
+    @Test
+    void deshabilitar_UsuarioExiste_AsignaFechaBaja() throws ErrorServicio {
+        // 1. Arrange
+        String idUsuario = "ID-USER-1";
+        Usuario usuarioExistente = new Usuario();
+        usuarioExistente.setId(idUsuario);
+        usuarioExistente.setBaja(null); // Aseguramos que empiece habilitado
+
+        when(usuarioRepositorio.findById(idUsuario)).thenReturn(Optional.of(usuarioExistente));
+
+        // 2. Act
+        usuarioServicio.deshabilitar(idUsuario);
+
+        // 3. Assert
+        // Verificamos que la fecha de baja ya no sea nula (se le asignó new Date())
+        assertNotNull(usuarioExistente.getBaja());
+    }
+
+    @Test
+    void habilitar_UsuarioExiste_QuitaFechaBaja() throws ErrorServicio {
+        // 1. Arrange
+        String idUsuario = "ID-USER-1";
+        Usuario usuarioExistente = new Usuario();
+        usuarioExistente.setId(idUsuario);
+        usuarioExistente.setBaja(new Date()); // Aseguramos que empiece deshabilitado (con fecha)
+
+        when(usuarioRepositorio.findById(idUsuario)).thenReturn(Optional.of(usuarioExistente));
+
+        // 2. Act
+        usuarioServicio.habilitar(idUsuario);
+
+        // 3. Assert
+        // Verificamos que la fecha de baja volvió a ser nula
+        assertNull(usuarioExistente.getBaja());
     }
 }
