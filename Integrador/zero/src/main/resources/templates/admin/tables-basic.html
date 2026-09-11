@@ -16,13 +16,109 @@
 <body>
 
 <!-- Sidebar Fragment -->
-<div th:replace="~{admin/fragments/sidebar :: admin-sidebar(activePage='tables')}"></div>
+<div th:replace="~{admin/fragments/sidebar :: admin-sidebar(activePage='tables')}">
+
+  <!-- Brand Logo / Identity -->
+  <a class="sidebar-brand sidebar-brand-zero" href="../index.html" th:href="@{/admin}">
+    <img src="../../../static/admin/assets/images/logo-zero.svg" th:src="@{/admin/assets/images/logo-zero.svg}" alt="Zero Admin">
+    <span>ZERO ADMIN</span>
+  </a>
+
+  <!-- Navigation Menu -->
+  <div class="flex-grow-1 overflow-y-auto">
+    <!-- Group: Menu -->
+    <div class="sidebar-menu-section">
+      <div class="sidebar-menu-title">Menu</div>
+      <ul class="sidebar-menu-list">
+        <li class="sidebar-menu-item">
+          <a href="../index.html" th:href="@{/admin}" class="sidebar-menu-link" id="menu-overview" title="Overview"
+             th:classappend="${activePage == 'dashboard'} ? ' active' : ''">
+            <i class="bi bi-grid-fill"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Group: Components -->
+    <div class="sidebar-menu-section">
+      <div class="sidebar-menu-title">Gestión y Componentes</div>
+      <ul class="sidebar-menu-list">
+        <li class="sidebar-menu-item">
+          <a href="../tables-basic.html" th:href="@{/admin/orders}" class="sidebar-menu-link" id="menu-basictables" title="Basic Tables"
+             th:classappend="${activePage == 'tables'} ? ' active' : ''">
+            <i class="bi bi-table"></i>
+            <span>Tablas de Órdenes</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Group: Pages -->
+    <div class="sidebar-menu-section">
+      <div class="sidebar-menu-title">Páginas</div>
+      <ul class="sidebar-menu-list">
+        <li class="sidebar-menu-item">
+          <a href="../../shop/index.html" th:href="@{/shop}" class="sidebar-menu-link" title="Ir a la Tienda" target="_blank">
+            <i class="bi bi-shop"></i>
+            <span>Ver Tienda</span>
+          </a>
+        </li>
+        <li class="sidebar-menu-item">
+          <a href="../page-login.html" th:href="@{/admin/login}" class="sidebar-menu-link" id="menu-loginpage" title="Login Page"
+             th:classappend="${activePage == 'login'} ? ' active' : ''">
+            <i class="bi bi-box-arrow-in-right"></i>
+            <span>Pantalla de Login</span>
+          </a>
+        </li>
+        <li class="sidebar-menu-item">
+          <a href="../page-404.html" th:href="@{/admin/404}" class="sidebar-menu-link" id="menu-404" title="404 Page"
+             th:classappend="${activePage == '404'} ? ' active' : ''">
+            <i class="bi bi-slash-circle"></i>
+            <span>Error 404</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Sidebar Profile Card (Dynamic Footer) -->
+  <div class="sidebar-profile">
+    <img src="../../../static/admin/assets/images/avatar.png" th:src="${adminUser != null && adminUser.avatarUrl != null} ? ${adminUser.avatarUrl} : @{/admin/assets/images/avatar.png}"
+         alt="Administrator" class="sidebar-profile-img"
+         onerror="this.src='../../../static/admin/assets/images/avatar.png'">
+    <div class="sidebar-profile-info">
+      <div class="sidebar-profile-name" th:text="${adminUser != null} ? ${adminUser.name} : 'Administrator'">Administrator</div>
+      <div class="sidebar-profile-email" th:text="${adminUser != null} ? ${adminUser.email} : 'admin@email.com'">admin@email.com</div>
+    </div>
+  </div>
+
+</div>
 
 <!-- Contenido Principal -->
 <main class="main-content-offset p-4 p-md-5 min-vh-100 d-flex flex-column">
 
   <!-- Top Navbar Fragment -->
-  <nav th:replace="~{admin/fragments/navbar :: admin-navbar}\"></nav>
+  <nav th:replace="~{admin/fragments/navbar :: admin-navbar}">
+
+  <div class="d-flex align-items-center gap-2">
+    <button class="btn btn-sm btn-outline-dark d-xl-none sidebar-toggle-btn" id="sidebar-toggle"><i class="bi bi-list"></i></button>
+    <form action="../tables-basic.html" th:action="@{/admin/orders}" method="GET" class="input-group input-group-sm" style="max-width: 320px;">
+      <input type="text" name="keyword" class="form-control border-brand bg-white" placeholder="Buscar en Zero Admin..." th:value="${param.keyword}">
+      <button class="btn btn-outline-dark border-brand bg-white" type="submit"><i class="bi bi-search"></i></button>
+    </form>
+  </div>
+
+  <div class="d-flex align-items-center gap-2">
+    <a href="../../shop/index.html" th:href="@{/shop}" target="_blank" class="btn btn-sm btn-outline-dark d-flex align-items-center gap-1">
+      <i class="bi bi-shop"></i> Tienda
+    </a>
+    <a href="../page-login.html" th:href="@{/admin/login}" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
+      <i class="bi bi-box-arrow-right"></i> Salir
+    </a>
+  </div>
+
+</nav>
 
   <!-- Header de sección -->
   <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
@@ -39,11 +135,11 @@
   </div>
 
   <!-- Alertas de Éxito / Error -->
-  <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show rounded-3 py-2 small" role="alert">
+  <div th:if="${successMessage}" th:class="'alert alert-success alert-dismissible fade show rounded-3 py-2 small'" class="alert alert-success d-none" role="alert">
     <span th:text="${successMessage}">Operación exitosa</span>
     <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
-  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show rounded-3 py-2 small" role="alert">
+  <div th:if="${errorMessage}" th:class="'alert alert-danger alert-dismissible fade show rounded-3 py-2 small'" class="alert alert-danger d-none" role="alert">
     <span th:text="${errorMessage}">Error en la operación</span>
     <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
@@ -81,7 +177,7 @@
         </thead>
         <tbody>
         <!-- Mensaje si no hay órdenes -->
-        <tr th:if="${orders == null || #lists.isEmpty(orders)}">
+        <tr th:if="${orders == null || #lists.isEmpty(orders)}" th:class="''" class="d-none">
           <td colspan="7" class="text-center py-4 text-muted small">No se encontraron pedidos registrados.</td>
         </tr>
 
@@ -144,7 +240,12 @@
   </div>
 
   <!-- Footer Fragment -->
-  <footer th:replace="~{admin/fragments/footer :: admin-footer}"></footer>
+  <footer th:replace="~{admin/fragments/footer :: admin-footer}">
+
+  <span>&copy; <span th:text="${#calendars.year(#calendars.createNow())}">2026</span> Zero Admin &bull; Sportswear System</span>
+  <span>Construido con Bootstrap 5</span>
+
+</footer>
 
 </main>
 

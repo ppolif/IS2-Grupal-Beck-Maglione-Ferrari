@@ -13,7 +13,7 @@
   <!-- Única hoja de estilos de paleta -->
   <link rel="stylesheet" href="../../static/admin/assets/css/brand-palette.css" th:href="@{/admin/assets/css/brand-palette.css}">
 </head>
-<body class="d-flex align-items-center justify-content-center min-vh-100 p-3">
+<body class="d-flex w-100 align-items-center justify-content-center min-vh-100 p-3">
 
 <div class="card shadow-lg border-brand rounded-4 p-4 p-md-5 w-100 bg-white" style="max-width: 440px;">
 
@@ -25,13 +25,13 @@
   </div>
 
   <!-- Alertas de Sesión / Error -->
-  <div th:if="${param.error}" class="alert alert-danger py-2 small rounded-3" role="alert">
+  <div th:if="${param.error}" th:class="'alert alert-danger py-2 small rounded-3'" class="alert alert-danger py-2 small rounded-3 d-none" role="alert">
     Credenciales incorrectas. Verifique correo y contraseña.
   </div>
-  <div th:if="${param.logout}" class="alert alert-success py-2 small rounded-3" role="alert">
+  <div th:if="${param.logout}" th:class="'alert alert-success py-2 small rounded-3'" class="alert alert-success py-2 small rounded-3 d-none" role="alert">
     Has cerrado sesión con éxito.
   </div>
-  <div th:if="${errorMessage}" class="alert alert-danger py-2 small rounded-3" role="alert" th:text="${errorMessage}"></div>
+  <div th:if="${errorMessage}" th:class="'alert alert-danger py-2 small rounded-3'" class="alert alert-danger py-2 small rounded-3 d-none" role="alert" th:text="${errorMessage}"></div>
 
   <!-- Formulario con utilidades Bootstrap -->
   <form action="index.html" th:action="@{/admin/login}" method="POST" id="loginForm">
