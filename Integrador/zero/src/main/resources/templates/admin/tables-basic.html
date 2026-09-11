@@ -2,7 +2,16 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{admin/fragments/head :: admin-head(title='Tablas de Órdenes - Zero Admin')}">
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tablas de Órdenes - Zero Admin</title>
+  <link rel="icon" type="image/png" href="../../static/admin/assets/images/favicon.ico" th:href="@{/admin/assets/images/favicon.ico}">
+
+  <!-- Dependencias -->
+  <link rel="stylesheet" href="../../static/admin/assets/libs/bootstrap/css/bootstrap.min.css" th:href="@{/admin/assets/libs/bootstrap/css/bootstrap.min.css}">
+  <link rel="stylesheet" href="../../static/admin/assets/libs/bootstrap-icons/bootstrap-icons.css" th:href="@{/admin/assets/libs/bootstrap-icons/bootstrap-icons.css}">
+
+  <!-- Única hoja de estilos de paleta -->
+  <link rel="stylesheet" href="../../static/admin/assets/css/brand-palette.css" th:href="@{/admin/assets/css/brand-palette.css}">
 </head>
 <body>
 
@@ -13,7 +22,7 @@
 <main class="main-content-offset p-4 p-md-5 min-vh-100 d-flex flex-column">
 
   <!-- Top Navbar Fragment -->
-  <nav th:replace="~{admin/fragments/navbar :: admin-navbar}"></nav>
+  <nav th:replace="~{admin/fragments/navbar :: admin-navbar}\"></nav>
 
   <!-- Header de sección -->
   <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
@@ -23,7 +32,7 @@
     </div>
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb mb-0 small">
-        <li class="breadcrumb-item"><a th:href="@{/admin}" class="text-decoration-none text-muted">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="index.html" th:href="@{/admin}" class="text-decoration-none text-muted">Inicio</a></li>
         <li class="breadcrumb-item active text-brand-dark" aria-current="page">Tablas</li>
       </ol>
     </nav>
@@ -81,9 +90,9 @@
           <td class="ps-3 fw-bold text-brand-dark" th:text="${order.orderNumber}">#ORD-9982</td>
           <td>
             <div class="d-flex align-items-center gap-2">
-              <img th:src="${order.customerAvatar != null} ? ${order.customerAvatar} : @{/admin/assets/images/avatar.png}"
+              <img src="../../static/admin/assets/images/avatar.png" th:src="${order.customerAvatar != null} ? ${order.customerAvatar} : @{/admin/assets/images/avatar.png}"
                    alt="Avatar" class="rounded-circle" width="34" height="34"
-                   onerror="this.src='/admin/assets/images/avatar.png'">
+                   onerror="this.src='../../static/admin/assets/images/avatar.png'">
               <div>
                 <div class="small fw-bold text-brand-dark" th:text="${order.customerName}">Eleanor Pena</div>
                 <div class="text-muted" style="font-size: 0.75rem;" th:text="${order.customerEmail}">eleanor@example.com</div>
@@ -100,7 +109,7 @@
           </td>
           <td class="text-center pe-3">
             <div class="btn-group btn-group-sm">
-              <a th:href="@{/shop/confirmation(orderNumber=${order.orderNumber})}" target="_blank" class="btn btn-outline-dark" title="Ver Comprobante">
+              <a href="../shop/confirmation.html" th:href="@{/shop/confirmation(orderNumber=${order.orderNumber})}" target="_blank" class="btn btn-outline-dark" title="Ver Comprobante">
                 <i class="bi bi-eye"></i>
               </a>
               <form th:action="@{/admin/orders/delete}" method="POST" class="d-inline" onsubmit="return confirm('¿Seguro que deseas eliminar este pedido?');">
@@ -140,7 +149,10 @@
 </main>
 
 <!-- Scripts Fragment -->
-<th:block th:replace="~{admin/fragments/scripts :: admin-scripts}"></th:block>
+<div th:replace="~{admin/fragments/scripts :: admin-scripts}">
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <script src="../../static/admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js" th:src="@{/admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</div>
 
 </body>
 </html>

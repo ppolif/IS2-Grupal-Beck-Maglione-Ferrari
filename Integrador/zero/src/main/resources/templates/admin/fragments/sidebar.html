@@ -3,8 +3,8 @@
 <body>
 <div th:fragment="admin-sidebar(activePage)" class="sidebar-wrapper" id="sidebar">
   <!-- Brand Logo / Identity -->
-  <a class="sidebar-brand sidebar-brand-zero" th:href="@{/admin}">
-    <img th:src="@{/admin/assets/images/logo-zero.svg}" alt="Zero Admin">
+  <a class="sidebar-brand sidebar-brand-zero" href="../index.html" th:href="@{/admin}">
+    <img src="../../../static/admin/assets/images/logo-zero.svg" th:src="@{/admin/assets/images/logo-zero.svg}" alt="Zero Admin">
     <span>ZERO ADMIN</span>
   </a>
 
@@ -15,7 +15,7 @@
       <div class="sidebar-menu-title">Menu</div>
       <ul class="sidebar-menu-list">
         <li class="sidebar-menu-item">
-          <a th:href="@{/admin}" class="sidebar-menu-link" id="menu-overview" title="Overview"
+          <a href="../index.html" th:href="@{/admin}" class="sidebar-menu-link" id="menu-overview" title="Overview"
              th:classappend="${activePage == 'dashboard'} ? ' active' : ''">
             <i class="bi bi-grid-fill"></i>
             <span>Dashboard</span>
@@ -29,7 +29,7 @@
       <div class="sidebar-menu-title">Gestión y Componentes</div>
       <ul class="sidebar-menu-list">
         <li class="sidebar-menu-item">
-          <a th:href="@{/admin/orders}" class="sidebar-menu-link" id="menu-basictables" title="Basic Tables"
+          <a href="../tables-basic.html" th:href="@{/admin/orders}" class="sidebar-menu-link" id="menu-basictables" title="Basic Tables"
              th:classappend="${activePage == 'tables'} ? ' active' : ''">
             <i class="bi bi-table"></i>
             <span>Tablas de Órdenes</span>
@@ -43,20 +43,20 @@
       <div class="sidebar-menu-title">Páginas</div>
       <ul class="sidebar-menu-list">
         <li class="sidebar-menu-item">
-          <a th:href="@{/shop}" class="sidebar-menu-link" title="Ir a la Tienda" target="_blank">
+          <a href="../../shop/index.html" th:href="@{/shop}" class="sidebar-menu-link" title="Ir a la Tienda" target="_blank">
             <i class="bi bi-shop"></i>
             <span>Ver Tienda</span>
           </a>
         </li>
         <li class="sidebar-menu-item">
-          <a th:href="@{/admin/login}" class="sidebar-menu-link" id="menu-loginpage" title="Login Page"
+          <a href="../page-login.html" th:href="@{/admin/login}" class="sidebar-menu-link" id="menu-loginpage" title="Login Page"
              th:classappend="${activePage == 'login'} ? ' active' : ''">
             <i class="bi bi-box-arrow-in-right"></i>
             <span>Pantalla de Login</span>
           </a>
         </li>
         <li class="sidebar-menu-item">
-          <a th:href="@{/admin/404}" class="sidebar-menu-link" id="menu-404" title="404 Page"
+          <a href="../page-404.html" th:href="@{/admin/404}" class="sidebar-menu-link" id="menu-404" title="404 Page"
              th:classappend="${activePage == '404'} ? ' active' : ''">
             <i class="bi bi-slash-circle"></i>
             <span>Error 404</span>
@@ -68,9 +68,9 @@
 
   <!-- Sidebar Profile Card (Dynamic Footer) -->
   <div class="sidebar-profile">
-    <img th:src="${adminUser != null && adminUser.avatarUrl != null} ? ${adminUser.avatarUrl} : @{/admin/assets/images/avatar.png}"
+    <img src="../../../static/admin/assets/images/avatar.png" th:src="${adminUser != null && adminUser.avatarUrl != null} ? ${adminUser.avatarUrl} : @{/admin/assets/images/avatar.png}"
          alt="Administrator" class="sidebar-profile-img"
-         onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&auto=format&fit=crop'">
+         onerror="this.src='../../../static/admin/assets/images/avatar.png'">
     <div class="sidebar-profile-info">
       <div class="sidebar-profile-name" th:text="${adminUser != null} ? ${adminUser.name} : 'Administrator'">Administrator</div>
       <div class="sidebar-profile-email" th:text="${adminUser != null} ? ${adminUser.email} : 'admin@email.com'">admin@email.com</div>

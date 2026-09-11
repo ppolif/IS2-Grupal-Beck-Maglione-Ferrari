@@ -2,21 +2,30 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{admin/fragments/head :: admin-head(title='404 No Encontrado - Zero Admin')}">
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>404 - Zero Admin</title>
+  <link rel="icon" type="image/png" href="../../static/admin/assets/images/favicon.ico" th:href="@{/admin/assets/images/favicon.ico}">
+
+  <!-- Dependencias -->
+  <link rel="stylesheet" href="../../static/admin/assets/libs/bootstrap/css/bootstrap.min.css" th:href="@{/admin/assets/libs/bootstrap/css/bootstrap.min.css}">
+  <link rel="stylesheet" href="../../static/admin/assets/libs/bootstrap-icons/bootstrap-icons.css" th:href="@{/admin/assets/libs/bootstrap-icons/bootstrap-icons.css}">
+
+  <!-- Única hoja de estilos de paleta -->
+  <link rel="stylesheet" href="../../static/admin/assets/css/brand-palette.css" th:href="@{/admin/assets/css/brand-palette.css}">
 </head>
 <body class="d-flex align-items-center justify-content-center min-vh-100 p-3">
 
 <div class="card shadow-lg border-brand rounded-4 p-5 text-center bg-white" style="max-width: 520px;">
 
   <!-- Logo -->
-  <a th:href="@{/admin}" class="d-inline-flex align-items-center justify-content-center text-decoration-none gap-2 mb-4">
-    <img th:src="@{/admin/assets/images/logo-zero.svg}" alt="Zero Logo" style="height: 38px;">
+  <a href="index.html" th:href="@{/admin}" class="d-inline-flex align-items-center justify-content-center text-decoration-none gap-2 mb-4">
+    <img src="../../static/admin/assets/images/logo-zero.svg" th:src="@{/admin/assets/images/logo-zero.svg}" alt="Zero Logo" style="height: 38px;">
     <span class="h4 fw-bold mb-0 text-brand-dark">ZERO ADMIN</span>
   </a>
 
   <!-- Número 404 grande con utilidades de Bootstrap -->
   <div class="display-1 fw-bold text-brand-dark d-flex align-items-center justify-content-center gap-2 mb-3">
-    <span>4<img th:src="@{/admin/assets/images/logo-zero.svg}" alt="0" style="height: 75px; margin-left: 12px; margin-bottom: 12px;">4</span>
+    <span>4<img src="../../static/admin/assets/images/logo-zero.svg" th:src="@{/admin/assets/images/logo-zero.svg}" alt="0" style="height: 75px; margin-left: 12px; margin-bottom: 12px;">4</span>
   </div>
 
   <h2 class="h4 fw-bold text-brand-dark mb-2">Página No Encontrada</h2>
@@ -25,15 +34,15 @@
   </p>
 
   <div class="d-flex justify-content-center gap-2">
-    <a th:href="@{/admin}" class="btn btn-primary px-4 py-2 rounded-3 fw-bold d-inline-flex align-items-center gap-2">
+    <a href="index.html" th:href="@{/admin}" class="btn btn-primary px-4 py-2 rounded-3 fw-bold d-inline-flex align-items-center gap-2">
       <i class="bi bi-house"></i> Panel Admin
     </a>
-    <a th:href="@{/shop}" class="btn btn-outline-dark px-4 py-2 rounded-3 fw-bold d-inline-flex align-items-center gap-2">
+    <a href="../shop/index.html" th:href="@{/shop}" class="btn btn-outline-dark px-4 py-2 rounded-3 fw-bold d-inline-flex align-items-center gap-2">
       <i class="bi bi-shop"></i> Ir a Tienda
     </a>
   </div>
 </div>
 
-<script th:src="@{/admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script src="../../static/admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js" th:src="@{/admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js}"></script>
 </body>
 </html>

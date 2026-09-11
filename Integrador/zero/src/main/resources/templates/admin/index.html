@@ -2,7 +2,18 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{admin/fragments/head :: admin-head(title='Dashboard - Zero Admin')}">
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - Zero Admin</title>
+  <link rel="icon" type="image/png" href="../../static/admin/assets/images/favicon.ico" th:href="@{/admin/assets/images/favicon.ico}">
+
+  <!-- Dependencias -->
+  <link rel="stylesheet" href="../../static/admin/assets/libs/bootstrap/css/bootstrap.min.css" th:href="@{/admin/assets/libs/bootstrap/css/bootstrap.min.css}">
+  <link rel="stylesheet" href="../../static/admin/assets/libs/bootstrap-icons/bootstrap-icons.css" th:href="@{/admin/assets/libs/bootstrap-icons/bootstrap-icons.css}">
+  <link rel="stylesheet" href="../../static/admin/assets/libs/apexcharts/apexcharts.css" th:href="@{/admin/assets/libs/apexcharts/apexcharts.css}">
+  <link rel="stylesheet" href="../../static/admin/assets/libs/flatpickr/flatpickr.min.css" th:href="@{/admin/assets/libs/flatpickr/flatpickr.min.css}">
+
+  <!-- Única hoja de estilos de paleta -->
+  <link rel="stylesheet" href="../../static/admin/assets/css/brand-palette.css" th:href="@{/admin/assets/css/brand-palette.css}">
 </head>
 <body>
 
@@ -37,7 +48,7 @@
           <div class="small text-muted mb-1">Semana actual</div>
           <h2 class="h5 fw-bold mb-0" th:text="${kpiSalesAlert != null} ? ${kpiSalesAlert} : 'Las ventas aumentaron un 40% este mes'">Las ventas aumentaron un 40% este mes</h2>
         </div>
-        <a th:href="@{/admin/orders}" class="text-brand-soft fw-bold small text-decoration-none mt-3 d-flex align-items-center gap-1">
+        <a href="tables-basic.html" th:href="@{/admin/orders}" class="text-brand-soft fw-bold small text-decoration-none mt-3 d-flex align-items-center gap-1">
           Ver estadísticas <i class="bi bi-arrow-right"></i>
         </a>
       </div>
@@ -96,7 +107,7 @@
         <div class="bg-brand-surface rounded-3 p-3 mt-3">
           <div class="small fw-bold text-brand-dark mb-1">Campaña de Temporada</div>
           <p class="small text-muted mb-2">Optimiza las conversiones en indumentaria urbana.</p>
-          <a th:href="@{/admin/orders}" class="btn btn-sm btn-primary w-100 rounded-3">Ver Órdenes</a>
+          <a href="tables-basic.html" th:href="@{/admin/orders}" class="btn btn-sm btn-primary w-100 rounded-3">Ver Órdenes</a>
         </div>
       </div>
     </div>
@@ -108,7 +119,13 @@
 </main>
 
 <!-- Scripts Fragment -->
-<th:block th:replace="~{admin/fragments/scripts :: admin-scripts}"></th:block>
+<div th:replace="~{admin/fragments/scripts :: admin-scripts}">
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <script src="../../static/admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js" th:src="@{/admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js}"></script>
+  <script src="../../static/admin/assets/libs/apexcharts/apexcharts.min.js" th:src="@{/admin/assets/libs/apexcharts/apexcharts.min.js}"></script>
+  <script src="../../static/admin/assets/libs/flatpickr/flatpickr.min.js" th:src="@{/admin/assets/libs/flatpickr/flatpickr.min.js}"></script>
+  <script src="../../static/admin/assets/js/dashboard.js" th:src="@{/admin/assets/js/dashboard.js}"></script>
+</div>
 
 </body>
 </html>

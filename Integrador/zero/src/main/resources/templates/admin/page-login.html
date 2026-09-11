@@ -2,7 +2,16 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{admin/fragments/head :: admin-head(title='Login - Zero Admin')}">
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Zero Admin</title>
+  <link rel="icon" type="image/png" href="../../static/admin/assets/images/favicon.ico" th:href="@{/admin/assets/images/favicon.ico}">
+
+  <!-- Dependencias -->
+  <link rel="stylesheet" href="../../static/admin/assets/libs/bootstrap/css/bootstrap.min.css" th:href="@{/admin/assets/libs/bootstrap/css/bootstrap.min.css}">
+  <link rel="stylesheet" href="../../static/admin/assets/libs/bootstrap-icons/bootstrap-icons.css" th:href="@{/admin/assets/libs/bootstrap-icons/bootstrap-icons.css}">
+
+  <!-- Única hoja de estilos de paleta -->
+  <link rel="stylesheet" href="../../static/admin/assets/css/brand-palette.css" th:href="@{/admin/assets/css/brand-palette.css}">
 </head>
 <body class="d-flex align-items-center justify-content-center min-vh-100 p-3">
 
@@ -10,7 +19,7 @@
 
   <!-- Logo & Titular -->
   <div class="text-center mb-4">
-    <img th:src="@{/admin/assets/images/logo-zero.svg}" alt="Zero Logo" class="img-fluid mb-2" style="height: 52px;">
+    <img src="../../static/admin/assets/images/logo-zero.svg" th:src="@{/admin/assets/images/logo-zero.svg}" alt="Zero Logo" class="img-fluid mb-2" style="height: 52px;">
     <h1 class="h3 fw-bold mb-1 text-brand-dark">Bienvenido a Zero</h1>
     <p class="text-muted small mb-0">Ingresa a tu cuenta de administración para continuar</p>
   </div>
@@ -25,7 +34,7 @@
   <div th:if="${errorMessage}" class="alert alert-danger py-2 small rounded-3" role="alert" th:text="${errorMessage}"></div>
 
   <!-- Formulario con utilidades Bootstrap -->
-  <form th:action="@{/admin/login}" method="POST" id="loginForm">
+  <form action="index.html" th:action="@{/admin/login}" method="POST" id="loginForm">
 
     <!-- Email -->
     <div class="mb-3">
@@ -65,14 +74,14 @@
   </form>
 
   <div class="text-center mt-4 pt-3 border-top border-brand">
-    <a th:href="@{/shop}" class="small text-brand-soft text-decoration-none fw-bold">
+    <a href="../shop/index.html" th:href="@{/shop}" class="small text-brand-soft text-decoration-none fw-bold">
       <i class="bi bi-arrow-left"></i> Volver a la Tienda
     </a>
   </div>
 
 </div>
 
-<script th:src="@{/admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js}"></script>
-<script th:src="@{/admin/assets/js/auth.js}"></script>
+<script src="../../static/admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js" th:src="@{/admin/assets/libs/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script src="../../static/admin/assets/js/auth.js" th:src="@{/admin/assets/js/auth.js}"></script>
 </body>
 </html>

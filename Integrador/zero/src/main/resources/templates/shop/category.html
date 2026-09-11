@@ -2,7 +2,23 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{shop/fragments/head :: shop-head(title='Catálogo de Productos - Zero Sportswear')}">
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="shortcut icon" href="../../static/shop/img/fav.png" th:href="@{/shop/img/fav.png}">
   <title>Catálogo - Zero</title>
+
+  <!-- CSS Dependencies -->
+  <link rel="stylesheet" href="../../static/shop/css/linearicons.css" th:href="@{/shop/css/linearicons.css}">
+  <link rel="stylesheet" href="../../static/shop/css/font-awesome.min.css" th:href="@{/shop/css/font-awesome.min.css}">
+  <link rel="stylesheet" href="../../static/shop/css/themify-icons.css" th:href="@{/shop/css/themify-icons.css}">
+  <link rel="stylesheet" href="../../static/shop/css/bootstrap.css" th:href="@{/shop/css/bootstrap.css}">
+  <link rel="stylesheet" href="../../static/shop/css/owl.carousel.css" th:href="@{/shop/css/owl.carousel.css}">
+  <link rel="stylesheet" href="../../static/shop/css/nice-select.css" th:href="@{/shop/css/nice-select.css}">
+  <link rel="stylesheet" href="../../static/shop/css/nouislider.min.css" th:href="@{/shop/css/nouislider.min.css}">
+  <link rel="stylesheet" href="../../static/shop/css/ion.rangeSlider.css" th:href="@{/shop/css/ion.rangeSlider.css}">
+  <link rel="stylesheet" href="../../static/shop/css/ion.rangeSlider.skinFlat.css" th:href="@{/shop/css/ion.rangeSlider.skinFlat.css}">
+  <link rel="stylesheet" href="../../static/shop/css/magnific-popup.css" th:href="@{/shop/css/magnific-popup.css}">
+  <link rel="stylesheet" href="../../static/shop/css/main.css" th:href="@{/shop/css/main.css}">
+  <link rel="stylesheet" href="../../static/shop/css/theme-palette.css" th:href="@{/shop/css/theme-palette.css}">
 </head>
 <body id="category">
 
@@ -31,11 +47,11 @@
 
           <!-- Fallback estático cuando no hay lista del backend -->
           <th:block th:if="${categories == null}">
-            <li class="main-nav-list"><a th:href="@{/shop/category(category='calzado')}"><span class="lnr lnr-arrow-right"></span>Calzado Deportivo<span class="number">(24)</span></a></li>
-            <li class="main-nav-list"><a th:href="@{/shop/category(category='remeras')}"><span class="lnr lnr-arrow-right"></span>Remeras y Tops<span class="number">(18)</span></a></li>
-            <li class="main-nav-list"><a th:href="@{/shop/category(category='pantalones')}"><span class="lnr lnr-arrow-right"></span>Pantalones y Joggers<span class="number">(15)</span></a></li>
-            <li class="main-nav-list"><a th:href="@{/shop/category(category='abrigos')}"><span class="lnr lnr-arrow-right"></span>Camperas y Buzos<span class="number">(10)</span></a></li>
-            <li class="main-nav-list"><a th:href="@{/shop/category(category='accesorios')}"><span class="lnr lnr-arrow-right"></span>Accesorios y Bolsos<span class="number">(8)</span></a></li>
+            <li class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='calzado')}"><span class="lnr lnr-arrow-right"></span>Calzado Deportivo<span class="number">(24)</span></a></li>
+            <li class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='remeras')}"><span class="lnr lnr-arrow-right"></span>Remeras y Tops<span class="number">(18)</span></a></li>
+            <li class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='pantalones')}"><span class="lnr lnr-arrow-right"></span>Pantalones y Joggers<span class="number">(15)</span></a></li>
+            <li class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='abrigos')}"><span class="lnr lnr-arrow-right"></span>Camperas y Buzos<span class="number">(10)</span></a></li>
+            <li class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='accesorios')}"><span class="lnr lnr-arrow-right"></span>Accesorios y Bolsos<span class="number">(8)</span></a></li>
           </th:block>
         </ul>
       </div>
@@ -43,14 +59,14 @@
       <div class="sidebar-filter mt-4">
         <div class="top-filter-head">Filtrar por Precio</div>
         <div class="common-filter p-3">
-          <form th:action="@{/shop/category}" method="GET">
+          <form action="category.html" th:action="@{/shop/category}" method="GET">
             <input type="hidden" name="categoryId" th:value="${selectedCategory}" th:if="${selectedCategory != null}">
             <div class="form-group mb-2">
               <label class="small text-muted">Precio Máximo:</label>
               <input type="number" name="maxPrice" class="form-control form-control-sm" placeholder="Ej: 200" th:value="${param.maxPrice}">
             </div>
             <button type="submit" class="btn btn-sm btn-dark w-100 mt-2">Aplicar Filtro</button>
-            <a th:href="@{/shop/category}" class="btn btn-sm btn-link text-muted w-100 mt-1">Limpiar</a>
+            <a href="category.html" th:href="@{/shop/category}" class="btn btn-sm btn-link text-muted w-100 mt-1">Limpiar</a>
           </form>
         </div>
       </div>
@@ -82,7 +98,7 @@
           <!-- Productos Dinámicos desde Backend -->
           <div class="col-lg-4 col-md-6" th:if="${products != null}" th:each="prod : ${products}">
             <div class="single-product">
-              <img class="img-fluid" th:src="${prod.imageUrl != null} ? ${prod.imageUrl} : @{/shop/img/product/p1.jpg}" th:alt="${prod.name}">
+              <img class="img-fluid" src="../../static/shop/img/product/p1.jpg" th:src="${prod.imageUrl != null} ? ${prod.imageUrl} : @{/shop/img/product/p1.jpg}" th:alt="${prod.name}">
               <div class="product-details">
                 <h6 th:text="${prod.name}">Zapatillas Zero Runner</h6>
                 <div class="price">
@@ -91,7 +107,7 @@
                       th:text="${#numbers.formatCurrency(prod.originalPrice)}">$210.00</h6>
                 </div>
                 <div class="prd-bottom">
-                  <form th:action="@{/shop/cart/add}" method="POST" class="d-inline">
+                  <form action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
                     <input type="hidden" name="productId" th:value="${prod.id}">
                     <input type="hidden" name="quantity" value="1">
                     <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
@@ -99,7 +115,7 @@
                       <p class="hover-text">Al carrito</p>
                     </button>
                   </form>
-                  <a th:href="@{/shop/product/{id}(id=${prod.id})}" class="social-info" title="Ver Detalle">
+                  <a href="single-product.html" th:href="@{/shop/product/{id}(id=${prod.id})}" class="social-info" title="Ver Detalle">
                     <span class="lnr lnr-move"></span>
                     <p class="hover-text">Detalle</p>
                   </a>
@@ -112,7 +128,7 @@
           <th:block th:if="${products == null}">
             <div class="col-lg-4 col-md-6" th:each="idx : ${#numbers.sequence(1, 6)}">
               <div class="single-product">
-                <img class="img-fluid" th:src="@{/shop/img/product/p{id}.jpg(id=${idx})}" alt="Producto Zero">
+                <img class="img-fluid" src="../../static/shop/img/product/p1.jpg" th:src="@{/shop/img/product/p{id}.jpg(id=${idx})}" alt="Producto Zero">
                 <div class="product-details">
                   <h6>Zero Sport Pro Performance</h6>
                   <div class="price">
@@ -120,7 +136,7 @@
                     <h6 class="l-through">$199.99</h6>
                   </div>
                   <div class="prd-bottom">
-                    <form th:action="@{/shop/cart/add}" method="POST" class="d-inline">
+                    <form action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
                       <input type="hidden" name="productId" th:value="${idx}">
                       <input type="hidden" name="quantity" value="1">
                       <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
@@ -128,7 +144,7 @@
                         <p class="hover-text">Al carrito</p>
                       </button>
                     </form>
-                    <a th:href="@{/shop/single-product}" class="social-info" title="Ver Detalle">
+                    <a href="single-product.html" th:href="@{/shop/single-product}" class="social-info" title="Ver Detalle">
                       <span class="lnr lnr-move"></span>
                       <p class="hover-text">Detalle</p>
                     </a>
@@ -149,7 +165,19 @@
 <footer th:replace="~{shop/fragments/footer :: shop-footer}"></footer>
 
 <!-- Scripts Fragment -->
-<th:block th:replace="~{shop/fragments/scripts :: shop-scripts}"></th:block>
+<div th:replace="~{shop/fragments/scripts :: shop-scripts}">
+  <script src="../../static/shop/js/vendor/jquery-2.2.4.min.js" th:src="@{/shop/js/vendor/jquery-2.2.4.min.js}"></script>
+  <script src="../../static/shop/js/vendor/popper.js" th:src="@{/shop/js/vendor/popper.js}"></script>
+  <script src="../../static/shop/js/vendor/bootstrap.min.js" th:src="@{/shop/js/vendor/bootstrap.min.js}"></script>
+  <script src="../../static/shop/js/jquery.ajaxchimp.min.js" th:src="@{/shop/js/jquery.ajaxchimp.min.js}"></script>
+  <script src="../../static/shop/js/jquery.nice-select.min.js" th:src="@{/shop/js/jquery.nice-select.min.js}"></script>
+  <script src="../../static/shop/js/jquery.sticky.js" th:src="@{/shop/js/jquery.sticky.js}"></script>
+  <script src="../../static/shop/js/nouislider.min.js" th:src="@{/shop/js/nouislider.min.js}"></script>
+  <script src="../../static/shop/js/countdown.js" th:src="@{/shop/js/countdown.js}"></script>
+  <script src="../../static/shop/js/jquery.magnific-popup.min.js" th:src="@{/shop/js/jquery.magnific-popup.min.js}"></script>
+  <script src="../../static/shop/js/owl.carousel.min.js" th:src="@{/shop/js/owl.carousel.min.js}"></script>
+  <script src="../../static/shop/js/main.js" th:src="@{/shop/js/main.js}"></script>
+</div>
 
 </body>
 </html>

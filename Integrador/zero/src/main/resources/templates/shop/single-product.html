@@ -2,7 +2,23 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{shop/fragments/head :: shop-head(title=${product != null && product.name != null} ? ${product.name} + ' - Zero Sportswear' : 'Detalle de Producto - Zero')}">
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="shortcut icon" href="../../static/shop/img/fav.png" th:href="@{/shop/img/fav.png}">
   <title>Detalle de Producto - Zero</title>
+
+  <!-- CSS Dependencies -->
+  <link rel="stylesheet" href="../../static/shop/css/linearicons.css" th:href="@{/shop/css/linearicons.css}">
+  <link rel="stylesheet" href="../../static/shop/css/font-awesome.min.css" th:href="@{/shop/css/font-awesome.min.css}">
+  <link rel="stylesheet" href="../../static/shop/css/themify-icons.css" th:href="@{/shop/css/themify-icons.css}">
+  <link rel="stylesheet" href="../../static/shop/css/bootstrap.css" th:href="@{/shop/css/bootstrap.css}">
+  <link rel="stylesheet" href="../../static/shop/css/owl.carousel.css" th:href="@{/shop/css/owl.carousel.css}">
+  <link rel="stylesheet" href="../../static/shop/css/nice-select.css" th:href="@{/shop/css/nice-select.css}">
+  <link rel="stylesheet" href="../../static/shop/css/nouislider.min.css" th:href="@{/shop/css/nouislider.min.css}">
+  <link rel="stylesheet" href="../../static/shop/css/ion.rangeSlider.css" th:href="@{/shop/css/ion.rangeSlider.css}">
+  <link rel="stylesheet" href="../../static/shop/css/ion.rangeSlider.skinFlat.css" th:href="@{/shop/css/ion.rangeSlider.skinFlat.css}">
+  <link rel="stylesheet" href="../../static/shop/css/magnific-popup.css" th:href="@{/shop/css/magnific-popup.css}">
+  <link rel="stylesheet" href="../../static/shop/css/main.css" th:href="@{/shop/css/main.css}">
+  <link rel="stylesheet" href="../../static/shop/css/theme-palette.css" th:href="@{/shop/css/theme-palette.css}">
 </head>
 <body>
 
@@ -10,7 +26,7 @@
 <header th:replace="~{shop/fragments/header :: shop-header(activePage='category')}"></header>
 
 <!-- Banner Fragment -->
-<section th:replace="~{shop/fragments/banner :: shop-banner(title='Detalle del Producto', subtitle=${product != null && product.name != null ? product.name : 'Producto'})}"></section>
+<section th:replace="~{shop/fragments/banner :: shop-banner(title='Detalle del Producto', subtitle=${product != null && product.name != null ? product.name : 'Producto'})}\"></section>
 
 <!--================Single Product Area =================-->
 <div class="product_image_area">
@@ -19,11 +35,11 @@
       <div class="col-lg-6">
         <div class="s_Product_carousel">
           <div class="single-prd-item">
-            <img class="img-fluid" th:src="${product != null && product.imageUrl != null} ? ${product.imageUrl} : @{/shop/img/category/s-p1.jpg}"
+            <img class="img-fluid" src="../../static/shop/img/category/s-p1.jpg" th:src="${product != null && product.imageUrl != null} ? ${product.imageUrl} : @{/shop/img/category/s-p1.jpg}"
                  th:alt="${product != null} ? ${product.name} : 'Producto'">
           </div>
           <div class="single-prd-item">
-            <img class="img-fluid" th:src="${product != null && product.imageUrl != null} ? ${product.imageUrl} : @{/shop/img/category/s-p1.jpg}"
+            <img class="img-fluid" src="../../static/shop/img/category/s-p1.jpg" th:src="${product != null && product.imageUrl != null} ? ${product.imageUrl} : @{/shop/img/category/s-p1.jpg}"
                  th:alt="${product != null} ? ${product.name} : 'Producto'">
           </div>
         </div>
@@ -46,7 +62,7 @@
           </p>
 
           <!-- Formulario Agregar al Carrito -->
-          <form th:action="@{/shop/cart/add}" method="POST">
+          <form action="cart.html" th:action="@{/shop/cart/add}" method="POST">
             <input type="hidden" name="productId" th:value="${product != null ? product.id : 1}">
 
             <div class="product_count d-flex align-items-center mb-4">
@@ -56,7 +72,7 @@
 
             <div class="card_area d-flex align-items-center">
               <button type="submit" class="primary-btn border-0" th:disabled="${product != null && product.stock <= 0}">Agregar al Carrito</button>
-              <a class="icon_btn" th:href="@{/shop/category}" title="Ver más productos"><i class="lnr lnr-arrow-left"></i></a>
+              <a class="icon_btn" href="category.html" th:href="@{/shop/category}" title="Ver más productos"><i class="lnr lnr-arrow-left"></i></a>
             </div>
           </form>
 
@@ -71,7 +87,19 @@
 <footer th:replace="~{shop/fragments/footer :: shop-footer}"></footer>
 
 <!-- Scripts Fragment -->
-<th:block th:replace="~{shop/fragments/scripts :: shop-scripts}"></th:block>
+<div th:replace="~{shop/fragments/scripts :: shop-scripts}">
+  <script src="../../static/shop/js/vendor/jquery-2.2.4.min.js" th:src="@{/shop/js/vendor/jquery-2.2.4.min.js}"></script>
+  <script src="../../static/shop/js/vendor/popper.js" th:src="@{/shop/js/vendor/popper.js}"></script>
+  <script src="../../static/shop/js/vendor/bootstrap.min.js" th:src="@{/shop/js/vendor/bootstrap.min.js}"></script>
+  <script src="../../static/shop/js/jquery.ajaxchimp.min.js" th:src="@{/shop/js/jquery.ajaxchimp.min.js}"></script>
+  <script src="../../static/shop/js/jquery.nice-select.min.js" th:src="@{/shop/js/jquery.nice-select.min.js}"></script>
+  <script src="../../static/shop/js/jquery.sticky.js" th:src="@{/shop/js/jquery.sticky.js}"></script>
+  <script src="../../static/shop/js/nouislider.min.js" th:src="@{/shop/js/nouislider.min.js}"></script>
+  <script src="../../static/shop/js/countdown.js" th:src="@{/shop/js/countdown.js}"></script>
+  <script src="../../static/shop/js/jquery.magnific-popup.min.js" th:src="@{/shop/js/jquery.magnific-popup.min.js}"></script>
+  <script src="../../static/shop/js/owl.carousel.min.js" th:src="@{/shop/js/owl.carousel.min.js}"></script>
+  <script src="../../static/shop/js/main.js" th:src="@{/shop/js/main.js}"></script>
+</div>
 
 </body>
 </html>

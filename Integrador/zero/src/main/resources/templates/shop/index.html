@@ -2,7 +2,23 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{shop/fragments/head :: shop-head(title='Zero | Sportswear - Tu Marca de Rendimiento')}">
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="shortcut icon" href="../../static/shop/img/fav.png" th:href="@{/shop/img/fav.png}">
   <title>Zero | Sportswear</title>
+
+  <!-- CSS Dependencies -->
+  <link rel="stylesheet" href="../../static/shop/css/linearicons.css" th:href="@{/shop/css/linearicons.css}">
+  <link rel="stylesheet" href="../../static/shop/css/font-awesome.min.css" th:href="@{/shop/css/font-awesome.min.css}">
+  <link rel="stylesheet" href="../../static/shop/css/themify-icons.css" th:href="@{/shop/css/themify-icons.css}">
+  <link rel="stylesheet" href="../../static/shop/css/bootstrap.css" th:href="@{/shop/css/bootstrap.css}">
+  <link rel="stylesheet" href="../../static/shop/css/owl.carousel.css" th:href="@{/shop/css/owl.carousel.css}">
+  <link rel="stylesheet" href="../../static/shop/css/nice-select.css" th:href="@{/shop/css/nice-select.css}">
+  <link rel="stylesheet" href="../../static/shop/css/nouislider.min.css" th:href="@{/shop/css/nouislider.min.css}">
+  <link rel="stylesheet" href="../../static/shop/css/ion.rangeSlider.css" th:href="@{/shop/css/ion.rangeSlider.css}">
+  <link rel="stylesheet" href="../../static/shop/css/ion.rangeSlider.skinFlat.css" th:href="@{/shop/css/ion.rangeSlider.skinFlat.css}">
+  <link rel="stylesheet" href="../../static/shop/css/magnific-popup.css" th:href="@{/shop/css/magnific-popup.css}">
+  <link rel="stylesheet" href="../../static/shop/css/main.css" th:href="@{/shop/css/main.css}">
+  <link rel="stylesheet" href="../../static/shop/css/theme-palette.css" th:href="@{/shop/css/theme-palette.css}">
 </head>
 <body>
 
@@ -22,14 +38,14 @@
                 <h1>Nueva Colección <br>Zero Velocity</h1>
                 <p>Equipamiento deportivo de alta tecnología diseñado para maximizar tu potencial y superar tus límites en cada sesión.</p>
                 <div class="add-bag d-flex align-items-center">
-                  <a class="add-btn" th:href="@{/shop/category}"><span class="lnr lnr-arrow-right"></span></a>
-                  <a th:href="@{/shop/category}" class="add-text text-uppercase text-dark font-weight-bold ml-2">Explorar Catálogo</a>
+                  <a class="add-btn" href="category.html" th:href="@{/shop/category}"><span class="lnr lnr-arrow-right"></span></a>
+                  <a href="category.html" th:href="@{/shop/category}" class="add-text text-uppercase text-dark font-weight-bold ml-2">Explorar Catálogo</a>
                 </div>
               </div>
             </div>
             <div class="col-lg-7">
               <div class="banner-img">
-                <img class="img-fluid" th:src="@{/shop/img/banner/banner-img.png}" alt="Zero Hero">
+                <img class="img-fluid" src="../../static/shop/img/banner/banner-img.png" th:src="@{/shop/img/banner/banner-img.png}" alt="Zero Hero">
               </div>
             </div>
           </div>
@@ -40,14 +56,14 @@
                 <h1>Línea Pro Training <br>Temporada 2026</h1>
                 <p>Materiales ultraligeros, transpirables y resistentes. Creados por atletas, diseñados para campeones.</p>
                 <div class="add-bag d-flex align-items-center">
-                  <a class="add-btn" th:href="@{/shop/category}"><span class="lnr lnr-arrow-right"></span></a>
-                  <a th:href="@{/shop/category}" class="add-text text-uppercase text-dark font-weight-bold ml-2">Ver Novedades</a>
+                  <a class="add-btn" href="category.html" th:href="@{/shop/category}"><span class="lnr lnr-arrow-right"></span></a>
+                  <a href="category.html" th:href="@{/shop/category}" class="add-text text-uppercase text-dark font-weight-bold ml-2">Ver Novedades</a>
                 </div>
               </div>
             </div>
             <div class="col-lg-7">
               <div class="banner-img">
-                <img class="img-fluid" th:src="@{/shop/img/banner/banner-img.png}" alt="Zero Hero 2">
+                <img class="img-fluid" src="../../static/shop/img/banner/banner-img.png" th:src="@{/shop/img/banner/banner-img.png}" alt="Zero Hero 2">
               </div>
             </div>
           </div>
@@ -65,7 +81,7 @@
       <div class="col-lg-3 col-md-6 col-sm-6">
         <div class="single-features text-center">
           <div class="f-icon mb-3">
-            <img th:src="@{/shop/img/features/f-icon1.png}" alt="Envío Gratis">
+            <img src="../../static/shop/img/features/f-icon1.png" th:src="@{/shop/img/features/f-icon1.png}" alt="Envío Gratis">
           </div>
           <h6>Envío a Todo el País</h6>
           <p class="small text-muted">Gratis en órdenes superiores a $50</p>
@@ -74,7 +90,7 @@
       <div class="col-lg-3 col-md-6 col-sm-6">
         <div class="single-features text-center">
           <div class="f-icon mb-3">
-            <img th:src="@{/shop/img/features/f-icon2.png}" alt="Devolución">
+            <img src="../../static/shop/img/features/f-icon2.png" th:src="@{/shop/img/features/f-icon2.png}" alt="Devolución">
           </div>
           <h6>Cambio Fácil</h6>
           <p class="small text-muted">30 días de garantía sin cargo</p>
@@ -83,7 +99,7 @@
       <div class="col-lg-3 col-md-6 col-sm-6">
         <div class="single-features text-center">
           <div class="f-icon mb-3">
-            <img th:src="@{/shop/img/features/f-icon3.png}" alt="Soporte">
+            <img src="../../static/shop/img/features/f-icon3.png" th:src="@{/shop/img/features/f-icon3.png}" alt="Soporte">
           </div>
           <h6>Soporte 24/7</h6>
           <p class="small text-muted">Atención dedicada para deportistas</p>
@@ -92,7 +108,7 @@
       <div class="col-lg-3 col-md-6 col-sm-6">
         <div class="single-features text-center">
           <div class="f-icon mb-3">
-            <img th:src="@{/shop/img/features/f-icon4.png}" alt="Pago Seguro">
+            <img src="../../static/shop/img/features/f-icon4.png" th:src="@{/shop/img/features/f-icon4.png}" alt="Pago Seguro">
           </div>
           <h6>Pago Seguro</h6>
           <p class="small text-muted">Múltiples opciones y cuotas</p>
@@ -112,8 +128,8 @@
           <div class="col-lg-8 col-md-8">
             <div class="single-deal">
               <div class="overlay"></div>
-              <img class="img-fluid w-100" th:src="@{/shop/img/category/c1.jpg}" alt="Sneakers Deportivos">
-              <a th:href="@{/shop/category(category='calzado')}" class="img-pop-up">
+              <img class="img-fluid w-100" src="../../static/shop/img/category/c1.jpg" th:src="@{/shop/img/category/c1.jpg}" alt="Sneakers Deportivos">
+              <a href="category.html" th:href="@{/shop/category(category='calzado')}" class="img-pop-up">
                 <div class="deal-details">
                   <h6 class="deal-title">Calzado High Performance</h6>
                 </div>
@@ -123,8 +139,8 @@
           <div class="col-lg-4 col-md-4">
             <div class="single-deal">
               <div class="overlay"></div>
-              <img class="img-fluid w-100" th:src="@{/shop/img/category/c2.jpg}" alt="Accesorios">
-              <a th:href="@{/shop/category(category='accesorios')}" class="img-pop-up">
+              <img class="img-fluid w-100" src="../../static/shop/img/category/c2.jpg" th:src="@{/shop/img/category/c2.jpg}" alt="Accesorios">
+              <a href="category.html" th:href="@{/shop/category(category='accesorios')}" class="img-pop-up">
                 <div class="deal-details">
                   <h6 class="deal-title">Accesorios &amp; Bolsos</h6>
                 </div>
@@ -134,8 +150,8 @@
           <div class="col-lg-4 col-md-4">
             <div class="single-deal">
               <div class="overlay"></div>
-              <img class="img-fluid w-100" th:src="@{/shop/img/category/c3.jpg}" alt="Tops y Remeras">
-              <a th:href="@{/shop/category(category='remeras')}" class="img-pop-up">
+              <img class="img-fluid w-100" src="../../static/shop/img/category/c3.jpg" th:src="@{/shop/img/category/c3.jpg}" alt="Tops y Remeras">
+              <a href="category.html" th:href="@{/shop/category(category='remeras')}" class="img-pop-up">
                 <div class="deal-details">
                   <h6 class="deal-title">Tops &amp; Remeras</h6>
                 </div>
@@ -145,8 +161,8 @@
           <div class="col-lg-8 col-md-8">
             <div class="single-deal">
               <div class="overlay"></div>
-              <img class="img-fluid w-100" th:src="@{/shop/img/category/c4.jpg}" alt="Pantalones">
-              <a th:href="@{/shop/category(category='pantalones')}" class="img-pop-up">
+              <img class="img-fluid w-100" src="../../static/shop/img/category/c4.jpg" th:src="@{/shop/img/category/c4.jpg}" alt="Pantalones">
+              <a href="category.html" th:href="@{/shop/category(category='pantalones')}" class="img-pop-up">
                 <div class="deal-details">
                   <h6 class="deal-title">Pantalones &amp; Calzas</h6>
                 </div>
@@ -158,8 +174,8 @@
       <div class="col-lg-4 col-md-6">
         <div class="single-deal">
           <div class="overlay"></div>
-          <img class="img-fluid w-100" th:src="@{/shop/img/category/c5.jpg}" alt="Colección Especial">
-          <a th:href="@{/shop/category}" class="img-pop-up">
+          <img class="img-fluid w-100" src="../../static/shop/img/category/c5.jpg" th:src="@{/shop/img/category/c5.jpg}" alt="Colección Especial">
+          <a href="category.html" th:href="@{/shop/category}" class="img-pop-up">
             <div class="deal-details">
               <h6 class="deal-title">Zero Special Edition</h6>
             </div>
@@ -187,7 +203,7 @@
       <!-- Iteración Dinámica si existen featuredProducts -->
       <div class="col-lg-3 col-md-6 mb-4" th:if="${featuredProducts != null}" th:each="prod : ${featuredProducts}">
         <div class="single-product">
-          <img class="img-fluid" th:src="${prod.imageUrl != null} ? ${prod.imageUrl} : @{/shop/img/product/p1.jpg}" th:alt="${prod.name}">
+          <img class="img-fluid" src="../../static/shop/img/product/p1.jpg" th:src="${prod.imageUrl != null} ? ${prod.imageUrl} : @{/shop/img/product/p1.jpg}" th:alt="${prod.name}">
           <div class="product-details">
             <h6 th:text="${prod.name}">Zero Runner Pro</h6>
             <div class="price">
@@ -196,7 +212,7 @@
                   th:text="${#numbers.formatCurrency(prod.originalPrice)}">$210.00</h6>
             </div>
             <div class="prd-bottom">
-              <form th:action="@{/shop/cart/add}" method="POST" class="d-inline">
+              <form action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
                 <input type="hidden" name="productId" th:value="${prod.id}">
                 <input type="hidden" name="quantity" value="1">
                 <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
@@ -204,7 +220,7 @@
                   <p class="hover-text">Al carrito</p>
                 </button>
               </form>
-              <a th:href="@{/shop/product/{id}(id=${prod.id})}" class="social-info" title="Ver Detalle">
+              <a href="single-product.html" th:href="@{/shop/product/{id}(id=${prod.id})}" class="social-info" title="Ver Detalle">
                 <span class="lnr lnr-move"></span>
                 <p class="hover-text">Detalle</p>
               </a>
@@ -217,7 +233,7 @@
       <th:block th:if="${featuredProducts == null}">
         <div class="col-lg-3 col-md-6 mb-4" th:each="idx : ${#numbers.sequence(1, 4)}">
           <div class="single-product">
-            <img class="img-fluid" th:src="@{/shop/img/product/p{id}.jpg(id=${idx})}" alt="Producto Zero">
+            <img class="img-fluid" src="../../static/shop/img/product/p1.jpg" th:src="@{/shop/img/product/p{id}.jpg(id=${idx})}" alt="Producto Zero">
             <div class="product-details">
               <h6>Zero Speedrunner Nitro V</h6>
               <div class="price">
@@ -225,7 +241,7 @@
                 <h6 class="l-through">$210.00</h6>
               </div>
               <div class="prd-bottom">
-                <form th:action="@{/shop/cart/add}" method="POST" class="d-inline">
+                <form action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
                   <input type="hidden" name="productId" th:value="${idx}">
                   <input type="hidden" name="quantity" value="1">
                   <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
@@ -233,7 +249,7 @@
                     <p class="hover-text">Al carrito</p>
                   </button>
                 </form>
-                <a th:href="@{/shop/single-product}" class="social-info" title="Ver Detalle">
+                <a href="single-product.html" th:href="@{/shop/single-product}" class="social-info" title="Ver Detalle">
                   <span class="lnr lnr-move"></span>
                   <p class="hover-text">Detalle</p>
                 </a>
@@ -245,7 +261,7 @@
     </div>
 
     <div class="text-center mt-4">
-      <a th:href="@{/shop/category}" class="primary-btn">Ver Toda la Tienda</a>
+      <a href="category.html" th:href="@{/shop/category}" class="primary-btn">Ver Toda la Tienda</a>
     </div>
   </div>
 </section>
@@ -255,7 +271,19 @@
 <footer th:replace="~{shop/fragments/footer :: shop-footer}"></footer>
 
 <!-- Scripts Fragment -->
-<th:block th:replace="~{shop/fragments/scripts :: shop-scripts}"></th:block>
+<div th:replace="~{shop/fragments/scripts :: shop-scripts}">
+  <script src="../../static/shop/js/vendor/jquery-2.2.4.min.js" th:src="@{/shop/js/vendor/jquery-2.2.4.min.js}"></script>
+  <script src="../../static/shop/js/vendor/popper.js" th:src="@{/shop/js/vendor/popper.js}"></script>
+  <script src="../../static/shop/js/vendor/bootstrap.min.js" th:src="@{/shop/js/vendor/bootstrap.min.js}"></script>
+  <script src="../../static/shop/js/jquery.ajaxchimp.min.js" th:src="@{/shop/js/jquery.ajaxchimp.min.js}"></script>
+  <script src="../../static/shop/js/jquery.nice-select.min.js" th:src="@{/shop/js/jquery.nice-select.min.js}"></script>
+  <script src="../../static/shop/js/jquery.sticky.js" th:src="@{/shop/js/jquery.sticky.js}"></script>
+  <script src="../../static/shop/js/nouislider.min.js" th:src="@{/shop/js/nouislider.min.js}"></script>
+  <script src="../../static/shop/js/countdown.js" th:src="@{/shop/js/countdown.js}"></script>
+  <script src="../../static/shop/js/jquery.magnific-popup.min.js" th:src="@{/shop/js/jquery.magnific-popup.min.js}"></script>
+  <script src="../../static/shop/js/owl.carousel.min.js" th:src="@{/shop/js/owl.carousel.min.js}"></script>
+  <script src="../../static/shop/js/main.js" th:src="@{/shop/js/main.js}"></script>
+</div>
 
 </body>
 </html>
