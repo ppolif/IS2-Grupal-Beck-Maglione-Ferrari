@@ -1,0 +1,418 @@
+/* ==========================================================================
+   KARMA SHOP - THEME PALETTE (Sportswear High Contrast Edition)
+   ========================================================================== */
+/* ==========================================================================
+   CAMBIO 2 Y 4: FUENTE POPPINS Y BORDER-RADIUS UNIFICADO (ZERO SHOP)
+   ========================================================================== */
+
+/* 4. Importación de la fuente Poppins */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap');
+
+body, button, input, select, textarea, .nice-select {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* 2. Bordes redondeados unificados (estilo Spark Admin: 10px en cards/tablas, 8px en botones/filtros) */
+.single-product,
+.order_box,
+.details_item,
+.order_details_table,
+.cart_inner .table,
+.sidebar-categories,
+.sidebar-filter,
+.login_box_area .login_box_img,
+.login_form_inner {
+    border-radius: 10px !important;
+    overflow: hidden;
+}
+
+.primary-btn,
+.main_btn,
+.gray_btn,
+.filter-bar,
+.filter-bar .nice-select,
+.billing_details .form-control,
+.product_count input.qty {
+    border-radius: 8px !important;
+}
+
+.sidebar-categories .head,
+.sidebar-filter .top-filter-head {
+    border-radius: 8px 8px 0 0 !important;
+}
+
+/* Logo Isotipo Navbar */
+.zero-navbar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none !important;
+}
+
+.zero-navbar-brand img {
+    height: 38px;
+    width: auto;
+}
+
+.zero-navbar-brand span {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    font-style: italic;
+    color: #141212 !important;
+}
+:root {
+    /* --- PALETA DE COLORES BASE --- */
+    --color-brand-soft: #D65959;    /* Rojo apagado / Terracota */
+    --color-brand-bold: #E51A24;    /* Rojo deportivo de alto impacto */
+    --color-dark: #141212;          /* Negro grafito */
+    --color-dark-subtle: #2B2525;   /* Carbón oscuro */
+    --color-energy: #FCA311;        /* Naranja dinámico */
+    --color-white: #FFFFFF;         /* Blanco puro */
+    --color-bg-main: #FFF4E0;       /* Beige cálido base */
+    --color-bg-surface: #FAF2E6;    /* Crema claro para cards/superficies */
+    --color-neon: #CCFF00;          /* Volt / Lima deportivo */
+    --color-border: #E8D8C0;        /* Borde divisorio sutil */
+
+    /* --- MAPEO SEMÁNTICO --- */
+    --bg-main: var(--color-bg-main);
+    --bg-highlight: var(--color-bg-surface);
+    --text-primary: var(--color-brand-bold);
+    --text-secondary: var(--color-brand-soft);
+    --text-dark: var(--color-dark);
+    --accent-btn: var(--color-dark);
+    --accent-btn-hover: var(--color-brand-bold);
+    --border-subtle: var(--color-border);
+    --white: var(--color-white);
+}
+
+
+/* --- Fondo General y Tipografía --- */
+body {
+    background-color: var(--bg-main) !important;
+    color: var(--text-dark) !important;
+    font-family: 'Poppins', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+    color: var(--text-dark) !important;
+    font-weight: 700;
+}
+
+p, span, label, td, th {
+    color: var(--color-dark-subtle);
+}
+
+a {
+    color: var(--text-secondary);
+    transition: all 0.25s ease-in-out;
+}
+
+a:hover, a:focus {
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+/* --- Encabezado y Navbar --- */
+.header_area,
+.header_area .main_menu,
+.header_area.navbar_fixed .main_menu {
+    background: var(--bg-highlight) !important;
+    border-bottom: 2px solid var(--border-subtle);
+    box-shadow: 0 4px 15px rgba(20, 18, 18, 0.05);
+}
+
+.navbar-light .navbar-nav .nav-link {
+    color: var(--text-dark) !important;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.navbar-light .navbar-nav .active > .nav-link,
+.navbar-light .navbar-nav .nav-link:hover {
+    color: var(--text-primary) !important;
+}
+
+.navbar-light .navbar-nav .nav-link::after {
+    background: var(--text-primary) !important;
+}
+
+.dropdown-menu {
+    background-color: var(--bg-highlight) !important;
+    border: 1px solid var(--border-subtle) !important;
+    box-shadow: 0 8px 24px rgba(20, 18, 18, 0.12);
+}
+
+.dropdown-menu .nav-item .nav-link {
+    color: var(--text-dark) !important;
+}
+
+.dropdown-menu .nav-item .nav-link:hover {
+    background-color: var(--bg-main) !important;
+    color: var(--text-primary) !important;
+}
+
+/* --- Banner de Sección / Breadcrumb --- */
+.banner-area,
+.organic-breadcrumb {
+    background: var(--bg-highlight) !important;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.breadcrumb-banner h1 {
+    color: var(--text-dark) !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.breadcrumb-banner nav a {
+    color: var(--color-dark-subtle) !important;
+}
+
+.breadcrumb-banner nav a.active,
+.breadcrumb-banner nav a:hover {
+    color: var(--text-primary) !important;
+}
+
+/* --- Botones Primarios y Secundarios --- */
+.primary-btn,
+.primary-btn.text-uppercase,
+.main_btn,
+.login_box_area .login_box_img .hover_btn,
+.view_btn {
+    background: var(--color-dark) !important;
+    color: var(--white) !important;
+    border: 1px solid var(--color-dark) !important;
+    font-weight: 700 !important;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 14px rgba(20, 18, 18, 0.25) !important;
+    transition: all 0.3s ease;
+}
+
+.primary-btn:hover,
+.main_btn:hover,
+.view_btn:hover {
+    background: var(--text-primary) !important;
+    border-color: var(--text-primary) !important;
+    color: var(--white) !important;
+    box-shadow: 0 6px 20px rgba(229, 26, 36, 0.4) !important;
+    transform: translateY(-2px);
+}
+
+.gray_btn {
+    background: var(--bg-highlight) !important;
+    color: var(--text-dark) !important;
+    border: 1px solid var(--border-subtle) !important;
+    font-weight: 600;
+}
+
+.gray_btn:hover {
+    background: var(--color-dark) !important;
+    color: var(--white) !important;
+    border-color: var(--color-dark) !important;
+}
+
+/* --- Catálogo (category.html) --- */
+.sidebar-categories,
+.sidebar-filter {
+    background: var(--bg-highlight) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: 6px;
+}
+
+.sidebar-categories .head,
+.sidebar-filter .top-filter-head {
+    background: var(--color-dark) !important;
+    color: var(--white) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filter-bar {
+    background: var(--bg-highlight) !important;
+    border: 1px solid var(--border-subtle) !important;
+}
+
+.filter-bar .nice-select,
+.sorting .nice-select {
+    background: var(--color-white) !important;
+    color: var(--text-dark) !important;
+    border: 1px solid var(--border-subtle) !important;
+}
+
+.single-product {
+    background: var(--color-white) !important;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 16px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.single-product:hover {
+    transform: translateY(-4px);
+    border-color: var(--color-neon);
+    box-shadow: 0 10px 25px rgba(20, 18, 18, 0.08);
+}
+
+.single-product .product-details h6 {
+    color: var(--text-dark) !important;
+    font-weight: 600;
+}
+
+.single-product .product-details .price h6 {
+    color: var(--text-primary) !important;
+    font-weight: 800;
+    font-size: 1.15rem;
+}
+
+.single-product .product-details .price .l-through {
+    color: #9C8E8E !important;
+    font-weight: 400;
+}
+
+.single-product .prd-bottom .social-info span {
+    background: var(--bg-highlight) !important;
+    color: var(--text-dark) !important;
+    border: 1px solid var(--border-subtle);
+}
+
+.single-product .prd-bottom .social-info:hover span {
+    background: var(--text-primary) !important;
+    color: var(--white) !important;
+    border-color: var(--text-primary) !important;
+}
+
+/* Paginación */
+.filter-bar .pagination a {
+    background: var(--color-white) !important;
+    color: var(--text-dark) !important;
+    border: 1px solid var(--border-subtle) !important;
+    font-weight: 600;
+}
+
+.filter-bar .pagination a.active,
+.filter-bar .pagination a:hover {
+    background: var(--text-primary) !important;
+    color: var(--white) !important;
+    border-color: var(--text-primary) !important;
+}
+
+/* --- Carrito de Compras (cart.html) --- */
+.cart_inner .table {
+    background: var(--color-white) !important;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+}
+
+.cart_inner .table thead tr th {
+    color: var(--white) !important;
+    background-color: var(--color-dark) !important;
+    border: none !important;
+    text-transform: uppercase;
+}
+
+.cart_inner .table tbody tr td {
+    border-top: 1px solid var(--border-subtle) !important;
+    color: var(--text-dark) !important;
+}
+
+.product_count input.qty {
+    border: 1px solid var(--border-subtle) !important;
+    background: var(--bg-main) !important;
+    color: var(--text-dark) !important;
+    font-weight: 600;
+}
+
+/* --- Checkout (checkout.html) --- */
+.check_title h2 {
+    background: var(--bg-highlight) !important;
+    border: 1px solid var(--border-subtle) !important;
+    color: var(--text-dark) !important;
+}
+
+.check_title a {
+    color: var(--text-primary) !important;
+    font-weight: 700;
+}
+
+.billing_details h3 {
+    color: var(--text-dark) !important;
+    border-bottom: 2px solid var(--color-dark) !important;
+}
+
+.billing_details .form-control {
+    border: 1px solid var(--border-subtle) !important;
+    background: var(--color-white) !important;
+    color: var(--text-dark) !important;
+}
+
+.billing_details .form-control:focus {
+    border-color: var(--text-primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(229, 26, 36, 0.2) !important;
+}
+
+.order_box {
+    background: var(--bg-highlight) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: 8px;
+}
+
+.order_box h2 {
+    border-bottom: 2px solid var(--color-dark) !important;
+    color: var(--text-dark) !important;
+    text-transform: uppercase;
+}
+
+.order_box .list_2 li span {
+    color: var(--text-primary) !important;
+    font-weight: 800;
+}
+
+/* --- Confirmación de Compra (confirmation.html) --- */
+.title_confirmation {
+    color: var(--color-dark) !important;
+    font-weight: 800;
+}
+
+.order_d_inner .details_item,
+.order_details_table {
+    background: var(--color-white) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: 8px;
+}
+
+.order_d_inner .details_item h4,
+.order_details_table h2 {
+    color: var(--text-dark) !important;
+    border-bottom: 2px solid var(--border-subtle);
+}
+
+/* --- Footer --- */
+.footer-area {
+    background: var(--color-dark) !important;
+    border-top: 4px solid var(--color-neon);
+}
+
+.footer-area .single-footer-widget h6 {
+    color: var(--white) !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.footer-area p,
+.footer-bottom p {
+    color: #B5A8A8 !important;
+}
+
+.footer-area .footer-social a {
+    background: var(--color-dark-subtle) !important;
+    color: var(--white) !important;
+}
+
+.footer-area .footer-social a:hover {
+    background: var(--color-neon) !important;
+    color: var(--color-dark) !important;
+}
+
