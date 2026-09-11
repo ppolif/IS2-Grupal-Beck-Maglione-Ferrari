@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<header th:fragment="shop-header(activePage)" class="header_area sticky-header">
+  <div class="main_menu">
+    <nav class="navbar navbar-expand-lg navbar-light main_box">
+      <div class="container">
+        <!-- Brand / Logo -->
+        <a class="navbar-brand logo_h zero-navbar-brand" th:href="@{/shop}">
+          <img th:src="@{/shop/img/logo-zero.svg}" alt="Zero Logo" style="height: 32px;">
+          <span style="font-weight: 800; letter-spacing: 1px; margin-left: 6px;">ZERO</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+
+        <!-- Nav Links -->
+        <div class="collapse navbar-collapse offset" id="navbarSupportedContent">
+          <ul class="nav navbar-nav menu_nav ml-auto">
+            <li class="nav-item" th:classappend="${activePage == 'home'} ? ' active' : ''">
+              <a class="nav-link" th:href="@{/shop}">Inicio</a>
+            </li>
+            <li class="nav-item submenu dropdown" th:classappend="${activePage == 'shop' || activePage == 'category' || activePage == 'product' || activePage == 'checkout' || activePage == 'cart' || activePage == 'confirmation'} ? ' active' : ''">
+              <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                 aria-expanded="false">Tienda</a>
+              <ul class="dropdown-menu">
+                <li class="nav-item" th:classappend="${activePage == 'category'} ? ' active' : ''">
+                  <a class="nav-link" th:href="@{/shop/category}">Catálogo de Productos</a>
+                </li>
+                <li class="nav-item" th:classappend="${activePage == 'cart'} ? ' active' : ''">
+                  <a class="nav-link" th:href="@{/shop/cart}">Carrito de Compras</a>
+                </li>
+                <li class="nav-item" th:classappend="${activePage == 'checkout'} ? ' active' : ''">
+                  <a class="nav-link" th:href="@{/shop/checkout}">Finalizar Compra</a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" th:href="@{/admin}" target="_blank">Panel Admin</a>
+            </li>
+          </ul>
+
+          <ul class="nav navbar-nav navbar-right">
+            <li class="nav-item">
+              <a th:href="@{/shop/cart}" class="cart position-relative" title="Ver Carrito">
+                <span class="ti-bag"></span>
+                <span class="badge badge-pill badge-primary position-absolute" 
+                      style="top: -6px; right: -10px; font-size: 0.65rem;"
+                      th:if="${cartCount != null && cartCount > 0}"
+                      th:text="${cartCount}">0</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <button class="search"><span class="lnr lnr-magnifier" id="search"></span></button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Search Input Bar -->
+  <div class="search_input" id="search_input_box">
+    <div class="container">
+      <form class="d-flex justify-content-between" th:action="@{/shop/category}" method="GET">
+        <input type="text" class="form-control" id="search_input" name="search" placeholder="Buscar productos, zapatillas, indumentaria..." th:value="${search}">
+        <button type="submit" class="btn"></button>
+        <span class="lnr lnr-cross" id="close_search" title="Cerrar Búsqueda"></span>
+      </form>
+    </div>
+  </div>
+</header>
+</body>
+</html>

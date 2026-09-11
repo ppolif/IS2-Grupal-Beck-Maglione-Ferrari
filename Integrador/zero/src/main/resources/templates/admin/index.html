@@ -1,125 +1,19 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments/head :: admin-head(title='Dashboard - Zero Admin')}">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - Zero Admin</title>
-  <link rel="icon" type="image/png" href="assets/images/favicon.ico">
-
-  <!-- Dependencias -->
-  <link rel="stylesheet" href="assets/libs/bootstrap/css/bootstrap.min.css">
-  <link rel="stylesheet" href="assets/libs/bootstrap-icons/bootstrap-icons.css">
-  <link rel="stylesheet" href="assets/libs/apexcharts/apexcharts.css">
-  <link rel="stylesheet" href="assets/libs/flatpickr/flatpickr.min.css">
-
-  <!-- Única hoja de estilos de paleta -->
-  <link rel="stylesheet" href="assets/css/brand-palette.css">
 </head>
 <body>
-<div class="sidebar-wrapper" id="sidebar">
-  <!-- Brand Logo / Identity -->
-  <a class="sidebar-brand sidebar-brand-zero" href="index.html">
-    <img src="assets/images/logo-zero.svg" alt="Zero Admin">
-    <span>ZERO ADMIN</span>
-  </a>
 
-  <!-- Navigation Menu -->
-  <div class="flex-grow-1 overflow-y-auto">
-    <!-- Group: Menu -->
-    <div class="sidebar-menu-section">
-      <div class="sidebar-menu-title">Menu</div>
-      <ul class="sidebar-menu-list">
-        <li class="sidebar-menu-item">
-          <a href="index.html" class="sidebar-menu-link" id="menu-overview" title="Overview">
-            <i class="bi bi-grid-fill"></i>
-            <span>Dashboard</span>
-          </a>
-        </li>
-      </ul>
-    </div>
-
-    <!-- Group: Components -->
-    <div class="sidebar-menu-section">
-      <div class="sidebar-menu-title">Components</div>
-      <ul class="sidebar-menu-list">
-        <li class="sidebar-menu-item">
-          <a href="tables-basic.html" class="sidebar-menu-link active" id="menu-basictables" title="Basic Tables">
-            <i class="bi bi-table"></i>
-            <span>Basic Tables</span>
-          </a>
-        </li>
-        <li class="sidebar-menu-item">
-          <a href="ui-forms.html" class="sidebar-menu-link" id="menu-uiforms" title="Forms and Input">
-            <i class="bi bi-input-cursor-text"></i>
-            <span>Forms & Input</span>
-          </a>
-        </li>
-        <li class="sidebar-menu-item">
-          <a href="ui-buttons.html" class="sidebar-menu-link" id="menu-uibuttons" title="Buttons">
-            <i class="bi bi-menu-button-wide-fill"></i>
-            <span>Buttons & Alerts</span>
-          </a>
-        </li>
-      </ul>
-    </div>
-
-    <!-- Group: Pages -->
-    <div class="sidebar-menu-section">
-      <div class="sidebar-menu-title">Pages</div>
-      <ul class="sidebar-menu-list">
-        <li class="sidebar-menu-item">
-          <a href="page-blank.html" class="sidebar-menu-link" id="menu-blankpage" title="Blank Page">
-            <i class="bi bi-file-earmark"></i>
-            <span>Blank Page</span>
-          </a>
-        </li>
-        <li class="sidebar-menu-item">
-          <a href="page-login.html" class="sidebar-menu-link" id="menu-loginpage" title="Login Page">
-            <i class="bi bi-box-arrow-in-right"></i>
-            <span>Login Screen</span>
-          </a>
-        </li>
-        <li class="sidebar-menu-item">
-          <a href="page-404.html" class="sidebar-menu-link" id="menu-404" title="404 Page">
-            <i class="bi bi-slash-circle"></i>
-            <span>Error 404</span>
-          </a>
-        </li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- Sidebar Profile Card (Dynamic Footer) -->
-  <div class="sidebar-profile">
-    <img src="assets/images/avatar.png" alt="Administrator" class="sidebar-profile-img"
-         onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&auto=format&fit=crop'">
-    <div class="sidebar-profile-info">
-      <div class="sidebar-profile-name">Administrator</div>
-      <div class="sidebar-profile-email">admin@email.com</div>
-    </div>
-  </div>
-</div>
-
+<!-- Sidebar Fragment -->
+<div th:replace="~{admin/fragments/sidebar :: admin-sidebar(activePage='dashboard')}"></div>
 
 <!-- Área Principal -->
 <main class="main-content-offset p-4 p-md-5 min-vh-100 d-flex flex-column">
 
-  <!-- Navbar superior con utilidades Bootstrap -->
-  <nav class="navbar navbar-expand bg-brand-surface rounded-4 border border-brand px-3 py-2 mb-4 d-flex justify-content-between align-items-center shadow-sm">
-    <div class="d-flex align-items-center gap-2">
-      <button class="btn btn-sm btn-outline-dark d-xl-none sidebar-toggle-btn" id="sidebar-toggle"><i class="bi bi-list"></i></button>
-      <div class="input-group input-group-sm" style="max-width: 320px;">
-        <input type="text" class="form-control border-brand bg-white" placeholder="Buscar en Zero Admin...">
-        <button class="btn btn-outline-dark border-brand bg-white"><i class="bi bi-search"></i></button>
-      </div>
-    </div>
-
-    <div class="d-flex align-items-center gap-2">
-      <a href="page-login.html" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
-        <i class="bi bi-box-arrow-right"></i> Salir
-      </a>
-    </div>
-  </nav>
+  <!-- Top Navbar Fragment -->
+  <nav th:replace="~{admin/fragments/navbar :: admin-navbar}"></nav>
 
   <!-- Header del Dashboard -->
   <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
@@ -129,7 +23,7 @@
     </div>
     <button class="btn btn-sm btn-outline-dark bg-white border-brand d-inline-flex align-items-center gap-2 rounded-3">
       <i class="bi bi-calendar-event"></i>
-      <span>Septiembre 2026</span>
+      <span th:text="${currentPeriod != null} ? ${currentPeriod} : 'Septiembre 2026'">Septiembre 2026</span>
     </button>
   </div>
 
@@ -141,9 +35,9 @@
         <div>
           <span class="badge bg-warning text-dark mb-2">Reporte</span>
           <div class="small text-muted mb-1">Semana actual</div>
-          <h2 class="h5 fw-bold mb-0">Las ventas aumentaron un 40% este mes</h2>
+          <h2 class="h5 fw-bold mb-0" th:text="${kpiSalesAlert != null} ? ${kpiSalesAlert} : 'Las ventas aumentaron un 40% este mes'">Las ventas aumentaron un 40% este mes</h2>
         </div>
-        <a href="#" class="text-brand-soft fw-bold small text-decoration-none mt-3 d-flex align-items-center gap-1">
+        <a th:href="@{/admin/orders}" class="text-brand-soft fw-bold small text-decoration-none mt-3 d-flex align-items-center gap-1">
           Ver estadísticas <i class="bi bi-arrow-right"></i>
         </a>
       </div>
@@ -153,8 +47,10 @@
     <div class="col-md-4">
       <div class="card bg-white rounded-4 p-4 h-100 shadow-sm border-brand">
         <span class="small text-muted fw-bold">Ingresos Netos</span>
-        <div class="display-6 fw-bold text-brand-dark my-2">$196,000</div>
-        <div class="small text-success fw-bold d-flex align-items-center gap-1">
+        <div class="display-6 fw-bold text-brand-dark my-2"
+             th:text="${kpiNetIncome != null} ? ${#numbers.formatCurrency(kpiNetIncome)} : '$196,000'">$196,000</div>
+        <div class="small text-success fw-bold d-flex align-items-center gap-1"
+             th:text="${kpiIncomeGrowth != null} ? '+' + ${kpiIncomeGrowth} + '% respecto al mes anterior' : '+35% respecto al mes anterior'">
           <i class="bi bi-arrow-up-right"></i> +35% respecto al mes anterior
         </div>
         <div id="income-sparkline" class="mt-3"></div>
@@ -165,8 +61,10 @@
     <div class="col-md-4">
       <div class="card bg-white rounded-4 p-4 h-100 shadow-sm border-brand">
         <span class="small text-muted fw-bold">Devoluciones</span>
-        <div class="display-6 fw-bold text-brand-dark my-2">$32,000</div>
-        <div class="small text-danger fw-bold d-flex align-items-center gap-1">
+        <div class="display-6 fw-bold text-brand-dark my-2"
+             th:text="${kpiReturns != null} ? ${#numbers.formatCurrency(kpiReturns)} : '$32,000'">$32,000</div>
+        <div class="small text-danger fw-bold d-flex align-items-center gap-1"
+             th:text="${kpiReturnsRate != null} ? ${kpiReturnsRate} + '% respecto al mes anterior' : '-24% respecto al mes anterior'">
           <i class="bi bi-arrow-down-left"></i> -24% respecto al mes anterior
         </div>
         <div id="return-sparkline" class="mt-3"></div>
@@ -196,25 +94,21 @@
         <h2 class="h5 fw-bold text-brand-dark mb-3">Rendimiento por Canal</h2>
         <div id="views-chart"></div>
         <div class="bg-brand-surface rounded-3 p-3 mt-3">
-          <div class="small fw-bold text-brand-dark mb-1">Campaña de Primavera</div>
+          <div class="small fw-bold text-brand-dark mb-1">Campaña de Temporada</div>
           <p class="small text-muted mb-2">Optimiza las conversiones en indumentaria urbana.</p>
-          <button class="btn btn-sm btn-primary w-100 rounded-3">Actualizar campaña</button>
+          <a th:href="@{/admin/orders}" class="btn btn-sm btn-primary w-100 rounded-3">Ver Órdenes</a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="mt-auto pt-4 border-top border-brand d-flex justify-content-between align-items-center small text-muted">
-    <span>&copy; 2026 Zero Admin</span>
-    <span>Construido con Bootstrap 5</span>
-  </footer>
+  <!-- Footer Fragment -->
+  <footer th:replace="~{admin/fragments/footer :: admin-footer}"></footer>
 
 </main>
-<div class="sidebar-overlay" id="sidebar-overlay"></div>
-<script src="assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="assets/libs/apexcharts/apexcharts.min.js"></script>
-<script src="assets/libs/flatpickr/flatpickr.min.js"></script>
-<script src="assets/js/dashboard.js"></script>
+
+<!-- Scripts Fragment -->
+<th:block th:replace="~{admin/fragments/scripts :: admin-scripts}"></th:block>
+
 </body>
 </html>

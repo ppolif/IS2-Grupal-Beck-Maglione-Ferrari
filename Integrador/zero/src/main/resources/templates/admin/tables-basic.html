@@ -1,134 +1,42 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments/head :: admin-head(title='Tablas de Órdenes - Zero Admin')}">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tablas - Zero Admin</title>
-  <link rel="icon" type="image/png" href="assets/images/favicon.ico">
-
-  <link rel="stylesheet" href="assets/libs/bootstrap/css/bootstrap.min.css">
-  <link rel="stylesheet" href="assets/libs/bootstrap-icons/bootstrap-icons.css">
-  <link rel="stylesheet" href="assets/css/brand-palette.css">
+  <title>Tablas de Órdenes - Zero Admin</title>
 </head>
 <body>
 
-<div class="sidebar-wrapper" id="sidebar">
-  <!-- Brand Logo / Identity -->
-  <a class="sidebar-brand sidebar-brand-zero" href="index.html">
-    <img src="assets/images/logo-zero.svg" alt="Zero Admin">
-    <span>ZERO ADMIN</span>
-  </a>
-
-  <!-- Navigation Menu -->
-  <div class="flex-grow-1 overflow-y-auto">
-    <!-- Group: Menu -->
-    <div class="sidebar-menu-section">
-      <div class="sidebar-menu-title">Menu</div>
-      <ul class="sidebar-menu-list">
-        <li class="sidebar-menu-item">
-          <a href="index.html" class="sidebar-menu-link" id="menu-overview" title="Overview">
-            <i class="bi bi-grid-fill"></i>
-            <span>Dashboard</span>
-          </a>
-        </li>
-      </ul>
-    </div>
-
-    <!-- Group: Components -->
-    <div class="sidebar-menu-section">
-      <div class="sidebar-menu-title">Components</div>
-      <ul class="sidebar-menu-list">
-        <li class="sidebar-menu-item">
-          <a href="tables-basic.html" class="sidebar-menu-link active" id="menu-basictables" title="Basic Tables">
-            <i class="bi bi-table"></i>
-            <span>Basic Tables</span>
-          </a>
-        </li>
-        <li class="sidebar-menu-item">
-          <a href="ui-forms.html" class="sidebar-menu-link" id="menu-uiforms" title="Forms and Input">
-            <i class="bi bi-input-cursor-text"></i>
-            <span>Forms & Input</span>
-          </a>
-        </li>
-        <li class="sidebar-menu-item">
-          <a href="ui-buttons.html" class="sidebar-menu-link" id="menu-uibuttons" title="Buttons">
-            <i class="bi bi-menu-button-wide-fill"></i>
-            <span>Buttons & Alerts</span>
-          </a>
-        </li>
-      </ul>
-    </div>
-
-    <!-- Group: Pages -->
-    <div class="sidebar-menu-section">
-      <div class="sidebar-menu-title">Pages</div>
-      <ul class="sidebar-menu-list">
-        <li class="sidebar-menu-item">
-          <a href="page-blank.html" class="sidebar-menu-link" id="menu-blankpage" title="Blank Page">
-            <i class="bi bi-file-earmark"></i>
-            <span>Blank Page</span>
-          </a>
-        </li>
-        <li class="sidebar-menu-item">
-          <a href="page-login.html" class="sidebar-menu-link" id="menu-loginpage" title="Login Page">
-            <i class="bi bi-box-arrow-in-right"></i>
-            <span>Login Screen</span>
-          </a>
-        </li>
-        <li class="sidebar-menu-item">
-          <a href="page-404.html" class="sidebar-menu-link" id="menu-404" title="404 Page">
-            <i class="bi bi-slash-circle"></i>
-            <span>Error 404</span>
-          </a>
-        </li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- Sidebar Profile Card (Dynamic Footer) -->
-  <div class="sidebar-profile">
-    <img src="assets/images/avatar.png" alt="Administrator" class="sidebar-profile-img"
-         onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&auto=format&fit=crop'">
-    <div class="sidebar-profile-info">
-      <div class="sidebar-profile-name">Administrator</div>
-      <div class="sidebar-profile-email">admin@email.com</div>
-    </div>
-  </div>
-</div>
-
+<!-- Sidebar Fragment -->
+<div th:replace="~{admin/fragments/sidebar :: admin-sidebar(activePage='tables')}"></div>
 
 <!-- Contenido Principal -->
 <main class="main-content-offset p-4 p-md-5 min-vh-100 d-flex flex-column">
 
-  <!-- Top Navbar -->
-  <nav class="navbar navbar-expand bg-brand-surface rounded-3 border border-brand px-3 py-2 mb-4 d-flex justify-content-between align-items-center">
-    <div class="d-flex align-items-center gap-2">
-      <button class="btn btn-sm btn-outline-dark d-xl-none sidebar-toggle-btn" id="sidebar-toggle"><i class="bi bi-list"></i></button>
-      <div class="input-group input-group-sm" style="max-width: 280px;">
-        <input type="text" class="form-control border-brand bg-white" placeholder="Buscar en Zero...">
-        <button class="btn btn-outline-dark border-brand bg-white"><i class="bi bi-search"></i></button>
-      </div>
-    </div>
-
-    <div class="d-flex align-items-center gap-2">
-      <a href="page-login.html" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
-        <i class="bi bi-box-arrow-right"></i> Salir
-      </a>
-    </div>
-  </nav>
+  <!-- Top Navbar Fragment -->
+  <nav th:replace="~{admin/fragments/navbar :: admin-navbar}"></nav>
 
   <!-- Header de sección -->
   <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
       <h1 class="h3 fw-bold text-brand-dark mb-1">Tablas de Pedidos</h1>
-      <p class="text-muted small mb-0">Gestión de órdenes con componentes tabulares estilizados por Bootstrap.</p>
+      <p class="text-muted small mb-0">Gestión de órdenes y compras con precisión.</p>
     </div>
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb mb-0 small">
-        <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Inicio</a></li>
+        <li class="breadcrumb-item"><a th:href="@{/admin}" class="text-decoration-none text-muted">Inicio</a></li>
         <li class="breadcrumb-item active text-brand-dark" aria-current="page">Tablas</li>
       </ol>
     </nav>
+  </div>
+
+  <!-- Alertas de Éxito / Error -->
+  <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show rounded-3 py-2 small" role="alert">
+    <span th:text="${successMessage}">Operación exitosa</span>
+    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show rounded-3 py-2 small" role="alert">
+    <span th:text="${errorMessage}">Error en la operación</span>
+    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
 
   <!-- Contenedor Card de la Tabla -->
@@ -136,18 +44,16 @@
 
     <!-- Controles Superiores de la Tabla -->
     <div class="card-header bg-white border-bottom border-brand p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <div class="input-group input-group-sm" style="max-width: 300px;">
-        <span class="input-group-text bg-light border-brand"><i class="bi bi-search"></i></span>
-        <input type="text" class="form-control border-brand" placeholder="Buscar por cliente o ID...">
-      </div>
-      <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-outline-dark border-brand d-flex align-items-center gap-1">
+      <form th:action="@{/admin/orders}" method="GET" class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="input-group input-group-sm" style="max-width: 300px;">
+          <span class="input-group-text bg-light border-brand"><i class="bi bi-search"></i></span>
+          <input type="text" name="keyword" th:value="${keyword}" class="form-control border-brand" placeholder="Buscar por cliente o ID...">
+        </div>
+        <button type="submit" class="btn btn-sm btn-outline-dark border-brand d-flex align-items-center gap-1">
           <i class="bi bi-funnel"></i> Filtrar
         </button>
-        <button class="btn btn-sm btn-primary d-flex align-items-center gap-1">
-          <i class="bi bi-download"></i> Exportar
-        </button>
-      </div>
+        <a th:if="${keyword != null}" th:href="@{/admin/orders}" class="btn btn-sm btn-outline-secondary">Limpiar</a>
+      </form>
     </div>
 
     <!-- Tabla Responsiva -->
@@ -165,51 +71,42 @@
         </tr>
         </thead>
         <tbody>
-        <tr>
-          <td class="ps-3 fw-bold text-brand-dark">#ORD-9982</td>
-          <td>
-            <div class="d-flex align-items-center gap-2">
-              <img src="assets/images/user_1.jpg" alt="Eleanor" class="rounded-circle" width="34" height="34"
-                   onerror="this.src='assets/images/avatar.png'">
-              <div>
-                <div class="small fw-bold text-brand-dark">Eleanor Pena</div>
-                <div class="text-muted" style="font-size: 0.75rem;">eleanor@example.com</div>
-              </div>
-            </div>
-          </td>
-          <td class="small fw-semibold">Oversized Hoodie</td>
-          <td><span class="badge bg-light text-dark border border-brand">Ropa deportiva</span></td>
-          <td class="small fw-bold text-brand-bold">$89.90</td>
-          <td><span class="badge bg-success bg-opacity-75 text-white">Completado</span></td>
-          <td class="text-center pe-3">
-            <div class="btn-group btn-group-sm">
-              <button class="btn btn-outline-dark"><i class="bi bi-eye"></i></button>
-              <button class="btn btn-outline-dark"><i class="bi bi-pencil"></i></button>
-              <button class="btn btn-outline-danger"><i class="bi bi-trash"></i></button>
-            </div>
-          </td>
+        <!-- Mensaje si no hay órdenes -->
+        <tr th:if="${orders == null || #lists.isEmpty(orders)}">
+          <td colspan="7" class="text-center py-4 text-muted small">No se encontraron pedidos registrados.</td>
         </tr>
-        <tr>
-          <td class="ps-3 fw-bold text-brand-dark">#ORD-9981</td>
+
+        <!-- Filas dinámicas -->
+        <tr th:each="order : ${orders}">
+          <td class="ps-3 fw-bold text-brand-dark" th:text="${order.orderNumber}">#ORD-9982</td>
           <td>
             <div class="d-flex align-items-center gap-2">
-              <img src="assets/images/user_2.jpg" alt="Wade" class="rounded-circle" width="34" height="34"
-                   onerror="this.src='assets/images/avatar.png'">
+              <img th:src="${order.customerAvatar != null} ? ${order.customerAvatar} : @{/admin/assets/images/avatar.png}"
+                   alt="Avatar" class="rounded-circle" width="34" height="34"
+                   onerror="this.src='/admin/assets/images/avatar.png'">
               <div>
-                <div class="small fw-bold text-brand-dark">Wade Warren</div>
-                <div class="text-muted" style="font-size: 0.75rem;">wade@example.com</div>
+                <div class="small fw-bold text-brand-dark" th:text="${order.customerName}">Eleanor Pena</div>
+                <div class="text-muted" style="font-size: 0.75rem;" th:text="${order.customerEmail}">eleanor@example.com</div>
               </div>
             </div>
           </td>
-          <td class="small fw-semibold">Running Shoes Pro</td>
-          <td><span class="badge bg-light text-dark border border-brand">Calzado</span></td>
-          <td class="small fw-bold text-brand-bold">$129.99</td>
-          <td><span class="badge bg-warning text-dark">Pendiente</span></td>
+          <td class="small fw-semibold" th:text="${order.productSummary}">Oversized Hoodie</td>
+          <td><span class="badge bg-light text-dark border border-brand" th:text="${order.categoryName}">Ropa deportiva</span></td>
+          <td class="small fw-bold text-brand-bold" th:text="${#numbers.formatCurrency(order.totalAmount)}">$89.90</td>
+          <td>
+            <span class="badge"
+                  th:classappend="${order.status == 'Completado' ? 'bg-success bg-opacity-75 text-white' : (order.status == 'Pendiente' ? 'bg-warning text-dark' : 'bg-secondary text-white')}"
+                  th:text="${order.status}">Completado</span>
+          </td>
           <td class="text-center pe-3">
             <div class="btn-group btn-group-sm">
-              <button class="btn btn-outline-dark"><i class="bi bi-eye"></i></button>
-              <button class="btn btn-outline-dark"><i class="bi bi-pencil"></i></button>
-              <button class="btn btn-outline-danger"><i class="bi bi-trash"></i></button>
+              <a th:href="@{/shop/confirmation(orderNumber=${order.orderNumber})}" target="_blank" class="btn btn-outline-dark" title="Ver Comprobante">
+                <i class="bi bi-eye"></i>
+              </a>
+              <form th:action="@{/admin/orders/delete}" method="POST" class="d-inline" onsubmit="return confirm('¿Seguro que deseas eliminar este pedido?');">
+                <input type="hidden" name="orderId" th:value="${order.id}">
+                <button type="submit" class="btn btn-outline-danger" title="Eliminar"><i class="bi bi-trash"></i></button>
+              </form>
             </div>
           </td>
         </tr>
@@ -218,28 +115,32 @@
     </div>
 
     <!-- Paginación Footer -->
-    <div class="card-footer bg-white border-top border-brand p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <span class="small text-muted">Mostrando 1 a 10 de 50 entradas</span>
+    <div class="card-footer bg-white border-top border-brand p-3 d-flex justify-content-between align-items-center flex-wrap gap-2"
+         th:if="${totalPages != null && totalPages > 1}">
+      <span class="small text-muted" th:text="'Página ' + (${currentPage != null ? currentPage : 1}) + ' de ' + ${totalPages}">Mostrando página 1 de 5</span>
       <ul class="pagination pagination-sm mb-0">
-        <li class="page-item disabled"><a class="page-link" href="#">«</a></li>
-        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-        <li class="page-item"><a class="page-link" href="#">2</a></li>
-        <li class="page-item"><a class="page-link" href="#">3</a></li>
-        <li class="page-item"><a class="page-link" href="#">»</a></li>
+        <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled' : ''">
+          <a class="page-link" th:href="@{/admin/orders(page=${currentPage - 1}, keyword=${keyword})}">&laquo;</a>
+        </li>
+        <li class="page-item" th:each="p : ${#numbers.sequence(1, totalPages)}"
+            th:classappend="${p == currentPage} ? 'active' : ''">
+          <a class="page-link" th:href="@{/admin/orders(page=${p}, keyword=${keyword})}" th:text="${p}">1</a>
+        </li>
+        <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled' : ''">
+          <a class="page-link" th:href="@{/admin/orders(page=${currentPage + 1}, keyword=${keyword})}">&raquo;</a>
+        </li>
       </ul>
     </div>
 
   </div>
 
-  <!-- Footer -->
-  <footer class="mt-auto pt-3 border-top border-brand d-flex justify-content-between align-items-center small text-muted">
-    <span>&copy; 2026 Zero Admin • Sportswear System</span>
-    <span>Versión 2.0 (Bootstrap Nativo)</span>
-  </footer>
+  <!-- Footer Fragment -->
+  <footer th:replace="~{admin/fragments/footer :: admin-footer}"></footer>
 
 </main>
 
-<script src="assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="assets/js/dashboard.js"></script>
+<!-- Scripts Fragment -->
+<th:block th:replace="~{admin/fragments/scripts :: admin-scripts}"></th:block>
+
 </body>
 </html>

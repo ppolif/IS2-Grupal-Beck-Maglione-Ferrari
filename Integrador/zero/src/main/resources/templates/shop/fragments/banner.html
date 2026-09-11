@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<section th:fragment="shop-banner(title, subtitle)" class="banner-area organic-breadcrumb">
+  <div class="container">
+    <div class="breadcrumb-banner d-flex flex-wrap align-items-center justify-content-end">
+      <div class="col-first">
+        <h1 th:text="${title}">Título de Página</h1>
+        <nav class="d-flex align-items-center">
+          <a th:href="@{/shop}">Inicio<span class="lnr lnr-arrow-right"></span></a>
+          <span class="text-white" th:text="${subtitle}">Subtítulo</span>
+        </nav>
+      </div>
+    </div>
+  </div>
+</section>
+</body>
+</html>
