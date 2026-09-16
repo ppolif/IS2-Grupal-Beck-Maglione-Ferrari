@@ -1,99 +1,58 @@
-/* ==========================================================================
-   BRAND PALETTE & BOOTSTRAP OVERRIDES (ZERO ADMIN & SHOP)
-   ========================================================================== */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&display=swap');
 
 :root {
-    /* Paleta cromática oficial */
-    --brand-bg-main: #FFF4E0;       /* Beige cálido base */
-    --brand-bg-surface: #FAF2E6;    /* Crema claro */
-    --brand-card: #FFFFFF;          /* Blanco de contenedores */
-    --brand-dark: #141212;          /* Negro grafito principal */
-    --brand-dark-subtle: #2B2525;   /* Carbón oscuro */
-    --brand-soft: #D65959;          /* Rojo apagado / Terracota */
-    --brand-bold: #E51A24;          /* Rojo deportivo de impacto */
-    --brand-energy: #FCA311;        /* Naranja enérgico */
-    --brand-neon: #CCFF00;          /* Volt / Lima acento */
-    --brand-border: #E8D8C0;        /* Borde divisorio sutil */
-
-    /* Configuración de dimensiones */
-    --sidebar-width: 280px;
-
-    /* Sobrescritura de variables nativas de Bootstrap 5 */
-    --bs-body-bg: var(--brand-bg-main);
-    --bs-body-color: var(--brand-dark);
-    --bs-body-font-family: 'Poppins', sans-serif;
-    --bs-primary: var(--brand-dark);
-    --bs-primary-rgb: 20, 18, 18;
-    --bs-secondary: var(--brand-soft);
-    --bs-secondary-rgb: 214, 89, 89;
-    --bs-danger: var(--brand-bold);
-    --bs-danger-rgb: 229, 26, 36;
-    --bs-warning: var(--brand-energy);
-    --bs-warning-rgb: 252, 163, 17;
-    --bs-border-color: var(--brand-border);
-}
-
-html, body {
-    height: 100%;
-    min-height: 100vh;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-}
-
-html, body {
-    height: 100%;
-    min-height: 100vh;
-    width: 100%;
-    margin: 0;
-    padding: 0;
+    --brand-bg: #FFF4E0;
+    --brand-surface: #FAF2E6;
+    --brand-dark: #141212;
+    --brand-text: #D65959;
+    --brand-primary: #E51A24;
+    --brand-border: #E8D8C0;
 }
 
 body {
-    font-family: var(--bs-body-font-family);
-    background-color: var(--bs-body-bg) !important;
-    color: var(--bs-body-color);
-    overflow-x: hidden;
+    font-family: 'Poppins', sans-serif !important;
+    background-color: var(--brand-bg) !important;
+    color: var(--brand-dark);
 }
 
-/* ==========================================================================
-   UTILIDADES Y CLASES DE MARCA
-   ========================================================================== */
-.bg-brand-surface { background-color: var(--brand-bg-surface) !important; }
-.bg-brand-dark    { background-color: var(--brand-dark) !important; color: #ffffff !important; }
-.text-brand-soft  { color: var(--brand-soft) !important; }
-.text-brand-bold  { color: var(--brand-bold) !important; }
-.border-brand     { border-color: var(--brand-border) !important; }
-
-/* Botones con paleta Zero */
-.btn-primary {
-    background-color: var(--brand-dark) !important;
-    border-color: var(--brand-dark) !important;
-    color: #ffffff !important;
-}
-.btn-primary:hover, .btn-primary:focus {
-    background-color: var(--brand-bold) !important;
-    border-color: var(--brand-bold) !important;
-    color: #ffffff !important;
-}
-
-/* ==========================================================================
-   SIDEBAR COMPONENT (.sidebar-wrapper)
-   ========================================================================== */
 .sidebar-wrapper {
-    width: var(--sidebar-width);
-    background-color: var(--brand-bg-surface);
-    height: 100vh;
+    width: 260px;
+    min-height: 100vh;
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 1040;
-    display: flex;
-    flex-direction: column;
-    padding: 1.5rem 1.25rem;
-    border-right: 2px solid var(--brand-border);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: var(--brand-surface) !important;
+    border-right: 1px solid var(--brand-border);
+    z-index: 1000;
+}
+
+.main-wrapper {
+    margin-left: 260px;
+    background-color: var(--brand-bg) !important;
+    min-height: 100vh;
+}
+
+.card {
+    border-radius: 12px !important;
+    border: 1px solid var(--brand-border) !important;
+    box-shadow: 0 4px 12px rgba(20, 18, 18, 0.04) !important;
+    background-color: #ffffff !important;
+}
+
+.btn-primary {
+    background-color: var(--brand-dark) !important;
+    border-color: var(--brand-dark) !important;
+    border-radius: 8px !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--brand-primary) !important;
+    border-color: var(--brand-primary) !important;
+}
+
+.nav-link.active {
+    background-color: var(--brand-dark) !important;
+    color: #ffffff !important;
 }
 
 /* Identidad y logotipo */
