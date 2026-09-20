@@ -42,7 +42,7 @@ public class Empleado extends Persona {
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;
 
-    @OneToMany(mappedBy = "empleado", fetch = FetchType.LAZY)
-    @Builder.Default
-    private Set<Factura> facturas = new HashSet<>();
+//    @OneToMany(mappedBy = "empleado", fetch = FetchType.LAZY)
+//    @Builder.Default
+//    private Set<Factura> facturas = new HashSet<>();
 }
