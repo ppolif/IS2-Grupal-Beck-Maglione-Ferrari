@@ -1,5 +1,6 @@
 package com.example.zero.entidades.persona;
 
+import com.example.zero.enums.TipoDocumento;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -40,10 +41,14 @@ import java.time.LocalDate;
 @ToString(exclude = "usuario")
 public abstract class Persona {
 
+//    @Id
+//    @UuidGenerator
+//    @Column(name = "id", updatable = false, nullable = false, length = 36)
+//    private String id;
+
     @Id
-    @UuidGenerator
-    @Column(name = "id", updatable = false, nullable = false, length = 36)
-    private String id;
+    @Column(name = "numero_documento", nullable = false, length = 20)
+    private String numeroDocumento;
 
     @Column(nullable = false, length = 100)
     private String nombre;
@@ -58,8 +63,6 @@ public abstract class Persona {
     @Column(name = "tipo_documento", nullable = false, length = 20)
     private TipoDocumento tipoDocumento;
 
-    @Column(name = "numero_documento", nullable = false, length = 20)
-    private String numeroDocumento;
 
     @Column(nullable = false)
     @lombok.Builder.Default

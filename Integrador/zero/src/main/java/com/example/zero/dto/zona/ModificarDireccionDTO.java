@@ -1,12 +1,16 @@
-package com.example.zero.entidades.zona;
+package com.example.zero.dto.zona;
 
-import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+/**
+ * 
+ */
 @Data
-@Entity
-public class Direccion {
-    @Id
+@NoArgsConstructor
+@AllArgsConstructor
+public class ModificarDireccionDTO {
     private String id;
     private String calle;
     private String numeracion;
@@ -14,9 +18,5 @@ public class Direccion {
     private String manzanaPiso;
     private String casaDepartamento;
     private String referencia;
-    private boolean eliminado;
-
-    @ManyToOne
-    @JoinColumn(name = "localidad_id")
-    private Localidad localidad;
+    private String idLocalidad;
 }
