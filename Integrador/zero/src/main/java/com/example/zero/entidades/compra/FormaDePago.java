@@ -1,6 +1,7 @@
 package com.example.zero.entidades.compra;
 
 
+import com.example.zero.enums.TipoDePago;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -42,7 +43,7 @@ public class FormaDePago {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_pago", nullable = false, length = 20)
-    private TipoPago tipoPago;
+    private TipoDePago tipoPago;
 
     @Column(length = 255)
     private String observacion;

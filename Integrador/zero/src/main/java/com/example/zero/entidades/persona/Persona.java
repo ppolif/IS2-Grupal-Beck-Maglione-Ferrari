@@ -1,16 +1,9 @@
 package com.example.zero.entidades.persona;
 
+import com.example.zero.entidades.empresa.Contacto;
+import com.example.zero.entidades.zona.Direccion;
 import com.example.zero.enums.TipoDocumento;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Inheritance;
-import jakarta.persistence.InheritanceType;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -22,6 +15,7 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 /**
  * Clase base de Persona. Es abstracta porque en el
@@ -81,11 +75,11 @@ public abstract class Persona {
     // private Imagen imagen;
 
     // Persona *..1 Direccion (muchas personas pueden compartir una misma dirección).
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "direccion_id")
-    // private Direccion direccion;
+     @ManyToOne(fetch = FetchType.LAZY)
+     @JoinColumn(name = "direccion_id")
+     private Direccion direccion;
 
     // Persona 1..* Contacto (una persona puede tener varios medios de contacto).
-    // @OneToMany(mappedBy = "persona", fetch = FetchType.LAZY)
-    // private java.util.Set<Contacto> contactos = new java.util.HashSet<>();
+     @OneToMany(fetch = FetchType.LAZY)
+     private Set<Contacto> contactos = new java.util.HashSet<>();
 }
