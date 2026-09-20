@@ -2,13 +2,9 @@ package com.example.zero.entidades.persona;
 
 
 import com.example.zero.entidades.compra.Factura;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import com.example.zero.entidades.empresa.Empresa;
+import com.example.zero.enums.TipoEmpleado;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -42,9 +38,9 @@ public class Empleado extends Persona {
     private TipoEmpleado tipoEmpleado;
 
     // Relación con Empresa: cada Empleado pertenece a una Empresa/sucursal.
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "empresa_id")
-    // private Empresa empresa;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
 
     @OneToMany(mappedBy = "empleado", fetch = FetchType.LAZY)
     @Builder.Default
