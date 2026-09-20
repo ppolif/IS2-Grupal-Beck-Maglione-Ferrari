@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div class="sidebar-wrapper" id="sidebar" th:fragment="sidebar">
+  <div class="sidebar-header p-3 border-bottom border-brand">
+    <a th:href="@{/admin}" class="sidebar-brand-zero d-flex align-items-center gap-2 text-decoration-none">
+      <img th:src="@{/admin/assets/images/logo-zero.svg}" src="/admin/assets/images/logo-zero.svg" alt="Zero" style="height: 32px; width: auto;">
+      <span class="fw-bold fs-5 text-dark fst-italic">ZERO ADMIN</span>
+    </a>
+  </div>
+
+  <div class="sidebar-menu p-3">
+    <ul class="nav flex-column gap-1">
+      <li class="nav-item">
+        <a class="nav-link active rounded-3" th:href="@{/admin}">
+          <i class="bi bi-speedometer2 me-2"></i> Dashboard
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link rounded-3 text-secondary" th:href="@{/admin/tables-basic}">
+          <i class="bi bi-table me-2"></i> Tablas y Productos
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link rounded-3 text-secondary" th:href="@{/}">
+          <i class="bi bi-shop me-2"></i> Ir a la Tienda
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link rounded-3 text-secondary" th:href="@{/admin/login}">
+          <i class="bi bi-box-arrow-right me-2"></i> Salir
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
