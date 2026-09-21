@@ -1,15 +1,7 @@
 package com.example.zero.entidades.persona;
 
 import com.example.zero.enums.RolUsuario;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -54,7 +46,7 @@ public class Usuario {
 
     // Lado dueño de la relación 1 a 1 con Persona (en la práctica, una Persona
     // concreta de tipo Cliente o Empleado).
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "persona_id", unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "persona_id")
     private Persona persona;
 }

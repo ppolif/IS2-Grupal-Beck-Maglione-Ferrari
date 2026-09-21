@@ -19,9 +19,10 @@ public class Empresa {
 
     private boolean eliminado;
 
-    ////PREGUNTAR
-    @OneToOne
-    private Direccion direccion;
+
+    @OneToMany
+    @JoinColumn(name = "empresa_id")
+    private List<Direccion> direccion;
 
     @OneToMany
     @JoinColumn(name = "empresa_id")

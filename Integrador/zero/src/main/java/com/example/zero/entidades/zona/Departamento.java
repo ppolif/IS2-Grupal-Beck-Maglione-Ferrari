@@ -16,6 +16,4 @@ public class Departamento {
     @JoinColumn(name = "provincia_id")
     private Provincia provincia;
 
-    @OneToMany(mappedBy = "departamento")
-    private List<Localidad> localidades;
 }

@@ -17,6 +17,8 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -64,11 +66,6 @@ public abstract class Persona {
     @lombok.Builder.Default
     private boolean eliminado = false;
 
-    // Relación 1 a 1 con Usuario
-    // Usuario es el lado dueño de la FK (usuario.persona_id), ver clase Usuario.
-    @OneToOne(mappedBy = "persona", fetch = FetchType.LAZY)
-    private Usuario usuario;
-
     // --- Relaciones con clases que NO estan hechas todavia) ---
 
     // Persona *..1 Imagen (cada persona puede tener una imagen de perfil).
@@ -76,12 +73,12 @@ public abstract class Persona {
     // @JoinColumn(name = "imagen_id")
     // private Imagen imagen;
 
-    // Persona *..1 Direccion (muchas personas pueden compartir una misma dirección).
-     @ManyToOne(fetch = FetchType.LAZY)
-     @JoinColumn(name = "direccion_id")
-     private Direccion direccion;
+    // Por borrado logico una persona tiene muchsa direcciones
+     @OneToMany(fetch = FetchType.LAZY)
+     @JoinColumn(name = "persona_documento")
+     private List<Direccion> direccion;
 
     // Persona 1..* Contacto (una persona puede tener varios medios de contacto).
      @OneToMany(fetch = FetchType.LAZY)
-     private Set<Contacto> contactos = new java.util.HashSet<>();
+     private List<Contacto> contactos;
 }

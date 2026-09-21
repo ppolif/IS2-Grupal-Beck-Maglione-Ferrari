@@ -12,6 +12,4 @@ public class Pais {
     private String nombre;
     private boolean eliminado;
 
-    @OneToMany(mappedBy = "pais")
-    private List<Provincia> provincias;
 }
