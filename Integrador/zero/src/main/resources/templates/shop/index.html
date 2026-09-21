@@ -182,15 +182,13 @@
 
     <div class="row">
       <!-- Iteración Dinámica si existen featuredProducts -->
-      <div class="col-lg-3 col-md-6 mb-4" th:if="${featuredProducts != null}" th:each="prod : ${featuredProducts}">
+      <div class="col-lg-3 col-md-6 mb-4" th:if="${featuredProducts != null && !#lists.isEmpty(featuredProducts)}" th:each="prod : ${featuredProducts}">
         <div class="single-product">
-          <img class="img-fluid" src="../../static/shop/img/product/p1.jpg" th:src="${prod.imageUrl != null} ? ${prod.imageUrl} : @{/shop/img/product/p1.jpg}" th:alt="${prod.name}">
+          <img class="img-fluid" src="../../static/shop/img/product/p1.jpg" th:src="@{/shop/img/product/p1.jpg}" th:alt="${prod.nombre}">
           <div class="product-details">
-            <h6 th:text="${prod.name}">Zero Runner Pro</h6>
+            <h6 th:text="${prod.nombre}">Zero Runner Pro</h6>
             <div class="price">
-              <h6 th:text="${#numbers.formatCurrency(prod.price)}">$150.00</h6>
-              <h6 class="l-through" th:if="${prod.originalPrice != null && prod.originalPrice > prod.price}"
-                  th:text="${#numbers.formatCurrency(prod.originalPrice)}">$210.00</h6>
+              <h6 th:text="${#numbers.formatCurrency(prod.precioActual)}">$150.00</h6>
             </div>
             <div class="prd-bottom">
               <form action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
@@ -210,8 +208,8 @@
         </div>
       </div>
 
-      <!-- Fallback de Productos si aún no está cableado el backend -->
-      <th:block th:if="${featuredProducts == null}">
+      <!-- Fallback de Productos si aún no hay productos registrados -->
+      <th:block th:if="${featuredProducts == null || #lists.isEmpty(featuredProducts)}">
         <div class="col-lg-3 col-md-6 mb-4" th:each="idx : ${#numbers.sequence(1, 4)}">
           <div class="single-product">
             <img class="img-fluid" src="../../static/shop/img/product/p1.jpg" th:src="@{/shop/img/product/p{id}.jpg(id=${idx})}" alt="Producto Zero">

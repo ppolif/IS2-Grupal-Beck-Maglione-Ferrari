@@ -29,8 +29,27 @@
                 <li class="nav-item"><a class="nav-link" th:href="@{/shop/confirmation}">Confirmación</a></li>
               </ul>
             </li>
-            <li class="nav-item"><a class="nav-link" th:href="@{/shop/cart}">Carrito</a></li>
-            <li class="nav-item"><a class="nav-link" th:href="@{/admin/page-login}" href="/">Login</a></li>
+            <!-- Usuario no logueado -->
+            <li class="nav-item" th:if="${session.usuariosession == null}">
+              <a class="nav-link" th:href="@{/admin/login}">Login</a>
+            </li>
+
+            <!-- Usuario logueado -->
+            <li class="nav-item submenu dropdown" th:if="${session.usuariosession != null}">
+              <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"
+                 style="color: #ffba00; font-weight: 600;">
+                <span class="ti-user" style="margin-right: 4px;"></span>
+                <span th:text="${session.usuariosession.nombreUsuario}">Usuario</span>
+              </a>
+              <ul class="dropdown-menu">
+                <li class="nav-item" th:if="${session.usuariosession.rol.name() == 'ADMINISTRATIVO' or session.usuariosession.rol.name() == 'JEFE'}">
+                  <a class="nav-link text-primary font-weight-bold" th:href="@{/admin}"><span class="ti-layout-grid2"></span> Panel Admin</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link text-danger font-weight-bold" th:href="@{/logout}"><span class="ti-power-off"></span> Cerrar Sesión</a>
+                </li>
+              </ul>
+            </li>
           </ul>
         </div>
       </div>

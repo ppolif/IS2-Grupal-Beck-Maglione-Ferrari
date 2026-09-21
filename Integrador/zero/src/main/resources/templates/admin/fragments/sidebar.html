@@ -28,28 +28,33 @@
         </a>
       </li>
       <li class="nav-item">
-        <a th:href="@{/admin/registrar-venta}" class="nav-link d-flex align-items-center gap-2"
-           th:classappend="${#httpServletRequest != null && #httpServletRequest.requestURI == '/admin/orders'} ? ' active' : ''">
-          <i class="bi bi-table"></i>
+        <a th:href="@{/admin/products}" class="nav-link d-flex align-items-center gap-2">
+          <i class="bi bi-box-seam"></i>
+          <span>Productos</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a th:href="@{/admin/registrar-venta}" class="nav-link d-flex align-items-center gap-2">
+          <i class="bi bi-cart-check"></i>
           <span>Registrar venta</span>
         </a>
       </li>
       <li class="nav-item">
-        <a th:href="@{/admin/registrar-compra}" class="nav-link d-flex align-items-center gap-2"
-           th:classappend="${#httpServletRequest != null && #httpServletRequest.requestURI == '/admin/orders'} ? ' active' : ''">
-          <i class="bi bi-table"></i>
+        <a th:href="@{/admin/registrar-compra}" class="nav-link d-flex align-items-center gap-2">
+          <i class="bi bi-truck"></i>
           <span>Registrar compra proveedores</span>
         </a>
       </li>
     </ul>
 
+  </div>
 
   <!-- Perfil Card Footer -->
   <div class="sidebar-profile d-flex align-items-center gap-2 p-2 bg-white rounded-3 border mt-auto">
     <img th:src="@{/admin/assets/images/avatar.png}" alt="Avatar" class="rounded-circle" width="38" height="38">
     <div class="overflow-hidden">
-      <div class="small fw-bold text-truncate text-brand-dark">Administrador</div>
-      <div class="text-muted text-truncate" style="font-size: 0.75rem;">admin@zero.com</div>
+      <div class="small fw-bold text-truncate text-brand-dark" th:text="${session.usuariosession != null ? session.usuariosession.rol : 'Administrador'}">Administrador</div>
+      <div class="text-muted text-truncate" style="font-size: 0.75rem;" th:text="${session.usuariosession != null ? session.usuariosession.nombreUsuario : 'admin@zero.com'}">admin@zero.com</div>
     </div>
   </div>
 </aside>

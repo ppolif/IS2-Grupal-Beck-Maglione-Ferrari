@@ -91,10 +91,20 @@ public class AuthController {
         }
     }
 
-    @GetMapping({"/admin/logout", "/logout"})
-    public String logout(HttpSession session) {
-        session.invalidate();
+    @GetMapping("/admin/logout")
+    public String adminLogout(HttpSession session) {
+        if (session != null) {
+            session.invalidate();
+        }
         return "redirect:/admin/login?logout=true";
+    }
+
+    @GetMapping("/logout")
+    public String clientLogout(HttpSession session) {
+        if (session != null) {
+            session.invalidate();
+        }
+        return "redirect:/?logout=true";
     }
 }
 

@@ -54,4 +54,8 @@ public class SubCategoria {
     @OneToMany(mappedBy = "subCategoria", fetch = FetchType.LAZY)
     @Builder.Default
     private Set<Producto> productos = new HashSet<>();
+
+    public String getName() {
+        return nombre;
+    }
 }

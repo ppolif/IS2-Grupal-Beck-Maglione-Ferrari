@@ -130,10 +130,18 @@ class AuthControllerTest {
     }
 
     @Test
-    void logout_invalidaSesionYRedirigeConLogoutParam() {
-        String vista = authController.logout(session);
+    void adminLogout_invalidaSesionYRedirigeLogin() {
+        String vista = authController.adminLogout(session);
 
         assertEquals("redirect:/admin/login?logout=true", vista);
+        verify(session, times(1)).invalidate();
+    }
+
+    @Test
+    void clientLogout_invalidaSesionYRedirigeInicio() {
+        String vista = authController.clientLogout(session);
+
+        assertEquals("redirect:/?logout=true", vista);
         verify(session, times(1)).invalidate();
     }
 }

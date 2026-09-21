@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<!-- Fragmento Head -->
+<head th:replace="~{admin/fragments/head :: head}"></head>
+
+<body class="d-flex">
+
+<!-- Fragmento Sidebar -->
+<aside th:replace="~{admin/fragments/sidebar :: sidebar}"></aside>
+
+<!-- Contenido Principal -->
+<main class="main-content-offset p-4 p-md-5 min-vh-100 d-flex flex-column flex-grow-1">
+
+  <!-- Top Navbar Fragment -->
+  <nav th:replace="~{admin/fragments/navbar :: navbar}"></nav>
+
+  <!-- Header de sección -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h1 class="h3 fw-bold text-brand-dark mb-1">Catálogo de Productos</h1>
+      <p class="text-muted small mb-0">Alta, modificación y baja lógica de productos de la tienda.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0 small">
+          <li class="breadcrumb-item"><a th:href="@{/admin}" class="text-decoration-none text-muted">Inicio</a></li>
+          <li class="breadcrumb-item active text-brand-dark" aria-current="page">Productos</li>
+        </ol>
+      </nav>
+      <a th:href="@{/admin/products/nuevo}" class="btn btn-sm btn-dark d-flex align-items-center gap-1 shadow-sm">
+        <i class="bi bi-plus-circle"></i> Nuevo Producto
+      </a>
+    </div>
+  </div>
+
+  <!-- Alertas de Éxito / Error -->
+  <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show rounded-3 py-2 small" role="alert">
+    <i class="bi bi-check-circle-fill me-1"></i>
+    <span th:text="${successMessage}">Operación exitosa</span>
+    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show rounded-3 py-2 small" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+    <span th:text="${errorMessage}">Error en la operación</span>
+    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <!-- Contenedor Card de la Tabla -->
+  <div class="card bg-white border-brand rounded-4 shadow-sm overflow-hidden mb-4">
+
+    <div class="card-header bg-white border-bottom border-brand p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span class="small fw-bold text-brand-dark" th:text="${products != null ? #lists.size(products) + ' productos activos' : '0 productos'}">0 productos activos</span>
+      <a th:href="@{/shop/category}" target="_blank" class="btn btn-sm btn-outline-dark d-flex align-items-center gap-1">
+        <i class="bi bi-box-arrow-up-right"></i> Ver en Tienda
+      </a>
+    </div>
+
+    <!-- Tabla Responsiva -->
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="bg-brand-dark">
+        <tr>
+          <th class="ps-3 text-uppercase small text-white">Código</th>
+          <th class="text-uppercase small text-white">Producto</th>
+          <th class="text-uppercase small text-white">Subcategoría</th>
+          <th class="text-uppercase small text-white">Talle</th>
+          <th class="text-uppercase small text-white">Precio Vigente</th>
+          <th class="text-uppercase small text-white">Oferta</th>
+          <th class="text-center text-uppercase small text-white pe-3">Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Mensaje si no hay productos -->
+        <tr th:if="${products == null || #lists.isEmpty(products)}">
+          <td colspan="7" class="text-center py-5 text-muted small">
+            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+            No se encontraron productos registrados en el sistema.<br>
+            <a th:href="@{/admin/products/nuevo}" class="btn btn-sm btn-dark mt-2">Crear el primer producto</a>
+          </td>
+        </tr>
+
+        <!-- Filas dinámicas -->
+        <tr th:each="product : ${products}">
+          <td class="ps-3 fw-bold text-brand-dark" th:text="${product.codigo}">#PROD-001</td>
+          <td>
+            <div>
+              <div class="small fw-bold text-brand-dark" th:text="${product.nombre}">Zero Speedrunner Pro</div>
+              <div class="text-muted text-truncate" style="font-size: 0.75rem; max-width: 250px;" th:text="${product.descripcion}">Descripción del producto</div>
+            </div>
+          </td>
+          <td>
+            <span class="badge bg-light text-dark border border-brand"
+                  th:text="${product.subCategoria != null ? product.subCategoria.nombre : 'Sin categoría'}">Zapatillas</span>
+          </td>
+          <td>
+            <span class="badge bg-secondary bg-opacity-25 text-dark" th:text="${product.talle != null && !product.talle.isEmpty() ? product.talle : 'N/A'}">42</span>
+          </td>
+          <td class="small fw-bold text-brand-bold" th:text="${#numbers.formatCurrency(product.precioActual)}">$120.00</td>
+          <td>
+            <span th:if="${product.enOferta}" class="badge bg-warning text-dark"><i class="bi bi-tag-fill me-1"></i>En Oferta</span>
+            <span th:unless="${product.enOferta}" class="badge bg-light text-muted border">Regular</span>
+          </td>
+          <td class="text-center pe-3">
+            <div class="btn-group btn-group-sm">
+              <a th:href="@{/admin/products/editar/{id}(id=${product.id})}" class="btn btn-outline-dark" title="Modificar">
+                <i class="bi bi-pencil-square"></i>
+              </a>
+              <form th:action="@{/admin/products/eliminar/{id}(id=${product.id})}" method="POST" class="d-inline"
+                    onsubmit="return confirm('¿Seguro que deseas dar de baja este producto?');">
+                <button type="submit" class="btn btn-outline-danger" title="Dar de baja"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- Footer Fragment -->
+  <footer th:replace="~{admin/fragments/footer :: footer}"></footer>
+
+</main>
+
+<!-- Scripts Fragment -->
+<div th:replace="~{admin/fragments/scripts :: scripts}"></div>
+
+</body>
+</html>
+

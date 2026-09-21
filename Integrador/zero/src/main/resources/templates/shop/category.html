@@ -16,22 +16,29 @@
       <div class="sidebar-categories">
         <div class="head">Categorías</div>
         <ul class="main-categories">
+          <!-- Todas las Categorías -->
+          <li class="main-nav-list">
+            <a th:href="@{/shop/category}"
+               th:classappend="${selectedCategory == null} ? 'font-weight-bold text-brand-dark' : ''">
+              <span class="lnr lnr-arrow-right"></span>
+              <span>Todos los productos</span>
+            </a>
+          </li>
           <!-- Si vienen categorías desde el backend -->
-          <li class="main-nav-list" th:if="${categories != null}" th:each="cat : ${categories}">
+          <li class="main-nav-list" th:if="${categories != null && !#lists.isEmpty(categories)}" th:each="cat : ${categories}">
             <a th:href="@{/shop/category(categoryId=${cat.id})}"
                th:classappend="${selectedCategory == cat.id} ? 'font-weight-bold text-brand-dark' : ''">
               <span class="lnr lnr-arrow-right"></span>
-              <span th:text="${cat.name}">Calzado</span>
-              <span class="number" th:if="${cat.productCount != null}" th:text="'(' + ${cat.productCount} + ')'">(12)</span>
+              <span th:text="${cat.nombre != null ? cat.nombre : cat.name}">Calzado</span>
             </a>
           </li>
 
           <!-- Fallback estático cuando no hay lista del backend -->
-          <li th:if="${categories == null}" class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='calzado')}"><span class="lnr lnr-arrow-right"></span>Calzado Deportivo<span class="number">(24)</span></a></li>
-            <li th:if="${categories == null}" class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='remeras')}"><span class="lnr lnr-arrow-right"></span>Remeras y Tops<span class="number">(18)</span></a></li>
-            <li th:if="${categories == null}" class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='pantalones')}"><span class="lnr lnr-arrow-right"></span>Pantalones y Joggers<span class="number">(15)</span></a></li>
-            <li th:if="${categories == null}" class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='abrigos')}"><span class="lnr lnr-arrow-right"></span>Camperas y Buzos<span class="number">(10)</span></a></li>
-            <li th:if="${categories == null}" class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='accesorios')}"><span class="lnr lnr-arrow-right"></span>Accesorios y Bolsos<span class="number">(8)</span></a></li>
+          <li th:if="${categories == null || #lists.isEmpty(categories)}" class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='calzado')}"><span class="lnr lnr-arrow-right"></span>Calzado Deportivo<span class="number">(24)</span></a></li>
+          <li th:if="${categories == null || #lists.isEmpty(categories)}" class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='remeras')}"><span class="lnr lnr-arrow-right"></span>Remeras y Tops<span class="number">(18)</span></a></li>
+          <li th:if="${categories == null || #lists.isEmpty(categories)}" class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='pantalones')}"><span class="lnr lnr-arrow-right"></span>Pantalones y Joggers<span class="number">(15)</span></a></li>
+          <li th:if="${categories == null || #lists.isEmpty(categories)}" class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='abrigos')}"><span class="lnr lnr-arrow-right"></span>Camperas y Buzos<span class="number">(10)</span></a></li>
+          <li th:if="${categories == null || #lists.isEmpty(categories)}" class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='accesorios')}"><span class="lnr lnr-arrow-right"></span>Accesorios y Bolsos<span class="number">(8)</span></a></li>
         </ul>
       </div>
 
@@ -75,15 +82,13 @@
         <div class="row">
 
           <!-- Productos Dinámicos desde Backend -->
-          <div class="col-lg-4 col-md-6" th:if="${products != null}" th:each="prod : ${products}">
+          <div class="col-lg-4 col-md-6" th:if="${products != null && !#lists.isEmpty(products)}" th:each="prod : ${products}">
             <div class="single-product">
-              <img class="img-fluid" src="../../static/shop/img/product/p1.jpg" th:src="${prod.imageUrl != null} ? ${prod.imageUrl} : @{/shop/img/product/p1.jpg}" th:alt="${prod.name}">
+              <img class="img-fluid" src="../../static/shop/img/product/p1.jpg" th:src="@{/shop/img/product/p1.jpg}" th:alt="${prod.nombre}">
               <div class="product-details">
-                <h6 th:text="${prod.name}">Zapatillas Zero Runner</h6>
+                <h6 th:text="${prod.nombre}">Zapatillas Zero Runner</h6>
                 <div class="price">
-                  <h6 th:text="${#numbers.formatCurrency(prod.price)}">$150.00</h6>
-                  <h6 class="l-through" th:if="${prod.originalPrice != null && prod.originalPrice > prod.price}"
-                      th:text="${#numbers.formatCurrency(prod.originalPrice)}">$210.00</h6>
+                  <h6 th:text="${#numbers.formatCurrency(prod.precioActual)}">$150.00</h6>
                 </div>
                 <div class="prd-bottom">
                   <form action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
@@ -94,7 +99,7 @@
                       <p class="hover-text">Al carrito</p>
                     </button>
                   </form>
-                  <a href="single-product.html" th:href="@{/shop/product/{id}(id=${prod.id})}" class="social-info" title="Ver Detalle">
+                  <a href="single-product.html" th:href="@{/shop/single-product(id=${prod.id})}" class="social-info" title="Ver Detalle">
                     <span class="lnr lnr-move"></span>
                     <p class="hover-text">Detalle</p>
                   </a>
@@ -105,7 +110,7 @@
 
           <!-- Fallback cuando no hay productos del backend -->
           
-            <div class="col-lg-4 col-md-6" th:if="${products == null}">
+            <div class="col-lg-4 col-md-6" th:if="${products == null || #lists.isEmpty(products)}">
               <div class="single-product">
                 <img class="img-fluid" src="../../static/shop/img/product/p1.jpg" alt="Producto Zero">
                 <div class="product-details">
@@ -131,7 +136,7 @@
                 </div>
               </div>
             </div>
-            <div class="col-lg-4 col-md-6" th:if="${products == null}">
+            <div class="col-lg-4 col-md-6" th:if="${products == null || #lists.isEmpty(products)}">
               <div class="single-product">
                 <img class="img-fluid" src="../../static/shop/img/product/p2.jpg" alt="Producto Zero">
                 <div class="product-details">
@@ -157,7 +162,7 @@
                 </div>
               </div>
             </div>
-            <div class="col-lg-4 col-md-6" th:if="${products == null}">
+            <div class="col-lg-4 col-md-6" th:if="${products == null || #lists.isEmpty(products)}">
               <div class="single-product">
                 <img class="img-fluid" src="../../static/shop/img/product/p3.jpg" alt="Producto Zero">
                 <div class="product-details">
@@ -183,7 +188,7 @@
                 </div>
               </div>
             </div>
-            <div class="col-lg-4 col-md-6" th:if="${products == null}">
+            <div class="col-lg-4 col-md-6" th:if="${products == null || #lists.isEmpty(products)}">
               <div class="single-product">
                 <img class="img-fluid" src="../../static/shop/img/product/p4.jpg" alt="Producto Zero">
                 <div class="product-details">
@@ -209,7 +214,7 @@
                 </div>
               </div>
             </div>
-            <div class="col-lg-4 col-md-6" th:if="${products == null}">
+            <div class="col-lg-4 col-md-6" th:if="${products == null || #lists.isEmpty(products)}">
               <div class="single-product">
                 <img class="img-fluid" src="../../static/shop/img/product/p5.jpg" alt="Producto Zero">
                 <div class="product-details">
@@ -235,7 +240,7 @@
                 </div>
               </div>
             </div>
-            <div class="col-lg-4 col-md-6" th:if="${products == null}">
+            <div class="col-lg-4 col-md-6" th:if="${products == null || #lists.isEmpty(products)}">
               <div class="single-product">
                 <img class="img-fluid" src="../../static/shop/img/product/p6.jpg" alt="Producto Zero">
                 <div class="product-details">
