@@ -61,9 +61,6 @@ public abstract class Persona {
     @Column(name = "tipo_documento", nullable = false, length = 20)
     private TipoDocumento tipoDocumento;
 
-    @Column(name = "numero_documento", nullable = false, length = 20)
-    private String numeroDocumento;
-
     @Column(nullable = false)
     @lombok.Builder.Default
     private boolean eliminado = false;
