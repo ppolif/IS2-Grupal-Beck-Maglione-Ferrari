@@ -1,38 +1,66 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
 <body>
-<div class="sidebar-wrapper" id="sidebar" th:fragment="sidebar">
-  <div class="sidebar-header p-3 border-bottom border-brand">
-    <a th:href="@{/admin}" class="sidebar-brand-zero d-flex align-items-center gap-2 text-decoration-none">
-      <img th:src="@{/admin/assets/images/logo-zero.svg}" src="/admin/assets/images/logo-zero.svg" alt="Zero" style="height: 32px; width: auto;">
-      <span class="fw-bold fs-5 text-dark fst-italic">ZERO ADMIN</span>
-    </a>
-  </div>
 
-  <div class="sidebar-menu p-3">
-    <ul class="nav flex-column gap-1">
+<aside class="sidebar-wrapper" id="sidebar" th:fragment="sidebar">
+  <!-- Brand Logo -->
+  <a class="sidebar-brand sidebar-brand-zero d-flex align-items-center gap-2 mb-4 text-decoration-none" th:href="@{/admin}">
+    <img th:src="@{/admin/assets/images/logo-zero.svg}" alt="Zero Admin" style="height: 36px;">
+    <span class="h5 fw-bold mb-0 text-brand-dark">ZERO ADMIN</span>
+  </a>
+
+  <!-- Menu Links -->
+  <div class="flex-grow-1 overflow-y-auto">
+    <div class="small fw-bold text-uppercase text-muted px-2 mb-2">Menú</div>
+    <ul class="nav nav-pills flex-column gap-1 mb-4">
       <li class="nav-item">
-        <a class="nav-link active rounded-3" th:href="@{/admin}">
-          <i class="bi bi-speedometer2 me-2"></i> Dashboard
+        <a th:href="@{/admin}" class="nav-link d-flex align-items-center gap-2"
+           th:classappend="${#httpServletRequest != null && #httpServletRequest.requestURI == '/admin'} ? ' active' : ''">
+          <i class="bi bi-grid-fill"></i>
+          <span>Dashboard</span>
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link rounded-3 text-secondary" th:href="@{/admin/tables-basic}">
-          <i class="bi bi-table me-2"></i> Tablas y Productos
+        <a th:href="@{/admin/orders}" class="nav-link d-flex align-items-center gap-2"
+           th:classappend="${#httpServletRequest != null && #httpServletRequest.requestURI == '/admin/orders'} ? ' active' : ''">
+          <i class="bi bi-table"></i>
+          <span>Tablas de Órdenes</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="small fw-bold text-uppercase text-muted px-2 mb-2">Páginas</div>
+    <ul class="nav nav-pills flex-column gap-1">
+      <li class="nav-item">
+        <a th:href="@{/shop}" target="_blank" class="nav-link d-flex align-items-center gap-2">
+          <i class="bi bi-shop"></i>
+          <span>Ir a la Tienda</span>
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link rounded-3 text-secondary" th:href="@{/}">
-          <i class="bi bi-shop me-2"></i> Ir a la Tienda
+        <a th:href="@{/admin/login}" class="nav-link d-flex align-items-center gap-2">
+          <i class="bi bi-box-arrow-in-right"></i>
+          <span>Pantalla de Login</span>
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link rounded-3 text-secondary" th:href="@{/admin/login}">
-          <i class="bi bi-box-arrow-right me-2"></i> Salir
+        <a th:href="@{/admin/404}" class="nav-link d-flex align-items-center gap-2">
+          <i class="bi bi-slash-circle"></i>
+          <span>Error 404</span>
         </a>
       </li>
     </ul>
   </div>
-</div>
+
+  <!-- Perfil Card Footer -->
+  <div class="sidebar-profile d-flex align-items-center gap-2 p-2 bg-white rounded-3 border mt-auto">
+    <img th:src="@{/admin/assets/images/avatar.png}" alt="Avatar" class="rounded-circle" width="38" height="38">
+    <div class="overflow-hidden">
+      <div class="small fw-bold text-truncate text-brand-dark">Administrador</div>
+      <div class="text-muted text-truncate" style="font-size: 0.75rem;">admin@zero.com</div>
+    </div>
+  </div>
+</aside>
+
 </body>
 </html>
