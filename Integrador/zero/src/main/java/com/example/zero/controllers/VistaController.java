@@ -65,4 +65,9 @@ public class VistaController {
     public String admin404() {
         return "admin/page-404";
     }
+
+    @GetMapping("/admin/register")
+    public String showRegisterPage() {
+        return "admin/page-register"; // o el nombre y ubicación de tu vista html
+    }
 }
