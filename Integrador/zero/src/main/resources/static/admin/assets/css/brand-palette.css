@@ -240,6 +240,61 @@ body {
         padding-right: 0;
     }
 }
+.sidebar-wrapper {
+    width: 280px;
+    background-color: var(--brand-bg-surface, #FAF2E6);
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1045;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    border-right: 1px solid var(--brand-border, #E8D8C0);
+    transition: transform 0.3s ease-in-out;
+}
+
+/* En resoluciones de escritorio (>= 1200px): fijo y visible */
+@media (min-width: 1200px) {
+    .sidebar-wrapper {
+        transform: translateX(0) !important;
+    }
+    .main-content-offset {
+        margin-left: 280px !important;
+    }
+}
+
+/* En resoluciones móviles o tablets (< 1200px): oculto por defecto, visible con .show */
+@media (max-width: 1199.98px) {
+    .sidebar-wrapper {
+        transform: translateX(-100%);
+    }
+    .sidebar-wrapper.show {
+        transform: translateX(0) !important;
+        box-shadow: 0 0 35px rgba(0, 0, 0, 0.25);
+    }
+    .main-content-offset {
+        margin-left: 0 !important;
+    }
+}
+
+/* Telón / Overlay para móviles */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(20, 18, 18, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 1040;
+    display: none;
+}
+
+.sidebar-overlay.show {
+    display: block;
+}
 
 /* 2. Tablet y Móvil (< 992px): Se esconde a la izquierda y se despliega con .show */
 @media (max-width: 991.98px) {

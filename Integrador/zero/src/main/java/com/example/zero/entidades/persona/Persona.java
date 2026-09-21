@@ -61,10 +61,17 @@ public abstract class Persona {
     @Column(name = "tipo_documento", nullable = false, length = 20)
     private TipoDocumento tipoDocumento;
 
+    @Column(name = "numero_documento", nullable = false, length = 20)
+    private String numeroDocumento;
 
     @Column(nullable = false)
     @lombok.Builder.Default
     private boolean eliminado = false;
+
+    // Relación 1 a 1 con Usuario
+    // Usuario es el lado dueño de la FK (usuario.persona_id), ver clase Usuario.
+    @OneToOne(mappedBy = "persona", fetch = FetchType.LAZY)
+    private Usuario usuario;
 
     // --- Relaciones con clases que NO estan hechas todavia) ---
 
