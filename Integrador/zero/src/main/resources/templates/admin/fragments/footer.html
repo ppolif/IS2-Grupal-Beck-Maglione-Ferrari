@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<footer th:fragment="admin-footer" class="mt-auto pt-4 border-top border-brand d-flex justify-content-between align-items-center small text-muted">
+  <span>&copy; <span th:text="${#calendars.year(#calendars.createNow())}">2026</span> Zero Admin &bull; Sportswear System</span>
+  <span>Construido con Bootstrap 5</span>
+</footer>
+</body>
+</html>

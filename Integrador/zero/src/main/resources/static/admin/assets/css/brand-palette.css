@@ -1,0 +1,262 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&display=swap');
+
+:root {
+    --brand-bg: #FFF4E0;
+    --brand-surface: #FAF2E6;
+    --brand-dark: #141212;
+    --brand-text: #D65959;
+    --brand-primary: #E51A24;
+    --brand-border: #E8D8C0;
+}
+
+body {
+    font-family: 'Poppins', sans-serif !important;
+    background-color: var(--brand-bg) !important;
+    color: var(--brand-dark);
+}
+
+.sidebar-wrapper {
+    width: 260px;
+    min-height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: var(--brand-surface) !important;
+    border-right: 1px solid var(--brand-border);
+    z-index: 1000;
+}
+
+.main-wrapper {
+    margin-left: 260px;
+    background-color: var(--brand-bg) !important;
+    min-height: 100vh;
+}
+
+.card {
+    border-radius: 12px !important;
+    border: 1px solid var(--brand-border) !important;
+    box-shadow: 0 4px 12px rgba(20, 18, 18, 0.04) !important;
+    background-color: #ffffff !important;
+}
+
+.btn-primary {
+    background-color: var(--brand-dark) !important;
+    border-color: var(--brand-dark) !important;
+    border-radius: 8px !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--brand-primary) !important;
+    border-color: var(--brand-primary) !important;
+}
+
+.nav-link.active {
+    background-color: var(--brand-dark) !important;
+    color: #ffffff !important;
+}
+
+/* Identidad y logotipo */
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: var(--brand-dark) !important;
+    text-decoration: none !important;
+    margin-bottom: 2rem;
+    padding-left: 0.5rem;
+}
+
+.sidebar-brand img {
+    height: 36px;
+    width: auto;
+}
+
+/* Grupos y títulos de sección */
+.sidebar-menu-section {
+    margin-bottom: 1.5rem;
+}
+
+.sidebar-menu-title {
+    font-size: 0.725rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--brand-soft);
+    padding-left: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-menu-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu-item {
+    margin-bottom: 0.25rem;
+}
+
+/* Enlaces del Sidebar */
+.sidebar-menu-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+    color: var(--brand-dark);
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.sidebar-menu-link i {
+    font-size: 1.1rem;
+}
+
+.sidebar-menu-link:hover {
+    background-color: var(--brand-bg-main);
+    color: var(--brand-bold);
+}
+
+.sidebar-menu-link.active {
+    background-color: var(--brand-dark);
+    color: #ffffff !important;
+    border-left: 4px solid var(--brand-neon);
+}
+
+.sidebar-menu-link.active i {
+    color: var(--brand-neon);
+}
+
+/* Perfil inferior del Sidebar */
+.sidebar-profile {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background-color: #ffffff;
+    padding: 0.75rem;
+    border-radius: 12px;
+    border: 1px solid var(--brand-border);
+}
+
+.sidebar-profile-img {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.sidebar-profile-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--brand-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-profile-email {
+    font-size: 0.725rem;
+    color: var(--brand-dark-subtle);
+    opacity: 0.75;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Overlay para fondo oscuro al desplegar en móviles */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(20, 18, 18, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 1035;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.25s ease;
+}
+
+.sidebar-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ==========================================================================
+   LAYOUT DEL CONTENIDO PRINCIPAL (.main-wrapper)
+   ========================================================================== */
+.main-wrapper,
+.main-content-offset {
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================================================
+   RESPONSIVIDAD (PANTALLAS GRANDES VS MÓVILES)
+   ========================================================================== */
+
+/* 1. Escritorio (>= 992px): Sidebar siempre anclado y visible */
+@media (min-width: 992px) {
+    .sidebar-wrapper {
+        transform: none !important;
+    }
+    .main-content-offset {
+        margin-left: var(--sidebar-width);
+        width: calc(100% - var(--sidebar-width));
+        min-height: 100vh;
+    }
+    .main-content-offset {
+        margin-left: var(--sidebar-width);
+        width: calc(100% - var(--sidebar-width));
+        min-height: 100vh;
+    }
+
+    /* Soporte para modo minimizado al pulsar el botón de desktop */
+    body.sidebar-minimized {
+        --sidebar-width: 80px;
+    }
+    body.sidebar-minimized .sidebar-brand span,
+    body.sidebar-minimized .sidebar-menu-title,
+    body.sidebar-minimized .sidebar-menu-link span,
+    body.sidebar-minimized .sidebar-profile-info {
+        display: none !important;
+    }
+    body.sidebar-minimized .sidebar-brand,
+    body.sidebar-minimized .sidebar-menu-link,
+    body.sidebar-minimized .sidebar-profile {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+/* 2. Tablet y Móvil (< 992px): Se esconde a la izquierda y se despliega con .show */
+@media (max-width: 991.98px) {
+    .sidebar-wrapper {
+        transform: translateX(-100%);
+        box-shadow: none;
+    }
+
+    .sidebar-wrapper.show {
+        transform: translateX(0) !important;
+        box-shadow: 0 10px 40px rgba(20, 18, 18, 0.25);
+    }
+
+    .main-wrapper,
+    .main-content-offset {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 1rem !important;
+    }
+}

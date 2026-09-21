@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap');
+
+:root {
+    --brand-bg: #FFF4E0;
+    --brand-surface: #FAF2E6;
+    --brand-dark: #141212;
+    --brand-text: #D65959;
+    --brand-primary: #E51A24;
+    --brand-accent: #CCFF00;
+    --brand-border: #E8D8C0;
+}
+
+body, button, input, select, textarea, .nice-select {
+    font-family: 'Poppins', sans-serif !important;
+    background-color: var(--brand-bg);
+    color: var(--brand-dark);
+}
+
+/* Redondeo homogéneo estilo Spark (Admin) */
+.single-product,
+.order_box,
+.details_item,
+.order_details_table,
+.cart_inner .table,
+.sidebar-categories,
+.sidebar-filter,
+.login_box_area .login_box_img,
+.login_form_inner {
+    border-radius: 10px !important;
+    overflow: hidden;
+}
+
+.primary-btn,
+.main_btn,
+.gray_btn,
+.filter-bar,
+.filter-bar .nice-select,
+.billing_details .form-control,
+.product_count input.qty {
+    border-radius: 8px !important;
+}
+
+/* Botones principales */
+.primary-btn, .main_btn {
+    background: var(--brand-dark) !important;
+    border-color: var(--brand-dark) !important;
+    color: #fff !important;
+}
+
+.primary-btn:hover, .main_btn:hover {
+    background: var(--brand-primary) !important;
+    border-color: var(--brand-primary) !important;
+    color: #fff !important;
+}
+
+/* Navbar y Superficies */
+.header_area .navbar {
+    background: var(--brand-surface) !important;
+}
