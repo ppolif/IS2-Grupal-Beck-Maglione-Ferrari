@@ -4,6 +4,7 @@ package com.example.zero.entidades.compra;
 
 import com.example.zero.entidades.persona.Cliente;
 import com.example.zero.entidades.persona.Empleado;
+import com.example.zero.enums.EstadoFactura;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

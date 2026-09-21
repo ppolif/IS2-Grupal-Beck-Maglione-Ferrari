@@ -2,6 +2,7 @@ package com.example.zero.entidades.persona;
 
 
 import com.example.zero.entidades.compra.Factura;
+import com.example.zero.enums.TipoEmpleado;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

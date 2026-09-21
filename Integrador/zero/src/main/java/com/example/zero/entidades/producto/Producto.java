@@ -1,7 +1,7 @@
 package com.example.zero.entidades.producto;
 
 
-//import com.example.zero.entidades.compra.Detalle;
+import com.example.zero.entidades.compra.Detalle;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
