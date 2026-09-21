@@ -27,6 +27,20 @@
           <span>Tablas de Órdenes</span>
         </a>
       </li>
+      <li class="nav-item">
+        <a th:href="@{/admin/registrar-venta}" class="nav-link d-flex align-items-center gap-2"
+           th:classappend="${#httpServletRequest != null && #httpServletRequest.requestURI == '/admin/orders'} ? ' active' : ''">
+          <i class="bi bi-table"></i>
+          <span>Registrar venta</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a th:href="@{/admin/registrar-compra}" class="nav-link d-flex align-items-center gap-2"
+           th:classappend="${#httpServletRequest != null && #httpServletRequest.requestURI == '/admin/orders'} ? ' active' : ''">
+          <i class="bi bi-table"></i>
+          <span>Registrar compra proveedores</span>
+        </a>
+      </li>
     </ul>
 
 

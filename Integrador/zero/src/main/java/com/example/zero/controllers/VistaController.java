@@ -70,4 +70,15 @@ public class VistaController {
     public String showRegisterPage() {
         return "admin/page-register"; // o el nombre y ubicación de tu vista html
     }
+
+    @GetMapping({"/admin/ventas/nueva", "/admin/registrar-venta"})
+    public String adminRegistrarVenta() {
+        return "admin/registrar-venta";
+    }
+
+    // 2. Registrar Compra (Ingreso de mercadería con proveedores y stock)
+    @GetMapping({"/admin/compras/nueva", "/admin/registrar-compra"})
+    public String adminRegistrarCompra() {
+        return "admin/registrar-compra";
+    }
 }

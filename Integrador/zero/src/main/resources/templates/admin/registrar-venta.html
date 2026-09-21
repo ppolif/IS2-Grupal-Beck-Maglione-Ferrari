@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments/head :: head}"></head>
+<body class="d-flex">
+
+<!-- Sidebar Zero Admin -->
+<aside th:replace="~{admin/fragments/sidebar :: sidebar}"></aside>
+
+<!-- Contenido Principal -->
+<main class="main-content-offset p-4 p-md-5 min-vh-100 d-flex flex-column flex-grow-1">
+    <nav th:replace="~{admin/fragments/navbar :: navbar}"></nav>
+
+    <!-- Header de Sección -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-brand-dark mb-1">Registrar Venta</h1>
+            <p class="text-muted small mb-0">Orden de compra y deducción de stock en tiempo real.</p>
+        </div>
+    </div>
+
+    <!-- Formulario para registrar venta con DTO -->
+    <!-- Formulario sin th:object -->
+    <form th:action="@{/admin/ventas/guardar}" method="POST">
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <div class="card bg-white border-brand rounded-4 p-4 shadow-sm mb-4">
+                    <h5 class="fw-bold mb-3">1. Datos del Comprador</h5>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">DNI del Comprador *</label>
+                        <input type="text" name="clienteDni" class="form-control border-brand" placeholder="Ej: 38492019" required/>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Forma de Pago</label>
+                        <select name="formaDePago" class="form-select border-brand">
+                            <option value="EFECTIVO">Efectivo</option>
+                            <option value="TRANSFERENCIA">Transferencia</option>
+                            <option value="TARJETA_DEBITO">Tarjeta de Débito</option>
+                            <option value="TARJETA_CREDITO">Tarjeta de Crédito</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="card bg-white border-brand rounded-4 shadow-sm overflow-hidden">
+                    <div class="card-header bg-white border-bottom border-brand p-3 d-flex justify-content-between">
+                        <h5 class="fw-bold mb-0">Carrito de Venta</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="bg-brand-dark">
+                            <tr>
+                                <th class="text-white ps-3">Producto</th>
+                                <th class="text-white text-center">Cantidad</th>
+                                <th class="text-white text-center">Precio</th>
+                                <th class="text-white text-center pe-3">Acción</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <!-- Itera sobre 'detalles' provisto en el Model, o muestra fila de ejemplo si no existe -->
+                            <tr th:each="item : ${detalles}">
+                                <td th:text="${item.producto.nombre}" class="ps-3 fw-semibold">Hoodie Zero</td>
+                                <td th:text="${item.cantidad}" class="text-center">1</td>
+                                <td th:text="${#numbers.formatCurrency(item.subtotal)}" class="text-center fw-bold">$89.90</td>
+                                <td class="text-center pe-3">
+                                    <button type="button" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- ... botones ... -->
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <footer th:replace="~{admin/fragments/footer :: footer}"></footer>
+</main>
+<div th:replace="~{admin/fragments/scripts :: scripts}"></div>
+</body>
+</html>

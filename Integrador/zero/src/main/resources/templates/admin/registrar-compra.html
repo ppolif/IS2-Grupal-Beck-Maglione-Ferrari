@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments/head :: head}"></head>
+<body class="d-flex">
+
+<!-- Sidebar Zero Admin -->
+<aside th:replace="~{admin/fragments/sidebar :: sidebar}"></aside>
+
+<main class="main-content-offset p-4 p-md-5 min-vh-100 d-flex flex-column flex-grow-1">
+    <nav th:replace="~{admin/fragments/navbar :: navbar}"></nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-brand-dark mb-1">Registrar Compra Mayorista</h1>
+            <p class="text-muted small mb-0">Recepción de mercadería e incremento automático de stock.</p>
+        </div>
+    </div>
+
+    <!-- Formulario sin th:object -->
+    <form th:action="@{/admin/compras/guardar}" method="POST">
+        <div class="card bg-white border-brand rounded-4 p-3 mb-4 shadow-sm">
+            <div class="row align-items-center g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Seleccionar Proveedor Mayorista *</label>
+                    <select name="proveedorId" class="form-select border-brand" required>
+                        <option value="" disabled selected>-- Elija un proveedor --</option>
+                        <option th:each="p : ${proveedores}" th:value="${p.id}" th:text="${p.razonSocial} + ' (CUIT: ' + ${p.cuit} + ')'">Textil S.A.</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detalle de Ítems -->
+        <div class="card bg-white border-brand rounded-4 shadow-sm overflow-hidden mb-4">
+            <!-- ... encabezado ... -->
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="bg-brand-dark">
+                    <tr>
+                        <th class="text-white ps-3">Producto</th>
+                        <th class="text-white text-center">Cantidad Recibida</th>
+                        <th class="text-white text-center">Costo Unitario</th>
+                        <th class="text-white text-center pe-3">Acción</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="item : ${detalles}">
+                        <td th:text="${item.producto.nombre}" class="ps-3 fw-semibold">Remera Zero</td>
+                        <td th:text="${item.cantidad}" class="text-center">+20</td>
+                        <td th:text="${#numbers.formatCurrency(item.costoUnitario)}" class="text-center">$45.00</td>
+                        <td class="text-center pe-3">
+                            <button type="button" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- ... botones ... -->
+        </div>
+    </form>
+
+    <footer th:replace="~{admin/fragments/footer :: footer}"></footer>
+</main>
+<div th:replace="~{admin/fragments/scripts :: scripts}"></div>
+</body>
+</html>
