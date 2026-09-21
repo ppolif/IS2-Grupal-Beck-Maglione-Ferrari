@@ -54,17 +54,12 @@ public class VistaController {
         return "admin/tables-basic";
     }
 
-    // 2. Pantalla de Login
-    @GetMapping({"/admin/login", "/admin/page-login", "/admin/login-page"})
-    public String adminLogin() {
-        return "admin/page-login";
-    }
-
-    // 3. Pantalla 404
+    // 2. Pantalla 404
     @GetMapping({"/admin/404", "/admin/page-404"})
     public String admin404() {
         return "admin/page-404";
     }
+<<<<<<< Updated upstream
 
     @GetMapping("/admin/register")
     public String showRegisterPage() {
@@ -81,4 +76,6 @@ public class VistaController {
     public String adminRegistrarCompra() {
         return "admin/registrar-compra";
     }
+=======
+>>>>>>> Stashed changes
 }
