@@ -152,16 +152,68 @@ class AuthControllerTest {
     }
 
     @Test
-    void processRegister_clienteExitoso_guardaSesionYRedirige() {
+    void processRegister_clienteExitoso_redirigeAVerifySinGuardarSesion() {
         ClienteRegistroDTO dto = ClienteRegistroDTO.builder().email("cliente@zero.com").build();
-        Usuario usuarioMock = Usuario.builder().nombreUsuario("cliente@zero.com").rol(RolUsuario.CLIENTE).build();
+        Usuario usuarioMock = Usuario.builder().nombreUsuario("cliente@zero.com").rol(RolUsuario.CLIENTE).activo(false).build();
 
         when(clienteService.registrarCliente(dto)).thenReturn(usuarioMock);
 
         String vista = authController.processRegister(dto, session, model);
 
-        assertEquals("redirect:/?registered=true", vista);
-        verify(session, times(1)).setAttribute("usuariosession", usuarioMock);
+        assertEquals("redirect:/verify?email=cliente%40zero.com&sent=true", vista);
+        verify(session, never()).setAttribute(eq("usuariosession"), any());
+    }
+
+    @Test
+    void showVerifyPage_sinSesion_retornaVistaVerify() {
+        when(session.getAttribute("usuariosession")).thenReturn(null);
+
+        String vista = authController.showVerifyPage("test@zero.com", session, model);
+
+        assertEquals("shop/verify", vista);
+        verify(model, times(1)).addAttribute("email", "test@zero.com");
+    }
+
+    @Test
+    void showVerifyPage_conSesion_redirigeInicio() {
+        Usuario usuario = Usuario.builder().rol(RolUsuario.CLIENTE).build();
+        when(session.getAttribute("usuariosession")).thenReturn(usuario);
+
+        String vista = authController.showVerifyPage("test@zero.com", session, model);
+
+        assertEquals("redirect:/", vista);
+    }
+
+    @Test
+    void processVerify_codigoCorrecto_redirigeLoginConVerified() {
+        Usuario usuario = Usuario.builder().nombreUsuario("test@zero.com").activo(true).build();
+        when(usuarioService.verificarCodigo("test@zero.com", "123456")).thenReturn(usuario);
+
+        String vista = authController.processVerify("test@zero.com", "123456", model);
+
+        assertEquals("redirect:/login?verified=true", vista);
+    }
+
+    @Test
+    void processVerify_codigoIncorrecto_retornaVistaVerifyConError() {
+        when(usuarioService.verificarCodigo("test@zero.com", "000000"))
+                .thenThrow(new IllegalArgumentException("El código de confirmación ingresado es incorrecto."));
+
+        String vista = authController.processVerify("test@zero.com", "000000", model);
+
+        assertEquals("shop/verify", vista);
+        verify(model, times(1)).addAttribute("errorMessage", "El código de confirmación ingresado es incorrecto.");
+        verify(model, times(1)).addAttribute("email", "test@zero.com");
+    }
+
+    @Test
+    void resendVerificationCode_exitoso_redirigeVerifyConResent() {
+        doNothing().when(usuarioService).reenviarCodigoConfirmacion("test@zero.com");
+
+        String vista = authController.resendVerificationCode("test@zero.com", model);
+
+        assertEquals("redirect:/verify?email=test%40zero.com&resent=true", vista);
+        verify(usuarioService, times(1)).reenviarCodigoConfirmacion("test@zero.com");
     }
 
     @Test

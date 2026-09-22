@@ -221,12 +221,20 @@ public class ClienteService {
 
         cliente = clienteRepository.save(cliente);
 
-        // 7. Crear Usuario con Rol CLIENTE
+        // 7. Crear Usuario con Rol CLIENTE (inactivo hasta verificar correo)
         Usuario usuario = null;
         if (usuarioService != null) {
-            usuario = usuarioService.crearUsuario(emailLimpio, dto.getPassword(), RolUsuario.CLIENTE, cliente);
+            usuario = usuarioService.crearUsuario(emailLimpio, dto.getPassword(), RolUsuario.CLIENTE, cliente, false);
             cliente.setUsuario(usuario);
             clienteRepository.save(cliente);
+
+            try {
+                String codigo = usuarioService.generarYAsignarCodigo(emailLimpio);
+                usuarioService.enviarCodigoConfirmacion(emailLimpio, codigo);
+            } catch (Exception e) {
+                // Registrar advertencia para no abortar si el mock o smtp falla en entornos de prueba
+                System.err.println(">> [ClienteService] Advertencia al despachar código de confirmación: " + e.getMessage());
+            }
         }
 
         return usuario;

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZERO | Confirmación de Cuenta</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" th:href="@{/css/bootstrap.css}">
+  <link rel="stylesheet" th:href="@{/css/themify-icons.css}">
+  <link rel="stylesheet" th:href="@{/css/main.css}">
+  <style>
+    body {
+      background-color: #f4f6f9;
+      font-family: 'Poppins', sans-serif;
+    }
+    .verify-card {
+      max-width: 480px;
+      margin: 60px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      padding: 40px 35px;
+      border-top: 5px solid #ffba00;
+    }
+    .brand-title {
+      font-size: 2rem;
+      font-weight: 800;
+      font-style: italic;
+      letter-spacing: 2px;
+      color: #141212;
+      margin-bottom: 4px;
+    }
+    .code-input {
+      font-size: 1.8rem;
+      letter-spacing: 8px;
+      text-align: center;
+      font-weight: 700;
+      color: #141212;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .code-input:focus {
+      border-color: #ffba00;
+      box-shadow: 0 0 0 0.2rem rgba(255, 186, 0, 0.25);
+    }
+    .btn-verify {
+      background-color: #ffba00;
+      color: #141212;
+      font-weight: 700;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      transition: all 0.2s ease-in-out;
+    }
+    .btn-verify:hover {
+      background-color: #e0a300;
+      color: #141212;
+    }
+    .btn-resend {
+      background: none;
+      border: none;
+      color: #ffba00;
+      font-weight: 600;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 0;
+      font-size: 0.9rem;
+    }
+    .btn-resend:hover {
+      color: #d49500;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="verify-card text-center">
+
+    <!-- Brand Header -->
+    <a th:href="@{/}" class="text-decoration-none">
+      <div class="brand-title">ZERO</div>
+    </a>
+    <p class="text-muted small mb-4">Confirmación y Activación de Cuenta</p>
+
+    <!-- Feedback Alerts -->
+    <div th:if="${param.sent}" class="alert alert-success text-left small py-2 px-3 mb-3 rounded" role="alert">
+      <i class="ti-check-box mr-1"></i> ¡Registro completado! Hemos enviado un código de 6 dígitos a tu correo.
+    </div>
+
+    <div th:if="${param.resent}" class="alert alert-info text-left small py-2 px-3 mb-3 rounded" role="alert">
+      <i class="ti-reload mr-1"></i> Se ha reenviado un nuevo código de confirmación a tu correo electrónico.
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger text-left small py-2 px-3 mb-3 rounded" role="alert">
+      <i class="ti-alert mr-1"></i> <span th:text="${errorMessage}">Error</span>
+    </div>
+
+    <p class="small text-secondary mb-3">
+      Ingresa el código numérico de 6 dígitos enviado a:
+      <br>
+      <strong class="text-dark" th:text="${email != null and !email.isEmpty() ? email : 'tu correo'}">correo@ejemplo.com</strong>
+    </p>
+
+    <!-- Verification Form -->
+    <form th:action="@{/verify}" method="POST" class="mb-4">
+      <input type="hidden" name="email" th:value="${email}">
+
+      <div class="form-group mb-4">
+        <label for="codigo" class="sr-only">Código de confirmación</label>
+        <input type="text"
+               id="codigo"
+               name="codigo"
+               class="form-control code-input"
+               placeholder="123456"
+               maxlength="6"
+               pattern="[0-9]{6}"
+               inputmode="numeric"
+               autocomplete="one-time-code"
+               required autofocus>
+        <small class="form-text text-muted mt-2">El código expira en 15 minutos.</small>
+      </div>
+
+      <button type="submit" class="btn btn-verify btn-block w-100 shadow-sm">
+        Confirmar Cuenta
+      </button>
+    </form>
+
+    <!-- Resend Form -->
+    <div class="border-top pt-3 mt-3">
+      <span class="small text-muted">¿No recibiste el correo o ya expiró? </span>
+      <form th:action="@{/verify/resend}" method="POST" class="d-inline">
+        <input type="hidden" name="email" th:value="${email}">
+        <button type="submit" class="btn-resend">
+          Reenviar código
+        </button>
+      </form>
+    </div>
+
+    <div class="mt-4 pt-2">
+      <a th:href="@{/login}" class="small text-secondary text-decoration-none">
+        <i class="ti-arrow-left"></i> Volver a Iniciar Sesión
+      </a>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
+

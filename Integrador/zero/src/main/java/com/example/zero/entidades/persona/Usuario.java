@@ -44,6 +44,16 @@ public class Usuario {
     @Builder.Default
     private boolean eliminado = false;
 
+    @Column(name = "activo", nullable = false)
+    @Builder.Default
+    private boolean activo = true;
+
+    @Column(name = "codigo_confirmacion", length = 10)
+    private String codigoConfirmacion;
+
+    @Column(name = "codigo_expiracion")
+    private java.time.LocalDateTime codigoExpiracion;
+
     // Lado dueño de la relación 1 a 1 con Persona (en la práctica, una Persona
     // concreta de tipo Cliente o Empleado).
     @ManyToOne(fetch = FetchType.LAZY)
