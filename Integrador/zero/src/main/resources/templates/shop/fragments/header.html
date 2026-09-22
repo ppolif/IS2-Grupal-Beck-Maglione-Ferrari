@@ -12,7 +12,7 @@
         </a>
 
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
-                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                aria-controls="#navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
@@ -46,14 +46,33 @@
                   <a class="nav-link text-primary font-weight-bold" th:href="@{/admin}"><span class="ti-layout-grid2"></span> Panel Admin</a>
                 </li>
                 <li class="nav-item">
+                  <a class="nav-link text-primary font-weight-bold" th:href="@{/shop/cart}"><span class="ti-shopping-cart"></span> Carrito</a>
+                </li>
+                <li class="nav-item">
                   <a class="nav-link text-danger font-weight-bold" th:href="@{/logout}"><span class="ti-power-off"></span> Cerrar Sesión</a>
                 </li>
+
               </ul>
             </li>
           </ul>
         </div>
       </div>
     </nav>
+  </div>
+  <!-- Contenedor global de mensajes de notificación/confirmación -->
+  <div class="container mt-2" th:if="${successMessage != null or errorMessage != null}">
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show text-center shadow-sm mb-0" role="alert">
+      <i class="fa fa-check-circle mr-2"></i><span th:text="${successMessage}">¡Producto agregado al carrito exitosamente!</span>
+      <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show text-center shadow-sm mb-0" role="alert">
+      <i class="fa fa-exclamation-circle mr-2"></i><span th:text="${errorMessage}">Error</span>
+      <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
   </div>
 </header>
 </body>

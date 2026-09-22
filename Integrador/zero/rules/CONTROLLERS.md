@@ -21,6 +21,16 @@
 
 ## Controladores de cliente
 
+- CartController
+  - GET /shop/cart
+  - POST /shop/cart/add
+  - POST /shop/cart/update
+  - POST /shop/cart/remove
+  - POST /shop/cart/clear
+  - POST /shop/cart/coupon
+  - GET /api/cart
+  - POST /api/cart/add
+
 - ClientController
   - GET /
 
