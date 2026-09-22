@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<!-- Fragmento Head -->
+<head th:replace="~{admin/fragments/head :: head}"></head>
+
+<body class="d-flex">
+
+<!-- Fragmento Sidebar -->
+<aside th:replace="~{admin/fragments/sidebar :: sidebar}"></aside>
+
+<!-- Contenido Principal -->
+<main class="main-content-offset p-4 p-md-5 min-vh-100 d-flex flex-column flex-grow-1">
+
+  <!-- Top Navbar Fragment -->
+  <nav th:replace="~{admin/fragments/navbar :: navbar}"></nav>
+
+  <!-- Header de sección -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h1 class="h3 fw-bold text-brand-dark mb-1" th:text="${isEdit ? 'Modificar Proveedor' : 'Alta de Nuevo Proveedor'}">Alta de Proveedor</h1>
+      <p class="text-muted small mb-0" th:text="${isEdit ? 'Actualice la información del proveedor comercial registrado.' : 'Complete el formulario para registrar un nuevo proveedor comercial.'}">Información de proveedores.</p>
+    </div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0 small">
+        <li class="breadcrumb-item"><a th:href="@{/admin}" class="text-decoration-none text-muted">Inicio</a></li>
+        <li class="breadcrumb-item"><a th:href="@{/admin/providers}" class="text-decoration-none text-muted">Proveedores</a></li>
+        <li class="breadcrumb-item active text-brand-dark" aria-current="page" th:text="${isEdit ? 'Modificar' : 'Nuevo'}">Nuevo</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Alerta de Error -->
+  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show rounded-3 py-2 small" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+    <span th:text="${errorMessage}">Error al procesar el proveedor</span>
+    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <!-- Card Formulario -->
+  <div class="card bg-white border-brand rounded-4 shadow-sm overflow-hidden mb-4" style="max-width: 700px;">
+    <div class="card-header bg-white border-bottom border-brand p-3">
+      <h5 class="fw-bold mb-0 text-brand-dark" th:text="${isEdit ? 'Datos del Proveedor: ' + proveedor.razonSocial : 'Datos del Nuevo Proveedor'}">Datos del Proveedor</h5>
+    </div>
+
+    <div class="card-body p-4">
+      <form th:action="${isEdit} ? @{/admin/providers/editar/{id}(id=${proveedor.id})} : @{/admin/providers/guardar}" method="POST">
+
+        <div class="row g-3">
+
+          <!-- CUIT -->
+          <div class="col-md-6">
+            <label for="cuit" class="form-label small fw-bold text-brand-dark">CUIT <span class="text-danger">*</span></label>
+            <input type="text" class="form-control font-monospace" id="cuit" name="cuit"
+                   th:value="${proveedor != null && proveedor.cuit != null ? proveedor.cuit : (cuit != null ? cuit : '')}"
+                   placeholder="Ej: 30-71234567-8" required>
+            <div class="form-text">Identificador fiscal único del proveedor.</div>
+          </div>
+
+          <!-- Razón Social -->
+          <div class="col-md-6">
+            <label for="razonSocial" class="form-label small fw-bold text-brand-dark">Razón Social <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="razonSocial" name="razonSocial"
+                   th:value="${proveedor != null && proveedor.razonSocial != null ? proveedor.razonSocial : (razonSocial != null ? razonSocial : '')}"
+                   placeholder="Ej: Indumentaria Textil S.A." required>
+          </div>
+
+        </div>
+
+        <hr class="my-4">
+
+        <!-- Botones de Acción -->
+        <div class="d-flex justify-content-end gap-2">
+          <a th:href="@{/admin/providers}" class="btn btn-outline-secondary">Cancelar</a>
+          <button type="submit" class="btn btn-dark d-flex align-items-center gap-1">
+            <i class="bi bi-check2-circle"></i>
+            <span th:text="${isEdit ? 'Actualizar Proveedor' : 'Guardar Proveedor'}">Guardar Proveedor</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer Fragment -->
+  <footer th:replace="~{admin/fragments/footer :: footer}"></footer>
+
+</main>
+
+<!-- Scripts Fragment -->
+<div th:replace="~{admin/fragments/scripts :: scripts}"></div>
+
+</body>
+</html>
+

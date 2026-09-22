@@ -3,12 +3,10 @@ package com.example.zero.config;
 import com.example.zero.entidades.producto.Categoria;
 import com.example.zero.entidades.producto.SubCategoria;
 import com.example.zero.enums.RolUsuario;
-import com.example.zero.repositories.CategoriaRepository;
-import com.example.zero.repositories.ProductoRepository;
-import com.example.zero.repositories.SubCategoriaRepository;
-import com.example.zero.repositories.UsuarioRepository;
+import com.example.zero.repositories.*;
 import com.example.zero.services.CategoriaService;
 import com.example.zero.services.ProductoService;
+import com.example.zero.services.ProveedorService;
 import com.example.zero.services.SubCategoriaService;
 import com.example.zero.services.persona.UsuarioService;
 import org.springframework.boot.CommandLineRunner;
@@ -25,6 +23,8 @@ public class DataInitializer implements CommandLineRunner {
     private final SubCategoriaService subCategoriaService;
     private final ProductoRepository productoRepository;
     private final ProductoService productoService;
+    private final ProveedorRepository proveedorRepository;
+    private final ProveedorService proveedorService;
 
     public DataInitializer(UsuarioRepository usuarioRepository,
                            UsuarioService usuarioService,
@@ -33,7 +33,9 @@ public class DataInitializer implements CommandLineRunner {
                            SubCategoriaRepository subCategoriaRepository,
                            SubCategoriaService subCategoriaService,
                            ProductoRepository productoRepository,
-                           ProductoService productoService) {
+                           ProductoService productoService,
+                           ProveedorRepository proveedorRepository,
+                           ProveedorService proveedorService) {
         this.usuarioRepository = usuarioRepository;
         this.usuarioService = usuarioService;
         this.categoriaRepository = categoriaRepository;
@@ -42,6 +44,8 @@ public class DataInitializer implements CommandLineRunner {
         this.subCategoriaService = subCategoriaService;
         this.productoRepository = productoRepository;
         this.productoService = productoService;
+        this.proveedorRepository = proveedorRepository;
+        this.proveedorService = proveedorService;
     }
 
     @Override
@@ -112,6 +116,17 @@ public class DataInitializer implements CommandLineRunner {
                         true
                 );
                 System.out.println(">> [DataInitializer] Producto inicial creado: PROD-003 (Pantalón Jogger Dry-Fit)");
+            }
+
+            // 4. Proveedores de prueba
+            if (proveedorRepository.findByCuitAndEliminadoFalse("30-71234567-8").isEmpty()) {
+                proveedorService.crearProveedor("Indumentaria Textil S.A.", "30-71234567-8");
+                System.out.println(">> [DataInitializer] Proveedor inicial creado: Indumentaria Textil S.A.");
+            }
+
+            if (proveedorRepository.findByCuitAndEliminadoFalse("30-65432109-7").isEmpty()) {
+                proveedorService.crearProveedor("Calzados Deportivos del Plata", "30-65432109-7");
+                System.out.println(">> [DataInitializer] Proveedor inicial creado: Calzados Deportivos del Plata");
             }
 
         } catch (Exception e) {
