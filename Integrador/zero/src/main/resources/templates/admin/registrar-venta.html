@@ -11,72 +11,303 @@
     <nav th:replace="~{admin/fragments/navbar :: navbar}"></nav>
 
     <!-- Header de Sección -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h1 class="h3 fw-bold text-brand-dark mb-1">Registrar Venta</h1>
-            <p class="text-muted small mb-0">Orden de compra y deducción de stock en tiempo real.</p>
+            <p class="text-muted small mb-0">Generación de orden de compra, comprobante y facturación con cliente y productos.</p>
         </div>
+        <a th:href="@{/admin/orders}" class="btn btn-sm btn-outline-dark d-flex align-items-center gap-1">
+            <i class="bi bi-table"></i> Ver Órdenes de Venta
+        </a>
     </div>
 
-    <!-- Formulario para registrar venta con DTO -->
-    <!-- Formulario sin th:object -->
-    <form th:action="@{/admin/ventas/guardar}" method="POST">
+    <!-- Alertas de Error / Éxito -->
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show rounded-3 py-2 small" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+        <span th:text="${errorMessage}">Error al procesar la venta</span>
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <form th:action="@{/admin/ventas/guardar}" method="POST" id="formVenta">
         <div class="row g-4">
+
+            <!-- Columna Izquierda: Datos del Comprador y Pago -->
             <div class="col-lg-5">
+                <!-- Datos del Cliente -->
                 <div class="card bg-white border-brand rounded-4 p-4 shadow-sm mb-4">
-                    <h5 class="fw-bold mb-3">1. Datos del Comprador</h5>
+                    <h5 class="fw-bold mb-3 text-brand-dark"><i class="bi bi-person-circle me-1"></i> 1. Datos del Comprador</h5>
+
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">DNI del Comprador *</label>
-                        <input type="text" name="clienteDni" class="form-control border-brand" placeholder="Ej: 38492019" required/>
+                        <label class="form-label small fw-semibold text-brand-dark">DNI del Comprador <span class="text-danger">*</span></label>
+                        <input type="text" name="clienteDni" id="clienteDni" list="clientesList" class="form-control border-brand"
+                               placeholder="Ej: 38492019" th:value="${clienteDni}" required autocomplete="off"/>
+                        <datalist id="clientesList">
+                            <option th:each="c : ${clientes}"
+                                    th:value="${c.numeroDocumento}"
+                                    th:data-nombre="${c.nombre}"
+                                    th:data-apellido="${c.apellido}"
+                                    th:text="${c.nombre + ' ' + c.apellido + ' (DNI: ' + c.numeroDocumento + ')'}"></option>
+                        </datalist>
+                        <div class="form-text">Si el cliente ya existe, se vinculará automáticamente.</div>
                     </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-brand-dark">Nombre <span class="text-danger">*</span></label>
+                            <input type="text" name="clienteNombre" id="clienteNombre" class="form-control border-brand"
+                                   placeholder="Nombre" th:value="${clienteNombre}" required/>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-brand-dark">Apellido <span class="text-danger">*</span></label>
+                            <input type="text" name="clienteApellido" id="clienteApellido" class="form-control border-brand"
+                                   placeholder="Apellido" th:value="${clienteApellido}" required/>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Forma de Pago</label>
+                        <label class="form-label small fw-semibold text-brand-dark">Email de Contacto</label>
+                        <input type="email" name="clienteEmail" id="clienteEmail" class="form-control border-brand"
+                               placeholder="cliente@ejemplo.com" th:value="${clienteEmail}"/>
+                    </div>
+                </div>
+
+                <!-- Forma de Pago -->
+                <div class="card bg-white border-brand rounded-4 p-4 shadow-sm mb-4">
+                    <h5 class="fw-bold mb-3 text-brand-dark"><i class="bi bi-credit-card me-1"></i> 2. Forma de Pago</h5>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold text-brand-dark">Método de Pago</label>
                         <select name="formaDePago" class="form-select border-brand">
-                            <option value="EFECTIVO">Efectivo</option>
-                            <option value="TRANSFERENCIA">Transferencia</option>
-                            <option value="TARJETA_DEBITO">Tarjeta de Débito</option>
-                            <option value="TARJETA_CREDITO">Tarjeta de Crédito</option>
+                            <option value="EFECTIVO" th:selected="${formaDePagoSeleccionada == 'EFECTIVO'}">Efectivo</option>
+                            <option value="TRANSFERENCIA" th:selected="${formaDePagoSeleccionada == 'TRANSFERENCIA'}">Transferencia</option>
+                            <option value="TARJETA_DEBITO" th:selected="${formaDePagoSeleccionada == 'TARJETA_DEBITO'}">Tarjeta de Débito</option>
+                            <option value="TARJETA_CREDITO" th:selected="${formaDePagoSeleccionada == 'TARJETA_CREDITO'}">Tarjeta de Crédito</option>
+                            <option value="BILLETERA_VIRTUAL" th:selected="${formaDePagoSeleccionada == 'BILLETERA_VIRTUAL'}">Billetera Virtual</option>
                         </select>
                     </div>
                 </div>
             </div>
 
+            <!-- Columna Derecha: Selección de Productos y Carrito -->
             <div class="col-lg-7">
-                <div class="card bg-white border-brand rounded-4 shadow-sm overflow-hidden">
-                    <div class="card-header bg-white border-bottom border-brand p-3 d-flex justify-content-between">
-                        <h5 class="fw-bold mb-0">Carrito de Venta</h5>
+                <!-- Selector de Productos -->
+                <div class="card bg-white border-brand rounded-4 p-4 shadow-sm mb-4">
+                    <h5 class="fw-bold mb-3 text-brand-dark"><i class="bi bi-box-seam me-1"></i> 3. Seleccionar Productos a Comprar</h5>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-7">
+                            <label class="form-label small fw-semibold text-brand-dark">Producto del Catálogo</label>
+                            <select id="selectorProducto" class="form-select border-brand">
+                                <option value="" disabled selected>-- Elija un producto --</option>
+                                <option th:each="prod : ${productos}"
+                                        th:value="${prod.id}"
+                                        th:data-nombre="${prod.nombre}"
+                                        th:data-precio="${prod.precioActual}"
+                                        th:text="${prod.codigo + ' - ' + prod.nombre + ' ($' + #numbers.formatDecimal(prod.precioActual, 1, 2) + ')'}">
+                                    PROD-001 - Zapatillas ($120.00)
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold text-brand-dark">Cantidad</label>
+                            <input type="number" id="selectorCantidad" class="form-control border-brand" min="1" value="1"/>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" id="btnAgregarProducto" class="btn btn-dark w-100 d-flex align-items-center justify-content-center gap-1">
+                                <i class="bi bi-plus-lg"></i> Agregar
+                            </button>
+                        </div>
                     </div>
+                </div>
+
+                <!-- Tabla Carrito de Venta -->
+                <div class="card bg-white border-brand rounded-4 shadow-sm overflow-hidden mb-4">
+                    <div class="card-header bg-white border-bottom border-brand p-3 d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0 text-brand-dark"><i class="bi bi-cart3 me-1"></i> Carrito de Venta</h5>
+                        <span class="badge bg-light text-dark border border-brand" id="badgeTotalItems">0 artículos</span>
+                    </div>
+
                     <div class="table-responsive">
-                        <table class="table align-middle mb-0">
+                        <table class="table align-middle mb-0" id="tablaCarrito">
                             <thead class="bg-brand-dark">
                             <tr>
                                 <th class="text-white ps-3">Producto</th>
                                 <th class="text-white text-center">Cantidad</th>
-                                <th class="text-white text-center">Precio</th>
+                                <th class="text-white text-center">Precio Unit.</th>
+                                <th class="text-white text-center">Subtotal</th>
                                 <th class="text-white text-center pe-3">Acción</th>
                             </tr>
                             </thead>
-                            <tbody>
-                            <!-- Itera sobre 'detalles' provisto en el Model, o muestra fila de ejemplo si no existe -->
-                            <tr th:each="item : ${detalles}">
-                                <td th:text="${item.producto.nombre}" class="ps-3 fw-semibold">Hoodie Zero</td>
-                                <td th:text="${item.cantidad}" class="text-center">1</td>
-                                <td th:text="${#numbers.formatCurrency(item.subtotal)}" class="text-center fw-bold">$89.90</td>
-                                <td class="text-center pe-3">
-                                    <button type="button" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            <tbody id="cuerpoTabla">
+                            <tr id="filaVacia">
+                                <td colspan="5" class="text-center py-4 text-muted small">
+                                    No hay productos agregados al carrito de venta.<br>
+                                    Seleccione un producto arriba y haga clic en <strong>Agregar</strong>.
                                 </td>
                             </tr>
                             </tbody>
                         </table>
                     </div>
-                    <!-- ... botones ... -->
+
+                    <!-- Contenedor dinámico de inputs ocultos que se envían al backend -->
+                    <div id="hiddenInputsContainer"></div>
+
+                    <!-- Footer con Total y Botón de Venta -->
+                    <div class="card-footer bg-white border-top border-brand p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="h5 mb-0 text-muted">Total a Pagar:</span>
+                            <span class="h3 fw-bold text-brand-dark mb-0" id="labelTotalVenta">$0.00</span>
+                        </div>
+                        <button type="submit" class="btn btn-dark btn-lg w-100 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-check2-circle fs-4"></i> Confirmar y Registrar Venta
+                        </button>
+                    </div>
                 </div>
             </div>
+
         </div>
     </form>
 
     <footer th:replace="~{admin/fragments/footer :: footer}"></footer>
 </main>
+
 <div th:replace="~{admin/fragments/scripts :: scripts}"></div>
+
+<!-- Script interactivo de carrito de venta -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const carrito = [];
+
+        const selectorProducto = document.getElementById("selectorProducto");
+        const selectorCantidad = document.getElementById("selectorCantidad");
+        const btnAgregar = document.getElementById("btnAgregarProducto");
+        const cuerpoTabla = document.getElementById("cuerpoTabla");
+        const filaVacia = document.getElementById("filaVacia");
+        const labelTotal = document.getElementById("labelTotalVenta");
+        const badgeTotalItems = document.getElementById("badgeTotalItems");
+        const hiddenInputsContainer = document.getElementById("hiddenInputsContainer");
+        const formVenta = document.getElementById("formVenta");
+
+        // Autocompletar cliente si selecciona del datalist
+        const clienteDni = document.getElementById("clienteDni");
+        const clienteNombre = document.getElementById("clienteNombre");
+        const clienteApellido = document.getElementById("clienteApellido");
+        const clientesList = document.getElementById("clientesList");
+
+        clienteDni.addEventListener("input", function () {
+            const val = this.value.trim();
+            const option = Array.from(clientesList.options).find(opt => opt.value === val);
+            if (option) {
+                if (option.getAttribute("data-nombre")) clienteNombre.value = option.getAttribute("data-nombre");
+                if (option.getAttribute("data-apellido")) clienteApellido.value = option.getAttribute("data-apellido");
+            }
+        });
+
+        // Agregar producto
+        btnAgregar.addEventListener("click", function () {
+            const prodId = selectorProducto.value;
+            const cant = parseInt(selectorCantidad.value, 10);
+
+            if (!prodId) {
+                alert("Por favor seleccione un producto del catálogo.");
+                return;
+            }
+            if (isNaN(cant) || cant <= 0) {
+                alert("La cantidad debe ser mayor a cero.");
+                return;
+            }
+
+            const selectedOption = selectorProducto.options[selectorProducto.selectedIndex];
+            const nombre = selectedOption.getAttribute("data-nombre");
+            const precio = parseFloat(selectedOption.getAttribute("data-precio")) || 0;
+
+            // Verificar si ya está en el carrito
+            const existente = carrito.find(item => item.id === prodId);
+            if (existente) {
+                existente.cantidad += cant;
+                existente.subtotal = Math.round(existente.cantidad * existente.precio * 100) / 100;
+            } else {
+                carrito.push({
+                    id: prodId,
+                    nombre: nombre,
+                    precio: precio,
+                    cantidad: cant,
+                    subtotal: Math.round(cant * precio * 100) / 100
+                });
+            }
+
+            selectorCantidad.value = 1;
+            renderCarrito();
+        });
+
+        // Renderizar tabla y inputs ocultos
+        function renderCarrito() {
+            cuerpoTabla.innerHTML = "";
+            hiddenInputsContainer.innerHTML = "";
+
+            if (carrito.length === 0) {
+                cuerpoTabla.appendChild(filaVacia);
+                labelTotal.textContent = "$0.00";
+                badgeTotalItems.textContent = "0 artículos";
+                return;
+            }
+
+            let total = 0;
+            let totalCantidad = 0;
+
+            carrito.forEach((item, index) => {
+                total += item.subtotal;
+                totalCantidad += item.cantidad;
+
+                const tr = document.createElement("tr");
+
+                tr.innerHTML = `
+                    <td class="ps-3 fw-bold text-brand-dark">${item.nombre}</td>
+                    <td class="text-center">${item.cantidad}</td>
+                    <td class="text-center">$${item.precio.toFixed(2)}</td>
+                    <td class="text-center fw-bold text-brand-dark">$${item.subtotal.toFixed(2)}</td>
+                    <td class="text-center pe-3">
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-item" data-index="${index}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                cuerpoTabla.appendChild(tr);
+
+                // Inputs ocultos para enviar al backend
+                const inputId = document.createElement("input");
+                inputId.type = "hidden";
+                inputId.name = "productoIds";
+                inputId.value = item.id;
+                hiddenInputsContainer.appendChild(inputId);
+
+                const inputCant = document.createElement("input");
+                inputCant.type = "hidden";
+                inputCant.name = "cantidades";
+                inputCant.value = item.cantidad;
+                hiddenInputsContainer.appendChild(inputCant);
+            });
+
+            labelTotal.textContent = "$" + total.toFixed(2);
+            badgeTotalItems.textContent = totalCantidad + " artículo(s)";
+
+            // Asignar eventos de eliminación
+            document.querySelectorAll(".btn-eliminar-item").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    const idx = parseInt(this.getAttribute("data-index"), 10);
+                    carrito.splice(idx, 1);
+                    renderCarrito();
+                });
+            });
+        }
+
+        // Validación al enviar el formulario
+        formVenta.addEventListener("submit", function (e) {
+            if (carrito.length === 0) {
+                e.preventDefault();
+                alert("Debe agregar al menos un producto al carrito de venta.");
+            }
+        });
+    });
+</script>
+
 </body>
 </html>

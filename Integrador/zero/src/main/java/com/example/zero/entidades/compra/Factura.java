@@ -39,7 +39,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = {"cliente", "empleado", "formaDePago", "detalles"})
+@ToString(exclude = {"cliente", "formaDePago", "detalles"})
 public class Factura {
 
     @Id

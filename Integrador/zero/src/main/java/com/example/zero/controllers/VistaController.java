@@ -1,9 +1,12 @@
 package com.example.zero.controllers;
 
+import com.example.zero.dto.OrderViewDto;
+import com.example.zero.entidades.compra.Factura;
 import com.example.zero.entidades.producto.Categoria;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.services.CategoriaService;
 import com.example.zero.services.ProductoService;
+import com.example.zero.services.VentaService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,10 +20,17 @@ public class VistaController {
 
     private final ProductoService productoService;
     private final CategoriaService categoriaService;
+    private final VentaService ventaService;
+    private final AdminVentaController adminVentaController;
 
-    public VistaController(ProductoService productoService, CategoriaService categoriaService) {
+    public VistaController(ProductoService productoService,
+                           CategoriaService categoriaService,
+                           VentaService ventaService,
+                           AdminVentaController adminVentaController) {
         this.productoService = productoService;
         this.categoriaService = categoriaService;
+        this.ventaService = ventaService;
+        this.adminVentaController = adminVentaController;
     }
 
     // Inicio / Portada
@@ -89,7 +99,18 @@ public class VistaController {
 
     // Confirmación de pedido
     @GetMapping({"/shop/confirmation", "/shop/confirmacion"})
-    public String shopConfirmation() {
+    public String shopConfirmation(Model model,
+                                   @RequestParam(name = "orderNumber", required = false) String orderNumber) {
+        if (orderNumber != null && !orderNumber.trim().isEmpty()) {
+            try {
+                String cleanNum = orderNumber.replace("#ORD-", "").replace("ORD-", "").trim();
+                Long num = Long.parseLong(cleanNum);
+                Factura f = ventaService.buscarPorNumeroFactura(num);
+                OrderViewDto dto = adminVentaController.mapearFacturaAOrderDto(f);
+                model.addAttribute("order", dto);
+            } catch (Exception ignored) {
+            }
+        }
         return "shop/confirmation";
     }
 
@@ -119,24 +140,13 @@ public class VistaController {
         return "admin/index";
     }
 
-    // 1. Tablas básicas (orders / tables-basic)
-    @GetMapping({"/admin/orders", "/admin/tables-basic"})
-    public String adminTables() {
-        return "admin/tables-basic";
-    }
-
-    // 2. Pantalla 404
+    // Pantalla 404
     @GetMapping({"/admin/404", "/admin/page-404"})
     public String admin404() {
         return "admin/page-404";
     }
 
-    @GetMapping({"/admin/ventas/nueva", "/admin/registrar-venta"})
-    public String adminRegistrarVenta() {
-        return "admin/registrar-venta";
-    }
-
-    // 2. Registrar Compra (Ingreso de mercadería con proveedores y stock)
+    // Registrar Compra (Ingreso de mercadería con proveedores y stock)
     @GetMapping({"/admin/compras/nueva", "/admin/registrar-compra"})
     public String adminRegistrarCompra() {
         return "admin/registrar-compra";
