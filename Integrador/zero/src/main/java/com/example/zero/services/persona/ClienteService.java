@@ -1,14 +1,26 @@
 package com.example.zero.services.persona;
 
+import com.example.zero.dto.persona.ClienteRegistroDTO;
+import com.example.zero.entidades.empresa.Contacto;
+import com.example.zero.entidades.empresa.ContactoCorreoElectronico;
+import com.example.zero.entidades.empresa.ContactoTelefonico;
 import com.example.zero.entidades.persona.Cliente;
 import com.example.zero.entidades.persona.Nacionalidad;
 import com.example.zero.entidades.persona.Usuario;
+import com.example.zero.entidades.zona.Direccion;
+import com.example.zero.entidades.zona.Localidad;
+import com.example.zero.enums.RolUsuario;
+import com.example.zero.enums.TipoContacto;
 import com.example.zero.enums.TipoDocumento;
-import com.example.zero.repositories.ClienteRepository;
+import com.example.zero.enums.TipoTelefono;
+import com.example.zero.repositories.*;
+import com.example.zero.services.zona.ZonaService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,9 +28,32 @@ import java.util.Optional;
 public class ClienteService {
 
     private final ClienteRepository clienteRepository;
+    private final NacionalidadRepository nacionalidadRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final UsuarioService usuarioService;
+    private final ZonaService zonaService;
+    private final DireccionRepository direccionRepository;
+    private final ContactoRepository contactoRepository;
 
     public ClienteService(ClienteRepository clienteRepository) {
+        this(clienteRepository, null, null, null, null, null, null);
+    }
+
+    @Autowired
+    public ClienteService(ClienteRepository clienteRepository,
+                          NacionalidadRepository nacionalidadRepository,
+                          UsuarioRepository usuarioRepository,
+                          UsuarioService usuarioService,
+                          ZonaService zonaService,
+                          DireccionRepository direccionRepository,
+                          ContactoRepository contactoRepository) {
         this.clienteRepository = clienteRepository;
+        this.nacionalidadRepository = nacionalidadRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.usuarioService = usuarioService;
+        this.zonaService = zonaService;
+        this.direccionRepository = direccionRepository;
+        this.contactoRepository = contactoRepository;
     }
 
     public void validar(String numeroDocumento, String nombre, String apellido) {
@@ -56,6 +91,145 @@ public class ClienteService {
                 .build();
 
         return clienteRepository.save(cliente);
+    }
+
+    @Transactional
+    public Usuario registrarCliente(ClienteRegistroDTO dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("Los datos de registro no pueden ser nulos");
+        }
+
+        // 1. Validar Credenciales
+        if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("La contraseña no puede estar vacía");
+        }
+        if (dto.getPassword().length() < 4) {
+            throw new IllegalArgumentException("La contraseña debe tener al menos 4 caracteres");
+        }
+        if (dto.getConfirmPassword() == null || !dto.getPassword().equals(dto.getConfirmPassword())) {
+            throw new IllegalArgumentException("Las contraseñas no coinciden");
+        }
+        if (dto.getEmail() == null || dto.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("El correo electrónico no puede estar vacío");
+        }
+        String emailLimpio = dto.getEmail().trim().toLowerCase();
+        if (usuarioRepository != null && usuarioRepository.findByNombreUsuarioAndEliminadoFalse(emailLimpio).isPresent()) {
+            throw new IllegalArgumentException("Ya existe un usuario activo con el correo: " + emailLimpio);
+        }
+
+        // 2. Validar Datos Personales
+        validar(dto.getNumeroDocumento(), dto.getNombre(), dto.getApellido());
+        String docLimpio = dto.getNumeroDocumento().trim();
+        if (clienteRepository.findByNumeroDocumentoAndEliminadoFalse(docLimpio).isPresent()) {
+            throw new IllegalArgumentException("Ya existe un cliente activo con el documento: " + docLimpio);
+        }
+        if (dto.getFechaNacimiento() == null) {
+            throw new IllegalArgumentException("Debe ingresar su fecha de nacimiento");
+        }
+        if (dto.getFechaNacimiento().isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("La fecha de nacimiento no puede ser posterior a la actual");
+        }
+
+        // 3. Validar Nacionalidad
+        if (dto.getNacionalidadId() == null || dto.getNacionalidadId().trim().isEmpty()) {
+            throw new IllegalArgumentException("Debe seleccionar una nacionalidad");
+        }
+        Nacionalidad nacionalidad = null;
+        if (nacionalidadRepository != null) {
+            nacionalidad = nacionalidadRepository.findActive(dto.getNacionalidadId().trim())
+                    .orElseThrow(() -> new IllegalArgumentException("La nacionalidad seleccionada no es válida"));
+        }
+
+        // 4. Validar Ubicación y Domicilio
+        if (dto.getLocalidadId() == null || dto.getLocalidadId().trim().isEmpty()) {
+            throw new IllegalArgumentException("Debe seleccionar una localidad para el domicilio");
+        }
+        Localidad localidad = null;
+        if (zonaService != null) {
+            localidad = zonaService.buscarLocalidadPorId(dto.getLocalidadId().trim());
+        }
+        if (dto.getCalle() == null || dto.getCalle().trim().isEmpty()) {
+            throw new IllegalArgumentException("La calle de la dirección no puede estar vacía");
+        }
+        if (dto.getNumeracion() == null || dto.getNumeracion().trim().isEmpty()) {
+            throw new IllegalArgumentException("La numeración de la dirección no puede estar vacía");
+        }
+
+        Direccion direccion = new Direccion();
+        direccion.setCalle(dto.getCalle().trim());
+        direccion.setNumeracion(dto.getNumeracion().trim());
+        direccion.setBarrio(dto.getBarrio() != null ? dto.getBarrio().trim() : null);
+        direccion.setManzanaPiso(dto.getManzanaPiso() != null ? dto.getManzanaPiso().trim() : null);
+        direccion.setCasaDepartamento(dto.getCasaDepartamento() != null ? dto.getCasaDepartamento().trim() : null);
+        direccion.setReferencia(dto.getReferencia() != null ? dto.getReferencia().trim() : null);
+        direccion.setLocalidad(localidad);
+        direccion.setEliminado(false);
+
+        if (direccionRepository != null) {
+            direccion = direccionRepository.save(direccion);
+        }
+
+        // 5. Validar y Crear Contacto (Correo o Celular)
+        Contacto contacto;
+        String tipoContacto = dto.getTipoContacto() != null ? dto.getTipoContacto().trim().toUpperCase() : "EMAIL";
+
+        if ("CELULAR".equals(tipoContacto)) {
+            if (dto.getContactoTelefono() == null || dto.getContactoTelefono().trim().isEmpty()) {
+                throw new IllegalArgumentException("Debe ingresar un número de celular de contacto");
+            }
+            ContactoTelefonico tel = new ContactoTelefonico();
+            tel.setTelefono(dto.getContactoTelefono().trim());
+            tel.setTipoTelefono(TipoTelefono.CELULAR);
+            tel.setTipoContacto(TipoContacto.PERSONAL);
+            tel.setObservacion(dto.getContactoObservacion() != null ? dto.getContactoObservacion().trim() : "Contacto móvil registrado");
+            tel.setEliminado(false);
+            contacto = tel;
+        } else {
+            String mailContacto = (dto.getContactoEmail() != null && !dto.getContactoEmail().trim().isEmpty())
+                    ? dto.getContactoEmail().trim()
+                    : emailLimpio;
+            ContactoCorreoElectronico mail = new ContactoCorreoElectronico();
+            mail.setEmail(mailContacto);
+            mail.setTipoContacto(TipoContacto.PERSONAL);
+            mail.setObservacion(dto.getContactoObservacion() != null ? dto.getContactoObservacion().trim() : "Correo principal registrado");
+            mail.setEliminado(false);
+            contacto = mail;
+        }
+
+        if (contactoRepository != null) {
+            contacto = contactoRepository.save(contacto);
+        }
+
+        // 6. Crear y Persistir Cliente
+        List<Direccion> direcciones = new ArrayList<>();
+        direcciones.add(direccion);
+
+        List<Contacto> contactos = new ArrayList<>();
+        contactos.add(contacto);
+
+        Cliente cliente = Cliente.builder()
+                .numeroDocumento(docLimpio)
+                .nombre(dto.getNombre().trim())
+                .apellido(dto.getApellido().trim())
+                .fechaNacimiento(dto.getFechaNacimiento())
+                .tipoDocumento(dto.getTipoDocumento() != null ? dto.getTipoDocumento() : TipoDocumento.DNI)
+                .nacionalidad(nacionalidad)
+                .direccion(direcciones)
+                .contactos(contactos)
+                .eliminado(false)
+                .build();
+
+        cliente = clienteRepository.save(cliente);
+
+        // 7. Crear Usuario con Rol CLIENTE
+        Usuario usuario = null;
+        if (usuarioService != null) {
+            usuario = usuarioService.crearUsuario(emailLimpio, dto.getPassword(), RolUsuario.CLIENTE, cliente);
+            cliente.setUsuario(usuario);
+            clienteRepository.save(cliente);
+        }
+
+        return usuario;
     }
 
     @Transactional
@@ -116,4 +290,3 @@ public class ClienteService {
         return clienteRepository.findAll();
     }
 }
-

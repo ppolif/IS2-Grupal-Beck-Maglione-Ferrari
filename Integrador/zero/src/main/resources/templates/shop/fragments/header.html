@@ -31,7 +31,10 @@
             </li>
             <!-- Usuario no logueado -->
             <li class="nav-item" th:if="${session.usuariosession == null}">
-              <a class="nav-link" th:href="@{/admin/login}">Login</a>
+              <a class="nav-link" th:href="@{/login}">Login</a>
+            </li>
+            <li class="nav-item" th:if="${session.usuariosession == null}">
+              <a class="nav-link font-weight-bold" th:href="@{/register}">Registro</a>
             </li>
 
             <!-- Usuario logueado -->

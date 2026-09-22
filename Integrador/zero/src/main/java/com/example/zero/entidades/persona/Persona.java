@@ -77,12 +77,13 @@ public abstract class Persona {
     // @JoinColumn(name = "imagen_id")
     // private Imagen imagen;
 
-    // Por borrado logico una persona tiene muchsa direcciones
-     @OneToMany(fetch = FetchType.LAZY)
-     @JoinColumn(name = "persona_documento")
-     private List<Direccion> direccion;
+    // Por borrado logico una persona tiene muchas direcciones
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "persona_documento")
+    private List<Direccion> direccion;
 
     // Persona 1..* Contacto (una persona puede tener varios medios de contacto).
-     @OneToMany(fetch = FetchType.LAZY)
-     private List<Contacto> contactos;
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "persona_documento")
+    private List<Contacto> contactos;
 }

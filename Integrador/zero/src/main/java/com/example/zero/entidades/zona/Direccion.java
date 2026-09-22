@@ -2,11 +2,14 @@ package com.example.zero.entidades.zona;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.UuidGenerator;
 
 @Data
 @Entity
 public class Direccion {
     @Id
+    @UuidGenerator
+    @Column(name = "id", updatable = false, nullable = false, length = 36)
     private String id;
     private String calle;
     private String numeracion;

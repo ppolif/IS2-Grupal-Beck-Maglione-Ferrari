@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{shop/fragments/head :: head}"></head>
+<body>
+
+<!-- Header Fragment -->
+<header th:replace="~{shop/fragments/header :: header}"></header>
+
+<!-- Start Banner Area -->
+<section class="banner-area organic-breadcrumb">
+  <div class="container">
+    <div class="breadcrumb-banner d-flex flex-wrap align-items-center justify-content-end">
+      <div class="col-first">
+        <h1>Registro de Clientes</h1>
+        <nav class="d-flex align-items-center">
+          <a th:href="@{/}">Inicio<span class="lnr lnr-arrow-right"></span></a>
+          <span class="text-white">Crear Cuenta</span>
+        </nav>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- End Banner Area -->
+
+<!--================ Register Section =================-->
+<section class="checkout_area section_gap">
+  <div class="container">
+
+    <!-- Mensaje de Error -->
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4 rounded" role="alert">
+      <strong><i class="fa fa-exclamation-triangle mr-1"></i> Atención:</strong>
+      <span th:text="${errorMessage}">Ocurrió un error al procesar el registro.</span>
+    </div>
+
+    <div class="billing_details">
+      <div class="row justify-content-center">
+        <div class="col-lg-10">
+          <div class="card shadow-sm border-0 p-4 p-md-5 bg-white rounded">
+
+            <div class="text-center mb-4">
+              <h2 class="font-weight-bold text-dark mb-1">Crea tu Cuenta en ZERO</h2>
+              <p class="text-muted">Completa tus datos personales, de contacto y dirección para darte de alta como cliente.</p>
+            </div>
+
+            <!-- Formulario gestionado 100% por Java y Thymeleaf (sin JavaScript) -->
+            <form th:action="@{/register}" th:object="${dto}" method="POST" id="registroClienteForm">
+
+              <!-- SECCIÓN 1: CREDENCIALES DE ACCESO -->
+              <div class="mb-4 pb-2 border-bottom">
+                <h4 class="text-primary font-weight-bold mb-3"><i class="fa fa-lock mr-2"></i>1. Credenciales de la Cuenta</h4>
+                <div class="row">
+                  <div class="col-md-12 form-group mb-3">
+                    <label for="email" class="small font-weight-bold d-block">Correo Electrónico (será tu usuario para iniciar sesión) *</label>
+                    <input type="email" class="form-control" id="email" th:field="*{email}" placeholder="ejemplo@correo.com" required>
+                  </div>
+                  <div class="col-md-6 form-group mb-3">
+                    <label for="password" class="small font-weight-bold d-block">Contraseña *</label>
+                    <input type="password" class="form-control" id="password" th:field="*{password}" placeholder="Mínimo 4 caracteres" required minlength="4">
+                  </div>
+                  <div class="col-md-6 form-group mb-3">
+                    <label for="confirmPassword" class="small font-weight-bold d-block">Confirmar Contraseña *</label>
+                    <input type="password" class="form-control" id="confirmPassword" th:field="*{confirmPassword}" placeholder="Repite la contraseña" required minlength="4">
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECCIÓN 2: DATOS PERSONALES Y CLIENTE -->
+              <div class="mb-4 pb-2 border-bottom">
+                <h4 class="text-primary font-weight-bold mb-3"><i class="fa fa-user mr-2"></i>2. Datos Personales</h4>
+                <div class="row">
+                  <div class="col-md-6 form-group mb-3">
+                    <label for="nombre" class="small font-weight-bold d-block">Nombre *</label>
+                    <input type="text" class="form-control" id="nombre" th:field="*{nombre}" placeholder="Nombre" required>
+                  </div>
+                  <div class="col-md-6 form-group mb-3">
+                    <label for="apellido" class="small font-weight-bold d-block">Apellido *</label>
+                    <input type="text" class="form-control" id="apellido" th:field="*{apellido}" placeholder="Apellido" required>
+                  </div>
+                  <div class="col-md-4 form-group mb-3">
+                    <label for="tipoDocumento" class="small font-weight-bold d-block">Tipo de Documento *</label>
+                    <select class="form-control" id="tipoDocumento" th:field="*{tipoDocumento}" required>
+                      <option th:each="tipo : ${tiposDocumento}" th:value="${tipo}" th:text="${tipo}">DNI</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4 form-group mb-3">
+                    <label for="numeroDocumento" class="small font-weight-bold d-block">Número de Documento *</label>
+                    <input type="text" class="form-control" id="numeroDocumento" th:field="*{numeroDocumento}" placeholder="Ej: 38123456" required>
+                  </div>
+                  <div class="col-md-4 form-group mb-3">
+                    <label for="fechaNacimiento" class="small font-weight-bold d-block">Fecha de Nacimiento *</label>
+                    <input type="date" class="form-control" id="fechaNacimiento" th:field="*{fechaNacimiento}" required>
+                  </div>
+                  <div class="col-md-12 form-group mb-3">
+                    <label for="nacionalidadId" class="small font-weight-bold d-block">Nacionalidad *</label>
+                    <select class="form-control" id="nacionalidadId" th:field="*{nacionalidadId}" required>
+                      <option value="">-- Seleccione Nacionalidad --</option>
+                      <option th:each="nac : ${nacionalidades}" th:value="${nac.id}" th:text="${nac.nombre}">Argentina</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECCIÓN 3: MEDIO DE CONTACTO -->
+              <div class="mb-4 pb-2 border-bottom">
+                <h4 class="text-primary font-weight-bold mb-3"><i class="fa fa-phone mr-2"></i>3. Medio de Contacto</h4>
+                <p class="text-muted small mb-2">Selecciona si deseas registrar un Correo Electrónico o un Teléfono Celular:</p>
+
+                <div class="d-flex align-items-center mb-3">
+                  <div class="custom-control custom-radio mr-4">
+                    <input type="radio" id="contactoTipoEmail" name="tipoContacto" value="EMAIL" class="custom-control-input"
+                           th:field="*{tipoContacto}">
+                    <label class="custom-control-label font-weight-bold" for="contactoTipoEmail">
+                      <i class="fa fa-envelope text-secondary mr-1"></i> Correo Electrónico
+                    </label>
+                  </div>
+                  <div class="custom-control custom-radio mr-3">
+                    <input type="radio" id="contactoTipoCelular" name="tipoContacto" value="CELULAR" class="custom-control-input"
+                           th:field="*{tipoContacto}">
+                    <label class="custom-control-label font-weight-bold" for="contactoTipoCelular">
+                      <i class="fa fa-mobile text-secondary mr-1"></i> Teléfono Celular
+                    </label>
+                  </div>
+                  <!-- Botón Thymeleaf para alternar vista del contacto -->
+                  <button type="submit" name="accion" value="cambiarContacto" formnovalidate class="btn btn-outline-secondary btn-sm">
+                    <i class="fa fa-refresh mr-1"></i> Aplicar Selección
+                  </button>
+                </div>
+
+                <div class="row">
+                  <!-- Si eligió Correo Electrónico -->
+                  <div class="col-md-6 form-group mb-3" th:if="${dto.tipoContacto == null or dto.tipoContacto == 'EMAIL'}">
+                    <label for="contactoEmail" class="small font-weight-bold d-block">Correo Electrónico de Contacto</label>
+                    <input type="email" class="form-control" id="contactoEmail" th:field="*{contactoEmail}" placeholder="contacto@ejemplo.com (o vacío para usar el usuario)">
+                    <small class="form-text text-muted">Si lo dejas en blanco se usará el correo de acceso.</small>
+                  </div>
+
+                  <!-- Si eligió Celular -->
+                  <div class="col-md-6 form-group mb-3" th:if="${dto.tipoContacto == 'CELULAR'}">
+                    <label for="contactoTelefono" class="small font-weight-bold d-block">Número de Celular *</label>
+                    <input type="tel" class="form-control" id="contactoTelefono" th:field="*{contactoTelefono}" placeholder="Ej: +54 9 351 1234567" required>
+                    <small class="form-text text-muted">Ingresa código de área y número celular.</small>
+                  </div>
+
+                  <!-- Observación -->
+                  <div class="col-md-6 form-group mb-3">
+                    <label for="contactoObservacion" class="small font-weight-bold d-block">Observación de Contacto</label>
+                    <input type="text" class="form-control" id="contactoObservacion" th:field="*{contactoObservacion}" placeholder="Ej: Horario disponible, preferir WhatsApp, etc.">
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECCIÓN 4: DOMICILIO Y ZONA GEOGRÁFICA -->
+              <div class="mb-4">
+                <h4 class="text-primary font-weight-bold mb-3"><i class="fa fa-map-marker mr-2"></i>4. Dirección y Ubicación Geográfica</h4>
+
+                <!-- COMBOBOXES EN CASCADA CON THYMELEAF (SIN JAVASCRIPT) -->
+                <div class="bg-light p-3 rounded mb-3 border">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small font-weight-bold text-dark">Selección Geográfica en Cascada (gestionado por Thymeleaf):</span>
+                    <button type="submit" name="accion" value="actualizarZonas" formnovalidate class="btn btn-outline-info btn-sm">
+                      <i class="fa fa-refresh mr-1"></i> Actualizar Opciones
+                    </button>
+                  </div>
+
+                  <div class="row">
+                    <!-- 1. País -->
+                    <div class="col-md-3 form-group mb-2">
+                      <label for="paisId" class="small font-weight-bold d-block">1. País *</label>
+                      <select class="form-control" id="paisId" th:field="*{paisId}" required>
+                        <option value="">-- Seleccionar País --</option>
+                        <option th:each="p : ${paises}" th:value="${p.id}" th:text="${p.nombre}">Argentina</option>
+                      </select>
+                      <button type="submit" name="accion" value="cambiarPais" formnovalidate class="btn btn-outline-primary btn-sm btn-block mt-2">
+                        <i class="fa fa-arrow-down mr-1"></i> Cargar Provincias
+                      </button>
+                    </div>
+
+                    <!-- 2. Provincia -->
+                    <div class="col-md-3 form-group mb-2">
+                      <label for="provinciaId" class="small font-weight-bold d-block">2. Provincia *</label>
+                      <select class="form-control" id="provinciaId" th:field="*{provinciaId}" th:disabled="${#lists.isEmpty(provincias)}" required>
+                        <option value="">-- Seleccionar Provincia --</option>
+                        <option th:each="prov : ${provincias}" th:value="${prov.id}" th:text="${prov.nombre}">Córdoba</option>
+                      </select>
+                      <button type="submit" name="accion" value="cambiarProvincia" formnovalidate class="btn btn-outline-primary btn-sm btn-block mt-2"
+                              th:disabled="${#lists.isEmpty(provincias)}">
+                        <i class="fa fa-arrow-down mr-1"></i> Cargar Deptos
+                      </button>
+                    </div>
+
+                    <!-- 3. Departamento -->
+                    <div class="col-md-3 form-group mb-2">
+                      <label for="departamentoId" class="small font-weight-bold d-block">3. Departamento *</label>
+                      <select class="form-control" id="departamentoId" th:field="*{departamentoId}" th:disabled="${#lists.isEmpty(departamentos)}" required>
+                        <option value="">-- Seleccionar Departamento --</option>
+                        <option th:each="dep : ${departamentos}" th:value="${dep.id}" th:text="${dep.nombre}">Capital</option>
+                      </select>
+                      <button type="submit" name="accion" value="cambiarDepartamento" formnovalidate class="btn btn-outline-primary btn-sm btn-block mt-2"
+                              th:disabled="${#lists.isEmpty(departamentos)}">
+                        <i class="fa fa-arrow-down mr-1"></i> Cargar Localidades
+                      </button>
+                    </div>
+
+                    <!-- 4. Localidad -->
+                    <div class="col-md-3 form-group mb-2">
+                      <label for="localidadId" class="small font-weight-bold d-block">4. Localidad *</label>
+                      <select class="form-control" id="localidadId" th:field="*{localidadId}" th:disabled="${#lists.isEmpty(localidades)}" required>
+                        <option value="">-- Seleccionar Localidad --</option>
+                        <option th:each="loc : ${localidades}" th:value="${loc.id}"
+                                th:text="${loc.nombre} + (${loc.codigoPostal} != null ? ' (CP: ' + ${loc.codigoPostal} + ')' : '')">
+                          Córdoba
+                        </option>
+                      </select>
+                      <small class="form-text text-muted mt-2 d-block" th:if="${#lists.isEmpty(localidades)}">
+                        Cargue los pasos anteriores para habilitar
+                      </small>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- DATOS ESPECÍFICOS DE LA DIRECCIÓN -->
+                <div class="row">
+                  <div class="col-md-6 form-group mb-3">
+                    <label for="calle" class="small font-weight-bold d-block">Calle *</label>
+                    <input type="text" class="form-control" id="calle" th:field="*{calle}" placeholder="Av. Siempre Viva" required>
+                  </div>
+                  <div class="col-md-3 form-group mb-3">
+                    <label for="numeracion" class="small font-weight-bold d-block">Numeración *</label>
+                    <input type="text" class="form-control" id="numeracion" th:field="*{numeracion}" placeholder="742" required>
+                  </div>
+                  <div class="col-md-3 form-group mb-3">
+                    <label for="barrio" class="small font-weight-bold d-block">Barrio</label>
+                    <input type="text" class="form-control" id="barrio" th:field="*{barrio}" placeholder="Centro / Residencial">
+                  </div>
+                  <div class="col-md-3 form-group mb-3">
+                    <label for="manzanaPiso" class="small font-weight-bold d-block">Manzana / Piso</label>
+                    <input type="text" class="form-control" id="manzanaPiso" th:field="*{manzanaPiso}" placeholder="Piso 4">
+                  </div>
+                  <div class="col-md-3 form-group mb-3">
+                    <label for="casaDepartamento" class="small font-weight-bold d-block">Casa / Depto</label>
+                    <input type="text" class="form-control" id="casaDepartamento" th:field="*{casaDepartamento}" placeholder="Depto B">
+                  </div>
+                  <div class="col-md-6 form-group mb-3">
+                    <label for="referencia" class="small font-weight-bold d-block">Referencia de Entrega</label>
+                    <input type="text" class="form-control" id="referencia" th:field="*{referencia}" placeholder="Entre calles, timbre, etc.">
+                  </div>
+                </div>
+              </div>
+
+              <!-- BOTÓN FINAL DE REGISTRO -->
+              <div class="mt-4 pt-3 border-top text-center">
+                <button type="submit" name="accion" value="registrar" class="btn btn-warning btn-block py-3 font-weight-bold shadow-sm" style="font-size: 1.1rem; border-radius: 8px;">
+                  <i class="fa fa-user-plus mr-2"></i> Registrarme como Cliente
+                </button>
+                <div class="mt-3">
+                  <span class="text-muted small">¿Ya posees una cuenta registrada? </span>
+                  <a th:href="@{/login}" class="small font-weight-bold text-primary">Inicia Sesión aquí</a>
+                </div>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!--================ End Register Section =================-->
+
+<!-- Footer Fragment -->
+<footer th:replace="~{shop/fragments/footer :: footer}"></footer>
+
+</body>
+</html>

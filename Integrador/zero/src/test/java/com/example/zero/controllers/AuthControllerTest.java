@@ -1,8 +1,12 @@
 package com.example.zero.controllers;
 
+import com.example.zero.dto.persona.ClienteRegistroDTO;
 import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.enums.RolUsuario;
+import com.example.zero.repositories.NacionalidadRepository;
+import com.example.zero.services.persona.ClienteService;
 import com.example.zero.services.persona.UsuarioService;
+import com.example.zero.services.zona.ZonaService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.Test;
@@ -22,6 +26,15 @@ class AuthControllerTest {
 
     @Mock
     private UsuarioService usuarioService;
+
+    @Mock
+    private ClienteService clienteService;
+
+    @Mock
+    private ZonaService zonaService;
+
+    @Mock
+    private NacionalidadRepository nacionalidadRepository;
 
     @Mock
     private HttpSession session;
@@ -99,17 +112,17 @@ class AuthControllerTest {
     }
 
     @Test
-    void showRegisterPage_sinSesion_retornaVistaRegister() {
+    void showAdminRegisterPage_sinSesion_retornaVistaAdminRegister() {
         when(session.getAttribute("usuariosession")).thenReturn(null);
 
-        String vista = authController.showRegisterPage(session);
+        String vista = authController.showAdminRegisterPage(session);
 
         assertEquals("admin/page-register", vista);
     }
 
     @Test
-    void processRegister_clavesNoCoinciden_retornaVistaConError() {
-        String vista = authController.processRegister("Juan", "juan@test.com", "pass1", "pass2", request, session, model);
+    void processAdminRegister_clavesNoCoinciden_retornaVistaConError() {
+        String vista = authController.processAdminRegister("Juan", "juan@test.com", "pass1", "pass2", request, session, model);
 
         assertEquals("admin/page-register", vista);
         verify(model, times(1)).addAttribute("errorMessage", "Las contraseñas no coinciden");
@@ -117,16 +130,75 @@ class AuthControllerTest {
     }
 
     @Test
-    void processRegister_exitoso_creaUsuarioYRedirige() {
+    void processAdminRegister_exitoso_creaUsuarioYRedirigeAdmin() {
         Usuario nuevo = Usuario.builder().nombreUsuario("nuevo@zero.com").rol(RolUsuario.ADMINISTRATIVO).build();
-        when(request.getRequestURI()).thenReturn("/admin/register");
         when(usuarioService.crearUsuario(eq("nuevo@zero.com"), eq("pass123"), eq(RolUsuario.ADMINISTRATIVO), isNull()))
                 .thenReturn(nuevo);
 
-        String vista = authController.processRegister("Nuevo Admin", "nuevo@zero.com", "pass123", "pass123", request, session, model);
+        String vista = authController.processAdminRegister("Nuevo Admin", "nuevo@zero.com", "pass123", "pass123", request, session, model);
 
         assertEquals("redirect:/admin", vista);
         verify(session, times(1)).setAttribute("usuariosession", nuevo);
+    }
+
+    @Test
+    void showRegisterPage_sinSesion_retornaVistaShopRegister() {
+        when(session.getAttribute("usuariosession")).thenReturn(null);
+
+        String vista = authController.showRegisterPage(session, model);
+
+        assertEquals("shop/register", vista);
+        verify(model, times(1)).addAttribute(eq("dto"), any(ClienteRegistroDTO.class));
+    }
+
+    @Test
+    void processRegister_clienteExitoso_guardaSesionYRedirige() {
+        ClienteRegistroDTO dto = ClienteRegistroDTO.builder().email("cliente@zero.com").build();
+        Usuario usuarioMock = Usuario.builder().nombreUsuario("cliente@zero.com").rol(RolUsuario.CLIENTE).build();
+
+        when(clienteService.registrarCliente(dto)).thenReturn(usuarioMock);
+
+        String vista = authController.processRegister(dto, session, model);
+
+        assertEquals("redirect:/?registered=true", vista);
+        verify(session, times(1)).setAttribute("usuariosession", usuarioMock);
+    }
+
+    @Test
+    void processRegister_errorValidacion_retornaVistaShopRegisterConError() {
+        ClienteRegistroDTO dto = ClienteRegistroDTO.builder().email("cliente@zero.com").build();
+
+        when(clienteService.registrarCliente(dto)).thenThrow(new IllegalArgumentException("El documento ya existe"));
+
+        String vista = authController.processRegister(dto, session, model);
+
+        assertEquals("shop/register", vista);
+        verify(model, times(1)).addAttribute("errorMessage", "El documento ya existe");
+        verify(session, never()).setAttribute(eq("usuariosession"), any());
+    }
+
+    @Test
+    void processRegister_accionCambiarPais_recargaProvinciasSinRegistrar() {
+        ClienteRegistroDTO dto = ClienteRegistroDTO.builder().paisId("pais-arg").provinciaId("prov-cba").build();
+
+        String vista = authController.processRegister(dto, "cambiarPais", session, model);
+
+        assertEquals("shop/register", vista);
+        assertNull(dto.getProvinciaId());
+        verify(clienteService, never()).registrarCliente(any());
+        verify(zonaService, times(1)).listarProvinciasPorPais("pais-arg");
+    }
+
+    @Test
+    void processRegister_accionCambiarProvincia_recargaDepartamentosSinRegistrar() {
+        ClienteRegistroDTO dto = ClienteRegistroDTO.builder().provinciaId("prov-cba").departamentoId("dep-cap").build();
+
+        String vista = authController.processRegister(dto, "cambiarProvincia", session, model);
+
+        assertEquals("shop/register", vista);
+        assertNull(dto.getDepartamentoId());
+        verify(clienteService, never()).registrarCliente(any());
+        verify(zonaService, times(1)).listarDepartamentosPorProvincia("prov-cba");
     }
 
     @Test
@@ -145,4 +217,3 @@ class AuthControllerTest {
         verify(session, times(1)).invalidate();
     }
 }
-
