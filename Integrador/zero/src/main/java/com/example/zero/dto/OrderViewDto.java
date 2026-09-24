@@ -32,6 +32,10 @@ public class OrderViewDto {
     private String shippingCity;
     private String shippingZip;
 
+    public LocalDateTime getDate() {
+        return createdAt;
+    }
+
     @Builder.Default
     private List<OrderItemDto> items = new ArrayList<>();
 
@@ -44,6 +48,9 @@ public class OrderViewDto {
         private int quantity;
         private double unitPrice;
         private double totalPrice;
+
+        public double getSubtotal() {
+            return totalPrice;
+        }
     }
 }
-

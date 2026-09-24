@@ -54,10 +54,6 @@ public class Producto {
     @Column(length = 20)
     private String talle;
 
-    @Column(name = "stock", nullable = false)
-    @Builder.Default
-    private int stock = 0;
-
     @Column(name = "en_oferta", nullable = false)
     @Builder.Default
     private boolean enOferta = false;

@@ -4,7 +4,6 @@ import com.example.zero.enums.RolUsuario;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -21,7 +20,7 @@ import org.hibernate.annotations.UuidGenerator;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = "persona")
+@ToString(exclude = {"persona"})
 public class Usuario {
 
     @Id
@@ -53,6 +52,9 @@ public class Usuario {
 
     @Column(name = "codigo_expiracion")
     private java.time.LocalDateTime codigoExpiracion;
+
+    @Column(name = "foto", length = 500)
+    private String foto;
 
     // Lado dueño de la relación 1 a 1 con Persona (en la práctica, una Persona
     // concreta de tipo Cliente o Empleado).

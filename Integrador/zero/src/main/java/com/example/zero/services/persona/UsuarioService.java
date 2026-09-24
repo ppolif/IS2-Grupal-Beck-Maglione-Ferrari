@@ -189,6 +189,40 @@ public class UsuarioService {
     }
 
     @Transactional
+    public Usuario actualizarPerfil(String id, String nuevoEmail, String nuevaFoto) {
+        Usuario usuario = buscarPorId(id);
+
+        if (nuevoEmail != null && !nuevoEmail.trim().isEmpty()) {
+            String emailLimpio = nuevoEmail.trim().toLowerCase();
+            if (!emailLimpio.contains("@")) {
+                throw new IllegalArgumentException("El formato del correo electrónico es inválido");
+            }
+            if (!emailLimpio.equalsIgnoreCase(usuario.getNombreUsuario())) {
+                usuarioRepository.findByNombreUsuarioAndEliminadoFalse(emailLimpio).ifPresent(existente -> {
+                    if (!existente.getId().equals(usuario.getId())) {
+                        throw new IllegalArgumentException("El correo electrónico ya se encuentra registrado por otro usuario.");
+                    }
+                });
+                usuario.setNombreUsuario(emailLimpio);
+
+                if (usuario.getPersona() != null && usuario.getPersona().getContactos() != null) {
+                    for (var c : usuario.getPersona().getContactos()) {
+                        if (c instanceof com.example.zero.entidades.empresa.ContactoCorreoElectronico ce) {
+                            ce.setEmail(emailLimpio);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (nuevaFoto != null) {
+            usuario.setFoto(nuevaFoto.trim());
+        }
+
+        return usuarioRepository.save(usuario);
+    }
+
+    @Transactional
     public void eliminarUsuario(String id) {
         Usuario usuario = buscarPorId(id);
         usuario.setEliminado(true);
@@ -223,4 +257,3 @@ public class UsuarioService {
         return usuarioRepository.findAll();
     }
 }
-

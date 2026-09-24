@@ -230,7 +230,10 @@ public class VentaService {
         }
 
         // Búsqueda alternativa por ID primario
-        Optional<Factura> facturaById = facturaRepository.findActive(orderNumberOrId.trim());
+        Optional<Factura> facturaById = facturaRepository.findActive(clean);
+        if (facturaById.isEmpty() && !clean.equals(orderNumberOrId.trim())) {
+            facturaById = facturaRepository.findActive(orderNumberOrId.trim());
+        }
         return facturaById.map(this::mapearFacturaAOrderDto).orElse(null);
     }
 

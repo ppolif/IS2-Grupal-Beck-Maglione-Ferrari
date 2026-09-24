@@ -168,6 +168,60 @@
 </section>
 <!-- End Category Banners Area -->
 
+<!-- Start Seccion de Ofertas Especiales ZERO -->
+<section id="ofertas-seccion" class="section_gap bg-light" th:if="${saleProducts != null && !#lists.isEmpty(saleProducts)}">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 text-center">
+        <div class="section-title mb-4">
+          <span class="badge badge-warning text-dark px-3 py-2 text-uppercase mb-2 font-weight-bold" style="letter-spacing: 1px;">
+            <i class="ti-tag mr-1"></i> Descuentos Especiales
+          </span>
+          <h1 class="font-weight-bold text-dark">Ofertas Exclusivas ZERO</h1>
+          <p class="text-muted">Aprovecha los mejores descuentos en indumentaria y calzado de alto rendimiento por tiempo limitado.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-3 col-md-6 mb-4" th:each="prod : ${saleProducts}">
+        <div class="single-product position-relative bg-white p-3 rounded shadow-sm">
+          <div class="position-absolute" style="top: 15px; left: 15px; z-index: 2;">
+            <span class="badge badge-danger text-uppercase font-weight-bold px-2 py-1 shadow-sm">OFERTA</span>
+          </div>
+          <img class="img-fluid rounded mb-3" th:src="@{/shop/img/product/p1.jpg}" th:alt="${prod.nombre}"
+               src="/shop/img/product/p1.jpg">
+          <div class="product-details text-center">
+            <h6 class="font-weight-bold text-dark text-truncate" th:text="${prod.nombre}">Producto en Oferta</h6>
+            <div class="price mb-2">
+              <h6 class="text-danger font-weight-bold" th:text="${#numbers.formatCurrency(prod.precioActual)}">$99.00</h6>
+            </div>
+            <div class="prd-bottom d-flex justify-content-center gap-2">
+              <form th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
+                <input type="hidden" name="productId" th:value="${prod.id}">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
+                  <span class="ti-bag"></span>
+                  <p class="hover-text">Al carrito</p>
+                </button>
+              </form>
+              <a th:href="@{/shop/product/{id}(id=${prod.id})}" class="social-info" title="Ver Detalle">
+                <span class="lnr lnr-move"></span>
+                <p class="hover-text">Detalle</p>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mt-3">
+      <a th:href="@{/offers}" class="primary-btn font-weight-bold">Ver Todas las Ofertas</a>
+    </div>
+  </div>
+</section>
+<!-- End Seccion de Ofertas Especiales ZERO -->
+
 <!-- Start Latest Products Section -->
 <section class="section_gap">
   <div class="container">
@@ -184,14 +238,15 @@
       <!-- Iteración Dinámica si existen featuredProducts -->
       <div class="col-lg-3 col-md-6 mb-4" th:if="${featuredProducts != null && !#lists.isEmpty(featuredProducts)}" th:each="prod : ${featuredProducts}">
         <div class="single-product">
-          <img class="img-fluid" src="../../static/shop/img/product/p1.jpg" th:src="@{/shop/img/product/p1.jpg}" th:alt="${prod.nombre}">
+          <img class="img-fluid" th:src="@{/shop/img/product/p1.jpg}" th:alt="${prod.nombre}"
+               src="/shop/img/product/p1.jpg">
           <div class="product-details">
             <h6 th:text="${prod.nombre}">Zero Runner Pro</h6>
             <div class="price">
               <h6 th:text="${#numbers.formatCurrency(prod.precioActual)}">$150.00</h6>
             </div>
             <div class="prd-bottom">
-              <form th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}" action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
+              <form th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
                 <input type="hidden" name="productId" th:value="${prod.id}">
                 <input type="hidden" name="quantity" value="1">
                 <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
@@ -199,7 +254,7 @@
                   <p class="hover-text">Al carrito</p>
                 </button>
               </form>
-              <a href="single-product.html" th:href="@{/shop/product/{id}(id=${prod.id})}" class="social-info" title="Ver Detalle">
+              <a th:href="@{/shop/product/{id}(id=${prod.id})}" class="social-info" title="Ver Detalle">
                 <span class="lnr lnr-move"></span>
                 <p class="hover-text">Detalle</p>
               </a>
@@ -212,7 +267,7 @@
       <th:block th:if="${featuredProducts == null || #lists.isEmpty(featuredProducts)}">
         <div class="col-lg-3 col-md-6 mb-4" th:each="idx : ${#numbers.sequence(1, 4)}">
           <div class="single-product">
-            <img class="img-fluid" src="../../static/shop/img/product/p1.jpg" th:src="@{/shop/img/product/p{id}.jpg(id=${idx})}" alt="Producto Zero">
+            <img class="img-fluid" th:src="@{/shop/img/product/p{id}.jpg(id=${idx})}" alt="Producto Zero">
             <div class="product-details">
               <h6>Zero Speedrunner Nitro V</h6>
               <div class="price">
@@ -220,7 +275,7 @@
                 <h6 class="l-through">$210.00</h6>
               </div>
               <div class="prd-bottom">
-                <form th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}" action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
+                <form th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
                   <input type="hidden" name="productId" th:value="${idx}">
                   <input type="hidden" name="quantity" value="1">
                   <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
@@ -228,7 +283,7 @@
                     <p class="hover-text">Al carrito</p>
                   </button>
                 </form>
-                <a href="single-product.html" th:href="@{/shop/single-product}" class="social-info" title="Ver Detalle">
+                <a th:href="@{/shop/single-product}" class="social-info" title="Ver Detalle">
                   <span class="lnr lnr-move"></span>
                   <p class="hover-text">Detalle</p>
                 </a>
@@ -240,7 +295,7 @@
     </div>
 
     <div class="text-center mt-4">
-      <a href="category.html" th:href="@{/shop/category}" class="primary-btn">Ver Toda la Tienda</a>
+      <a th:href="@{/shop/category}" class="primary-btn">Ver Toda la Tienda</a>
     </div>
   </div>
 </section>
@@ -254,3 +309,4 @@
 
 </body>
 </html>
+

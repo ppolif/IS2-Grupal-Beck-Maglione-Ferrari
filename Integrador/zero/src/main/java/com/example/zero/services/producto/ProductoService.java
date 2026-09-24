@@ -296,7 +296,7 @@ public class ProductoService {
         if (producto == null) return 0.0;
         if (producto.getId() != null) {
             try {
-                return obtenerPrecioActual(producto.getId());
+                return vigenciaPrecioService.obtenerPrecioActual(producto.getId());
             } catch (Exception ignored) {
             }
         }
@@ -333,7 +333,7 @@ public class ProductoService {
     public Producto prepararParaVista(Producto producto) {
         if (producto == null) return null;
         try {
-            double precio = obtenerPrecioActual(producto.getId());
+            double precio = vigenciaPrecioService.obtenerPrecioActual(producto.getId());
             producto.setPrecioActual(precio);
         } catch (Exception ignored) {
             if (producto.getPrecioActual() == null) {

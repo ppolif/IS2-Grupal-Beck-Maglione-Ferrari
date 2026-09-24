@@ -19,7 +19,7 @@
   <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
       <h1 class="h3 fw-bold text-brand-dark mb-1">Tablas de Pedidos</h1>
-      <p class="text-muted small mb-0">Gestión de órdenes y compras con precisión.</p>
+      <p class="text-muted small mb-0">Gestión de órdenes y facturas con precisión.</p>
     </div>
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb mb-0 small">
@@ -99,7 +99,7 @@
           </td>
           <td class="text-center pe-3">
             <div class="btn-group btn-group-sm">
-              <a th:href="@{/shop/confirmation(orderNumber=${order.orderNumber})}" target="_blank" class="btn btn-outline-dark" title="Ver Comprobante">
+              <a th:href="@{/admin/orders/{id}(id=${order.id})}" class="btn btn-outline-dark" title="Ver Detalle de Factura">
                 <i class="bi bi-eye"></i>
               </a>
               <form th:action="@{/admin/orders/delete}" method="POST" class="d-inline" onsubmit="return confirm('¿Seguro que deseas eliminar este pedido?');">

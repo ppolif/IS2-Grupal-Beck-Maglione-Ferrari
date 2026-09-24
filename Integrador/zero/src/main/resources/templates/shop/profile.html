@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{shop/fragments/head :: head}"></head>
+<body>
+
+<!-- Header Fragment -->
+<header th:replace="~{shop/fragments/header :: header}"></header>
+
+<!-- Banner / Breadcrumb Fragment -->
+<section class="banner-area organic-breadcrumb">
+  <div class="container">
+    <div class="breadcrumb-banner d-flex flex-wrap align-items-center justify-content-end">
+      <div class="col-first">
+        <h1>Mi Perfil</h1>
+        <nav class="d-flex align-items-center">
+          <a th:href="@{/}">Inicio<span class="lnr lnr-arrow-right"></span></a>
+          <a th:href="@{/profile}">Perfil de Cliente</a>
+        </nav>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Profile Content Area -->
+<section class="section_gap">
+  <div class="container">
+
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+          <div class="card-header bg-dark text-white p-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+              <img id="headerAvatar"
+                   th:src="${usuario != null && usuario.foto != null && !usuario.foto.isBlank()} ? ${usuario.foto} : @{/admin/assets/images/avatar.png}"
+                   alt="Avatar" class="rounded-circle border border-warning" width="60" height="60" style="object-fit: cover;"
+                   onerror="this.src='/admin/assets/images/avatar.png'">
+              <div>
+                <h4 class="text-white mb-0 font-weight-bold"
+                    th:text="${cliente != null ? (cliente.nombre + ' ' + cliente.apellido) : usuario.nombreUsuario}">
+                  Juan Pérez
+                </h4>
+                <span class="badge badge-warning text-dark font-weight-bold">CLIENTE ZERO</span>
+              </div>
+            </div>
+            <a th:href="@{/shop/category}" class="btn btn-outline-light btn-sm">
+              <i class="fa fa-shopping-bag mr-1"></i> Ir a la Tienda
+            </a>
+          </div>
+
+          <div class="card-body p-4 p-md-5 bg-white">
+            <form th:action="@{/profile}" method="POST" id="formPerfilCliente">
+
+              <div class="row">
+                <!-- Columna Izquierda: Foto y Previsualización -->
+                <div class="col-md-4 text-center mb-4 mb-md-0 border-right">
+                  <div class="mb-3">
+                    <img id="avatarPreview"
+                         th:src="${usuario != null && usuario.foto != null && !usuario.foto.isBlank()} ? ${usuario.foto} : @{/admin/assets/images/avatar.png}"
+                         alt="Previsualización" class="rounded-circle shadow-sm border p-1" width="130" height="130" style="object-fit: cover;"
+                         onerror="this.src='/admin/assets/images/avatar.png'">
+                  </div>
+                  <h6 class="font-weight-bold text-dark mb-1">Foto de Perfil</h6>
+                  <p class="text-muted small mb-3">Introduce la URL de tu imagen o avatar</p>
+
+                  <div class="form-group text-left">
+                    <label for="fotoInput" class="small font-weight-bold text-muted">URL de Imagen / Foto:</label>
+                    <input type="url" name="foto" id="fotoInput" class="form-control form-control-sm"
+                           placeholder="https://ejemplo.com/mifoto.jpg"
+                           th:value="${usuario != null ? usuario.foto : ''}"
+                           oninput="document.getElementById('avatarPreview').src = this.value || '/admin/assets/images/avatar.png'">
+                  </div>
+                </div>
+
+                <!-- Columna Derecha: Datos del Perfil -->
+                <div class="col-md-8 pl-md-4">
+                  <h5 class="font-weight-bold text-dark border-bottom pb-2 mb-4">
+                    <i class="fa fa-id-card-o mr-2 text-warning"></i>Información Personal & Cuenta
+                  </h5>
+
+                  <div class="row">
+                    <!-- Campo Modificable: Email -->
+                    <div class="col-12 form-group mb-3">
+                      <label for="emailInput" class="font-weight-bold text-dark">
+                        Correo Electrónico (Modificable):
+                      </label>
+                      <input type="email" name="email" id="emailInput" class="form-control" required
+                             th:value="${usuario != null ? usuario.nombreUsuario : ''}">
+                      <small class="form-text text-muted">Este correo se utiliza como usuario de acceso al sistema.</small>
+                    </div>
+
+                    <!-- Datos No Editables del Cliente -->
+                    <div class="col-md-6 form-group mb-3">
+                      <label class="small text-muted font-weight-bold">Nombre:</label>
+                      <input type="text" class="form-control bg-light" readonly
+                             th:value="${cliente != null ? cliente.nombre : '-'}">
+                    </div>
+
+                    <div class="col-md-6 form-group mb-3">
+                      <label class="small text-muted font-weight-bold">Apellido:</label>
+                      <input type="text" class="form-control bg-light" readonly
+                             th:value="${cliente != null ? cliente.apellido : '-'}">
+                    </div>
+
+                    <div class="col-md-6 form-group mb-3">
+                      <label class="small text-muted font-weight-bold">Tipo y Número de Documento:</label>
+                      <input type="text" class="form-control bg-light" readonly
+                             th:value="${cliente != null ? ((cliente.tipoDocumento != null ? cliente.tipoDocumento : 'DNI') + ' ' + cliente.numeroDocumento) : '-'}">
+                    </div>
+
+                    <div class="col-md-6 form-group mb-3">
+                      <label class="small text-muted font-weight-bold">Fecha de Nacimiento:</label>
+                      <input type="text" class="form-control bg-light" readonly
+                             th:value="${cliente != null && cliente.fechaNacimiento != null ? cliente.fechaNacimiento : '-'}">
+                    </div>
+
+                    <div class="col-md-6 form-group mb-3">
+                      <label class="small text-muted font-weight-bold">Nacionalidad:</label>
+                      <input type="text" class="form-control bg-light" readonly
+                             th:value="${cliente != null && cliente.nacionalidad != null ? cliente.nacionalidad.nombre : 'Argentina'}">
+                    </div>
+
+                    <div class="col-md-6 form-group mb-3">
+                      <label class="small text-muted font-weight-bold">Rol:</label>
+                      <input type="text" class="form-control bg-light" readonly
+                             th:value="${usuario != null ? usuario.rol : 'CLIENTE'}">
+                    </div>
+                  </div>
+
+                  <!-- Botón de Guardar Cambios -->
+                  <div class="mt-4 pt-3 border-top text-right">
+                    <button type="submit" class="primary-btn border-0 font-weight-bold px-4">
+                      <i class="fa fa-save mr-1"></i> Guardar Cambios de Perfil
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Footer Fragment -->
+<footer th:replace="~{shop/fragments/footer :: footer}"></footer>
+
+<!-- Scripts Fragment -->
+<div th:replace="~{shop/fragments/scripts :: scripts}"></div>
+
+</body>
+</html>
