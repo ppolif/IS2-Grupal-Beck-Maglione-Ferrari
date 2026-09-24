@@ -10,7 +10,7 @@ import com.example.zero.entidades.producto.Categoria;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.entidades.producto.SubCategoria;
 import com.example.zero.enums.TipoDePago;
-import com.example.zero.services.ProductoService;
+import com.example.zero.services.producto.ProductoService;
 import com.example.zero.services.VentaService;
 import com.example.zero.services.persona.ClienteService;
 import org.junit.jupiter.api.Test;

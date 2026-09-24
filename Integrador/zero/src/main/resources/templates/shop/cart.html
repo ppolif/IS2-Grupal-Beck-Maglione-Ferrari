@@ -52,11 +52,7 @@
             <td>
               <div class="media">
                 <div class="d-flex mr-3">
-<<<<<<< HEAD
-                  <img src="../../static/shop/img/cart.jpg" th:src="@{/shop/img/cart.jpg}"
-=======
                   <img th:src="@{/shop/img/cart.jpg}"
->>>>>>> augusto
                        th:alt="${item.producto != null ? item.producto.nombre : 'Producto'}"
                        style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">
                 </div>
@@ -70,16 +66,6 @@
               <h5>$<span th:text="${#numbers.formatDecimal(item.precioUnitario != null ? item.precioUnitario : 0, 1, 'POINT', 2, 'POINT')}">360.00</span></h5>
             </td>
             <td>
-<<<<<<< HEAD
-              <form th:action="@{/shop/cart/update}" method="POST" class="m-0 p-0">
-                <input type="hidden" name="itemId" th:value="${item.id}">
-                <div class="product_count">
-                  <input type="text" name="quantity" th:id="'sst_' + ${item.id}" maxlength="12" th:value="${item.cantidad}" title="Cantidad:" class="input-text qty" onchange="this.form.submit()">
-                  <button onclick="var r = this.parentElement.querySelector('.qty'); var v = parseInt(r.value); if(!isNaN(v)) { r.value = v + 1; r.form.submit(); } return false;" class="increase items-count" type="button"><i class="lnr lnr-chevron-up"></i></button>
-                  <button onclick="var r = this.parentElement.querySelector('.qty'); var v = parseInt(r.value); if(!isNaN(v) &amp;&amp; v > 1) { r.value = v - 1; r.form.submit(); } return false;" class="reduced items-count" type="button"><i class="lnr lnr-chevron-down"></i></button>
-                </div>
-                <noscript><button type="submit" class="btn btn-sm btn-outline-secondary ml-1" title="Actualizar"><i class="fa fa-check"></i></button></noscript>
-=======
               <!-- Formulario de Actualización de Cantidad (100% Server-side sin JavaScript) -->
               <form th:action="@{/shop/cart/update}" method="POST" class="d-inline-flex align-items-center">
                 <input type="hidden" name="itemId" th:value="${item.id}">
@@ -87,7 +73,6 @@
                 <button type="submit" class="btn btn-sm btn-outline-dark ml-2" title="Actualizar cantidad">
                   <i class="fa fa-refresh"></i>
                 </button>
->>>>>>> augusto
               </form>
             </td>
             <td>
@@ -104,26 +89,6 @@
             </td>
           </tr>
 
-<<<<<<< HEAD
-          <!-- Subtotal -->
-          <tr>
-            <td colspan="3"></td>
-            <td><h5>Subtotal</h5></td>
-            <td><h5>$<span th:text="${#numbers.formatDecimal(cart != null && cart.total != null ? cart.total : 0, 1, 'POINT', 2, 'POINT')}">2160.00</span></h5></td>
-          </tr>
-
-          <!-- Costo de Envío -->
-          <tr class="shipping_area">
-            <td colspan="3"></td>
-            <td><h5>Envío estimado</h5></td>
-            <td><h5>Gratis</h5></td>
-          </tr>
-
-          <!-- Total Final -->
-          <tr>
-            <td colspan="3"></td>
-            <td><h4>Total</h4></td>
-=======
           <!-- Fila de Acciones Globales (Vaciar Carrito) -->
           <tr>
             <td colspan="3">
@@ -134,8 +99,7 @@
               </form>
             </td>
             <td><h5>Total</h5></td>
->>>>>>> augusto
-            <td><h4 class="text-brand-bold font-weight-bold">$<span th:text="${#numbers.formatDecimal(cart != null && cart.total != null ? cart.total : 0, 1, 'POINT', 2, 'POINT')}">2210.00</span></h4></td>
+            <td><h4 class="text-brand-bold font-weight-bold">$<span th:text="${#numbers.formatDecimal(cart != null && cart.total != null ? cart.total : 0, 1, 'POINT', 2, 'POINT')}">0.00</span></h4></td>
           </tr>
 
           <!-- Acciones de Salida -->

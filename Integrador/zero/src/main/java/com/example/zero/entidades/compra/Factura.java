@@ -65,10 +65,9 @@ public class Factura {
     @Builder.Default
     private boolean eliminado = false;
 
-//    //esto segun el uml no estaria????
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "cliente_id", nullable = false)
-//    private Cliente cliente;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cliente_id")
+    private Cliente cliente;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "forma_de_pago_id", nullable = false)
