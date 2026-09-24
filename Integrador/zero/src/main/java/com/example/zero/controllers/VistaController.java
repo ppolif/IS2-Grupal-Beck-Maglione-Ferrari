@@ -71,13 +71,14 @@ public class VistaController {
     @GetMapping({"/shop/confirmation", "/shop/confirmacion"})
     public String shopConfirmation(Model model,
                                    @RequestParam(name = "orderNumber", required = false) String orderNumber) {
+        model.addAttribute("title", "Confirmación de Pedido");
+        model.addAttribute("subtitle", "Comprobante");
         if (orderNumber != null && !orderNumber.trim().isEmpty()) {
             try {
-                String cleanNum = orderNumber.replace("#ORD-", "").replace("ORD-", "").trim();
-                Long num = Long.parseLong(cleanNum);
-                Factura f = ventaService.buscarPorNumeroFactura(num);
-                OrderViewDto dto = adminVentaController.mapearFacturaAOrderDto(f);
-                model.addAttribute("order", dto);
+                OrderViewDto dto = ventaService.buscarOrderDtoPorIdentificador(orderNumber);
+                if (dto != null) {
+                    model.addAttribute("order", dto);
+                }
             } catch (Exception ignored) {
             }
         }

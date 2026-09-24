@@ -156,58 +156,7 @@ public class AdminVentaController {
      * Mapeo de Factura a DTO para vistas de administración y comprobantes.
      */
     public OrderViewDto mapearFacturaAOrderDto(Factura f) {
-        String clientName = f.getCliente() != null
-                ? (f.getCliente().getNombre() + " " + f.getCliente().getApellido()).trim()
-                : "Cliente General";
-        String email = (f.getCliente() != null && f.getCliente().getUsuario() != null)
-                ? f.getCliente().getUsuario().getNombreUsuario()
-                : (f.getCliente() != null ? "DNI: " + f.getCliente().getNumeroDocumento() : "N/A");
-
-        StringBuilder summary = new StringBuilder();
-        String category = "General";
-        List<OrderViewDto.OrderItemDto> items = new ArrayList<>();
-
-        if (f.getDetalles() != null) {
-            for (Detalle d : f.getDetalles()) {
-                if (d.getProducto() != null) {
-                    if (summary.length() > 0) summary.append(", ");
-                    summary.append(d.getProducto().getNombre()).append(" (x").append(d.getCantidad()).append(")");
-                    if (d.getProducto().getSubCategoria() != null && d.getProducto().getSubCategoria().getCategoria() != null) {
-                        category = d.getProducto().getSubCategoria().getCategoria().getNombre();
-                    }
-                    items.add(OrderViewDto.OrderItemDto.builder()
-                            .productName(d.getProducto().getNombre())
-                            .quantity(d.getCantidad())
-                            .unitPrice(d.getCantidad() > 0 ? Math.round((d.getSubtotal() / d.getCantidad()) * 100.0) / 100.0 : 0.0)
-                            .totalPrice(d.getSubtotal())
-                            .build());
-                }
-            }
-        }
-
-        String payment = (f.getFormaDePago() != null && f.getFormaDePago().getTipoPago() != null)
-                ? f.getFormaDePago().getTipoPago().name().replace('_', ' ')
-                : "Efectivo";
-
-        return OrderViewDto.builder()
-                .id(f.getId())
-                .orderNumber("#ORD-" + f.getNumeroFactura())
-                .numeroFactura(f.getNumeroFactura())
-                .customerName(clientName)
-                .customerEmail(email)
-                .customerPhone("+54 11 0000-0000")
-                .productSummary(summary.length() > 0 ? summary.toString() : "Venta General")
-                .categoryName(category)
-                .totalAmount(f.getTotalPagado())
-                .subtotal(f.getTotalPagado())
-                .status("Completado")
-                .paymentMethod(payment)
-                .createdAt(f.getFechaFactura())
-                .shippingAddress("Mostrador / Entrega Inmediata")
-                .shippingCity("Sucursal Central")
-                .shippingZip("C1000")
-                .items(items)
-                .build();
+        return ventaService.mapearFacturaAOrderDto(f);
     }
 }
 
