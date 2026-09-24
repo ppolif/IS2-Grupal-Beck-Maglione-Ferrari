@@ -39,3 +39,7 @@ public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, String
 
     List<OrdenCompra> findByEliminadoFalse();
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> augusto

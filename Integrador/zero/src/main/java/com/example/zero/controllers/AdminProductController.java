@@ -2,7 +2,7 @@ package com.example.zero.controllers;
 
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.entidades.producto.SubCategoria;
-import com.example.zero.services.ProductoService;
+import com.example.zero.services.producto.ProductoService;
 import com.example.zero.services.SubCategoriaService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

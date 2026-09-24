@@ -82,28 +82,4 @@ public class Producto {
 
     @jakarta.persistence.Transient
     private Double precioActual;
-
-    public Double getPrecioActual() {
-        if (precioActual != null) {
-            return precioActual;
-        }
-        if (vigenciasPrecio == null || vigenciasPrecio.isEmpty()) {
-            return 0.0;
-        }
-        return vigenciasPrecio.stream()
-                .filter(vp -> !vp.isEliminado())
-                .filter(vp -> vp.getFechaHasta() == null || !vp.getFechaHasta().isBefore(java.time.LocalDate.now()))
-                .sorted((a, b) -> b.getFechaDesde().compareTo(a.getFechaDesde()))
-                .map(VigenciaPrecio::getPrecio)
-                .findFirst()
-                .orElse(0.0);
-    }
-
-    public Double getPrice() {
-        return getPrecioActual();
-    }
-
-    public String getName() {
-        return nombre;
-    }
 }

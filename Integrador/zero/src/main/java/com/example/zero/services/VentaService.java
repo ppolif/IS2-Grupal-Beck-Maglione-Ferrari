@@ -1,5 +1,6 @@
 package com.example.zero.services;
 
+import com.example.zero.dto.OrderViewDto;
 import com.example.zero.entidades.compra.Detalle;
 import com.example.zero.entidades.compra.Factura;
 import com.example.zero.entidades.compra.FormaDePago;
@@ -11,6 +12,7 @@ import com.example.zero.enums.TipoDePago;
 import com.example.zero.enums.TipoDocumento;
 import com.example.zero.repositories.*;
 import com.example.zero.services.persona.ClienteService;
+import com.example.zero.services.producto.ProductoService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -209,6 +211,82 @@ public class VentaService {
             }
         }
         facturaRepository.save(factura);
+    }
+
+    @Transactional(readOnly = true)
+    public OrderViewDto buscarOrderDtoPorIdentificador(String orderNumberOrId) {
+        if (orderNumberOrId == null || orderNumberOrId.trim().isEmpty()) {
+            return null;
+        }
+        String clean = orderNumberOrId.trim().replace("#ORD-", "").replace("ORD-", "").replace("#", "").trim();
+        try {
+            Long num = Long.parseLong(clean);
+            Optional<Factura> facturaOpt = facturaRepository.findByNumeroFacturaAndEliminadoFalse(num);
+            if (facturaOpt.isPresent()) {
+                return mapearFacturaAOrderDto(facturaOpt.get());
+            }
+        } catch (NumberFormatException ignored) {
+        }
+
+        // Búsqueda alternativa por ID primario
+        Optional<Factura> facturaById = facturaRepository.findActive(orderNumberOrId.trim());
+        return facturaById.map(this::mapearFacturaAOrderDto).orElse(null);
+    }
+
+    public OrderViewDto mapearFacturaAOrderDto(Factura f) {
+        if (f == null) return null;
+        String clientName = f.getCliente() != null
+                ? (f.getCliente().getNombre() + " " + f.getCliente().getApellido()).trim()
+                : "Cliente General";
+        String email = (f.getCliente() != null && f.getCliente().getUsuario() != null)
+                ? f.getCliente().getUsuario().getNombreUsuario()
+                : (f.getCliente() != null ? "DNI: " + f.getCliente().getNumeroDocumento() : "N/A");
+
+        StringBuilder summary = new StringBuilder();
+        String category = "General";
+        List<OrderViewDto.OrderItemDto> items = new ArrayList<>();
+
+        if (f.getDetalles() != null) {
+            for (Detalle d : f.getDetalles()) {
+                if (d.getProducto() != null) {
+                    if (summary.length() > 0) summary.append(", ");
+                    summary.append(d.getProducto().getNombre()).append(" (x").append(d.getCantidad()).append(")");
+                    if (d.getProducto().getSubCategoria() != null && d.getProducto().getSubCategoria().getCategoria() != null) {
+                        category = d.getProducto().getSubCategoria().getCategoria().getNombre();
+                    }
+                    items.add(OrderViewDto.OrderItemDto.builder()
+                            .productName(d.getProducto().getNombre())
+                            .quantity(d.getCantidad())
+                            .unitPrice(d.getCantidad() > 0 ? Math.round((d.getSubtotal() / d.getCantidad()) * 100.0) / 100.0 : 0.0)
+                            .totalPrice(d.getSubtotal())
+                            .build());
+                }
+            }
+        }
+
+        String payment = (f.getFormaDePago() != null && f.getFormaDePago().getTipoPago() != null)
+                ? f.getFormaDePago().getTipoPago().name().replace('_', ' ')
+                : "Efectivo";
+
+        return OrderViewDto.builder()
+                .id(f.getId())
+                .orderNumber("#ORD-" + f.getNumeroFactura())
+                .numeroFactura(f.getNumeroFactura())
+                .customerName(clientName)
+                .customerEmail(email)
+                .customerPhone("+54 11 0000-0000")
+                .productSummary(summary.length() > 0 ? summary.toString() : "Venta General")
+                .categoryName(category)
+                .totalAmount(f.getTotalPagado())
+                .subtotal(f.getTotalPagado())
+                .status("Completado")
+                .paymentMethod(payment)
+                .createdAt(f.getFechaFactura())
+                .shippingAddress("Mostrador / Entrega Inmediata")
+                .shippingCity("Sucursal Central")
+                .shippingZip("C1000")
+                .items(items)
+                .build();
     }
 }
 

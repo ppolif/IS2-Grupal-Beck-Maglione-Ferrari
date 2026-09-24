@@ -10,7 +10,7 @@ import com.example.zero.entidades.zona.Provincia;
 import com.example.zero.enums.RolUsuario;
 import com.example.zero.repositories.*;
 import com.example.zero.services.CategoriaService;
-import com.example.zero.services.ProductoService;
+import com.example.zero.services.producto.ProductoService;
 import com.example.zero.services.ProveedorService;
 import com.example.zero.services.SubCategoriaService;
 import com.example.zero.services.persona.UsuarioService;
@@ -73,13 +73,21 @@ public class DataInitializer implements CommandLineRunner {
         try {
             // 1. Usuarios de prueba
             if (usuarioRepository.findByNombreUsuarioAndEliminadoFalse("admin@zero.com").isEmpty()) {
-                usuarioService.crearUsuario("admin@zero.com", "admin123", RolUsuario.ADMINISTRATIVO, null);
+                usuarioService.crearUsuario("admin@zero.com", "admin123", RolUsuario.ADMINISTRATIVO, null, true);
                 System.out.println(">> [DataInitializer] Usuario administrador creado: admin@zero.com / admin123");
+            } else {
+                usuarioRepository.findByNombreUsuarioAndEliminadoFalse("admin@zero.com").ifPresent(u -> {
+                    if (!u.isActivo()) { u.setActivo(true); usuarioRepository.save(u); }
+                });
             }
 
             if (usuarioRepository.findByNombreUsuarioAndEliminadoFalse("cliente@zero.com").isEmpty()) {
-                usuarioService.crearUsuario("cliente@zero.com", "cliente123", RolUsuario.CLIENTE, null);
+                usuarioService.crearUsuario("cliente@zero.com", "cliente123", RolUsuario.CLIENTE, null, true);
                 System.out.println(">> [DataInitializer] Usuario cliente creado: cliente@zero.com / cliente123");
+            } else {
+                usuarioRepository.findByNombreUsuarioAndEliminadoFalse("cliente@zero.com").ifPresent(u -> {
+                    if (!u.isActivo()) { u.setActivo(true); usuarioRepository.save(u); }
+                });
             }
 
             // 2. Categorías y Subcategorías de prueba

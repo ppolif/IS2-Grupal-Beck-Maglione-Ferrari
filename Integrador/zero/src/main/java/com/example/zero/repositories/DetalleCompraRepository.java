@@ -30,3 +30,7 @@ public interface DetalleCompraRepository extends JpaRepository<DetalleCompra, St
 
     List<DetalleCompra> findByOrdenCompraIdAndEliminadoFalse(String ordenCompraId);
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> augusto

@@ -86,8 +86,9 @@ class ClienteServiceRegistroTest {
         when(direccionRepository.save(any(Direccion.class))).thenAnswer(i -> i.getArgument(0));
         when(contactoRepository.save(any(Contacto.class))).thenAnswer(i -> i.getArgument(0));
         when(clienteRepository.save(any(Cliente.class))).thenAnswer(i -> i.getArgument(0));
-        when(usuarioService.crearUsuario(eq("cliente@test.com"), eq("pass1234"), eq(RolUsuario.CLIENTE), any(Cliente.class)))
+        when(usuarioService.crearUsuario(eq("cliente@test.com"), eq("pass1234"), eq(RolUsuario.CLIENTE), any(Cliente.class), eq(false)))
                 .thenReturn(usuarioMock);
+        when(usuarioService.generarYAsignarCodigo("cliente@test.com")).thenReturn("123456");
 
         Usuario resultado = clienteService.registrarCliente(dto);
 
@@ -98,7 +99,9 @@ class ClienteServiceRegistroTest {
         verify(direccionRepository, times(1)).save(any(Direccion.class));
         verify(contactoRepository, times(1)).save(any(ContactoCorreoElectronico.class));
         verify(clienteRepository, times(2)).save(any(Cliente.class));
-        verify(usuarioService, times(1)).crearUsuario(eq("cliente@test.com"), eq("pass1234"), eq(RolUsuario.CLIENTE), any(Cliente.class));
+        verify(usuarioService, times(1)).crearUsuario(eq("cliente@test.com"), eq("pass1234"), eq(RolUsuario.CLIENTE), any(Cliente.class), eq(false));
+        verify(usuarioService, times(1)).generarYAsignarCodigo("cliente@test.com");
+        verify(usuarioService, times(1)).enviarCodigoConfirmacion("cliente@test.com", "123456");
     }
 
     @Test
@@ -132,7 +135,7 @@ class ClienteServiceRegistroTest {
         when(direccionRepository.save(any(Direccion.class))).thenAnswer(i -> i.getArgument(0));
         when(contactoRepository.save(any(Contacto.class))).thenAnswer(i -> i.getArgument(0));
         when(clienteRepository.save(any(Cliente.class))).thenAnswer(i -> i.getArgument(0));
-        when(usuarioService.crearUsuario(eq("maria@test.com"), eq("pass1234"), eq(RolUsuario.CLIENTE), any(Cliente.class)))
+        when(usuarioService.crearUsuario(eq("maria@test.com"), eq("pass1234"), eq(RolUsuario.CLIENTE), any(Cliente.class), eq(false)))
                 .thenReturn(usuarioMock);
 
         Usuario resultado = clienteService.registrarCliente(dto);

@@ -7,8 +7,15 @@ import com.example.zero.entidades.persona.Nacionalidad;
 import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.enums.EstadoOrdenCompra;
+<<<<<<< HEAD
 import com.example.zero.enums.TipoDocumento;
 import com.example.zero.repositories.*;
+=======
+import com.example.zero.enums.RolUsuario;
+import com.example.zero.enums.TipoDocumento;
+import com.example.zero.repositories.*;
+import com.example.zero.services.producto.ProductoService;
+>>>>>>> augusto
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -96,12 +103,18 @@ public class OrdenCompraService {
 
     /**
      * Obtiene o asocia el Cliente correspondiente a un Usuario autenticado.
+<<<<<<< HEAD
+=======
+     * Reasocia el usuario a la sesión activa de JPA para evitar LazyInitializationException
+     * al consultar la relación ManyToOne con Persona/Cliente.
+>>>>>>> augusto
      */
     @Transactional
     public Cliente obtenerOAsociarCliente(Usuario usuario) {
         if (usuario == null) {
             throw new IllegalArgumentException("Usuario no autenticado");
         }
+<<<<<<< HEAD
 
         if (usuario.getPersona() != null) {
             String doc = usuario.getPersona().getNumeroDocumento();
@@ -120,15 +133,65 @@ public class OrdenCompraService {
             Cliente cliente = existente.get();
             usuario.setPersona(cliente);
             usuarioRepository.save(usuario);
+=======
+        if (usuario.getRol() != RolUsuario.CLIENTE) {
+            throw new IllegalArgumentException("Solo los usuarios con rol CLIENTE pueden poseer o gestionar un carrito de compras.");
+        }
+
+        // Reasociar usuario a la sesión de persistencia actual
+        Usuario uPersistente = null;
+        if (usuario.getId() != null) {
+            uPersistente = usuarioRepository.findById(usuario.getId()).orElse(null);
+        }
+        if (uPersistente == null && usuario.getNombreUsuario() != null) {
+            uPersistente = usuarioRepository.findByNombreUsuarioAndEliminadoFalse(usuario.getNombreUsuario()).orElse(null);
+        }
+        if (uPersistente == null) {
+            uPersistente = usuario;
+        }
+
+        // 1. Si el usuario ya tiene asociada una Persona (Cliente)
+        if (uPersistente.getPersona() != null) {
+            if (uPersistente.getPersona() instanceof Cliente) {
+                return (Cliente) uPersistente.getPersona();
+            }
+            String doc = uPersistente.getPersona().getNumeroDocumento();
+            if (doc != null) {
+                Optional<Cliente> clienteOpt = clienteRepository.findByNumeroDocumentoAndEliminadoFalse(doc);
+                if (clienteOpt.isPresent()) {
+                    return clienteOpt.get();
+                }
+            }
+        }
+
+        // 2. Si es un usuario cliente sin persona asociada previa (ej. usuario semilla):
+        String doc = "CLI-" + (uPersistente.getId() != null
+                ? uPersistente.getId().replace("-", "").substring(0, Math.min(10, uPersistente.getId().replace("-", "").length()))
+                : UUID.randomUUID().toString().substring(0, 8));
+
+        Optional<Cliente> existente = clienteRepository.findByNumeroDocumentoAndEliminadoFalse(doc);
+        if (existente.isPresent()) {
+            Cliente cliente = existente.get();
+            uPersistente.setPersona(cliente);
+            usuarioRepository.save(uPersistente);
+>>>>>>> augusto
             return cliente;
         }
 
         Nacionalidad nacionalidad = nacionalidadRepository.findByEliminadoFalse().stream().findFirst().orElseGet(() -> {
+<<<<<<< HEAD
             Nacionalidad nac = Nacionalidad.builder().nombre("Argentina").eliminado(false).build();
             return nacionalidadRepository.save(nac);
         });
 
         String nombreUsuario = usuario.getNombreUsuario() != null ? usuario.getNombreUsuario() : "Cliente";
+=======
+            Nacionalidad nac = Nacionalidad.builder().id("nac-01").nombre("Argentina").eliminado(false).build();
+            return nacionalidadRepository.save(nac);
+        });
+
+        String nombreUsuario = uPersistente.getNombreUsuario() != null ? uPersistente.getNombreUsuario() : "Cliente";
+>>>>>>> augusto
         Cliente nuevoCliente = Cliente.builder()
                 .numeroDocumento(doc)
                 .nombre(nombreUsuario.contains("@") ? nombreUsuario.substring(0, nombreUsuario.indexOf("@")) : nombreUsuario)
@@ -140,8 +203,13 @@ public class OrdenCompraService {
                 .build();
 
         nuevoCliente = clienteRepository.save(nuevoCliente);
+<<<<<<< HEAD
         usuario.setPersona(nuevoCliente);
         usuarioRepository.save(usuario);
+=======
+        uPersistente.setPersona(nuevoCliente);
+        usuarioRepository.save(uPersistente);
+>>>>>>> augusto
         return nuevoCliente;
     }
 
@@ -326,3 +394,7 @@ public class OrdenCompraService {
         return ordenCompraRepository.save(carrito);
     }
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> augusto

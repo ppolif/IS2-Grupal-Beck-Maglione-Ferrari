@@ -22,7 +22,7 @@
           <ul class="list list-unstyled mt-3">
             <li class="mb-2"><span>Número de Orden</span> : <strong class="text-brand-dark" th:text="${order != null && order.orderNumber != null} ? ${order.orderNumber} : '#ORD-60235'">#ORD-60235</strong></li>
             <li class="mb-2"><span>Fecha</span> : <span th:text="${order != null && order.createdAt != null} ? ${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')} : '11/09/2026'">11/09/2026</span></li>
-            <li class="mb-2"><span>Total</span> : <strong class="text-brand-bold" th:text="${order != null && order.totalAmount != null} ? ${#numbers.formatCurrency(order.totalAmount)} : '$2,210.00'">$2,210.00</strong></li>
+            <li class="mb-2"><span>Total</span> : <strong class="text-brand-bold" th:text="${order != null} ? ${#numbers.formatCurrency(order.totalAmount)} : '$2,210.00'">$2,210.00</strong></li>
             <li class="mb-2"><span>Método de Pago</span> : <span th:text="${order != null && order.paymentMethod != null} ? ${order.paymentMethod} : 'Tarjeta de Crédito'">Tarjeta de Crédito</span></li>
           </ul>
         </div>
@@ -80,21 +80,16 @@
             <td class="text-right"><p class="mb-0">$180.00</p></td>
           </tr>
 
-          <!-- Subtotal y Envío -->
+          <!-- Subtotal y Total Abonado -->
           <tr>
             <td><h4>Subtotal</h4></td>
             <td></td>
-            <td class="text-right"><p class="font-weight-bold mb-0" th:text="${order != null && order.subtotal != null} ? ${#numbers.formatCurrency(order.subtotal)} : '$180.00'">$180.00</p></td>
-          </tr>
-          <tr>
-            <td><h4>Costo de Envío</h4></td>
-            <td></td>
-            <td class="text-right"><p class="font-weight-bold mb-0" th:text="${order != null && order.shippingCost != null} ? ${#numbers.formatCurrency(order.shippingCost)} : '$0.00'">$0.00</p></td>
+            <td class="text-right"><p class="font-weight-bold mb-0" th:text="${order != null} ? ${#numbers.formatCurrency(order.subtotal)} : '$180.00'">$180.00</p></td>
           </tr>
           <tr>
             <td><h3 class="text-brand-dark">Total Abonado</h3></td>
             <td></td>
-            <td class="text-right"><h3 class="text-brand-bold font-weight-bold" th:text="${order != null && order.totalAmount != null} ? ${#numbers.formatCurrency(order.totalAmount)} : '$180.00'">$180.00</h3></td>
+            <td class="text-right"><h3 class="text-brand-bold font-weight-bold" th:text="${order != null} ? ${#numbers.formatCurrency(order.totalAmount)} : '$180.00'">$180.00</h3></td>
           </tr>
           </tbody>
         </table>

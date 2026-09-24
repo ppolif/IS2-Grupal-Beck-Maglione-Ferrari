@@ -164,10 +164,11 @@ public class AuthController {
         // Procesamiento del registro de cliente
         try {
             if (clienteService != null) {
-                Usuario nuevoUsuario = clienteService.registrarCliente(dto);
-                session.setAttribute("usuariosession", nuevoUsuario);
+                clienteService.registrarCliente(dto);
             }
-            return "redirect:/?registered=true";
+            String emailDestino = (dto.getEmail() != null) ? dto.getEmail().trim() : "";
+            String emailParam = java.net.URLEncoder.encode(emailDestino, java.nio.charset.StandardCharsets.UTF_8);
+            return "redirect:/verify?email=" + emailParam + "&sent=true";
         } catch (IllegalArgumentException e) {
             model.addAttribute("errorMessage", e.getMessage());
             model.addAttribute("dto", dto);
@@ -180,6 +181,52 @@ public class AuthController {
                                   HttpSession session,
                                   Model model) {
         return processRegister(dto, null, session, model);
+    }
+
+    // Endpoints de confirmación y activación de cuenta por correo (rules/CONTROLLERS.md)
+    @GetMapping("/verify")
+    public String showVerifyPage(@RequestParam(value = "email", required = false) String email,
+                                 HttpSession session,
+                                 Model model) {
+        Usuario usuarioLogueado = (Usuario) session.getAttribute("usuariosession");
+        if (usuarioLogueado != null) {
+            return "redirect:/";
+        }
+
+        model.addAttribute("email", email != null ? email.trim() : "");
+        return "shop/verify";
+    }
+
+    @PostMapping("/verify")
+    public String processVerify(@RequestParam("email") String email,
+                                @RequestParam("codigo") String codigo,
+                                Model model) {
+        try {
+            if (usuarioService != null) {
+                usuarioService.verificarCodigo(email, codigo);
+            }
+            return "redirect:/login?verified=true";
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("email", email != null ? email.trim() : "");
+            return "shop/verify";
+        }
+    }
+
+    @PostMapping("/verify/resend")
+    public String resendVerificationCode(@RequestParam("email") String email,
+                                         Model model) {
+        try {
+            if (usuarioService != null) {
+                usuarioService.reenviarCodigoConfirmacion(email);
+            }
+            String emailParam = (email != null) ? java.net.URLEncoder.encode(email.trim(), java.nio.charset.StandardCharsets.UTF_8) : "";
+            return "redirect:/verify?email=" + emailParam + "&resent=true";
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("email", email != null ? email.trim() : "");
+            return "shop/verify";
+        }
     }
 
     private void cargarDatosFormularioRegistro(Model model, ClienteRegistroDTO dto) {

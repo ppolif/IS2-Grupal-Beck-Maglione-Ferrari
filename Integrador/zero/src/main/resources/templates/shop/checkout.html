@@ -81,9 +81,9 @@
 
             <!-- Lista de Artículos -->
             <ul class="list" th:if="${cart != null && !#lists.isEmpty(cart.items)}">
-              <li><a href="javascript:void(0);"><strong>Producto</strong> <span>Total</span></a></li>
+              <li><a href="#"><strong>Producto</strong> <span>Total</span></a></li>
               <li th:each="item : ${cart.items}">
-                <a href="javascript:void(0);">
+                <a href="#">
                   <span class="text-truncate d-inline-block" style="max-width: 150px;" th:text="${item.productName}">Producto</span>
                   <span class="middle" th:text="'x ' + ${item.quantity}">x 01</span>
                   <span class="last" th:text="${#numbers.formatCurrency(item.subtotal)}">$720.00</span>
@@ -93,24 +93,24 @@
 
             <!-- Fallback si cart está vacío en preview -->
             <ul class="list" th:if="${cart == null || #lists.isEmpty(cart.items)}">
-              <li><a href="javascript:void(0);"><strong>Producto</strong> <span>Total</span></a></li>
-              <li><a href="javascript:void(0);">Indumentaria Zero Sport <span class="middle">x 01</span> <span class="last">$720.00</span></a></li>
+              <li><a href="#"><strong>Producto</strong> <span>Total</span></a></li>
+              <li><a href="#">Indumentaria Zero Sport <span class="middle">x 01</span> <span class="last">$720.00</span></a></li>
             </ul>
 
             <!-- Subtotales -->
             <ul class="list list_2">
               <li>
-                <a href="javascript:void(0);">Subtotal
+                <a href="#">Subtotal
                   <span th:text="${cart != null} ? ${#numbers.formatCurrency(cart.subtotal)} : '$720.00'">$720.00</span>
                 </a>
               </li>
               <li>
-                <a href="javascript:void(0);">Envío
+                <a href="#">Envío
                   <span th:text="${cart != null && cart.shippingCost != null ? #numbers.formatCurrency(cart.shippingCost) : '$50.00'}">$50.00</span>
                 </a>
               </li>
               <li>
-                <a href="javascript:void(0);">Total
+                <a href="#">Total
                   <span class="font-weight-bold" th:text="${cart != null} ? ${#numbers.formatCurrency(cart.total)} : '$770.00'">$770.00</span>
                 </a>
               </li>

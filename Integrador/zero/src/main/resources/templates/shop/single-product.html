@@ -31,11 +31,8 @@
       <div class="col-lg-6">
         <div class="s_Product_carousel">
           <div class="single-prd-item">
-            <img class="img-fluid" src="../../static/shop/img/category/s-p1.jpg" th:src="${product != null && product.imageUrl != null} ? ${product.imageUrl} : @{/shop/img/category/s-p1.jpg}"
-                 th:alt="${product != null} ? ${product.name} : 'Producto'">
-          </div>
-          <div class="single-prd-item">
-            <img class="img-fluid" src="../../static/shop/img/category/s-p1.jpg" th:src="${product != null && product.imageUrl != null} ? ${product.imageUrl} : @{/shop/img/category/s-p1.jpg}"
+            <img class="img-fluid" th:src="${product != null && product.imageUrl != null} ? ${product.imageUrl} : @{/shop/img/category/s-p1.jpg}"
+                 src="/shop/img/category/s-p1.jpg"
                  th:alt="${product != null} ? ${product.name} : 'Producto'">
           </div>
         </div>
@@ -45,30 +42,29 @@
           <h3 th:text="${product != null && product.name != null} ? ${product.name} : 'Zapatillas Zero Nitro Pro'">Zapatillas Zero Nitro Pro</h3>
           <h2 th:text="${product != null && product.price != null} ? ${#numbers.formatCurrency(product.price)} : '$149.99'">$149.99</h2>
           <ul class="list">
-            <li><a class="active" href="javascript:void(0);"><span>Categoría</span> : <span th:text="${product != null && product.categoryName != null} ? ${product.categoryName} : 'Calzado Deportivo'">Calzado Deportivo</span></a></li>
+            <li><span>Categoría</span> : <span th:text="${product != null && product.categoryName != null} ? ${product.categoryName} : 'Calzado Deportivo'">Calzado Deportivo</span></li>
             <li>
-              <a href="javascript:void(0);"><span>Disponibilidad</span> :
-                <span th:if="${product == null || product.stock > 0}" class="text-success font-weight-bold">En Stock</span>
-                <span th:if="${product != null && product.stock <= 0}" class="text-danger font-weight-bold">Agotado</span>
-              </a>
+              <span>Disponibilidad</span> :
+              <span th:if="${product == null || product.stock > 0}" class="text-success font-weight-bold">En Stock</span>
+              <span th:if="${product != null && product.stock <= 0}" class="text-danger font-weight-bold">Agotado</span>
             </li>
           </ul>
           <p th:text="${product != null && product.description != null} ? ${product.description} : 'Diseñado para brindar el máximo soporte, amortiguación y velocidad en cada entrenamiento. Fabricado con materiales sostenibles de alto impacto.'">
             Diseñado para brindar el máximo soporte, amortiguación y velocidad en cada entrenamiento. Fabricado con materiales sostenibles de alto impacto.
           </p>
 
-          <!-- Formulario Agregar al Carrito -->
-          <form action="cart.html" th:action="@{/shop/cart/add}" method="POST">
+          <!-- Formulario Agregar al Carrito (100% Server-side sin JavaScript) -->
+          <form th:action="@{/shop/cart/add}" method="POST">
             <input type="hidden" name="productId" th:value="${product != null ? product.id : 1}">
 
             <div class="product_count d-flex align-items-center mb-4">
-              <label for="sst" class="mr-2 mb-0">Cantidad:</label>
-              <input type="number" name="quantity" id="sst" min="1" max="50" value="1" title="Cantidad:" class="input-text qty form-control text-center" style="width: 70px;">
+              <label for="sst" class="mr-2 mb-0 font-weight-bold">Cantidad:</label>
+              <input type="number" name="quantity" id="sst" min="1" max="50" value="1" title="Cantidad:" class="input-text qty form-control text-center" style="width: 80px;">
             </div>
 
             <div class="card_area d-flex align-items-center">
               <button type="submit" class="primary-btn border-0" th:disabled="${product != null && product.stock <= 0}">Agregar al Carrito</button>
-              <a class="icon_btn" href="category.html" th:href="@{/shop/category}" title="Ver más productos"><i class="lnr lnr-arrow-left"></i></a>
+              <a class="icon_btn ml-3" th:href="@{/shop/category}" title="Ver más productos"><i class="lnr lnr-arrow-left"></i></a>
             </div>
           </form>
 

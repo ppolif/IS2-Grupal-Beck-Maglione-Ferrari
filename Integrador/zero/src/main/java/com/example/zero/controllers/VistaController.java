@@ -3,21 +3,29 @@ package com.example.zero.controllers;
 <<<<<<< HEAD
 import com.example.zero.dto.OrderViewDto;
 import com.example.zero.entidades.compra.Factura;
-import com.example.zero.entidades.producto.Categoria;
+import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.entidades.producto.Producto;
-import com.example.zero.services.CategoriaService;
-import com.example.zero.services.ProductoService;
+import com.example.zero.enums.RolUsuario;
+import com.example.zero.repositories.CategoriaRepository;
+import com.example.zero.repositories.ProductoRepository;
 import com.example.zero.services.VentaService;
+<<<<<<< HEAD
 =======
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.repositories.CategoriaRepository;
 import com.example.zero.repositories.ProductoRepository;
 import lombok.RequiredArgsConstructor;
 >>>>>>> 536d26e87ff46602e7df6b32b88b021fd9954a5c
+=======
+import com.example.zero.services.producto.ProductoService;
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
+>>>>>>> augusto
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -25,6 +33,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VistaController {
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     private final ProductoService productoService;
     private final CategoriaService categoriaService;
@@ -44,11 +53,23 @@ public class VistaController {
     private final ProductoRepository productoRepository;
     private final CategoriaRepository categoriaRepository;
 >>>>>>> 536d26e87ff46602e7df6b32b88b021fd9954a5c
+=======
+    private final AdminVentaController adminVentaController;
+    private final VentaService ventaService;
+    private final ProductoRepository productoRepository;
+    private final ProductoService productoService;
+    private final CategoriaRepository categoriaRepository;
+>>>>>>> augusto
 
     // Inicio / Portada
     @GetMapping({"/", "/shop", "/shop/index"})
     public String shopIndex(Model model) {
+<<<<<<< HEAD
         List<Producto> featured = productoRepository.findByEliminadoFalse();
+=======
+        List<Producto> featured = productoService.listarActivos();
+        productoService.prepararParaVista(featured);
+>>>>>>> augusto
         model.addAttribute("featuredProducts", featured);
         return "shop/index";
     }
@@ -58,7 +79,12 @@ public class VistaController {
     public String shopCategory(@RequestParam(value = "categoryId", required = false) String categoryId,
                                @RequestParam(value = "maxPrice", required = false) Double maxPrice,
                                Model model) {
+<<<<<<< HEAD
         List<Producto> products = productoRepository.findByEliminadoFalse();
+=======
+        List<Producto> products = productoService.listarActivos();
+        productoService.prepararParaVista(products);
+>>>>>>> augusto
         if (categoryId != null && !categoryId.trim().isEmpty()) {
             products = products.stream()
                     .filter(p -> p.getSubCategoria() != null && p.getSubCategoria().getCategoria() != null &&
@@ -80,7 +106,12 @@ public class VistaController {
 
     // Finalizar compra / Checkout
     @GetMapping({"/shop/checkout", "/shop/pagar"})
-    public String shopCheckout() {
+    public String shopCheckout(HttpSession session, RedirectAttributes redirectAttributes) {
+        Usuario usuario = (Usuario) session.getAttribute("usuariosession");
+        if (usuario != null && usuario.getRol() != RolUsuario.CLIENTE) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden acceder al proceso de compra.");
+            return "redirect:/admin";
+        }
         return "shop/checkout";
     }
 
@@ -88,13 +119,14 @@ public class VistaController {
     @GetMapping({"/shop/confirmation", "/shop/confirmacion"})
     public String shopConfirmation(Model model,
                                    @RequestParam(name = "orderNumber", required = false) String orderNumber) {
+        model.addAttribute("title", "Confirmación de Pedido");
+        model.addAttribute("subtitle", "Comprobante");
         if (orderNumber != null && !orderNumber.trim().isEmpty()) {
             try {
-                String cleanNum = orderNumber.replace("#ORD-", "").replace("ORD-", "").trim();
-                Long num = Long.parseLong(cleanNum);
-                Factura f = ventaService.buscarPorNumeroFactura(num);
-                OrderViewDto dto = adminVentaController.mapearFacturaAOrderDto(f);
-                model.addAttribute("order", dto);
+                OrderViewDto dto = ventaService.buscarOrderDtoPorIdentificador(orderNumber);
+                if (dto != null) {
+                    model.addAttribute("order", dto);
+                }
             } catch (Exception ignored) {
             }
         }
@@ -102,8 +134,29 @@ public class VistaController {
     }
 
     // Ficha de producto individual
+<<<<<<< HEAD
     @GetMapping({"/shop/single-product", "/shop/producto"})
     public String shopSingleProduct() {
+=======
+    @GetMapping({"/shop/single-product", "/shop/producto", "/shop/product/{id}"})
+    public String shopSingleProduct(@PathVariable(value = "id", required = false) String pathId,
+                                    @RequestParam(value = "id", required = false) String paramId,
+                                    Model model) {
+        String id = pathId != null ? pathId : paramId;
+        if (id != null && !id.trim().isEmpty()) {
+            try {
+                Producto p = productoService.buscarPorId(id.trim());
+                productoService.prepararParaVista(p);
+                model.addAttribute("product", p);
+                model.addAttribute("title", "Detalle del Producto");
+                model.addAttribute("subtitle", p.getNombre());
+                model.addAttribute("categoryName", productoService.obtenerNombreCategoria(p));
+                model.addAttribute("stock", productoService.obtenerStock(p));
+                model.addAttribute("imageUrl", productoService.obtenerImagenUrl(p));
+            } catch (Exception ignored) {
+            }
+        }
+>>>>>>> augusto
         return "shop/single-product";
     }
 

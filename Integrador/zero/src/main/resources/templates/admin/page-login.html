@@ -13,6 +13,9 @@
   </div>
 
   <!-- Alertas de Sesión / Error -->
+  <div th:if="${param.verified}" class="alert alert-success py-2 small rounded-3" role="alert">
+    ¡Tu cuenta ha sido activada con éxito! Ya puedes iniciar sesión.
+  </div>
   <div th:if="${param.error}" class="alert alert-danger py-2 small rounded-3" role="alert">
     Credenciales incorrectas. Verifique correo y contraseña.
   </div>

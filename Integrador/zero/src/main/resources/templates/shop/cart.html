@@ -15,18 +15,24 @@
     <div class="cart_inner">
 
       <!-- Alertas -->
-      <div th:if="${successMessage}" th:class="'alert alert-success alert-dismissible fade show mb-4'" class="alert alert-success d-none" role="alert">
-        <span th:text="${successMessage}">Operación exitosa</span>
+      <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+        <i class="fa fa-check-circle mr-2"></i><span th:text="${successMessage}">Operación exitosa</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
-      <div th:if="${errorMessage}" th:class="'alert alert-danger alert-dismissible fade show mb-4'" class="alert alert-danger d-none" role="alert">
-        <span th:text="${errorMessage}">Error</span>
+      <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+        <i class="fa fa-exclamation-circle mr-2"></i><span th:text="${errorMessage}">Error</span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
 
       <!-- Estado vacío -->
       <div th:if="${items == null || #lists.isEmpty(items)}" class="text-center py-5">
         <h3 class="mb-3">Tu carrito está vacío</h3>
         <p class="text-muted mb-4">Descubre nuestros productos destacados y renueva tu estilo deportivo.</p>
-        <a href="category.html" th:href="@{/shop/category}" class="primary-btn">Explorar Catálogo</a>
+        <a th:href="@{/shop/category}" class="primary-btn">Explorar Catálogo</a>
       </div>
 
       <!-- Tabla de Artículos -->
@@ -36,8 +42,8 @@
           <tr>
             <th scope="col">Producto</th>
             <th scope="col">Precio</th>
-            <th scope="col" style="min-width: 140px;">Cantidad</th>
-            <th scope="col">Total</th>
+            <th scope="col" style="min-width: 170px;">Cantidad</th>
+            <th scope="col">Subtotal</th>
             <th scope="col" class="text-center">Quitar</th>
           </tr>
           </thead>
@@ -46,7 +52,11 @@
             <td>
               <div class="media">
                 <div class="d-flex mr-3">
+<<<<<<< HEAD
                   <img src="../../static/shop/img/cart.jpg" th:src="@{/shop/img/cart.jpg}"
+=======
+                  <img th:src="@{/shop/img/cart.jpg}"
+>>>>>>> augusto
                        th:alt="${item.producto != null ? item.producto.nombre : 'Producto'}"
                        style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">
                 </div>
@@ -60,6 +70,7 @@
               <h5>$<span th:text="${#numbers.formatDecimal(item.precioUnitario != null ? item.precioUnitario : 0, 1, 'POINT', 2, 'POINT')}">360.00</span></h5>
             </td>
             <td>
+<<<<<<< HEAD
               <form th:action="@{/shop/cart/update}" method="POST" class="m-0 p-0">
                 <input type="hidden" name="itemId" th:value="${item.id}">
                 <div class="product_count">
@@ -68,12 +79,22 @@
                   <button onclick="var r = this.parentElement.querySelector('.qty'); var v = parseInt(r.value); if(!isNaN(v) &amp;&amp; v > 1) { r.value = v - 1; r.form.submit(); } return false;" class="reduced items-count" type="button"><i class="lnr lnr-chevron-down"></i></button>
                 </div>
                 <noscript><button type="submit" class="btn btn-sm btn-outline-secondary ml-1" title="Actualizar"><i class="fa fa-check"></i></button></noscript>
+=======
+              <!-- Formulario de Actualización de Cantidad (100% Server-side sin JavaScript) -->
+              <form th:action="@{/shop/cart/update}" method="POST" class="d-inline-flex align-items-center">
+                <input type="hidden" name="itemId" th:value="${item.id}">
+                <input type="number" name="quantity" min="1" max="99" th:value="${item.cantidad}" class="form-control form-control-sm text-center" style="width: 70px;">
+                <button type="submit" class="btn btn-sm btn-outline-dark ml-2" title="Actualizar cantidad">
+                  <i class="fa fa-refresh"></i>
+                </button>
+>>>>>>> augusto
               </form>
             </td>
             <td>
               <h5>$<span th:text="${#numbers.formatDecimal(item.subtotal != null ? item.subtotal : 0, 1, 'POINT', 2, 'POINT')}">720.00</span></h5>
             </td>
             <td class="text-center">
+              <!-- Formulario de Eliminación de Ítem -->
               <form th:action="@{/shop/cart/remove}" method="POST" class="d-inline">
                 <input type="hidden" name="itemId" th:value="${item.id}">
                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar ítem">
@@ -83,6 +104,7 @@
             </td>
           </tr>
 
+<<<<<<< HEAD
           <!-- Subtotal -->
           <tr>
             <td colspan="3"></td>
@@ -101,6 +123,18 @@
           <tr>
             <td colspan="3"></td>
             <td><h4>Total</h4></td>
+=======
+          <!-- Fila de Acciones Globales (Vaciar Carrito) -->
+          <tr>
+            <td colspan="3">
+              <form th:action="@{/shop/cart/clear}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                  <i class="fa fa-trash-o mr-1"></i> Vaciar Carrito
+                </button>
+              </form>
+            </td>
+            <td><h5>Total</h5></td>
+>>>>>>> augusto
             <td><h4 class="text-brand-bold font-weight-bold">$<span th:text="${#numbers.formatDecimal(cart != null && cart.total != null ? cart.total : 0, 1, 'POINT', 2, 'POINT')}">2210.00</span></h4></td>
           </tr>
 
@@ -108,8 +142,8 @@
           <tr class="out_button_area">
             <td colspan="5">
               <div class="checkout_btn_inner d-flex align-items-center justify-content-end gap-2">
-                <a class="gray_btn mr-2" href="category.html" th:href="@{/shop/category}">Continuar Comprando</a>
-                <a class="primary-btn" href="checkout.html" th:href="@{/shop/checkout}">Finalizar Compra</a>
+                <a class="gray_btn mr-2" th:href="@{/shop/category}">Continuar Comprando</a>
+                <a class="primary-btn" th:href="@{/shop/checkout}">Finalizar Compra</a>
               </div>
             </td>
           </tr>

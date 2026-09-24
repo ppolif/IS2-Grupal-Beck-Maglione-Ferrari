@@ -1,9 +1,11 @@
-package com.example.zero.services;
+package com.example.zero.services.producto;
 
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.entidades.producto.SubCategoria;
 import com.example.zero.entidades.producto.VigenciaPrecio;
 import com.example.zero.repositories.ProductoRepository;
+import com.example.zero.services.SubCategoriaService;
+import com.example.zero.services.VigenciaPrecioService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -228,5 +230,59 @@ public class ProductoService {
             throw new IllegalArgumentException("El stock actual no puede ser negativo");
         }
         return stockActual + cantidad;
+    }
+
+    // ==================== MÉTODOS HELPER PARA VISTA Y NEGOCIO ====================
+
+    @Transactional(readOnly = true)
+    public double obtenerPrecioActual(Producto producto) {
+        if (producto == null) return 0.0;
+        if (producto.getId() != null) {
+            try {
+                return obtenerPrecioActual(producto.getId());
+            } catch (Exception ignored) {
+            }
+        }
+        return producto.getPrecioActual() != null ? producto.getPrecioActual() : 0.0;
+    }
+
+    public String obtenerNombreCategoria(Producto producto) {
+        if (producto == null) return "Indumentaria";
+        if (producto.getSubCategoria() != null && producto.getSubCategoria().getCategoria() != null) {
+            return producto.getSubCategoria().getCategoria().getNombre();
+        }
+        if (producto.getSubCategoria() != null) {
+            return producto.getSubCategoria().getNombre();
+        }
+        return "Indumentaria";
+    }
+
+    public int obtenerStock(Producto producto) {
+        return 10;
+    }
+
+    public String obtenerImagenUrl(Producto producto) {
+        return "/shop/img/product/p1.jpg";
+    }
+
+    @Transactional(readOnly = true)
+    public Producto prepararParaVista(Producto producto) {
+        if (producto == null) return null;
+        try {
+            double precio = obtenerPrecioActual(producto.getId());
+            producto.setPrecioActual(precio);
+        } catch (Exception ignored) {
+            if (producto.getPrecioActual() == null) {
+                producto.setPrecioActual(0.0);
+            }
+        }
+        return producto;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Producto> prepararParaVista(List<Producto> productos) {
+        if (productos == null) return java.util.Collections.emptyList();
+        productos.forEach(this::prepararParaVista);
+        return productos;
     }
 }

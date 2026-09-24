@@ -4,19 +4,30 @@ import com.example.zero.entidades.persona.Persona;
 import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.enums.RolUsuario;
 import com.example.zero.repositories.UsuarioRepository;
+import com.example.zero.services.mail.EmailService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 @Service
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final EmailService emailService;
 
     public UsuarioService(UsuarioRepository usuarioRepository) {
+        this(usuarioRepository, null);
+    }
+
+    @Autowired
+    public UsuarioService(UsuarioRepository usuarioRepository, EmailService emailService) {
         this.usuarioRepository = usuarioRepository;
+        this.emailService = emailService;
     }
 
     public void validar(String nombreUsuario, String clave, RolUsuario rol) {
@@ -36,6 +47,11 @@ public class UsuarioService {
 
     @Transactional
     public Usuario crearUsuario(String nombreUsuario, String clave, RolUsuario rol, Persona persona) {
+        return crearUsuario(nombreUsuario, clave, rol, persona, true);
+    }
+
+    @Transactional
+    public Usuario crearUsuario(String nombreUsuario, String clave, RolUsuario rol, Persona persona, boolean activo) {
         validar(nombreUsuario, clave, rol);
         String usuarioLimpio = nombreUsuario.trim().toLowerCase();
 
@@ -49,9 +65,84 @@ public class UsuarioService {
                 .clave(clave)
                 .rol(rol)
                 .persona(persona)
+                .activo(activo)
                 .eliminado(false)
                 .build();
 
+        return usuarioRepository.save(usuario);
+    }
+
+    public String generarCodigoAleatorio() {
+        Random random = new Random();
+        int numero = 100000 + random.nextInt(900000);
+        return String.valueOf(numero);
+    }
+
+    @Transactional
+    public String generarYAsignarCodigo(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("El correo electrónico no puede estar vacío");
+        }
+        String emailLimpio = email.trim().toLowerCase();
+        Usuario usuario = usuarioRepository.findByNombreUsuarioAndEliminadoFalse(emailLimpio)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró ningún usuario con el correo: " + emailLimpio));
+
+        if (usuario.isActivo()) {
+            throw new IllegalArgumentException("La cuenta ya se encuentra activa");
+        }
+
+        String codigo = generarCodigoAleatorio();
+        usuario.setCodigoConfirmacion(codigo);
+        usuario.setCodigoExpiracion(LocalDateTime.now().plusMinutes(15));
+        usuarioRepository.save(usuario);
+        return codigo;
+    }
+
+    @Transactional
+    public void enviarCodigoConfirmacion(String email, String codigo) {
+        if (emailService != null) {
+            emailService.enviarCodigoConfirmacion(email.trim().toLowerCase(), codigo);
+        }
+    }
+
+    @Transactional
+    public void reenviarCodigoConfirmacion(String email) {
+        String codigo = generarYAsignarCodigo(email);
+        enviarCodigoConfirmacion(email, codigo);
+    }
+
+    @Transactional
+    public Usuario verificarCodigo(String email, String codigo) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("El correo electrónico no puede estar vacío");
+        }
+        if (codigo == null || codigo.trim().isEmpty()) {
+            throw new IllegalArgumentException("Debe ingresar el código de confirmación");
+        }
+
+        String emailLimpio = email.trim().toLowerCase();
+        Usuario usuario = usuarioRepository.findByNombreUsuarioAndEliminadoFalse(emailLimpio)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró una cuenta asociada al correo: " + emailLimpio));
+
+        if (usuario.isActivo()) {
+            return usuario;
+        }
+
+        if (usuario.getCodigoConfirmacion() == null || usuario.getCodigoExpiracion() == null) {
+            throw new IllegalArgumentException("No hay ningún código de confirmación pendiente. Solicita uno nuevo.");
+        }
+
+        if (LocalDateTime.now().isAfter(usuario.getCodigoExpiracion())) {
+            throw new IllegalArgumentException("El código de confirmación ha expirado. Por favor solicita uno nuevo.");
+        }
+
+        if (!usuario.getCodigoConfirmacion().equals(codigo.trim())) {
+            throw new IllegalArgumentException("El código de confirmación ingresado es incorrecto.");
+        }
+
+        usuario.setActivo(true);
+        usuario.setCodigoConfirmacion(null);
+        usuario.setCodigoExpiracion(null);
         return usuarioRepository.save(usuario);
     }
 
@@ -70,6 +161,10 @@ public class UsuarioService {
 
         if (!usuario.getClave().equals(clave)) {
             throw new IllegalArgumentException("Contraseña incorrecta");
+        }
+
+        if (!usuario.isActivo()) {
+            throw new IllegalArgumentException("Tu cuenta no está activa. Debes confirmar el código enviado a tu correo.");
         }
 
         return usuario;
