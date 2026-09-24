@@ -160,7 +160,6 @@ public class ProductoService {
     }
 
     // ==================== GESTIÓN DE PRECIOS ====================
-    //A CHEQUEAR ESTO QUE NO SE PISE CON VIGENCIAPRECIO
     @Transactional
     public VigenciaPrecio actualizarPrecio(String productoId, double nuevoPrecio) {
         buscarPorId(productoId); // Validar existencia activa
@@ -200,7 +199,6 @@ public class ProductoService {
     }
 
     // ==================== GESTIÓN DE STOCK ====================
-    //A CHEQUEAR ESTO QUE NO SE PISE CON STOCK
 
     public boolean esStockCritico(int stockActual, int stockTotal) {
         if (stockTotal <= 0) {
@@ -239,7 +237,7 @@ public class ProductoService {
         if (producto == null) return 0.0;
         if (producto.getId() != null) {
             try {
-                return obtenerPrecioActual(producto.getId());
+                return vigenciaPrecioService.obtenerPrecioActual(producto.getId());
             } catch (Exception ignored) {
             }
         }
@@ -269,7 +267,7 @@ public class ProductoService {
     public Producto prepararParaVista(Producto producto) {
         if (producto == null) return null;
         try {
-            double precio = obtenerPrecioActual(producto.getId());
+            double precio = vigenciaPrecioService.obtenerPrecioActual(producto.getId());
             producto.setPrecioActual(precio);
         } catch (Exception ignored) {
             if (producto.getPrecioActual() == null) {

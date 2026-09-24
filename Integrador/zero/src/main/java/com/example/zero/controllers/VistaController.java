@@ -5,12 +5,11 @@ import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.enums.RolUsuario;
 import com.example.zero.repositories.CategoriaRepository;
-import com.example.zero.repositories.ProductoRepository;
 import com.example.zero.services.CategoriaService;
 import com.example.zero.services.VentaService;
-import lombok.RequiredArgsConstructor;
 import com.example.zero.services.producto.ProductoService;
 import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,13 +29,17 @@ public class VistaController {
     private final CategoriaRepository categoriaRepository;
     private final com.example.zero.services.OrdenCompraService ordenCompraService;
 
-
     // Inicio / Portada
     @GetMapping({"/", "/shop", "/shop/index"})
     public String shopIndex(Model model) {
         List<Producto> featured = productoService.listarActivos();
         productoService.prepararParaVista(featured);
         model.addAttribute("featuredProducts", featured);
+
+        List<Producto> sale = productoService.listarEnOferta();
+        productoService.prepararParaVista(sale);
+        model.addAttribute("saleProducts", sale);
+
         return "shop/index";
     }
 
@@ -63,6 +66,19 @@ public class VistaController {
         model.addAttribute("products", products);
         model.addAttribute("totalProducts", products.size());
         model.addAttribute("categories", categoriaRepository.findByEliminadoFalse());
+        return "shop/category";
+    }
+
+    // Catálogo de Ofertas
+    @GetMapping({"/offers", "/ofertas", "/shop/offers", "/shop/ofertas"})
+    public String shopOffers(Model model) {
+        List<Producto> offers = productoService.listarEnOferta();
+        productoService.prepararParaVista(offers);
+        model.addAttribute("products", offers);
+        model.addAttribute("totalProducts", offers.size());
+        model.addAttribute("categories", categoriaRepository.findByEliminadoFalse());
+        model.addAttribute("isOffersPage", true);
+        model.addAttribute("title", "Ofertas Especiales");
         return "shop/category";
     }
 
@@ -128,8 +144,17 @@ public class VistaController {
 
     // Confirmación de pedido
     @GetMapping({"/shop/confirmation", "/shop/confirmacion"})
-    public String shopConfirmation(Model model,
+    public String shopConfirmation(HttpSession session,
+                                   Model model,
                                    @RequestParam(name = "orderNumber", required = false) String orderNumber) {
+        Usuario usuario = (Usuario) session.getAttribute("usuariosession");
+        if (usuario != null && usuario.getRol() != RolUsuario.CLIENTE) {
+            if (orderNumber != null && !orderNumber.trim().isEmpty()) {
+                return "redirect:/admin/orders/" + orderNumber.trim();
+            }
+            return "redirect:/admin/ventas";
+        }
+
         model.addAttribute("title", "Confirmación de Pedido");
         model.addAttribute("subtitle", "Comprobante");
         if (orderNumber != null && !orderNumber.trim().isEmpty()) {

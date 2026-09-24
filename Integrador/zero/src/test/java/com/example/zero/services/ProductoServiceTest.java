@@ -344,7 +344,7 @@ class ProductoServiceTest {
                 .subCategoria(sub)
                 .build();
 
-        when(productoRepository.findById("prod-99")).thenReturn(Optional.of(producto));
+        lenient().when(productoRepository.findById("prod-99")).thenReturn(Optional.of(producto));
         when(vigenciaPrecioService.obtenerPrecioActual("prod-99")).thenReturn(25000.0);
 
         double precio = productoService.obtenerPrecioActual(producto);

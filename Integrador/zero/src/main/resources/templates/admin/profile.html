@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<!-- Fragmento Head -->
+<head th:replace="~{admin/fragments/head :: head}"></head>
+
+<body class="d-flex">
+
+<!-- Fragmento Sidebar -->
+<aside th:replace="~{admin/fragments/sidebar :: sidebar}"></aside>
+
+<!-- Contenido Principal -->
+<main class="main-content-offset p-4 p-md-5 min-vh-100 d-flex flex-column flex-grow-1">
+
+  <!-- Top Navbar Fragment -->
+  <nav th:replace="~{admin/fragments/navbar :: navbar}"></nav>
+
+  <!-- Header de sección -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h1 class="h3 fw-bold text-brand-dark mb-1">
+        <i class="bi bi-person-bounding-box me-2"></i>Mi Perfil de Administrador
+      </h1>
+      <p class="text-muted small mb-0">Gestión de tu cuenta de acceso, correo y fotografía de perfil.</p>
+    </div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0 small">
+        <li class="breadcrumb-item"><a th:href="@{/admin}" class="text-decoration-none text-muted">Inicio</a></li>
+        <li class="breadcrumb-item active text-brand-dark" aria-current="page">Mi Perfil</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Alertas -->
+  <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show rounded-3 py-2 small" role="alert">
+    <i class="bi bi-check-circle me-1"></i> <span th:text="${successMessage}">Operación exitosa</span>
+    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show rounded-3 py-2 small" role="alert">
+    <i class="bi bi-exclamation-triangle me-1"></i> <span th:text="${errorMessage}">Error</span>
+    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <!-- Card Principal de Perfil -->
+  <div class="card bg-white border-brand rounded-4 shadow-sm overflow-hidden mb-4">
+    <div class="card-header bg-brand-dark text-white p-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div class="d-flex align-items-center gap-3">
+        <img id="adminHeaderAvatar"
+             th:src="${usuario != null && usuario.foto != null && !usuario.foto.isBlank()} ? ${usuario.foto} : @{/admin/assets/images/avatar.png}"
+             alt="Avatar" class="rounded-circle border border-warning" width="56" height="56" style="object-fit: cover;"
+             onerror="this.src='/admin/assets/images/avatar.png'">
+        <div>
+          <h5 class="fw-bold mb-0 text-white"
+              th:text="${empleado != null ? (empleado.nombre + ' ' + empleado.apellido) : usuario.nombreUsuario}">
+            Administrador ZERO
+          </h5>
+          <span class="badge bg-warning text-dark fw-bold text-uppercase" th:text="${usuario != null ? usuario.rol : 'ADMINISTRADOR'}">ADMINISTRATIVO</span>
+        </div>
+      </div>
+      <a th:href="@{/admin}" class="btn btn-outline-light btn-sm">
+        <i class="bi bi-grid me-1"></i> Dashboard
+      </a>
+    </div>
+
+    <div class="card-body p-4 p-md-5">
+      <form th:action="@{/admin/profile}" method="POST" id="formPerfilAdmin">
+
+        <div class="row g-4">
+          <!-- Columna Izquierda: Foto y Preview -->
+          <div class="col-lg-4 text-center border-end-lg pe-lg-4">
+            <div class="mb-3">
+              <img id="adminAvatarPreview"
+                   th:src="${usuario != null && usuario.foto != null && !usuario.foto.isBlank()} ? ${usuario.foto} : @{/admin/assets/images/avatar.png}"
+                   alt="Avatar Preview" class="rounded-circle shadow-sm border p-1" width="130" height="130" style="object-fit: cover;"
+                   onerror="this.src='/admin/assets/images/avatar.png'">
+            </div>
+            <h6 class="fw-bold text-brand-dark mb-1">Fotografía de Cuenta</h6>
+            <p class="text-muted small mb-3">Enlace web de tu imagen de perfil corporativo</p>
+
+            <div class="text-start">
+              <label for="adminFotoInput" class="form-label small fw-bold text-muted">URL de Imagen / Foto:</label>
+              <input type="url" name="foto" id="adminFotoInput" class="form-control form-control-sm border-brand"
+                     placeholder="https://ejemplo.com/mifoto.jpg"
+                     th:value="${usuario != null ? usuario.foto : ''}"
+                     oninput="document.getElementById('adminAvatarPreview').src = this.value || '/admin/assets/images/avatar.png'">
+            </div>
+          </div>
+
+          <!-- Columna Derecha: Formulario y Datos de Empleado -->
+          <div class="col-lg-8 ps-lg-4">
+            <h5 class="fw-bold text-brand-dark border-bottom pb-2 mb-4">
+              <i class="bi bi-person-lines-fill me-2 text-warning"></i>Datos de Cuenta y Funcionario
+            </h5>
+
+            <div class="row g-3">
+              <!-- Campo Editable: Correo Electrónico -->
+              <div class="col-12">
+                <label for="adminEmailInput" class="form-label fw-bold text-dark">
+                  Correo Electrónico de Acceso (Modificable):
+                </label>
+                <input type="email" name="email" id="adminEmailInput" class="form-control border-brand" required
+                       th:value="${usuario != null ? usuario.nombreUsuario : ''}">
+                <div class="form-text text-muted small">Este correo es tu credencial de inicio de sesión administrativo.</div>
+              </div>
+
+              <!-- Datos Informativos del Empleado -->
+              <div class="col-md-6">
+                <label class="form-label small text-muted fw-bold">Nombre Completo:</label>
+                <input type="text" class="form-control bg-light" readonly
+                       th:value="${empleado != null ? (empleado.nombre + ' ' + empleado.apellido) : '-'}">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small text-muted fw-bold">Tipo y Número de Documento:</label>
+                <input type="text" class="form-control bg-light" readonly
+                       th:value="${empleado != null ? ((empleado.tipoDocumento != null ? empleado.tipoDocumento : 'DNI') + ' ' + empleado.numeroDocumento) : '-'}">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small text-muted fw-bold">Tipo de Empleado:</label>
+                <input type="text" class="form-control bg-light" readonly
+                       th:value="${empleado != null && empleado.tipoEmpleado != null ? empleado.tipoEmpleado : 'Personal Administrativo'}">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small text-muted fw-bold">Empresa:</label>
+                <input type="text" class="form-control bg-light" readonly
+                       th:value="${empleado != null && empleado.empresa != null ? empleado.empresa.nombre : 'ZERO S.A.'}">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small text-muted fw-bold">Nivel de Acceso / Rol:</label>
+                <input type="text" class="form-control bg-light" readonly
+                       th:value="${usuario != null ? usuario.rol : 'ADMINISTRATIVO'}">
+              </div>
+            </div>
+
+            <!-- Botón Guardar -->
+            <div class="mt-4 pt-3 border-top text-end">
+              <button type="submit" class="btn btn-dark fw-bold px-4">
+                <i class="bi bi-check-lg me-1"></i> Guardar Cambios de Perfil
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer Fragment -->
+  <footer th:replace="~{admin/fragments/footer :: footer}"></footer>
+
+</main>
+
+<!-- Scripts Fragment -->
+<div th:replace="~{admin/fragments/scripts :: scripts}"></div>
+
+</body>
+</html>

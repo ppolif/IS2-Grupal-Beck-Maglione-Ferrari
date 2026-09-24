@@ -10,19 +10,6 @@
 <section th:replace="~{shop/fragments/banner :: banner}"></section>
 
 <div class="container py-5">
-  <!-- Alerta de Confirmacion de Accion -->
-  <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-    <i class="fa fa-check-circle mr-2"></i><span th:text="${successMessage}">Producto agregado con exito</span>
-    <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
-      <span aria-hidden="true">&times;</span>
-    </button>
-  </div>
-  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-    <i class="fa fa-exclamation-circle mr-2"></i><span th:text="${errorMessage}">Error</span>
-    <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
-      <span aria-hidden="true">&times;</span>
-    </button>
-  </div>
   <div class="row">
     <!-- Sidebar de Filtros -->
     <div class="col-xl-3 col-lg-4 col-md-5">
@@ -32,9 +19,17 @@
           <!-- Todas las Categorías -->
           <li class="main-nav-list">
             <a th:href="@{/shop/category}"
-               th:classappend="${selectedCategory == null} ? 'font-weight-bold text-brand-dark' : ''">
+               th:classappend="${selectedCategory == null && isOffersPage == null} ? 'font-weight-bold text-brand-dark' : ''">
               <span class="lnr lnr-arrow-right"></span>
               <span>Todos los productos</span>
+            </a>
+          </li>
+          <!-- Enlace Directo a Ofertas -->
+          <li class="main-nav-list">
+            <a th:href="@{/offers}"
+               th:classappend="${isOffersPage != null && isOffersPage} ? 'font-weight-bold text-warning' : ''">
+              <span class="lnr lnr-arrow-right"></span>
+              <span>Ofertas Especiales</span>
             </a>
           </li>
           <!-- Si vienen categorías desde el backend -->
@@ -74,6 +69,12 @@
     <!-- Grilla de Productos y Barra Superior -->
     <div class="col-xl-9 col-lg-8 col-md-7">
 
+      <!-- Titulo condicional para Ofertas -->
+      <div th:if="${isOffersPage != null && isOffersPage}" class="mb-4 p-3 bg-light rounded border border-warning">
+        <h4 class="font-weight-bold text-dark mb-1"><i class="ti-tag text-warning mr-2"></i>Ofertas Especiales ZERO</h4>
+        <p class="text-muted small mb-0">Listado de productos con descuentos por tiempo limitado.</p>
+      </div>
+
       <!-- Barra de Filtros Superior -->
       <div class="filter-bar d-flex flex-wrap align-items-center justify-content-between mb-4">
         <div class="d-flex align-items-center">
@@ -96,12 +97,16 @@
 
           <!-- Productos Dinámicos desde Backend -->
           <div class="col-lg-4 col-md-6" th:if="${products != null && !#lists.isEmpty(products)}" th:each="prod : ${products}">
-            <div class="single-product">
-              <img class="img-fluid" src="../../static/shop/img/product/p1.jpg" th:src="@{/shop/img/product/p1.jpg}" th:alt="${prod.nombre}">
+            <div class="single-product position-relative">
+              <div class="position-absolute" style="top: 10px; left: 10px; z-index: 2;" th:if="${prod.enOferta}">
+                <span class="badge badge-danger text-uppercase font-weight-bold px-2 py-1 shadow-sm">OFERTA</span>
+              </div>
+              <img class="img-fluid" th:src="@{/shop/img/product/p1.jpg}" th:alt="${prod.nombre}"
+                   src="/shop/img/product/p1.jpg">
               <div class="product-details">
                 <h6 th:text="${prod.nombre}">Zapatillas Zero Runner</h6>
                 <div class="price">
-                  <h6>$<span th:text="${#numbers.formatDecimal(prod.precioActual != null ? prod.precioActual : 0, 1, 'POINT', 2, 'POINT')}">150.00</span></h6>
+                  <h6 th:classappend="${prod.enOferta} ? 'text-danger font-weight-bold' : ''">$<span th:text="${#numbers.formatDecimal(prod.precioActual != null ? prod.precioActual : 0, 1, 'POINT', 2, 'POINT')}">150.00</span></h6>
                 </div>
                 <div class="prd-bottom">
                   <form th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}" action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
@@ -122,163 +127,10 @@
           </div>
 
           <!-- Fallback cuando no hay productos del backend -->
-          
-            <div class="col-lg-4 col-md-6" th:if="${products == null || #lists.isEmpty(products)}">
-              <div class="single-product">
-                <img class="img-fluid" src="../../static/shop/img/product/p1.jpg" alt="Producto Zero">
-                <div class="product-details">
-                  <h6>Zero Sport Pro Performance 1</h6>
-                  <div class="price">
-                    <h6>$149.99</h6>
-                    <h6 class="l-through">$199.99</h6>
-                  </div>
-                  <div class="prd-bottom">
-                    <form th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}" action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
-                      <input type="hidden" name="productId" value="1">
-                      <input type="hidden" name="quantity" value="1">
-                      <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
-                        <span class="ti-bag"></span>
-                        <p class="hover-text">Al carrito</p>
-                      </button>
-                    </form>
-                    <a href="single-product.html" th:href="@{/shop/single-product}" class="social-info" title="Ver Detalle">
-                      <span class="lnr lnr-move"></span>
-                      <p class="hover-text">Detalle</p>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-lg-4 col-md-6" th:if="${products == null || #lists.isEmpty(products)}">
-              <div class="single-product">
-                <img class="img-fluid" src="../../static/shop/img/product/p2.jpg" alt="Producto Zero">
-                <div class="product-details">
-                  <h6>Zero Sport Pro Performance 2</h6>
-                  <div class="price">
-                    <h6>$149.99</h6>
-                    <h6 class="l-through">$199.99</h6>
-                  </div>
-                  <div class="prd-bottom">
-                    <form th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}" action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
-                      <input type="hidden" name="productId" value="2">
-                      <input type="hidden" name="quantity" value="1">
-                      <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
-                        <span class="ti-bag"></span>
-                        <p class="hover-text">Al carrito</p>
-                      </button>
-                    </form>
-                    <a href="single-product.html" th:href="@{/shop/single-product}" class="social-info" title="Ver Detalle">
-                      <span class="lnr lnr-move"></span>
-                      <p class="hover-text">Detalle</p>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-lg-4 col-md-6" th:if="${products == null || #lists.isEmpty(products)}">
-              <div class="single-product">
-                <img class="img-fluid" src="../../static/shop/img/product/p3.jpg" alt="Producto Zero">
-                <div class="product-details">
-                  <h6>Zero Sport Pro Performance 3</h6>
-                  <div class="price">
-                    <h6>$149.99</h6>
-                    <h6 class="l-through">$199.99</h6>
-                  </div>
-                  <div class="prd-bottom">
-                    <form th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}" action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
-                      <input type="hidden" name="productId" value="3">
-                      <input type="hidden" name="quantity" value="1">
-                      <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
-                        <span class="ti-bag"></span>
-                        <p class="hover-text">Al carrito</p>
-                      </button>
-                    </form>
-                    <a href="single-product.html" th:href="@{/shop/single-product}" class="social-info" title="Ver Detalle">
-                      <span class="lnr lnr-move"></span>
-                      <p class="hover-text">Detalle</p>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-lg-4 col-md-6" th:if="${products == null || #lists.isEmpty(products)}">
-              <div class="single-product">
-                <img class="img-fluid" src="../../static/shop/img/product/p4.jpg" alt="Producto Zero">
-                <div class="product-details">
-                  <h6>Zero Sport Pro Performance 4</h6>
-                  <div class="price">
-                    <h6>$149.99</h6>
-                    <h6 class="l-through">$199.99</h6>
-                  </div>
-                  <div class="prd-bottom">
-                    <form th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}" action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
-                      <input type="hidden" name="productId" value="4">
-                      <input type="hidden" name="quantity" value="1">
-                      <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
-                        <span class="ti-bag"></span>
-                        <p class="hover-text">Al carrito</p>
-                      </button>
-                    </form>
-                    <a href="single-product.html" th:href="@{/shop/single-product}" class="social-info" title="Ver Detalle">
-                      <span class="lnr lnr-move"></span>
-                      <p class="hover-text">Detalle</p>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-lg-4 col-md-6" th:if="${products == null || #lists.isEmpty(products)}">
-              <div class="single-product">
-                <img class="img-fluid" src="../../static/shop/img/product/p5.jpg" alt="Producto Zero">
-                <div class="product-details">
-                  <h6>Zero Sport Pro Performance 5</h6>
-                  <div class="price">
-                    <h6>$149.99</h6>
-                    <h6 class="l-through">$199.99</h6>
-                  </div>
-                  <div class="prd-bottom">
-                    <form th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}" action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
-                      <input type="hidden" name="productId" value="5">
-                      <input type="hidden" name="quantity" value="1">
-                      <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
-                        <span class="ti-bag"></span>
-                        <p class="hover-text">Al carrito</p>
-                      </button>
-                    </form>
-                    <a href="single-product.html" th:href="@{/shop/single-product}" class="social-info" title="Ver Detalle">
-                      <span class="lnr lnr-move"></span>
-                      <p class="hover-text">Detalle</p>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-lg-4 col-md-6" th:if="${products == null || #lists.isEmpty(products)}">
-              <div class="single-product">
-                <img class="img-fluid" src="../../static/shop/img/product/p6.jpg" alt="Producto Zero">
-                <div class="product-details">
-                  <h6>Zero Sport Pro Performance 6</h6>
-                  <div class="price">
-                    <h6>$149.99</h6>
-                    <h6 class="l-through">$199.99</h6>
-                  </div>
-                  <div class="prd-bottom">
-                    <form th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}" action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
-                      <input type="hidden" name="productId" value="6">
-                      <input type="hidden" name="quantity" value="1">
-                      <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
-                        <span class="ti-bag"></span>
-                        <p class="hover-text">Al carrito</p>
-                      </button>
-                    </form>
-                    <a href="single-product.html" th:href="@{/shop/single-product}" class="social-info" title="Ver Detalle">
-                      <span class="lnr lnr-move"></span>
-                      <p class="hover-text">Detalle</p>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div class="col-12 py-5 text-center" th:if="${products == null || #lists.isEmpty(products)}">
+            <h5 class="text-muted">No se encontraron productos disponibles en este momento.</h5>
+            <a th:href="@{/shop/category}" class="primary-btn mt-3">Ver Todos los Productos</a>
+          </div>
 
         </div>
       </section>
@@ -295,3 +147,4 @@
 
 </body>
 </html>
+

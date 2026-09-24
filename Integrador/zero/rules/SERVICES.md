@@ -7,3 +7,6 @@
 - SubCategoriaService: Se encarga de la lógica de negocio relacionada con las subcategorías de productos.
 - VigenciaPrecioService: Se encarga de la lógica de negocio relacionada con los precios de los productos.
 - OrdenCompraService: Se encarga de la gestión de órdenes de compra y del carrito de compras del cliente (OrdenCompra en estado PENDIENTE_COMPLETAR), persistiendo los productos en base de datos para sesiones recurrentes.
+- NewsletterService: Se encarga del envío recurrente cada 10 días de newsletters automáticos con ofertas en formato HTML embebido mediante notación cron (@Scheduled(cron = "${newsletter.cron:0 0 9 */10 * *}")).
+- MercadoPagoService: Se encarga de la integración con la pasarela de pagos de Mercado Pago SDK para procesar pagos de órdenes de compra.
+

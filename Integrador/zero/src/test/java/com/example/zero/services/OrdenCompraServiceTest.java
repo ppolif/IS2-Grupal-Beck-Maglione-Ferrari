@@ -62,7 +62,6 @@ class OrdenCompraServiceTest {
     void setUp() {
         Nacionalidad nac = Nacionalidad.builder().id("nac-01").nombre("Argentina").build();
         clienteTest = Cliente.builder()
-                .id("cli-uuid-1")
                 .numeroDocumento("12345678")
                 .nombre("Juan")
                 .apellido("Perez")
@@ -408,7 +407,7 @@ class OrdenCompraServiceTest {
         Cliente resultado = ordenCompraService.obtenerOAsociarCliente(usuario);
 
         assertNotNull(resultado);
-        assertEquals(clienteTest.getId(), resultado.getId());
+        assertEquals(clienteTest.getNumeroDocumento(), resultado.getNumeroDocumento());
     }
 
     @Test

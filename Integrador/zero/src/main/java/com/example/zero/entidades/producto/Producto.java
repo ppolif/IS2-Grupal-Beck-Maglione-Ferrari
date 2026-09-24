@@ -82,4 +82,29 @@ public class Producto {
 
     @jakarta.persistence.Transient
     private Double precioActual;
+
+    @jakarta.persistence.Transient
+    public String getName() {
+        return nombre;
+    }
+
+    @jakarta.persistence.Transient
+    public Double getPrice() {
+        return precioActual;
+    }
+
+    @jakarta.persistence.Transient
+    public String getDescription() {
+        return descripcion;
+    }
+
+    @jakarta.persistence.Transient
+    public String getImagen() {
+        return null;
+    }
+
+    @jakarta.persistence.Transient
+    public String getImageUrl() {
+        return null;
+    }
 }

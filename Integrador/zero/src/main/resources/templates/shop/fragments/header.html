@@ -25,15 +25,15 @@
               <a th:href="@{/shop/category}" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Tienda</a>
               <ul class="dropdown-menu">
                 <li class="nav-item"><a class="nav-link" th:href="@{/shop/category}">Categorías</a></li>
-                <li class="nav-item" th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}"><a class="nav-link" th:href="@{/shop/cart}">Carrito</a></li>
                 <li class="nav-item" th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}"><a class="nav-link" th:href="@{/shop/checkout}">Checkout</a></li>
                 <li class="nav-item"><a class="nav-link" th:href="@{/shop/confirmation}">Confirmación</a></li>
               </ul>
             </li>
+            <li class="nav-item"><a class="nav-link text-warning font-weight-bold" th:href="@{/offers}"><span class="ti-tag mr-1"></span> Ofertas</a></li>
 
-            <!-- Botón Carrito de Compras (solo para clientes o visitantes) -->
+            <!-- Botón Carrito de Compras (Única aparición en la barra de navegación) -->
             <li class="nav-item" th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}">
-              <a class="nav-link" th:href="@{/shop/cart}" title="Carrito de Compras">
+              <a class="nav-link font-weight-bold" th:href="@{/shop/cart}" title="Carrito de Compras">
                 <span class="ti-bag mr-1"></span> Carrito
               </a>
             </li>
@@ -54,19 +54,15 @@
                 <span th:text="${session.usuariosession.nombreUsuario}">Usuario</span>
               </a>
               <ul class="dropdown-menu">
-                <li class="nav-item" th:if="${session.usuariosession.rol.name() == 'CLIENTE'}">
-                  <a class="nav-link font-weight-bold" th:href="@{/shop/cart}"><span class="ti-bag"></span> Mi Carrito</a>
+                <li class="nav-item">
+                  <a class="nav-link font-weight-bold" th:href="@{/profile}"><span class="ti-id-badge mr-1"></span> Mi Perfil</a>
                 </li>
                 <li class="nav-item" th:if="${session.usuariosession.rol.name() == 'ADMINISTRATIVO' or session.usuariosession.rol.name() == 'JEFE'}">
-                  <a class="nav-link text-primary font-weight-bold" th:href="@{/admin}"><span class="ti-layout-grid2"></span> Panel Admin</a>
+                  <a class="nav-link text-primary font-weight-bold" th:href="@{/admin}"><span class="ti-layout-grid2 mr-1"></span> Panel Admin</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link text-primary font-weight-bold" th:href="@{/shop/cart}"><span class="ti-shopping-cart"></span> Carrito</a>
+                  <a class="nav-link text-danger font-weight-bold" th:href="@{/logout}"><span class="ti-power-off mr-1"></span> Cerrar Sesión</a>
                 </li>
-                <li class="nav-item">
-                  <a class="nav-link text-danger font-weight-bold" th:href="@{/logout}"><span class="ti-power-off"></span> Cerrar Sesión</a>
-                </li>
-
               </ul>
             </li>
           </ul>
@@ -74,46 +70,46 @@
       </div>
     </nav>
 
-    <!-- Alertas Flash Globales -->
-    <div class="container mt-2" th:if="${successMessage != null or errorMessage != null or infoMessage != null}">
-      <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert" th:if="${successMessage != null}">
-        <i class="fa fa-check-circle mr-2"></i>
-        <span th:text="${successMessage}"></span>
+    <!-- Contenedor Único Global de Alertas con Auto-Dismiss -->
+    <div id="global-alert-container" class="container mt-2" th:if="${successMessage != null or errorMessage != null or infoMessage != null}">
+      <div th:if="${successMessage != null}" class="alert alert-success alert-dismissible fade show text-center shadow-sm auto-dismiss-alert" role="alert">
+        <i class="fa fa-check-circle mr-2"></i><span th:text="${successMessage}">Operación exitosa</span>
         <button type="button" class="close" data-dismiss="alert" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert" th:if="${errorMessage != null}">
-        <i class="fa fa-exclamation-circle mr-2"></i>
-        <span th:text="${errorMessage}"></span>
+      <div th:if="${errorMessage != null and successMessage == null}" class="alert alert-danger alert-dismissible fade show text-center shadow-sm auto-dismiss-alert" role="alert">
+        <i class="fa fa-exclamation-circle mr-2"></i><span th:text="${errorMessage}">Error</span>
         <button type="button" class="close" data-dismiss="alert" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <div class="alert alert-info alert-dismissible fade show shadow-sm" role="alert" th:if="${infoMessage != null}">
-        <i class="fa fa-info-circle mr-2"></i>
-        <span th:text="${infoMessage}"></span>
+      <div th:if="${infoMessage != null and successMessage == null and errorMessage == null}" class="alert alert-info alert-dismissible fade show text-center shadow-sm auto-dismiss-alert" role="alert">
+        <i class="fa fa-info-circle mr-2"></i><span th:text="${infoMessage}">Información</span>
         <button type="button" class="close" data-dismiss="alert" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
     </div>
   </div>
-  <!-- Contenedor global de mensajes de notificación/confirmación -->
-  <div class="container mt-2" th:if="${successMessage != null or errorMessage != null}">
-    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show text-center shadow-sm mb-0" role="alert">
-      <i class="fa fa-check-circle mr-2"></i><span th:text="${successMessage}">¡Producto agregado al carrito exitosamente!</span>
-      <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
-        <span aria-hidden="true">&times;</span>
-      </button>
-    </div>
-    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show text-center shadow-sm mb-0" role="alert">
-      <i class="fa fa-exclamation-circle mr-2"></i><span th:text="${errorMessage}">Error</span>
-      <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
-        <span aria-hidden="true">&times;</span>
-      </button>
-    </div>
-  </div>
+
+  <!-- Script para auto-cerrar la alerta luego de 3.5 segundos -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var alerts = document.querySelectorAll(".auto-dismiss-alert");
+      alerts.forEach(function (alertElem) {
+        setTimeout(function () {
+          alertElem.style.transition = "opacity 0.6s ease";
+          alertElem.style.opacity = "0";
+          setTimeout(function () {
+            if (alertElem.parentNode) {
+              alertElem.parentNode.removeChild(alertElem);
+            }
+          }, 600);
+        }, 3500);
+      });
+    });
+  </script>
 </header>
 </body>
 </html>
