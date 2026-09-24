@@ -25,7 +25,6 @@ public class OrderViewDto {
     private String categoryName;
     private double totalAmount;
     private double subtotal;
-    private double shippingCost;
     private String status;
     private String paymentMethod;
     private LocalDateTime createdAt;

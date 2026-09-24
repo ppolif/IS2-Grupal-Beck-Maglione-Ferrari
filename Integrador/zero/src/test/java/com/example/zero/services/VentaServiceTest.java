@@ -308,7 +308,6 @@ class VentaServiceTest {
         assertNotNull(dto);
         assertEquals("#ORD-1001", dto.getOrderNumber());
         assertEquals(1500.0, dto.getTotalAmount());
-        assertEquals(0.0, dto.getShippingCost());
     }
 
     @Test

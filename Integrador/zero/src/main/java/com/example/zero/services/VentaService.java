@@ -279,7 +279,6 @@ public class VentaService {
                 .categoryName(category)
                 .totalAmount(f.getTotalPagado())
                 .subtotal(f.getTotalPagado())
-                .shippingCost(0.0)
                 .status("Completado")
                 .paymentMethod(payment)
                 .createdAt(f.getFechaFactura())

@@ -80,16 +80,11 @@
             <td class="text-right"><p class="mb-0">$180.00</p></td>
           </tr>
 
-          <!-- Subtotal y Envío -->
+          <!-- Subtotal y Total Abonado -->
           <tr>
             <td><h4>Subtotal</h4></td>
             <td></td>
             <td class="text-right"><p class="font-weight-bold mb-0" th:text="${order != null} ? ${#numbers.formatCurrency(order.subtotal)} : '$180.00'">$180.00</p></td>
-          </tr>
-          <tr>
-            <td><h4>Costo de Envío</h4></td>
-            <td></td>
-            <td class="text-right"><p class="font-weight-bold mb-0" th:text="${order != null} ? ${#numbers.formatCurrency(order.shippingCost)} : '$0.00'">$0.00</p></td>
           </tr>
           <tr>
             <td><h3 class="text-brand-dark">Total Abonado</h3></td>
