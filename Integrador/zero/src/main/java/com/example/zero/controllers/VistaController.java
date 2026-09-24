@@ -28,6 +28,7 @@ public class VistaController {
     private final CategoriaService categoriaService;
     private final VentaService ventaService;
     private final CategoriaRepository categoriaRepository;
+    private final com.example.zero.services.OrdenCompraService ordenCompraService;
 
 
     // Inicio / Portada
@@ -67,12 +68,61 @@ public class VistaController {
 
     // Finalizar compra / Checkout
     @GetMapping({"/shop/checkout", "/shop/pagar"})
-    public String shopCheckout(HttpSession session, RedirectAttributes redirectAttributes) {
+    public String shopCheckout(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
         Usuario usuario = (Usuario) session.getAttribute("usuariosession");
-        if (usuario != null && usuario.getRol() != RolUsuario.CLIENTE) {
+        if (usuario == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Debes iniciar sesión para acceder al proceso de compra.");
+            return "redirect:/login";
+        }
+        if (usuario.getRol() != RolUsuario.CLIENTE) {
             redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden acceder al proceso de compra.");
             return "redirect:/admin";
         }
+
+        try {
+            com.example.zero.entidades.persona.Cliente cliente = ordenCompraService.obtenerOAsociarCliente(usuario);
+            session.setAttribute("usuariosession", usuario);
+
+            com.example.zero.entidades.compraCliente.OrdenCompra carrito = ordenCompraService.obtenerOCrearCarrito(cliente);
+            List<com.example.zero.entidades.compraCliente.DetalleCompra> items = ordenCompraService.obtenerItemsActivos(carrito);
+
+            model.addAttribute("cliente", cliente);
+            model.addAttribute("usuario", usuario);
+            model.addAttribute("cart", carrito);
+            model.addAttribute("items", items);
+
+            String telefono = "";
+            if (cliente.getContactos() != null) {
+                telefono = cliente.getContactos().stream()
+                        .filter(c -> c instanceof com.example.zero.entidades.empresa.ContactoTelefonico)
+                        .map(c -> ((com.example.zero.entidades.empresa.ContactoTelefonico) c).getTelefono())
+                        .filter(t -> t != null && !t.isBlank())
+                        .findFirst()
+                        .orElse("");
+            }
+            model.addAttribute("customerPhone", telefono);
+
+            String direccion = "";
+            String ciudad = "";
+            String zipCode = "";
+            if (cliente.getDireccion() != null && !cliente.getDireccion().isEmpty()) {
+                com.example.zero.entidades.zona.Direccion dir = cliente.getDireccion().get(0);
+                String calle = dir.getCalle() != null ? dir.getCalle() : "";
+                String num = dir.getNumeracion() != null ? dir.getNumeracion() : "";
+                direccion = (calle + " " + num).trim();
+                if (dir.getLocalidad() != null) {
+                    ciudad = dir.getLocalidad().getNombre() != null ? dir.getLocalidad().getNombre() : "";
+                    zipCode = dir.getLocalidad().getCodigoPostal() != null ? dir.getLocalidad().getCodigoPostal() : "";
+                }
+            }
+            model.addAttribute("customerAddress", direccion);
+            model.addAttribute("customerCity", ciudad);
+            model.addAttribute("customerZip", zipCode);
+
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", "Error al cargar datos del checkout: " + e.getMessage());
+        }
+
         return "shop/checkout";
     }
 
