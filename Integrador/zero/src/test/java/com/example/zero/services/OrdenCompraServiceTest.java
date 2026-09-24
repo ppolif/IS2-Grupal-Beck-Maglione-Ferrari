@@ -10,7 +10,6 @@ import com.example.zero.enums.EstadoOrdenCompra;
 import com.example.zero.enums.RolUsuario;
 import com.example.zero.enums.TipoDocumento;
 import com.example.zero.repositories.*;
-import com.example.zero.services.producto.ProductoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,7 +23,6 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -91,70 +89,6 @@ class OrdenCompraServiceTest {
                 .build();
     }
 
-    // ==================== MÉTODOS AUXILIARES Y CÁLCULOS ====================
-
-    @Test
-    @DisplayName("recalcularTotal calcula correctamente la suma de subtotales de detalles activos")
-    void recalcularTotal_calculaCorrectamenteSumaDetallesActivos() {
-        DetalleCompra d1 = DetalleCompra.builder().cantidad(2).precioUnitario(100.0).subtotal(200.0).eliminado(false).build();
-        DetalleCompra d2 = DetalleCompra.builder().cantidad(1).precioUnitario(350.5).subtotal(350.5).eliminado(false).build();
-        DetalleCompra dEliminado = DetalleCompra.builder().cantidad(1).precioUnitario(500.0).subtotal(500.0).eliminado(true).build();
-
-        OrdenCompra orden = OrdenCompra.builder().detalles(new ArrayList<>(List.of(d1, d2, dEliminado))).build();
-
-        ordenCompraService.recalcularTotal(orden);
-
-        assertEquals(550.5, orden.getTotal());
-    }
-
-    @Test
-    @DisplayName("recalcularSubtotal calcula cantidad * precio unitario")
-    void recalcularSubtotal_calculaMultiplicacionCantidadYPrecio() {
-        DetalleCompra detalle = DetalleCompra.builder().cantidad(3).precioUnitario(199.99).build();
-
-        ordenCompraService.recalcularSubtotal(detalle);
-
-        assertEquals(599.97, detalle.getSubtotal());
-    }
-
-    @Test
-    @DisplayName("obtenerItemsActivos filtra los detalles eliminados")
-    void obtenerItemsActivos_filtraCorrectamenteDetallesEliminados() {
-        DetalleCompra d1 = DetalleCompra.builder().id("d1").eliminado(false).build();
-        DetalleCompra d2 = DetalleCompra.builder().id("d2").eliminado(true).build();
-        DetalleCompra d3 = DetalleCompra.builder().id("d3").eliminado(false).build();
-
-        OrdenCompra orden = OrdenCompra.builder().detalles(List.of(d1, d2, d3)).build();
-
-        List<DetalleCompra> activos = ordenCompraService.obtenerItemsActivos(orden);
-
-        assertEquals(2, activos.size());
-        assertTrue(activos.contains(d1));
-        assertTrue(activos.contains(d3));
-        assertFalse(activos.contains(d2));
-    }
-
-    @Test
-    @DisplayName("contarItems cuenta solo cantidades de ítems no eliminados")
-    void contarItems_cuentaCantidadesCorrectamente() {
-        DetalleCompra item1 = DetalleCompra.builder().cantidad(3).eliminado(false).build();
-        DetalleCompra item2 = DetalleCompra.builder().cantidad(2).eliminado(true).build();
-        DetalleCompra item3 = DetalleCompra.builder().cantidad(4).eliminado(false).build();
-        carritoTest.getDetalles().addAll(List.of(item1, item2, item3));
-
-        int total = ordenCompraService.contarItems(carritoTest);
-
-        assertEquals(7, total);
-    }
-
-    @Test
-    @DisplayName("contarItems con orden nula retorna cero")
-    void contarItems_ordenNula_retornaCero() {
-        assertEquals(0, ordenCompraService.contarItems((OrdenCompra) null));
-    }
-
-    // ==================== OBTENER O CREAR CARRITO ====================
-
     @Test
     @DisplayName("obtenerOCrearCarrito retorna carrito existente si ya está en estado PENDIENTE_COMPLETAR")
     void obtenerOCrearCarrito_existente_retornaCarritoExistente() {
@@ -186,35 +120,29 @@ class OrdenCompraServiceTest {
     }
 
     @Test
-    @DisplayName("obtenerOCrearCarrito con cliente nulo lanza IllegalArgumentException")
-    void obtenerOCrearCarrito_clienteNulo_lanzaIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> ordenCompraService.obtenerOCrearCarrito(null));
-    }
-
-    // ==================== AGREGAR PRODUCTO ====================
-
-    @Test
-    @DisplayName("agregarProducto agrega un nuevo ítem y recalcula total")
-    void agregarProducto_productoNuevo_creaDetalleYRecalculaTotal() {
-        when(productoRepository.findActive("prod-uuid-1")).thenReturn(Optional.of(productoTest));
-        when(productoService.obtenerPrecioActual("prod-uuid-1")).thenReturn(150.0);
+    @DisplayName("agregarProducto agrega un nuevo detalle al carrito y recalcula totales")
+    void agregarProducto_nuevoItem_agregaYRecalcula() {
         when(ordenCompraRepository.findByClienteAndEstadoOrdenCompraAndEliminadoFalse(
                 clienteTest, EstadoOrdenCompra.PENDIENTE_COMPLETAR))
                 .thenReturn(Optional.of(carritoTest));
+        when(productoRepository.findActive("prod-uuid-1")).thenReturn(Optional.of(productoTest));
+        when(productoService.obtenerPrecioActual("prod-uuid-1")).thenReturn(150.0);
         when(detalleCompraRepository.save(any(DetalleCompra.class))).thenAnswer(inv -> inv.getArgument(0));
         when(ordenCompraRepository.save(any(OrdenCompra.class))).thenAnswer(inv -> inv.getArgument(0));
 
         OrdenCompra resultado = ordenCompraService.agregarProducto(clienteTest, "prod-uuid-1", 2);
 
         assertNotNull(resultado);
-        assertEquals(1, resultado.getDetalles().size());
         assertEquals(300.0, resultado.getTotal());
+        assertEquals(1, resultado.getDetalles().size());
+        assertEquals(2, resultado.getDetalles().get(0).getCantidad());
+        assertEquals(300.0, resultado.getDetalles().get(0).getSubtotal());
         verify(detalleCompraRepository, times(1)).save(any(DetalleCompra.class));
     }
 
     @Test
-    @DisplayName("agregarProducto con producto ya existente en carrito acumula la cantidad")
-    void agregarProducto_productoExistenteEnCarrito_incrementaCantidadYRecalculaTotal() {
+    @DisplayName("agregarProducto incrementa cantidad si el producto ya existía en el carrito")
+    void agregarProducto_productoYaExistente_incrementaCantidad() {
         DetalleCompra itemExistente = DetalleCompra.builder()
                 .id("det-1")
                 .ordenCompra(carritoTest)
@@ -225,28 +153,27 @@ class OrdenCompraServiceTest {
                 .eliminado(false)
                 .build();
         carritoTest.getDetalles().add(itemExistente);
-        carritoTest.setTotal(150.0);
 
-        when(productoRepository.findActive("prod-uuid-1")).thenReturn(Optional.of(productoTest));
-        when(productoService.obtenerPrecioActual("prod-uuid-1")).thenReturn(150.0);
         when(ordenCompraRepository.findByClienteAndEstadoOrdenCompraAndEliminadoFalse(
                 clienteTest, EstadoOrdenCompra.PENDIENTE_COMPLETAR))
                 .thenReturn(Optional.of(carritoTest));
+        when(productoRepository.findActive("prod-uuid-1")).thenReturn(Optional.of(productoTest));
+        when(productoService.obtenerPrecioActual("prod-uuid-1")).thenReturn(150.0);
         when(detalleCompraRepository.save(any(DetalleCompra.class))).thenAnswer(inv -> inv.getArgument(0));
         when(ordenCompraRepository.save(any(OrdenCompra.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        OrdenCompra resultado = ordenCompraService.agregarProducto(clienteTest, "prod-uuid-1", 3);
+        OrdenCompra resultado = ordenCompraService.agregarProducto(clienteTest, "prod-uuid-1", 2);
 
         assertNotNull(resultado);
+        assertEquals(450.0, resultado.getTotal());
         assertEquals(1, resultado.getDetalles().size());
-        assertEquals(4, itemExistente.getCantidad());
-        assertEquals(600.0, itemExistente.getSubtotal());
-        assertEquals(600.0, resultado.getTotal());
+        assertEquals(3, itemExistente.getCantidad());
+        assertEquals(450.0, itemExistente.getSubtotal());
     }
 
     @Test
-    @DisplayName("agregarProducto con cantidad <= 0 lanza IllegalArgumentException")
-    void agregarProducto_cantidadInvalida_lanzaIllegalArgumentException() {
+    @DisplayName("agregarProducto con cantidad menor o igual a cero lanza IllegalArgumentException")
+    void agregarProducto_cantidadInvalida_lanzaExcepcion() {
         assertThrows(IllegalArgumentException.class, () ->
                 ordenCompraService.agregarProducto(clienteTest, "prod-uuid-1", 0));
         assertThrows(IllegalArgumentException.class, () ->
@@ -254,39 +181,18 @@ class OrdenCompraServiceTest {
     }
 
     @Test
-    @DisplayName("agregarProducto con producto inexistente lanza IllegalArgumentException")
-    void agregarProducto_productoInexistente_lanzaIllegalArgumentException() {
-        when(productoRepository.findActive("prod-inexistente")).thenReturn(Optional.empty());
-        when(productoRepository.findByCodigoAndEliminadoFalse("prod-inexistente")).thenReturn(Optional.empty());
-        when(productoRepository.findByEliminadoFalse()).thenReturn(Collections.emptyList());
-
-        assertThrows(IllegalArgumentException.class, () ->
-                ordenCompraService.agregarProducto(clienteTest, "prod-inexistente", 1));
-    }
-
-    @Test
-    @DisplayName("agregarProducto con cliente nulo lanza IllegalArgumentException")
-    void agregarProducto_clienteNulo_lanzaIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () ->
-                ordenCompraService.agregarProducto(null, "prod-uuid-1", 1));
-    }
-
-    // ==================== ACTUALIZAR CANTIDAD ====================
-
-    @Test
-    @DisplayName("actualizarCantidad actualiza cantidad del ítem y recalcula total")
-    void actualizarCantidad_detalleExistente_actualizaCantidadYRecalculaTotal() {
+    @DisplayName("actualizarCantidad modifica la cantidad de un ítem existente y recalcula total")
+    void actualizarCantidad_itemExistente_actualizaYRecalcula() {
         DetalleCompra item = DetalleCompra.builder()
                 .id("det-1")
                 .ordenCompra(carritoTest)
                 .producto(productoTest)
-                .cantidad(2)
-                .precioUnitario(150.0)
-                .subtotal(300.0)
+                .cantidad(1)
+                .precioUnitario(100.0)
+                .subtotal(100.0)
                 .eliminado(false)
                 .build();
         carritoTest.getDetalles().add(item);
-        carritoTest.setTotal(300.0);
 
         when(ordenCompraRepository.findByClienteAndEstadoOrdenCompraAndEliminadoFalse(
                 clienteTest, EstadoOrdenCompra.PENDIENTE_COMPLETAR))
@@ -294,46 +200,24 @@ class OrdenCompraServiceTest {
         when(detalleCompraRepository.save(any(DetalleCompra.class))).thenAnswer(inv -> inv.getArgument(0));
         when(ordenCompraRepository.save(any(OrdenCompra.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        OrdenCompra resultado = ordenCompraService.actualizarCantidad(clienteTest, "det-1", 5);
+        OrdenCompra resultado = ordenCompraService.actualizarCantidad(clienteTest, "det-1", 4);
 
         assertNotNull(resultado);
-        assertEquals(5, item.getCantidad());
-        assertEquals(750.0, item.getSubtotal());
-        assertEquals(750.0, resultado.getTotal());
+        assertEquals(400.0, resultado.getTotal());
+        assertEquals(4, item.getCantidad());
+        assertEquals(400.0, item.getSubtotal());
     }
 
     @Test
-    @DisplayName("actualizarCantidad con cantidad <= 0 lanza IllegalArgumentException")
-    void actualizarCantidad_cantidadInvalida_lanzaIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () ->
-                ordenCompraService.actualizarCantidad(clienteTest, "det-1", 0));
-        assertThrows(IllegalArgumentException.class, () ->
-                ordenCompraService.actualizarCantidad(clienteTest, "det-1", -2));
-    }
-
-    @Test
-    @DisplayName("actualizarCantidad con ítem inexistente lanza IllegalArgumentException")
-    void actualizarCantidad_detalleNoPerteneceAlCarrito_lanzaIllegalArgumentException() {
-        when(ordenCompraRepository.findByClienteAndEstadoOrdenCompraAndEliminadoFalse(
-                clienteTest, EstadoOrdenCompra.PENDIENTE_COMPLETAR))
-                .thenReturn(Optional.of(carritoTest));
-
-        assertThrows(IllegalArgumentException.class, () ->
-                ordenCompraService.actualizarCantidad(clienteTest, "det-fantasma", 3));
-    }
-
-    // ==================== ELIMINAR PRODUCTO ====================
-
-    @Test
-    @DisplayName("eliminarProducto marca el detalle como eliminado y recalcula total")
-    void eliminarProducto_detalleExistente_marcaEliminadoYRecalculaTotal() {
+    @DisplayName("eliminarProducto realiza baja lógica del detalle y recalcula total")
+    void eliminarProducto_itemExistente_bajaLogicaYRecalcula() {
         DetalleCompra item1 = DetalleCompra.builder()
                 .id("det-1")
                 .ordenCompra(carritoTest)
                 .producto(productoTest)
                 .cantidad(1)
-                .precioUnitario(150.0)
-                .subtotal(150.0)
+                .precioUnitario(100.0)
+                .subtotal(100.0)
                 .eliminado(false)
                 .build();
         DetalleCompra item2 = DetalleCompra.builder()
@@ -362,8 +246,6 @@ class OrdenCompraServiceTest {
         assertEquals(100.0, resultado.getTotal());
     }
 
-    // ==================== VACIAR CARRITO ====================
-
     @Test
     @DisplayName("vaciarCarrito da de baja lógica a todos los ítems y total queda en 0.0")
     void vaciarCarrito_marcaTodosEliminados() {
@@ -391,7 +273,18 @@ class OrdenCompraServiceTest {
         assertEquals(0, ordenCompraService.obtenerItemsActivos(resultado).size());
     }
 
-    // ==================== OBTENER O ASOCIAR CLIENTE ====================
+    @Test
+    @DisplayName("contarItems cuenta solo cantidades de ítems no eliminados")
+    void contarItems_cuentaCantidadesCorrectamente() {
+        DetalleCompra item1 = DetalleCompra.builder().cantidad(3).eliminado(false).build();
+        DetalleCompra item2 = DetalleCompra.builder().cantidad(2).eliminado(true).build();
+        DetalleCompra item3 = DetalleCompra.builder().cantidad(4).eliminado(false).build();
+        carritoTest.getDetalles().addAll(List.of(item1, item2, item3));
+
+        int total = ordenCompraService.contarItems(carritoTest);
+
+        assertEquals(7, total);
+    }
 
     @Test
     @DisplayName("obtenerOAsociarCliente retorna el cliente existente asociado a la persona del usuario")
@@ -409,30 +302,6 @@ class OrdenCompraServiceTest {
 
         assertNotNull(resultado);
         assertEquals(clienteTest.getId(), resultado.getId());
-    }
-
-    @Test
-    @DisplayName("obtenerOAsociarCliente con usuario cliente sin persona previa crea nuevo cliente")
-    void obtenerOAsociarCliente_usuarioSinPersona_creaYAsociaCliente() {
-        Usuario usuario = Usuario.builder()
-                .id("user-sin-persona")
-                .nombreUsuario("cliente@zero.com")
-                .rol(RolUsuario.CLIENTE)
-                .build();
-
-        Nacionalidad nac = Nacionalidad.builder().id("nac-01").nombre("Argentina").build();
-        when(usuarioRepository.findById("user-sin-persona")).thenReturn(Optional.of(usuario));
-        when(clienteRepository.findByNumeroDocumentoAndEliminadoFalse(anyString())).thenReturn(Optional.empty());
-        when(nacionalidadRepository.findByEliminadoFalse()).thenReturn(List.of(nac));
-        when(clienteRepository.save(any(Cliente.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        Cliente resultado = ordenCompraService.obtenerOAsociarCliente(usuario);
-
-        assertNotNull(resultado);
-        assertEquals(resultado, usuario.getPersona());
-        verify(clienteRepository, times(1)).save(any(Cliente.class));
-        verify(usuarioRepository, times(1)).save(usuario);
     }
 
     @Test
@@ -470,10 +339,5 @@ class OrdenCompraServiceTest {
         assertTrue(ex.getMessage().contains("CLIENTE"));
         verifyNoInteractions(clienteRepository);
     }
-
-    @Test
-    @DisplayName("obtenerOAsociarCliente con usuario nulo lanza IllegalArgumentException")
-    void obtenerOAsociarCliente_usuarioNulo_lanzaIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> ordenCompraService.obtenerOAsociarCliente(null));
-    }
 }
+

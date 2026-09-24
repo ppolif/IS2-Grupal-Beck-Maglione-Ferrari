@@ -27,6 +27,7 @@ public class VistaController {
     private final ProductoService productoService;
     private final CategoriaService categoriaService;
     private final VentaService ventaService;
+    private final AdminVentaController adminVentaController;
     private final CategoriaRepository categoriaRepository;
 
 
@@ -126,6 +127,11 @@ public class VistaController {
     @GetMapping({"/admin/404", "/admin/page-404"})
     public String admin404() {
         return "admin/page-404";
+    }
+
+    @GetMapping({"/admin/ventas/nueva", "/admin/registrar-venta"})
+    public String adminRegistrarVenta() {
+        return "admin/registrar-venta";
     }
 
     // Registrar Compra (Ingreso de mercadería con proveedores y stock)

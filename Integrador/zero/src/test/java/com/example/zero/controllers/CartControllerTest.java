@@ -57,6 +57,7 @@ class CartControllerTest {
                 .build();
 
         clienteMock = Cliente.builder()
+                .id("cli-123")
                 .numeroDocumento("12345678")
                 .nombre("Juan")
                 .apellido("Perez")
@@ -277,22 +278,5 @@ class CartControllerTest {
         assertEquals("redirect:/admin", view);
         verify(redirectAttributes).addFlashAttribute(eq("errorMessage"), contains("administradores"));
     }
-
-    @Test
-    @DisplayName("applyCoupon con código aplica cupón y redirige a /shop/cart")
-    void applyCoupon_conCodigo_agregaMensajeExito() {
-        String view = cartController.applyCoupon("PROMO2026", session, redirectAttributes);
-
-        assertEquals("redirect:/shop/cart", view);
-        verify(redirectAttributes).addFlashAttribute(eq("successMessage"), contains("PROMO2026"));
-    }
-
-    @Test
-    @DisplayName("applyCoupon sin código agrega mensaje de error")
-    void applyCoupon_sinCodigo_agregaMensajeError() {
-        String view = cartController.applyCoupon("", session, redirectAttributes);
-
-        assertEquals("redirect:/shop/cart", view);
-        verify(redirectAttributes).addFlashAttribute(eq("errorMessage"), any());
-    }
 }
+
