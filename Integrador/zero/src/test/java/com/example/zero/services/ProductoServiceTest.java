@@ -5,7 +5,6 @@ import com.example.zero.entidades.producto.Producto;
 import com.example.zero.entidades.producto.SubCategoria;
 import com.example.zero.enums.TipoImagen;
 import com.example.zero.repositories.ProductoRepository;
-import com.example.zero.services.producto.ProductoService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

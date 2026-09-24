@@ -26,6 +26,7 @@ public class VistaController {
     private final ProductoService productoService;
     private final CategoriaService categoriaService;
     private final VentaService ventaService;
+    private final AdminVentaController adminVentaController;
     private final CategoriaRepository categoriaRepository;
     private final com.example.zero.services.OrdenCompraService ordenCompraService;
 
