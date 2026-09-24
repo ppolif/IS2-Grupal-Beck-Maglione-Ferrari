@@ -330,5 +330,33 @@ class ProductoServiceTest {
         assertThrows(IllegalArgumentException.class, () -> productoService.aumentarStock(10, -5));
         assertThrows(IllegalArgumentException.class, () -> productoService.aumentarStock(-1, 10));
     }
+
+    @Test
+    void helperMethods_obtenerDatosParaVista() {
+        SubCategoria sub = SubCategoria.builder()
+                .nombre("Running")
+                .categoria(com.example.zero.entidades.producto.Categoria.builder().nombre("Calzado").build())
+                .build();
+        Producto producto = Producto.builder()
+                .id("prod-99")
+                .nombre("Zapatilla")
+                .subCategoria(sub)
+                .build();
+
+        when(productoRepository.findById("prod-99")).thenReturn(Optional.of(producto));
+        when(vigenciaPrecioService.obtenerPrecioActual("prod-99")).thenReturn(25000.0);
+
+        double precio = productoService.obtenerPrecioActual(producto);
+        String categoria = productoService.obtenerNombreCategoria(producto);
+        int stock = productoService.obtenerStock(producto);
+        String img = productoService.obtenerImagenUrl(producto);
+        Producto preparado = productoService.prepararParaVista(producto);
+
+        assertEquals(25000.0, precio);
+        assertEquals("Calzado", categoria);
+        assertEquals(10, stock);
+        assertNotNull(img);
+        assertEquals(25000.0, preparado.getPrecioActual());
+    }
 }
 

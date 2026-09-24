@@ -5,7 +5,7 @@ import com.example.zero.entidades.compra.Detalle;
 import com.example.zero.entidades.compra.Factura;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.enums.TipoDePago;
-import com.example.zero.services.ProductoService;
+import com.example.zero.services.producto.ProductoService;
 import com.example.zero.services.VentaService;
 import com.example.zero.services.persona.ClienteService;
 import org.springframework.stereotype.Controller;

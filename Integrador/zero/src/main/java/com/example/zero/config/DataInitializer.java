@@ -10,7 +10,7 @@ import com.example.zero.entidades.zona.Provincia;
 import com.example.zero.enums.RolUsuario;
 import com.example.zero.repositories.*;
 import com.example.zero.services.CategoriaService;
-import com.example.zero.services.ProductoService;
+import com.example.zero.services.producto.ProductoService;
 import com.example.zero.services.ProveedorService;
 import com.example.zero.services.SubCategoriaService;
 import com.example.zero.services.persona.UsuarioService;
