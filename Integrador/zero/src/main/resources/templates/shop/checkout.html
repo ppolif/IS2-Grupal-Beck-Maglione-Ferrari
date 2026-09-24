@@ -18,7 +18,7 @@
       <span th:text="${errorMessage}">Por favor verifica los datos ingresados.</span>
     </div>
 
-    <form class="billing_details" action="confirmation.html" th:action="@{/shop/checkout/process}" th:object="${checkoutForm}" method="POST">
+    <form class="billing_details" th:action="@{/api/mercadoPago}" method="POST">
       <div class="row">
         <!-- Columna de Datos de Envío y Facturación -->
         <div class="col-lg-8">
@@ -27,49 +27,42 @@
             <div class="col-md-6 form-group">
               <label for="firstName" class="small font-weight-bold">Nombre *</label>
               <input type="text" class="form-control" id="firstName" name="firstName"
-                     th:field="*{firstName}" placeholder="Juan" required>
-              <div class="text-danger small mt-1" th:if="${#fields != null && #fields.hasErrors('firstName')}" th:errors="*{firstName}"></div>
+                     th:value="${cliente != null ? cliente.nombre : ''}" placeholder="Juan" required>
             </div>
             <div class="col-md-6 form-group">
               <label for="lastName" class="small font-weight-bold">Apellido *</label>
               <input type="text" class="form-control" id="lastName" name="lastName"
-                     th:field="*{lastName}" placeholder="Pérez" required>
-              <div class="text-danger small mt-1" th:if="${#fields != null && #fields.hasErrors('lastName')}" th:errors="*{lastName}"></div>
+                     th:value="${cliente != null ? cliente.apellido : ''}" placeholder="Pérez" required>
             </div>
             <div class="col-md-6 form-group">
               <label for="phoneNumber" class="small font-weight-bold">Teléfono de Contacto *</label>
               <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber"
-                     th:field="*{phoneNumber}" placeholder="+54 11 1234-5678" required>
-              <div class="text-danger small mt-1" th:if="${#fields != null && #fields.hasErrors('phoneNumber')}" th:errors="*{phoneNumber}"></div>
+                     th:value="${customerPhone}" placeholder="+54 11 1234-5678" required>
             </div>
             <div class="col-md-6 form-group">
               <label for="email" class="small font-weight-bold">Correo Electrónico *</label>
               <input type="email" class="form-control" id="email" name="email"
-                     th:field="*{email}" placeholder="juan.perez@email.com" required>
-              <div class="text-danger small mt-1" th:if="${#fields != null && #fields.hasErrors('email')}" th:errors="*{email}"></div>
+                     th:value="${usuario != null ? usuario.nombreUsuario : ''}" placeholder="juan.perez@email.com" required>
             </div>
             <div class="col-md-12 form-group">
               <label for="address" class="small font-weight-bold">Dirección de Entrega (Calle y Altura) *</label>
               <input type="text" class="form-control" id="address" name="address"
-                     th:field="*{address}" placeholder="Av. Corrientes 1234, Piso 2 Depto B" required>
-              <div class="text-danger small mt-1" th:if="${#fields != null && #fields.hasErrors('address')}" th:errors="*{address}"></div>
+                     th:value="${customerAddress}" placeholder="Av. Corrientes 1234, Piso 2 Depto B" required>
             </div>
             <div class="col-md-6 form-group">
               <label for="city" class="small font-weight-bold">Ciudad / Localidad *</label>
               <input type="text" class="form-control" id="city" name="city"
-                     th:field="*{city}" placeholder="Buenos Aires" required>
-              <div class="text-danger small mt-1" th:if="${#fields != null && #fields.hasErrors('city')}" th:errors="*{city}"></div>
+                     th:value="${customerCity}" placeholder="Buenos Aires" required>
             </div>
             <div class="col-md-6 form-group">
               <label for="zipCode" class="small font-weight-bold">Código Postal *</label>
               <input type="text" class="form-control" id="zipCode" name="zipCode"
-                     th:field="*{zipCode}" placeholder="C1043" required>
-              <div class="text-danger small mt-1" th:if="${#fields != null && #fields.hasErrors('zipCode')}" th:errors="*{zipCode}"></div>
+                     th:value="${customerZip}" placeholder="C1043" required>
             </div>
             <div class="col-md-12 form-group">
               <label for="orderNotes" class="small font-weight-bold">Notas o Instrucciones para la Entrega</label>
               <textarea class="form-control" id="orderNotes" name="orderNotes"
-                        th:field="*{orderNotes}" rows="2" placeholder="Tocar timbre, dejar en portería..."></textarea>
+                        rows="2" placeholder="Tocar timbre, dejar en portería..."></textarea>
             </div>
           </div>
         </div>
@@ -80,38 +73,33 @@
             <h2>Tu Pedido</h2>
 
             <!-- Lista de Artículos -->
-            <ul class="list" th:if="${cart != null && !#lists.isEmpty(cart.items)}">
+            <ul class="list" th:if="${items != null && !#lists.isEmpty(items)}">
               <li><a href="#"><strong>Producto</strong> <span>Total</span></a></li>
-              <li th:each="item : ${cart.items}">
+              <li th:each="item : ${items}">
                 <a href="#">
-                  <span class="text-truncate d-inline-block" style="max-width: 150px;" th:text="${item.productName}">Producto</span>
-                  <span class="middle" th:text="'x ' + ${item.quantity}">x 01</span>
-                  <span class="last" th:text="${#numbers.formatCurrency(item.subtotal)}">$720.00</span>
+                  <span class="text-truncate d-inline-block" style="max-width: 150px;" th:text="${item.producto != null ? item.producto.nombre : 'Producto'}">Producto</span>
+                  <span class="middle" th:text="'x ' + ${item.cantidad}">x 01</span>
+                  <span class="last">$<span th:text="${#numbers.formatDecimal(item.subtotal != null ? item.subtotal : 0, 1, 'POINT', 2, 'POINT')}">720.00</span></span>
                 </a>
               </li>
             </ul>
 
             <!-- Fallback si cart está vacío en preview -->
-            <ul class="list" th:if="${cart == null || #lists.isEmpty(cart.items)}">
+            <ul class="list" th:if="${items == null || #lists.isEmpty(items)}">
               <li><a href="#"><strong>Producto</strong> <span>Total</span></a></li>
-              <li><a href="#">Indumentaria Zero Sport <span class="middle">x 01</span> <span class="last">$720.00</span></a></li>
+              <li><a href="#">Tu carrito está vacío <span class="middle">x 0</span> <span class="last">$0.00</span></a></li>
             </ul>
 
             <!-- Subtotales -->
             <ul class="list list_2">
               <li>
                 <a href="#">Subtotal
-                  <span th:text="${cart != null} ? ${#numbers.formatCurrency(cart.subtotal)} : '$720.00'">$720.00</span>
-                </a>
-              </li>
-              <li>
-                <a href="#">Envío
-                  <span th:text="${cart != null && cart.shippingCost != null ? #numbers.formatCurrency(cart.shippingCost) : '$50.00'}">$50.00</span>
+                  <span>$<span th:text="${#numbers.formatDecimal(cart != null && cart.total != null ? cart.total : 0, 1, 'POINT', 2, 'POINT')}">0.00</span></span>
                 </a>
               </li>
               <li>
                 <a href="#">Total
-                  <span class="font-weight-bold" th:text="${cart != null} ? ${#numbers.formatCurrency(cart.total)} : '$770.00'">$770.00</span>
+                  <span class="font-weight-bold text-brand-bold">$<span th:text="${#numbers.formatDecimal(cart != null && cart.total != null ? cart.total : 0, 1, 'POINT', 2, 'POINT')}">0.00</span></span>
                 </a>
               </li>
             </ul>
@@ -141,7 +129,7 @@
               <label for="termsCheck" class="small">He leído y acepto los <a href="#" class="text-brand-soft">términos y condiciones</a></label>
             </div>
 
-            <button type="submit" class="primary-btn w-100 border-0 text-center">Confirmar Compra</button>
+            <button type="submit" class="primary-btn w-100 border-0 text-center">Confirmar y Pagar con Mercado Pago</button>
           </div>
         </div>
       </div>

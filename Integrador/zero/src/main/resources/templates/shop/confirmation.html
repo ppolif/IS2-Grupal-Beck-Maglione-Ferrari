@@ -12,7 +12,13 @@
 <!--================Order Details Area =================-->
 <section class="order_details section_gap">
   <div class="container">
-    <h3 class="title_confirmation text-center mb-5 text-success">¡Gracias! Tu pedido ha sido confirmado con éxito.</h3>
+    <h3 class="title_confirmation text-center mb-4 text-success">¡Gracias! Tu pago y pedido han sido confirmados con éxito.</h3>
+
+    <!-- Opciones de Navegación Rápida -->
+    <div class="text-center mb-5">
+      <a th:href="@{/}" class="primary-btn mr-3"><i class="fa fa-home mr-2"></i>Volver al Inicio</a>
+      <a href="#detalle-compra" class="gray_btn"><i class="fa fa-list-alt mr-2"></i>Ver el Detalle de la Compra</a>
+    </div>
 
     <div class="row order_d_inner mb-5">
       <!-- Info de Orden -->
@@ -54,7 +60,7 @@
     </div>
 
     <!-- Tabla Detallada del Pedido -->
-    <div class="order_details_table shadow-sm p-4 rounded bg-white">
+    <div id="detalle-compra" class="order_details_table shadow-sm p-4 rounded bg-white">
       <h2 class="mb-4">Resumen de Productos Comprados</h2>
       <div class="table-responsive">
         <table class="table align-middle">

@@ -105,14 +105,56 @@
           <!-- Acciones de Salida -->
           <tr class="out_button_area">
             <td colspan="5">
-              <div class="checkout_btn_inner d-flex align-items-center justify-content-end gap-2">
+              <div class="checkout_btn_inner d-flex align-items-center justify-content-end gap-2 flex-wrap">
                 <a class="gray_btn mr-2" th:href="@{/shop/category}">Continuar Comprando</a>
-                <a class="primary-btn" th:href="@{/shop/checkout}">Finalizar Compra</a>
+                <a class="gray_btn mr-2" th:href="@{/shop/checkout}">Revisar Facturación</a>
+                <button type="button" class="primary-btn border-0" data-toggle="modal" data-target="#modalConfirmarCompra">Finalizar Compra</button>
               </div>
             </td>
           </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Modal de Confirmación de Finalizar Compra -->
+      <div class="modal fade" id="modalConfirmarCompra" tabindex="-1" role="dialog" aria-labelledby="modalConfirmarCompraLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+              <h5 class="modal-title text-white" id="modalConfirmarCompraLabel">
+                <i class="fa fa-shopping-cart mr-2"></i>Confirmar Finalización de Compra
+              </h5>
+              <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body p-4 text-center">
+              <div class="mb-3">
+                <i class="fa fa-credit-card text-warning" style="font-size: 3rem;"></i>
+              </div>
+              <h5 class="mb-2 font-weight-bold">¿Deseas finalizar la compra?</h5>
+              <p class="text-muted mb-3">
+                Al confirmar, serás redirigido a la pasarela de <strong>Mercado Pago</strong> para realizar el pago correspondiente a tu carrito de forma segura.
+              </p>
+              <div class="p-3 bg-light rounded mb-2">
+                <span class="text-muted small d-block">Monto total a abonar:</span>
+                <h3 class="text-brand-bold font-weight-bold mb-0">
+                  $<span th:text="${#numbers.formatDecimal(cart != null && cart.total != null ? cart.total : 0, 1, 'POINT', 2, 'POINT')}">0.00</span>
+                </h3>
+              </div>
+            </div>
+            <div class="modal-footer bg-light justify-content-center">
+              <button type="button" class="btn btn-secondary px-4 mr-2" data-dismiss="modal">
+                <i class="fa fa-times mr-1"></i> Cancelar
+              </button>
+              <form th:action="@{/api/mercadoPago}" method="POST" class="d-inline m-0">
+                <button type="submit" class="btn btn-primary px-4 font-weight-bold" id="btnConfirmarPago">
+                  <i class="fa fa-check mr-1"></i> Confirmar
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
