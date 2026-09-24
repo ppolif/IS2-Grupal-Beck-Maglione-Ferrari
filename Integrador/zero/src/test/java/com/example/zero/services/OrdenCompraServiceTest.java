@@ -303,5 +303,41 @@ class OrdenCompraServiceTest {
         assertNotNull(resultado);
         assertEquals(clienteTest.getId(), resultado.getId());
     }
+
+    @Test
+    @DisplayName("obtenerOAsociarCliente con usuario administrador lanza IllegalArgumentException")
+    void obtenerOAsociarCliente_usuarioAdmin_lanzaIllegalArgumentException() {
+        Usuario admin = Usuario.builder()
+                .id("admin-1")
+                .nombreUsuario("admin@zero.com")
+                .rol(RolUsuario.ADMINISTRATIVO)
+                .build();
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> ordenCompraService.obtenerOAsociarCliente(admin)
+        );
+
+        assertTrue(ex.getMessage().contains("CLIENTE"));
+        verifyNoInteractions(clienteRepository);
+    }
+
+    @Test
+    @DisplayName("obtenerOAsociarCliente con usuario jefe lanza IllegalArgumentException")
+    void obtenerOAsociarCliente_usuarioJefe_lanzaIllegalArgumentException() {
+        Usuario jefe = Usuario.builder()
+                .id("jefe-1")
+                .nombreUsuario("jefe@zero.com")
+                .rol(RolUsuario.JEFE)
+                .build();
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> ordenCompraService.obtenerOAsociarCliente(jefe)
+        );
+
+        assertTrue(ex.getMessage().contains("CLIENTE"));
+        verifyNoInteractions(clienteRepository);
+    }
 }
 

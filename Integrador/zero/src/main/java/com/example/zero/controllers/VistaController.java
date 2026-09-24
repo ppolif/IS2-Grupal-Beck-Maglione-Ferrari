@@ -2,17 +2,21 @@ package com.example.zero.controllers;
 
 import com.example.zero.dto.OrderViewDto;
 import com.example.zero.entidades.compra.Factura;
+import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.entidades.producto.Producto;
+import com.example.zero.enums.RolUsuario;
 import com.example.zero.repositories.CategoriaRepository;
 import com.example.zero.repositories.ProductoRepository;
 import com.example.zero.services.VentaService;
 import com.example.zero.services.producto.ProductoService;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -63,7 +67,12 @@ public class VistaController {
 
     // Finalizar compra / Checkout
     @GetMapping({"/shop/checkout", "/shop/pagar"})
-    public String shopCheckout() {
+    public String shopCheckout(HttpSession session, RedirectAttributes redirectAttributes) {
+        Usuario usuario = (Usuario) session.getAttribute("usuariosession");
+        if (usuario != null && usuario.getRol() != RolUsuario.CLIENTE) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden acceder al proceso de compra.");
+            return "redirect:/admin";
+        }
         return "shop/checkout";
     }
 

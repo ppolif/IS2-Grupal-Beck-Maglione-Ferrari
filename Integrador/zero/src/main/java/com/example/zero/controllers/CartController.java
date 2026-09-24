@@ -4,6 +4,7 @@ import com.example.zero.entidades.compraCliente.DetalleCompra;
 import com.example.zero.entidades.compraCliente.OrdenCompra;
 import com.example.zero.entidades.persona.Cliente;
 import com.example.zero.entidades.persona.Usuario;
+import com.example.zero.enums.RolUsuario;
 import com.example.zero.services.OrdenCompraService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -28,11 +29,16 @@ public class CartController {
      * Muestra la vista principal del carrito de compras del cliente autenticado.
      */
     @GetMapping({"/shop/cart", "/cart"})
-    public String showCart(HttpSession session, Model model) {
+    public String showCart(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
         Usuario usuario = (Usuario) session.getAttribute("usuariosession");
         if (usuario == null) {
-            model.addAttribute("errorMessage", "Debes iniciar sesión para acceder a tu carrito de compras.");
+            redirectAttributes.addFlashAttribute("errorMessage", "Debes iniciar sesión para acceder a tu carrito de compras.");
             return "redirect:/login";
+        }
+
+        if (usuario.getRol() != RolUsuario.CLIENTE) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden acceder a un carrito ni operar como clientes.");
+            return "redirect:/admin";
         }
 
         try {
@@ -68,6 +74,14 @@ public class CartController {
             return "redirect:/login";
         }
 
+        if (usuario.getRol() != RolUsuario.CLIENTE) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden agregar productos al carrito ni operar como clientes.");
+            if (referer != null && !referer.isBlank()) {
+                return "redirect:" + referer;
+            }
+            return "redirect:/admin";
+        }
+
         try {
             Cliente cliente = ordenCompraService.obtenerOAsociarCliente(usuario);
             session.setAttribute("usuariosession", usuario);
@@ -98,6 +112,11 @@ public class CartController {
             return "redirect:/login";
         }
 
+        if (usuario.getRol() != RolUsuario.CLIENTE) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden operar sobre el carrito.");
+            return "redirect:/admin";
+        }
+
         try {
             Cliente cliente = ordenCompraService.obtenerOAsociarCliente(usuario);
             session.setAttribute("usuariosession", usuario);
@@ -124,6 +143,11 @@ public class CartController {
             return "redirect:/login";
         }
 
+        if (usuario.getRol() != RolUsuario.CLIENTE) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden operar sobre el carrito.");
+            return "redirect:/admin";
+        }
+
         try {
             Cliente cliente = ordenCompraService.obtenerOAsociarCliente(usuario);
             session.setAttribute("usuariosession", usuario);
@@ -148,6 +172,11 @@ public class CartController {
             return "redirect:/login";
         }
 
+        if (usuario.getRol() != RolUsuario.CLIENTE) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden operar sobre el carrito.");
+            return "redirect:/admin";
+        }
+
         try {
             Cliente cliente = ordenCompraService.obtenerOAsociarCliente(usuario);
             session.setAttribute("usuariosession", usuario);
@@ -166,7 +195,14 @@ public class CartController {
      */
     @PostMapping({"/shop/cart/coupon", "/cart/coupon"})
     public String applyCoupon(@RequestParam(value = "couponCode", required = false) String couponCode,
+                              HttpSession session,
                               RedirectAttributes redirectAttributes) {
+        Usuario usuario = (Usuario) session.getAttribute("usuariosession");
+        if (usuario != null && usuario.getRol() != RolUsuario.CLIENTE) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden operar sobre el carrito.");
+            return "redirect:/admin";
+        }
+
         if (couponCode == null || couponCode.trim().isEmpty()) {
             redirectAttributes.addFlashAttribute("errorMessage", "Ingresa un código de cupón válido.");
         } else {

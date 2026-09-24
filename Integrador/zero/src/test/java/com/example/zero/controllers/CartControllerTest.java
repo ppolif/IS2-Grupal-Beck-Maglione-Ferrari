@@ -22,6 +22,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -75,10 +76,27 @@ class CartControllerTest {
     void showCart_sinSesion_redirigeALogin() {
         when(session.getAttribute("usuariosession")).thenReturn(null);
 
-        String view = cartController.showCart(session, model);
+        String view = cartController.showCart(session, model, redirectAttributes);
 
         assertEquals("redirect:/login", view);
-        verify(model).addAttribute(eq("errorMessage"), any());
+        verify(redirectAttributes).addFlashAttribute(eq("errorMessage"), any());
+    }
+
+    @Test
+    @DisplayName("showCart con usuario administrador redirige a /admin con flash error")
+    void showCart_conUsuarioAdmin_redirigeAAdmin() {
+        Usuario admin = Usuario.builder()
+                .id("admin-1")
+                .nombreUsuario("admin@zero.com")
+                .rol(RolUsuario.ADMINISTRATIVO)
+                .build();
+        when(session.getAttribute("usuariosession")).thenReturn(admin);
+
+        String view = cartController.showCart(session, model, redirectAttributes);
+
+        assertEquals("redirect:/admin", view);
+        verify(redirectAttributes).addFlashAttribute(eq("errorMessage"), contains("administradores"));
+        verifyNoInteractions(ordenCompraService);
     }
 
     @Test
@@ -91,7 +109,7 @@ class CartControllerTest {
         when(ordenCompraService.obtenerItemsActivos(carritoMock)).thenReturn(items);
         when(ordenCompraService.contarItems(carritoMock)).thenReturn(0);
 
-        String view = cartController.showCart(session, model);
+        String view = cartController.showCart(session, model, redirectAttributes);
 
         assertEquals("shop/cart", view);
         verify(model).addAttribute("cart", carritoMock);
@@ -175,6 +193,90 @@ class CartControllerTest {
         assertEquals("redirect:/shop/cart", view);
         verify(ordenCompraService).vaciarCarrito(clienteMock);
         verify(redirectAttributes).addFlashAttribute(eq("successMessage"), any());
+    }
+
+    @Test
+    @DisplayName("addToCart con usuario administrador redirige a /admin y no agrega producto")
+    void addToCart_conAdmin_redirigeAAdmin() {
+        Usuario admin = Usuario.builder()
+                .id("admin-1")
+                .nombreUsuario("admin@zero.com")
+                .rol(RolUsuario.ADMINISTRATIVO)
+                .build();
+        when(session.getAttribute("usuariosession")).thenReturn(admin);
+
+        String view = cartController.addToCart("prod-1", 1, null, session, redirectAttributes);
+
+        assertEquals("redirect:/admin", view);
+        verify(redirectAttributes).addFlashAttribute(eq("errorMessage"), contains("administradores"));
+        verify(ordenCompraService, never()).agregarProducto(any(), any(), anyInt());
+    }
+
+    @Test
+    @DisplayName("updateCartItem con usuario administrador redirige a /admin")
+    void updateCartItem_conAdmin_redirigeAAdmin() {
+        Usuario jefe = Usuario.builder()
+                .id("jefe-1")
+                .nombreUsuario("jefe@zero.com")
+                .rol(RolUsuario.JEFE)
+                .build();
+        when(session.getAttribute("usuariosession")).thenReturn(jefe);
+
+        String view = cartController.updateCartItem("item-1", 2, session, redirectAttributes);
+
+        assertEquals("redirect:/admin", view);
+        verify(redirectAttributes).addFlashAttribute(eq("errorMessage"), contains("administradores"));
+        verify(ordenCompraService, never()).actualizarCantidad(any(), any(), anyInt());
+    }
+
+    @Test
+    @DisplayName("removeCartItem con usuario administrador redirige a /admin")
+    void removeCartItem_conAdmin_redirigeAAdmin() {
+        Usuario admin = Usuario.builder()
+                .id("admin-1")
+                .nombreUsuario("admin@zero.com")
+                .rol(RolUsuario.ADMINISTRATIVO)
+                .build();
+        when(session.getAttribute("usuariosession")).thenReturn(admin);
+
+        String view = cartController.removeCartItem("item-1", session, redirectAttributes);
+
+        assertEquals("redirect:/admin", view);
+        verify(redirectAttributes).addFlashAttribute(eq("errorMessage"), contains("administradores"));
+        verify(ordenCompraService, never()).eliminarProducto(any(), any());
+    }
+
+    @Test
+    @DisplayName("clearCart con usuario administrador redirige a /admin")
+    void clearCart_conAdmin_redirigeAAdmin() {
+        Usuario admin = Usuario.builder()
+                .id("admin-1")
+                .nombreUsuario("admin@zero.com")
+                .rol(RolUsuario.ADMINISTRATIVO)
+                .build();
+        when(session.getAttribute("usuariosession")).thenReturn(admin);
+
+        String view = cartController.clearCart(session, redirectAttributes);
+
+        assertEquals("redirect:/admin", view);
+        verify(redirectAttributes).addFlashAttribute(eq("errorMessage"), contains("administradores"));
+        verify(ordenCompraService, never()).vaciarCarrito(any());
+    }
+
+    @Test
+    @DisplayName("applyCoupon con usuario administrador redirige a /admin")
+    void applyCoupon_conAdmin_redirigeAAdmin() {
+        Usuario admin = Usuario.builder()
+                .id("admin-1")
+                .nombreUsuario("admin@zero.com")
+                .rol(RolUsuario.ADMINISTRATIVO)
+                .build();
+        when(session.getAttribute("usuariosession")).thenReturn(admin);
+
+        String view = cartController.applyCoupon("DESCUENTO10", session, redirectAttributes);
+
+        assertEquals("redirect:/admin", view);
+        verify(redirectAttributes).addFlashAttribute(eq("errorMessage"), contains("administradores"));
     }
 }
 

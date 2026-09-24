@@ -7,6 +7,7 @@ import com.example.zero.entidades.persona.Nacionalidad;
 import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.enums.EstadoOrdenCompra;
+import com.example.zero.enums.RolUsuario;
 import com.example.zero.enums.TipoDocumento;
 import com.example.zero.repositories.*;
 import com.example.zero.services.producto.ProductoService;
@@ -104,6 +105,9 @@ public class OrdenCompraService {
     public Cliente obtenerOAsociarCliente(Usuario usuario) {
         if (usuario == null) {
             throw new IllegalArgumentException("Usuario no autenticado");
+        }
+        if (usuario.getRol() != RolUsuario.CLIENTE) {
+            throw new IllegalArgumentException("Solo los usuarios con rol CLIENTE pueden poseer o gestionar un carrito de compras.");
         }
 
         // Reasociar usuario a la sesión de persistencia actual

@@ -16,25 +16,25 @@
       <div class="col-lg-6">
         <div class="s_Product_carousel">
           <div class="single-prd-item">
-            <img class="img-fluid" th:src="${imageUrl != null} ? ${imageUrl} : @{/shop/img/category/s-p1.jpg}"
+            <img class="img-fluid" th:src="${product != null && product.imageUrl != null} ? ${product.imageUrl} : @{/shop/img/category/s-p1.jpg}"
                  src="/shop/img/category/s-p1.jpg"
-                 th:alt="${product != null && product.nombre != null} ? ${product.nombre} : 'Producto'">
+                 th:alt="${product != null} ? ${product.name} : 'Producto'">
           </div>
         </div>
       </div>
       <div class="col-lg-5 offset-lg-1">
         <div class="s_product_text">
-          <h3 th:text="${product != null && product.nombre != null} ? ${product.nombre} : 'Zapatillas Zero Nitro Pro'">Zapatillas Zero Nitro Pro</h3>
-          <h2 th:text="${product != null && product.precioActual != null} ? ${#numbers.formatCurrency(product.precioActual)} : '$149.99'">$149.99</h2>
+          <h3 th:text="${product != null && product.name != null} ? ${product.name} : 'Zapatillas Zero Nitro Pro'">Zapatillas Zero Nitro Pro</h3>
+          <h2 th:text="${product != null && product.price != null} ? ${#numbers.formatCurrency(product.price)} : '$149.99'">$149.99</h2>
           <ul class="list">
-            <li><span>Categoría</span> : <span th:text="${categoryName != null} ? ${categoryName} : 'Calzado Deportivo'">Calzado Deportivo</span></li>
+            <li><span>Categoría</span> : <span th:text="${product != null && product.categoryName != null} ? ${product.categoryName} : 'Calzado Deportivo'">Calzado Deportivo</span></li>
             <li>
               <span>Disponibilidad</span> :
-              <span th:if="${stock == null || stock > 0}" class="text-success font-weight-bold">En Stock</span>
-              <span th:if="${stock != null && stock <= 0}" class="text-danger font-weight-bold">Agotado</span>
+              <span th:if="${product == null || product.stock > 0}" class="text-success font-weight-bold">En Stock</span>
+              <span th:if="${product != null && product.stock <= 0}" class="text-danger font-weight-bold">Agotado</span>
             </li>
           </ul>
-          <p th:text="${product != null && product.descripcion != null} ? ${product.descripcion} : 'Diseñado para brindar el máximo soporte, amortiguación y velocidad en cada entrenamiento. Fabricado con materiales sostenibles de alto impacto.'">
+          <p th:text="${product != null && product.description != null} ? ${product.description} : 'Diseñado para brindar el máximo soporte, amortiguación y velocidad en cada entrenamiento. Fabricado con materiales sostenibles de alto impacto.'">
             Diseñado para brindar el máximo soporte, amortiguación y velocidad en cada entrenamiento. Fabricado con materiales sostenibles de alto impacto.
           </p>
 
@@ -48,7 +48,7 @@
             </div>
 
             <div class="card_area d-flex align-items-center">
-              <button type="submit" class="primary-btn border-0" th:disabled="${stock != null && stock <= 0}">Agregar al Carrito</button>
+              <button type="submit" class="primary-btn border-0" th:disabled="${product != null && product.stock <= 0}">Agregar al Carrito</button>
               <a class="icon_btn ml-3" th:href="@{/shop/category}" title="Ver más productos"><i class="lnr lnr-arrow-left"></i></a>
             </div>
           </form>

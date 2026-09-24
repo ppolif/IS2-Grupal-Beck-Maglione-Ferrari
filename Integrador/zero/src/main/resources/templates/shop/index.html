@@ -191,7 +191,7 @@
               <h6 th:text="${#numbers.formatCurrency(prod.precioActual)}">$150.00</h6>
             </div>
             <div class="prd-bottom">
-              <form action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
+              <form th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}" action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
                 <input type="hidden" name="productId" th:value="${prod.id}">
                 <input type="hidden" name="quantity" value="1">
                 <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
@@ -220,7 +220,7 @@
                 <h6 class="l-through">$210.00</h6>
               </div>
               <div class="prd-bottom">
-                <form action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
+                <form th:if="${session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE'}" action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
                   <input type="hidden" name="productId" th:value="${idx}">
                   <input type="hidden" name="quantity" value="1">
                   <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
