@@ -55,6 +55,9 @@ class VentaServiceTest {
     @Mock
     private ProductoService productoService;
 
+    @Mock
+    private com.example.zero.repositories.UsuarioRepository usuarioRepository;
+
     @InjectMocks
     private VentaService ventaService;
 
@@ -292,7 +295,7 @@ class VentaServiceTest {
     }
 
     @Test
-    void buscarOrderDtoPorIdentificador_conNumeroFacturaConPrefijo_retornaDto() {
+    void buscarFacturaPorIdentificador_conNumeroFacturaConPrefijo_retornaFactura() {
         Factura f = Factura.builder()
                 .id("fac-1")
                 .numeroFactura(1001L)
@@ -304,27 +307,27 @@ class VentaServiceTest {
 
         when(facturaRepository.findByNumeroFacturaAndEliminadoFalse(1001L)).thenReturn(Optional.of(f));
 
-        com.example.zero.dto.OrderViewDto dto = ventaService.buscarOrderDtoPorIdentificador("#ORD-1001");
+        Factura resultado = ventaService.buscarFacturaPorIdentificador("#ORD-1001");
 
-        assertNotNull(dto);
-        assertEquals("#ORD-1001", dto.getOrderNumber());
-        assertEquals(1500.0, dto.getTotalAmount());
+        assertNotNull(resultado);
+        assertEquals("#ORD-1001", resultado.getOrderNumber());
+        assertEquals(1500.0, resultado.getTotalAmount());
     }
 
     @Test
-    void buscarOrderDtoPorIdentificador_noExistente_retornaNull() {
+    void buscarFacturaPorIdentificador_noExistente_retornaNull() {
         when(facturaRepository.findByNumeroFacturaAndEliminadoFalse(9999L)).thenReturn(Optional.empty());
         when(facturaRepository.findActive("9999")).thenReturn(Optional.empty());
 
-        com.example.zero.dto.OrderViewDto dto = ventaService.buscarOrderDtoPorIdentificador("#ORD-9999");
+        Factura resultado = ventaService.buscarFacturaPorIdentificador("#ORD-9999");
 
-        assertNull(dto);
+        assertNull(resultado);
     }
 
     @Test
-    void buscarOrderDtoPorIdentificador_nuloOVacio_retornaNull() {
-        assertNull(ventaService.buscarOrderDtoPorIdentificador(null));
-        assertNull(ventaService.buscarOrderDtoPorIdentificador("   "));
+    void buscarFacturaPorIdentificador_nuloOVacio_retornaNull() {
+        assertNull(ventaService.buscarFacturaPorIdentificador(null));
+        assertNull(ventaService.buscarFacturaPorIdentificador("   "));
     }
 }
 

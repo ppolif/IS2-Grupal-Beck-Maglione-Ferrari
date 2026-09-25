@@ -124,3 +124,4 @@ class ProfileControllerTest {
         assertTrue(ra.getFlashAttributes().containsKey("errorMessage"));
     }
 }
+

@@ -1,6 +1,5 @@
 package com.example.zero.services;
 
-import com.example.zero.dto.OrderViewDto;
 import com.example.zero.entidades.compra.Detalle;
 import com.example.zero.entidades.compra.Factura;
 import com.example.zero.entidades.compra.FormaDePago;
@@ -33,6 +32,7 @@ public class VentaService {
     private final ClienteService clienteService;
     private final NacionalidadRepository nacionalidadRepository;
     private final ProductoService productoService;
+    private final UsuarioRepository usuarioRepository;
 
     public VentaService(FacturaRepository facturaRepository,
                         DetalleRepository detalleRepository,
@@ -40,7 +40,8 @@ public class VentaService {
                         ClienteRepository clienteRepository,
                         ClienteService clienteService,
                         NacionalidadRepository nacionalidadRepository,
-                        ProductoService productoService) {
+                        ProductoService productoService,
+                        UsuarioRepository usuarioRepository) {
         this.facturaRepository = facturaRepository;
         this.detalleRepository = detalleRepository;
         this.formaDePagoRepository = formaDePagoRepository;
@@ -48,6 +49,7 @@ public class VentaService {
         this.clienteService = clienteService;
         this.nacionalidadRepository = nacionalidadRepository;
         this.productoService = productoService;
+        this.usuarioRepository = usuarioRepository;
     }
 
     public void validarVenta(String clienteDni, String clienteNombre, String clienteApellido,
@@ -106,6 +108,21 @@ public class VentaService {
         }
         if (clienteApellido != null && !clienteApellido.trim().isEmpty()) {
             cliente.setApellido(clienteApellido.trim());
+        }
+        // Asociar usuario al cliente si aún no está vinculado
+        if (cliente.getUsuario() == null && usuarioRepository != null) {
+            if (clienteEmail != null && !clienteEmail.trim().isEmpty()) {
+                usuarioRepository.findByNombreUsuarioAndEliminadoFalse(clienteEmail.trim().toLowerCase())
+                        .ifPresent(u -> {
+                            cliente.setUsuario(u);
+                            u.setPersona(cliente);
+                            usuarioRepository.save(u);
+                        });
+            }
+            if (cliente.getUsuario() == null) {
+                usuarioRepository.findByPersonaDocumentoAndEliminadoFalse(dniLimpio)
+                        .ifPresent(cliente::setUsuario);
+            }
         }
         clienteRepository.save(cliente);
 
@@ -180,7 +197,11 @@ public class VentaService {
 
     @Transactional(readOnly = true)
     public List<Factura> listarVentas() {
-        return facturaRepository.findByEliminadoFalseOrderByFechaFacturaDesc();
+        List<Factura> facturas = facturaRepository.findByEliminadoFalseOrderByFechaFacturaDesc();
+        for (Factura f : facturas) {
+            enriquecerFactura(f);
+        }
+        return facturas;
     }
 
     @Transactional(readOnly = true)
@@ -188,8 +209,10 @@ public class VentaService {
         if (id == null || id.trim().isEmpty()) {
             throw new IllegalArgumentException("El ID de la factura no puede ser nulo o vacío");
         }
-        return facturaRepository.findActive(id)
+        Factura f = facturaRepository.findActive(id)
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró la factura activa con ID: " + id));
+        enriquecerFactura(f);
+        return f;
     }
 
     @Transactional(readOnly = true)
@@ -197,8 +220,10 @@ public class VentaService {
         if (numeroFactura == null) {
             throw new IllegalArgumentException("El número de factura no puede ser nulo");
         }
-        return facturaRepository.findByNumeroFacturaAndEliminadoFalse(numeroFactura)
+        Factura f = facturaRepository.findByNumeroFacturaAndEliminadoFalse(numeroFactura)
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró la factura número: " + numeroFactura));
+        enriquecerFactura(f);
+        return f;
     }
 
     @Transactional
@@ -214,7 +239,7 @@ public class VentaService {
     }
 
     @Transactional(readOnly = true)
-    public OrderViewDto buscarOrderDtoPorIdentificador(String orderNumberOrId) {
+    public Factura buscarFacturaPorIdentificador(String orderNumberOrId) {
         if (orderNumberOrId == null || orderNumberOrId.trim().isEmpty()) {
             return null;
         }
@@ -223,7 +248,9 @@ public class VentaService {
             Long num = Long.parseLong(clean);
             Optional<Factura> facturaOpt = facturaRepository.findByNumeroFacturaAndEliminadoFalse(num);
             if (facturaOpt.isPresent()) {
-                return mapearFacturaAOrderDto(facturaOpt.get());
+                Factura f = facturaOpt.get();
+                enriquecerFactura(f);
+                return f;
             }
         } catch (NumberFormatException ignored) {
         }
@@ -233,62 +260,28 @@ public class VentaService {
         if (facturaById.isEmpty() && !clean.equals(orderNumberOrId.trim())) {
             facturaById = facturaRepository.findActive(orderNumberOrId.trim());
         }
-        return facturaById.map(this::mapearFacturaAOrderDto).orElse(null);
+        Factura f = facturaById.orElse(null);
+        enriquecerFactura(f);
+        return f;
     }
 
-    public OrderViewDto mapearFacturaAOrderDto(Factura f) {
-        if (f == null) return null;
-        String clientName = f.getCliente() != null
-                ? (f.getCliente().getNombre() + " " + f.getCliente().getApellido()).trim()
-                : "Cliente General";
-        String email = (f.getCliente() != null && f.getCliente().getUsuario() != null)
-                ? f.getCliente().getUsuario().getNombreUsuario()
-                : (f.getCliente() != null ? "DNI: " + f.getCliente().getNumeroDocumento() : "N/A");
-
-        StringBuilder summary = new StringBuilder();
-        String category = "General";
-        List<OrderViewDto.OrderItemDto> items = new ArrayList<>();
-
-        if (f.getDetalles() != null) {
-            for (Detalle d : f.getDetalles()) {
-                if (d.getProducto() != null) {
-                    if (summary.length() > 0) summary.append(", ");
-                    summary.append(d.getProducto().getNombre()).append(" (x").append(d.getCantidad()).append(")");
-                    if (d.getProducto().getSubCategoria() != null && d.getProducto().getSubCategoria().getCategoria() != null) {
-                        category = d.getProducto().getSubCategoria().getCategoria().getNombre();
-                    }
-                    items.add(OrderViewDto.OrderItemDto.builder()
-                            .productName(d.getProducto().getNombre())
-                            .quantity(d.getCantidad())
-                            .unitPrice(d.getCantidad() > 0 ? Math.round((d.getSubtotal() / d.getCantidad()) * 100.0) / 100.0 : 0.0)
-                            .totalPrice(d.getSubtotal())
-                            .build());
+    public void enriquecerFactura(Factura f) {
+        if (f == null || f.getCliente() == null) return;
+        Cliente c = f.getCliente();
+        if (c.getUsuario() == null && usuarioRepository != null) {
+            if (c.getNumeroDocumento() != null) {
+                usuarioRepository.findByPersonaDocumentoAndEliminadoFalse(c.getNumeroDocumento())
+                        .ifPresent(c::setUsuario);
+            }
+        }
+        if (c.getUsuario() == null && c.getContactos() != null && usuarioRepository != null) {
+            for (var cont : c.getContactos()) {
+                if (cont instanceof com.example.zero.entidades.empresa.ContactoCorreoElectronico ce && ce.getEmail() != null) {
+                    usuarioRepository.findByNombreUsuarioAndEliminadoFalse(ce.getEmail().trim().toLowerCase())
+                            .ifPresent(c::setUsuario);
+                    if (c.getUsuario() != null) break;
                 }
             }
         }
-
-        String payment = (f.getFormaDePago() != null && f.getFormaDePago().getTipoPago() != null)
-                ? f.getFormaDePago().getTipoPago().name().replace('_', ' ')
-                : "Efectivo";
-
-        return OrderViewDto.builder()
-                .id(f.getId())
-                .orderNumber("#ORD-" + f.getNumeroFactura())
-                .numeroFactura(f.getNumeroFactura())
-                .customerName(clientName)
-                .customerEmail(email)
-                .customerPhone("+54 11 0000-0000")
-                .productSummary(summary.length() > 0 ? summary.toString() : "Venta General")
-                .categoryName(category)
-                .totalAmount(f.getTotalPagado())
-                .subtotal(f.getTotalPagado())
-                .status("Completado")
-                .paymentMethod(payment)
-                .createdAt(f.getFechaFactura())
-                .shippingAddress("Mostrador / Entrega Inmediata")
-                .shippingCity("Sucursal Central")
-                .shippingZip("C1000")
-                .items(items)
-                .build();
     }
 }

@@ -1,6 +1,5 @@
 package com.example.zero.controllers;
 
-import com.example.zero.dto.OrderViewDto;
 import com.example.zero.entidades.compra.Detalle;
 import com.example.zero.entidades.compra.Factura;
 import com.example.zero.entidades.compra.FormaDePago;
@@ -183,7 +182,31 @@ class AdminVentaControllerTest {
     }
 
     @Test
-    void mapearFacturaAOrderDto_mapeaCamposCorrectamente() {
+    void orderDetail_conExito_retornaVistaConFacturaYOrder() {
+        Factura factura = Factura.builder().id("f1").numeroFactura(1001L).build();
+        when(ventaService.buscarFacturaPorIdentificador("f1")).thenReturn(factura);
+
+        org.springframework.web.servlet.mvc.support.RedirectAttributes ra = mock(org.springframework.web.servlet.mvc.support.RedirectAttributes.class);
+        String vista = controller.orderDetail("f1", model, ra);
+
+        assertEquals("admin/order-detail", vista);
+        verify(model).addAttribute("factura", factura);
+        verify(model).addAttribute("order", factura);
+    }
+
+    @Test
+    void orderDetail_noExistente_redireccionaAOrdersConError() {
+        when(ventaService.buscarFacturaPorIdentificador("f-999")).thenReturn(null);
+
+        org.springframework.web.servlet.mvc.support.RedirectAttributes ra = mock(org.springframework.web.servlet.mvc.support.RedirectAttributes.class);
+        String vista = controller.orderDetail("f-999", model, ra);
+
+        assertEquals("redirect:/admin/orders", vista);
+        verify(ra).addFlashAttribute(eq("errorMessage"), anyString());
+    }
+
+    @Test
+    void factura_helpersRetornanValoresCorrectos() {
         Categoria cat = Categoria.builder().id("c1").nombre("Deportes").build();
         SubCategoria subCat = SubCategoria.builder().id("sc1").nombre("Calzado").categoria(cat).build();
         Producto prod = Producto.builder().id("p1").nombre("Zapatillas Nike").subCategoria(subCat).build();
@@ -195,7 +218,7 @@ class AdminVentaControllerTest {
                 .subtotal(5000.0)
                 .build();
 
-        Usuario user = Usuario.builder().nombreUsuario("carlos@example.com").build();
+        Usuario user = Usuario.builder().nombreUsuario("carlos@example.com").foto("https://ejemplo.com/avatar.jpg").build();
         Cliente cliente = Cliente.builder()
                 .numeroDocumento("12345678")
                 .nombre("Carlos")
@@ -217,20 +240,18 @@ class AdminVentaControllerTest {
                 .detalles(new HashSet<>(List.of(detalle)))
                 .build();
 
-        OrderViewDto dto = controller.mapearFacturaAOrderDto(factura);
-
-        assertNotNull(dto);
-        assertEquals("#ORD-1055", dto.getOrderNumber());
-        assertEquals(1055L, dto.getNumeroFactura());
-        assertEquals("Carlos Perez", dto.getCustomerName());
-        assertEquals("carlos@example.com", dto.getCustomerEmail());
-        assertEquals("TARJETA CREDITO", dto.getPaymentMethod());
-        assertEquals("Deportes", dto.getCategoryName());
-        assertEquals(5000.0, dto.getTotalAmount());
-        assertEquals(1, dto.getItems().size());
-        assertEquals("Zapatillas Nike", dto.getItems().get(0).getProductName());
-        assertEquals(2, dto.getItems().get(0).getQuantity());
-        assertEquals(2500.0, dto.getItems().get(0).getUnitPrice());
+        assertEquals("#ORD-1055", factura.getOrderNumber());
+        assertEquals(1055L, factura.getNumeroFactura());
+        assertEquals("Carlos Perez", factura.getCustomerName());
+        assertEquals("carlos@example.com", factura.getCustomerEmail());
+        assertEquals("https://ejemplo.com/avatar.jpg", factura.getCustomerAvatar());
+        assertEquals("TARJETA CREDITO", factura.getPaymentMethod());
+        assertEquals("Deportes", factura.getCategoryName());
+        assertEquals(5000.0, factura.getTotalAmount());
+        assertEquals(1, factura.getItems().size());
+        assertEquals("Zapatillas Nike", detalle.getProductName());
+        assertEquals(2, detalle.getQuantity());
+        assertEquals(2500.0, detalle.getUnitPrice());
     }
 }
 

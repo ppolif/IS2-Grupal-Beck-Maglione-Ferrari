@@ -54,4 +54,20 @@ public class Detalle {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
+
+    public String getProductName() {
+        return producto != null && producto.getNombre() != null ? producto.getNombre() : "Producto";
+    }
+
+    public int getQuantity() {
+        return cantidad;
+    }
+
+    public double getUnitPrice() {
+        return cantidad > 0 ? Math.round((subtotal / cantidad) * 100.0) / 100.0 : 0.0;
+    }
+
+    public double getTotalPrice() {
+        return subtotal;
+    }
 }
