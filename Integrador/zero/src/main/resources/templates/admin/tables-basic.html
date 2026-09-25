@@ -81,8 +81,9 @@
           <td class="ps-3 fw-bold text-brand-dark" th:text="${order.orderNumber}">#ORD-9982</td>
           <td>
             <div class="d-flex align-items-center gap-2">
-              <img th:src="${order.customerAvatar != null} ? ${order.customerAvatar} : @{/admin/assets/images/avatar.png}"
-                   alt="Avatar" class="rounded-circle" width="34" height="34">
+              <img th:src="${order.customerAvatar != null && !order.customerAvatar.isBlank()} ? ${order.customerAvatar} : @{/admin/assets/images/avatar.png}"
+                   alt="Avatar" class="rounded-circle border" width="34" height="34" style="object-fit: cover;"
+                   onerror="this.src='/admin/assets/images/avatar.png'">
               <div>
                 <div class="small fw-bold text-brand-dark" th:text="${order.customerName}">Eleanor Pena</div>
                 <div class="text-muted" style="font-size: 0.75rem;" th:text="${order.customerEmail}">eleanor@example.com</div>

@@ -101,3 +101,4 @@ class NewsletterServiceTest {
         assertTrue(html.contains("ZERO"));
     }
 }
+

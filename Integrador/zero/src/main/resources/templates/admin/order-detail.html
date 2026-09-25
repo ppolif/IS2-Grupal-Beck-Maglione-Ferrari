@@ -54,7 +54,7 @@
           <span class="badge bg-warning text-dark px-3 py-2 fw-bold text-uppercase mb-2"
                 th:text="${order != null ? order.status : 'EMITIDA'}">COMPLETADO</span>
           <h4 class="fw-bold mb-1 text-white"
-              th:text="${order != null ? 'FACTURA #' + order.orderNumber : (factura != null ? 'FACTURA #' + factura.id : 'FACTURA #0001')}">
+              th:text="${order != null ? 'FACTURA ' + order.orderNumber : (factura != null ? 'FACTURA #ORD-' + factura.numeroFactura : 'FACTURA #0001')}">
             FACTURA #ORD-9982
           </h4>
           <span class="small text-white-50"
@@ -75,18 +75,19 @@
               <i class="bi bi-person-badge me-1"></i> Datos del Comprador
             </h6>
             <div class="d-flex align-items-center gap-3 mb-3">
-              <img th:src="${order != null && order.customerAvatar != null ? order.customerAvatar : @{/admin/assets/images/avatar.png}}"
-                   alt="Avatar" class="rounded-circle border" width="46" height="46">
+              <img th:src="${order != null && order.customerAvatar != null && !order.customerAvatar.isBlank() ? order.customerAvatar : '/admin/assets/images/avatar.png'}"
+                   alt="Avatar" class="rounded-circle border" width="46" height="46" style="object-fit: cover;"
+                   onerror="this.src='/admin/assets/images/avatar.png'">
               <div>
                 <h6 class="fw-bold mb-0 text-brand-dark" th:text="${order != null ? order.customerName : 'Cliente Final'}">Juan Pérez</h6>
                 <span class="small text-muted" th:text="${order != null ? order.customerEmail : 'cliente@ejemplo.com'}">cliente@ejemplo.com</span>
               </div>
             </div>
             <ul class="list-unstyled small mb-0 text-muted">
-              <li class="mb-1" th:if="${order != null && order.customerPhone != null}">
+              <li class="mb-1" th:if="${order != null && order.customerPhone != null && !order.customerPhone.isBlank()}">
                 <strong class="text-dark">Teléfono:</strong> <span th:text="${order.customerPhone}">+54 9 11 2345-6789</span>
               </li>
-              <li class="mb-1" th:if="${order != null && order.shippingAddress != null}">
+              <li class="mb-1" th:if="${order != null && order.shippingAddress != null && !order.shippingAddress.isBlank()}">
                 <strong class="text-dark">Dirección de Entrega:</strong> <span th:text="${order.shippingAddress}">Av. Corrientes 1234, CABA</span>
               </li>
             </ul>

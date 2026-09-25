@@ -1,6 +1,5 @@
 package com.example.zero.controllers;
 
-import com.example.zero.dto.OrderViewDto;
 import com.example.zero.entidades.compra.Detalle;
 import com.example.zero.entidades.compra.Factura;
 import com.example.zero.entidades.producto.Producto;
@@ -107,25 +106,25 @@ public class AdminVentaController {
                              @RequestParam(name = "success", required = false) String success,
                              @RequestParam(name = "error", required = false) String error) {
         List<Factura> facturas = ventaService.listarVentas();
-        List<OrderViewDto> orders = new ArrayList<>();
+        List<Factura> orders = new ArrayList<>();
 
         for (Factura f : facturas) {
-            OrderViewDto dto = mapearFacturaAOrderDto(f);
-            if (dto == null) continue;
+            if (f == null) continue;
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = keyword.trim().toLowerCase();
-                boolean matchName = dto.getCustomerName() != null && dto.getCustomerName().toLowerCase().contains(kw);
-                boolean matchOrder = dto.getOrderNumber() != null && dto.getOrderNumber().toLowerCase().contains(kw);
-                boolean matchEmail = dto.getCustomerEmail() != null && dto.getCustomerEmail().toLowerCase().contains(kw);
+                boolean matchName = f.getCustomerName() != null && f.getCustomerName().toLowerCase().contains(kw);
+                boolean matchOrder = f.getOrderNumber() != null && f.getOrderNumber().toLowerCase().contains(kw);
+                boolean matchEmail = f.getCustomerEmail() != null && f.getCustomerEmail().toLowerCase().contains(kw);
                 if (matchName || matchOrder || matchEmail) {
-                    orders.add(dto);
+                    orders.add(f);
                 }
             } else {
-                orders.add(dto);
+                orders.add(f);
             }
         }
 
         model.addAttribute("orders", orders);
+        model.addAttribute("facturas", orders);
         model.addAttribute("keyword", keyword);
 
         if ("created".equals(success)) {
@@ -159,73 +158,13 @@ public class AdminVentaController {
      */
     @GetMapping({"/admin/orders/{id}", "/admin/orders/detalle/{id}"})
     public String orderDetail(@PathVariable("id") String id, Model model, RedirectAttributes redirectAttributes) {
-        OrderViewDto order = ventaService.buscarOrderDtoPorIdentificador(id);
-        if (order == null) {
+        Factura factura = ventaService.buscarFacturaPorIdentificador(id);
+        if (factura == null) {
             redirectAttributes.addFlashAttribute("errorMessage", "No se encontró la factura u orden: " + id);
             return "redirect:/admin/orders";
         }
-        model.addAttribute("order", order);
+        model.addAttribute("factura", factura);
+        model.addAttribute("order", factura);
         return "admin/order-detail";
-    }
-
-    /**
-     * Mapeo de Factura a DTO para vistas de administración y comprobantes.
-     */
-    public OrderViewDto mapearFacturaAOrderDto(Factura f) {
-        if (f == null) return null;
-        if (ventaService != null) {
-            try {
-                OrderViewDto dto = ventaService.mapearFacturaAOrderDto(f);
-                if (dto != null) return dto;
-            } catch (Exception ignored) {
-            }
-        }
-        String clientName = f.getCliente() != null
-                ? (f.getCliente().getNombre() + " " + f.getCliente().getApellido()).trim()
-                : "Cliente General";
-        String email = (f.getCliente() != null && f.getCliente().getUsuario() != null)
-                ? f.getCliente().getUsuario().getNombreUsuario()
-                : (f.getCliente() != null ? "carlos@example.com" : "N/A");
-
-        StringBuilder summary = new StringBuilder();
-        String category = "General";
-        List<OrderViewDto.OrderItemDto> items = new ArrayList<>();
-
-        if (f.getDetalles() != null) {
-            for (Detalle d : f.getDetalles()) {
-                if (d.getProducto() != null) {
-                    if (summary.length() > 0) summary.append(", ");
-                    summary.append(d.getProducto().getNombre()).append(" (x").append(d.getCantidad()).append(")");
-                    if (d.getProducto().getSubCategoria() != null && d.getProducto().getSubCategoria().getCategoria() != null) {
-                        category = d.getProducto().getSubCategoria().getCategoria().getNombre();
-                    }
-                    items.add(OrderViewDto.OrderItemDto.builder()
-                            .productName(d.getProducto().getNombre())
-                            .quantity(d.getCantidad())
-                            .unitPrice(d.getCantidad() > 0 ? Math.round((d.getSubtotal() / d.getCantidad()) * 100.0) / 100.0 : 0.0)
-                            .totalPrice(d.getSubtotal())
-                            .build());
-                }
-            }
-        }
-
-        String payment = (f.getFormaDePago() != null && f.getFormaDePago().getTipoPago() != null)
-                ? f.getFormaDePago().getTipoPago().name().replace('_', ' ')
-                : "Efectivo";
-
-        return OrderViewDto.builder()
-                .id(f.getId())
-                .orderNumber("#ORD-" + f.getNumeroFactura())
-                .numeroFactura(f.getNumeroFactura())
-                .customerName(clientName)
-                .customerEmail(email)
-                .customerPhone("+54 11 0000-0000")
-                .productSummary(summary.length() > 0 ? summary.toString() : "Venta General")
-                .categoryName(category)
-                .totalAmount(f.getTotalPagado())
-                .status("Completado")
-                .items(items)
-                .paymentMethod(payment)
-                .build();
     }
 }

@@ -127,3 +127,4 @@ class AdminProfileControllerTest {
         assertEquals(adminActualizado, session.getAttribute("usuariosession"));
     }
 }
+

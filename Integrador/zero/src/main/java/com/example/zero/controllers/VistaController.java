@@ -1,6 +1,6 @@
 package com.example.zero.controllers;
 
-import com.example.zero.dto.OrderViewDto;
+import com.example.zero.entidades.compra.Factura;
 import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.enums.RolUsuario;
@@ -159,9 +159,10 @@ public class VistaController {
         model.addAttribute("subtitle", "Comprobante");
         if (orderNumber != null && !orderNumber.trim().isEmpty()) {
             try {
-                OrderViewDto dto = ventaService.buscarOrderDtoPorIdentificador(orderNumber);
-                if (dto != null) {
-                    model.addAttribute("order", dto);
+                Factura factura = ventaService.buscarFacturaPorIdentificador(orderNumber);
+                if (factura != null) {
+                    model.addAttribute("factura", factura);
+                    model.addAttribute("order", factura);
                 }
             } catch (Exception ignored) {
             }
