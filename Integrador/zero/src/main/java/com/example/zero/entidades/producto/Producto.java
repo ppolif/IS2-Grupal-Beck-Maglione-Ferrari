@@ -1,5 +1,6 @@
 package com.example.zero.entidades.producto;
 
+import com.example.zero.entidades.Imagen;
 import com.example.zero.entidades.compra.Detalle;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -18,6 +19,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.UuidGenerator;
+import java.util.List;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -52,6 +54,10 @@ public class Producto {
     @Column(length = 20)
     private String talle;
 
+    @Column(name = "stock", nullable = false)
+    @Builder.Default
+    private int stock = 0;
+
     @Column(name = "en_oferta", nullable = false)
     @Builder.Default
     private boolean enOferta = false;
@@ -60,51 +66,15 @@ public class Producto {
     @Builder.Default
     private boolean eliminado = false;
 
-    // Relación con Imagen: cada Producto puede tener una imagen asociada.
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "imagen_id")
-    // private Imagen imagen;
+    // Relación con Imagen: cada Producto puede tener muchas imagenes (por borrado logico).
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "producto_id")
+    private List<Imagen> imagenes;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subcategoria_id", nullable = false)
     private SubCategoria subCategoria;
 
-    // Historial de precios del producto. Cascade ALL + orphanRemoval porque las vigencias
-    // de precio no tienen sentido de existir sin su Producto (relación de composición).
-    @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @Builder.Default
-    private Set<VigenciaPrecio> vigenciasPrecio = new HashSet<>();
-
-    // Lado inverso: un Producto puede aparecer en muchos Detalles de factura.
-    @OneToMany(mappedBy = "producto", fetch = FetchType.LAZY)
-    @Builder.Default
-    private Set<Detalle> detalles = new HashSet<>();
-
     @jakarta.persistence.Transient
     private Double precioActual;
-
-    @jakarta.persistence.Transient
-    public String getName() {
-        return nombre;
-    }
-
-    @jakarta.persistence.Transient
-    public Double getPrice() {
-        return precioActual;
-    }
-
-    @jakarta.persistence.Transient
-    public String getDescription() {
-        return descripcion;
-    }
-
-    @jakarta.persistence.Transient
-    public String getImagen() {
-        return null;
-    }
-
-    @jakarta.persistence.Transient
-    public String getImageUrl() {
-        return null;
-    }
 }

@@ -42,24 +42,17 @@
               <p class="text-muted">Completa tus datos personales, de contacto y dirección para darte de alta como cliente.</p>
             </div>
 
-            <!-- Formulario gestionado 100% por Java y Thymeleaf (sin JavaScript) -->
-            <form th:action="@{/register}" th:object="${dto}" method="POST" id="registroClienteForm">
+            <!-- Formulario gestionado por Java y Thymeleaf con recarga automática sin botones manuales -->
+            <form th:action="@{/register}" th:object="${dto}" method="POST" id="registroClienteForm" enctype="multipart/form-data">
+              <input type="hidden" id="accionInput" name="accion" value="">
 
-              <!-- SECCIÓN 1: CREDENCIALES DE ACCESO -->
+              <!-- SECCIÓN 1: USUARIO DE ACCESO -->
               <div class="mb-4 pb-2 border-bottom">
-                <h4 class="text-primary font-weight-bold mb-3"><i class="fa fa-lock mr-2"></i>1. Credenciales de la Cuenta</h4>
+                <h4 class="text-primary font-weight-bold mb-3"><i class="fa fa-user-circle mr-2"></i>1. Usuario de la Cuenta</h4>
                 <div class="row">
                   <div class="col-md-12 form-group mb-3">
                     <label for="email" class="small font-weight-bold d-block">Correo Electrónico (será tu usuario para iniciar sesión) *</label>
                     <input type="email" class="form-control" id="email" th:field="*{email}" placeholder="ejemplo@correo.com" required>
-                  </div>
-                  <div class="col-md-6 form-group mb-3">
-                    <label for="password" class="small font-weight-bold d-block">Contraseña *</label>
-                    <input type="password" class="form-control" id="password" th:field="*{password}" placeholder="Mínimo 4 caracteres" required minlength="4">
-                  </div>
-                  <div class="col-md-6 form-group mb-3">
-                    <label for="confirmPassword" class="small font-weight-bold d-block">Confirmar Contraseña *</label>
-                    <input type="password" class="form-control" id="confirmPassword" th:field="*{confirmPassword}" placeholder="Repite la contraseña" required minlength="4">
                   </div>
                 </div>
               </div>
@@ -97,6 +90,12 @@
                       <option th:each="nac : ${nacionalidades}" th:value="${nac.id}" th:text="${nac.nombre}">Argentina</option>
                     </select>
                   </div>
+                  <!-- Foto de Perfil (Opcional) -->
+                  <div class="col-md-12 form-group mb-3">
+                    <label for="fotoPerfil" class="small font-weight-bold d-block">Foto de Perfil (Opcional)</label>
+                    <input type="file" class="form-control-file" id="fotoPerfil" name="fotoPerfil" accept="image/*">
+                    <small class="form-text text-muted">Puedes subir una imagen para tu perfil. Si no seleccionas ninguna, se asignará un avatar automáticamente.</small>
+                  </div>
                 </div>
               </div>
 
@@ -108,22 +107,20 @@
                 <div class="d-flex align-items-center mb-3">
                   <div class="custom-control custom-radio mr-4">
                     <input type="radio" id="contactoTipoEmail" name="tipoContacto" value="EMAIL" class="custom-control-input"
-                           th:field="*{tipoContacto}">
+                           th:field="*{tipoContacto}"
+                           onchange="this.form.noValidate = true; document.getElementById('accionInput').value = 'cambiarContacto'; this.form.submit();">
                     <label class="custom-control-label font-weight-bold" for="contactoTipoEmail">
                       <i class="fa fa-envelope text-secondary mr-1"></i> Correo Electrónico
                     </label>
                   </div>
                   <div class="custom-control custom-radio mr-3">
                     <input type="radio" id="contactoTipoCelular" name="tipoContacto" value="CELULAR" class="custom-control-input"
-                           th:field="*{tipoContacto}">
+                           th:field="*{tipoContacto}"
+                           onchange="this.form.noValidate = true; document.getElementById('accionInput').value = 'cambiarContacto'; this.form.submit();">
                     <label class="custom-control-label font-weight-bold" for="contactoTipoCelular">
                       <i class="fa fa-mobile text-secondary mr-1"></i> Teléfono Celular
                     </label>
                   </div>
-                  <!-- Botón Thymeleaf para alternar vista del contacto -->
-                  <button type="submit" name="accion" value="cambiarContacto" formnovalidate class="btn btn-outline-secondary btn-sm">
-                    <i class="fa fa-refresh mr-1"></i> Aplicar Selección
-                  </button>
                 </div>
 
                 <div class="row">
@@ -150,55 +147,40 @@
               </div>
 
               <!-- SECCIÓN 4: DOMICILIO Y ZONA GEOGRÁFICA -->
-              <div class="mb-4">
+              <div class="mb-4 pb-2 border-bottom">
                 <h4 class="text-primary font-weight-bold mb-3"><i class="fa fa-map-marker mr-2"></i>4. Dirección y Ubicación Geográfica</h4>
 
-                <!-- COMBOBOXES EN CASCADA CON THYMELEAF (SIN JAVASCRIPT) -->
+                <!-- COMBOBOXES EN CASCADA AUTOMÁTICOS (SIN BOTONES MANUALES) -->
                 <div class="bg-light p-3 rounded mb-3 border">
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="small font-weight-bold text-dark">Selección Geográfica en Cascada (gestionado por Thymeleaf):</span>
-                    <button type="submit" name="accion" value="actualizarZonas" formnovalidate class="btn btn-outline-info btn-sm">
-                      <i class="fa fa-refresh mr-1"></i> Actualizar Opciones
-                    </button>
-                  </div>
-
                   <div class="row">
                     <!-- 1. País -->
                     <div class="col-md-3 form-group mb-2">
                       <label for="paisId" class="small font-weight-bold d-block">1. País *</label>
-                      <select class="form-control" id="paisId" th:field="*{paisId}" required>
+                      <select class="form-control" id="paisId" th:field="*{paisId}"
+                              onchange="this.form.noValidate = true; document.getElementById('accionInput').value = 'cambiarPais'; this.form.submit();" required>
                         <option value="">-- Seleccionar País --</option>
                         <option th:each="p : ${paises}" th:value="${p.id}" th:text="${p.nombre}">Argentina</option>
                       </select>
-                      <button type="submit" name="accion" value="cambiarPais" formnovalidate class="btn btn-outline-primary btn-sm btn-block mt-2">
-                        <i class="fa fa-arrow-down mr-1"></i> Cargar Provincias
-                      </button>
                     </div>
 
                     <!-- 2. Provincia -->
                     <div class="col-md-3 form-group mb-2">
                       <label for="provinciaId" class="small font-weight-bold d-block">2. Provincia *</label>
-                      <select class="form-control" id="provinciaId" th:field="*{provinciaId}" th:disabled="${#lists.isEmpty(provincias)}" required>
+                      <select class="form-control" id="provinciaId" th:field="*{provinciaId}" th:disabled="${#lists.isEmpty(provincias)}"
+                              onchange="this.form.noValidate = true; document.getElementById('accionInput').value = 'cambiarProvincia'; this.form.submit();" required>
                         <option value="">-- Seleccionar Provincia --</option>
                         <option th:each="prov : ${provincias}" th:value="${prov.id}" th:text="${prov.nombre}">Córdoba</option>
                       </select>
-                      <button type="submit" name="accion" value="cambiarProvincia" formnovalidate class="btn btn-outline-primary btn-sm btn-block mt-2"
-                              th:disabled="${#lists.isEmpty(provincias)}">
-                        <i class="fa fa-arrow-down mr-1"></i> Cargar Deptos
-                      </button>
                     </div>
 
                     <!-- 3. Departamento -->
                     <div class="col-md-3 form-group mb-2">
                       <label for="departamentoId" class="small font-weight-bold d-block">3. Departamento *</label>
-                      <select class="form-control" id="departamentoId" th:field="*{departamentoId}" th:disabled="${#lists.isEmpty(departamentos)}" required>
+                      <select class="form-control" id="departamentoId" th:field="*{departamentoId}" th:disabled="${#lists.isEmpty(departamentos)}"
+                              onchange="this.form.noValidate = true; document.getElementById('accionInput').value = 'cambiarDepartamento'; this.form.submit();" required>
                         <option value="">-- Seleccionar Departamento --</option>
                         <option th:each="dep : ${departamentos}" th:value="${dep.id}" th:text="${dep.nombre}">Capital</option>
                       </select>
-                      <button type="submit" name="accion" value="cambiarDepartamento" formnovalidate class="btn btn-outline-primary btn-sm btn-block mt-2"
-                              th:disabled="${#lists.isEmpty(departamentos)}">
-                        <i class="fa fa-arrow-down mr-1"></i> Cargar Localidades
-                      </button>
                     </div>
 
                     <!-- 4. Localidad -->
@@ -212,7 +194,7 @@
                         </option>
                       </select>
                       <small class="form-text text-muted mt-2 d-block" th:if="${#lists.isEmpty(localidades)}">
-                        Cargue los pasos anteriores para habilitar
+                        Selecciona el país, provincia y departamento
                       </small>
                     </div>
                   </div>
@@ -247,9 +229,25 @@
                 </div>
               </div>
 
+              <!-- SECCIÓN 5: CONTRASEÑA DE ACCESO -->
+              <div class="mb-4 pb-2 border-bottom">
+                <h4 class="text-primary font-weight-bold mb-3"><i class="fa fa-lock mr-2"></i>5. Contraseña de la Cuenta</h4>
+                <p class="text-muted small mb-3">Define la contraseña para proteger tu cuenta e iniciar sesión:</p>
+                <div class="row">
+                  <div class="col-md-6 form-group mb-3">
+                    <label for="password" class="small font-weight-bold d-block">Contraseña *</label>
+                    <input type="password" class="form-control" id="password" th:field="*{password}" placeholder="Mínimo 4 caracteres" required minlength="4">
+                  </div>
+                  <div class="col-md-6 form-group mb-3">
+                    <label for="confirmPassword" class="small font-weight-bold d-block">Confirmar Contraseña *</label>
+                    <input type="password" class="form-control" id="confirmPassword" th:field="*{confirmPassword}" placeholder="Repite la contraseña" required minlength="4">
+                  </div>
+                </div>
+              </div>
+
               <!-- BOTÓN FINAL DE REGISTRO -->
-              <div class="mt-4 pt-3 border-top text-center">
-                <button type="submit" name="accion" value="registrar" class="btn btn-warning btn-block py-3 font-weight-bold shadow-sm" style="font-size: 1.1rem; border-radius: 8px;">
+              <div class="mt-4 pt-3 text-center">
+                <button type="submit" name="accion" value="registrar" onclick="document.getElementById('accionInput').value = 'registrar';" class="btn btn-warning btn-block py-3 font-weight-bold shadow-sm" style="font-size: 1.1rem; border-radius: 8px;">
                   <i class="fa fa-user-plus mr-2"></i> Registrarme como Cliente
                 </button>
                 <div class="mt-3">
@@ -269,7 +267,7 @@
 <!--================ End Register Section =================-->
 
 <!-- Footer Fragment -->
-<footer th:replace="~{shop/fragments/footer :: footer}"></footer>
+<footer th:replace="~{shop/fragments/footer :: footer}"></footer >
 
 </body>
 </html>

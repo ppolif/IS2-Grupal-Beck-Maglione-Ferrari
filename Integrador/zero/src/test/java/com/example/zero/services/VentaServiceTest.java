@@ -317,7 +317,7 @@ class VentaServiceTest {
     @Test
     void buscarFacturaPorIdentificador_noExistente_retornaNull() {
         when(facturaRepository.findByNumeroFacturaAndEliminadoFalse(9999L)).thenReturn(Optional.empty());
-        when(facturaRepository.findActive("9999")).thenReturn(Optional.empty());
+        when(facturaRepository.findActive(anyString())).thenReturn(Optional.empty());
 
         Factura resultado = ventaService.buscarFacturaPorIdentificador("#ORD-9999");
 

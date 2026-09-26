@@ -92,7 +92,7 @@ public class VistaController {
         }
         if (usuario.getRol() != RolUsuario.CLIENTE) {
             redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden acceder al proceso de compra.");
-            return "redirect:/admin";
+            return "redirect:/admin/registrar-venta";
         }
 
         try {
@@ -192,21 +192,15 @@ public class VistaController {
         return "shop/single-product";
     }
 
-    // Dashboard Admin
-    @GetMapping({"/admin", "/admin/index"})
+    // Panel Admin redirige directamente a Registrar Venta
+    @GetMapping({"/admin", "/admin/", "/admin/index", "/admin/index.html", "/admin/dashboard"})
     public String adminIndex() {
-        return "admin/index";
+        return "redirect:/admin/registrar-venta";
     }
 
     // Pantalla 404
     @GetMapping({"/admin/404", "/admin/page-404"})
     public String admin404() {
         return "admin/page-404";
-    }
-
-    // Registrar Compra (Ingreso de mercadería con proveedores y stock)
-    @GetMapping({"/admin/compras/nueva", "/admin/registrar-compra"})
-    public String adminRegistrarCompra() {
-        return "admin/registrar-compra";
     }
 }

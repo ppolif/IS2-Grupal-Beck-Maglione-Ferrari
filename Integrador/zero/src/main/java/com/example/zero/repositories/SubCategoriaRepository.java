@@ -21,7 +21,7 @@ public interface SubCategoriaRepository extends JpaRepository<SubCategoria, Stri
         return id != null ? find(id.toString()) : Optional.empty();
     }
 
-    @Query("SELECT s FROM SubCategoria s WHERE s.id = :id AND s.eliminado = false")
+    @Query("SELECT s FROM SubCategoria s LEFT JOIN FETCH s.categoria WHERE s.id = :id AND (s.eliminado = false OR s.eliminado IS NULL)")
     Optional<SubCategoria> findActive(@Param("id") String id);
 
     default Optional<SubCategoria> findActive(UUID id) {
@@ -30,8 +30,9 @@ public interface SubCategoriaRepository extends JpaRepository<SubCategoria, Stri
 
     Optional<SubCategoria> findByNombreAndEliminadoFalse(String nombre);
 
-    List<SubCategoria> findByCategoriaIdAndEliminadoFalse(String categoriaId);
+    @Query("SELECT s FROM SubCategoria s LEFT JOIN FETCH s.categoria WHERE s.categoria.id = :categoriaId AND (s.eliminado = false OR s.eliminado IS NULL) ORDER BY s.nombre ASC")
+    List<SubCategoria> findByCategoriaIdAndEliminadoFalse(@Param("categoriaId") String categoriaId);
 
+    @Query("SELECT s FROM SubCategoria s LEFT JOIN FETCH s.categoria WHERE (s.eliminado = false OR s.eliminado IS NULL) ORDER BY s.nombre ASC")
     List<SubCategoria> findByEliminadoFalse();
 }
-

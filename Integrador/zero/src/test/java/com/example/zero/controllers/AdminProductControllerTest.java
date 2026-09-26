@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.ui.Model;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -85,6 +86,29 @@ class AdminProductControllerTest {
         String vista = controller.createProduct("PROD-01", "Runner", "Desc", "42", "sub1", 120.0, true, model, redirectAttributes);
 
         assertEquals("redirect:/admin/products?success=created", vista);
+    }
+
+    @Test
+    void createProduct_conImagenValida_creaExitosamente() {
+        MockMultipartFile file = new MockMultipartFile("imagen", "zap.jpg", "image/jpeg", new byte[]{1, 2});
+        Producto creado = Producto.builder().id("p1").codigo("PROD-01").build();
+        when(productoService.crearProducto("PROD-01", "Runner", "Desc", "42", "sub1", 120.0, true, file))
+                .thenReturn(creado);
+
+        String vista = controller.createProduct("PROD-01", "Runner", "Desc", "42", "sub1", 120.0, true, file, model, redirectAttributes);
+
+        assertEquals("redirect:/admin/products?success=created", vista);
+    }
+
+    @Test
+    void createProduct_sinImagen_retornaErrorFormulario() {
+        when(subCategoriaService.listarActivas()).thenReturn(Collections.emptyList());
+
+        String vista = controller.createProduct("PROD-01", "Runner", "Desc", "42", "sub1", 120.0, true, null, model, redirectAttributes);
+
+        assertEquals("admin/product-form", vista);
+        verify(model).addAttribute("errorMessage", "Debe seleccionar obligatoriamente una imagen del producto");
+        verify(model).addAttribute("isEdit", false);
     }
 
     @Test
@@ -167,4 +191,3 @@ class AdminProductControllerTest {
         verify(productoService).eliminarProducto("p1");
     }
 }
-

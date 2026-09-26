@@ -1,66 +1,461 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<!-- Fragmento Head -->
 <head th:replace="~{admin/fragments/head :: head}"></head>
+
 <body class="d-flex">
 
-<!-- Sidebar Zero Admin -->
+<!-- Fragmento Sidebar -->
 <aside th:replace="~{admin/fragments/sidebar :: sidebar}"></aside>
 
+<!-- Contenido Principal -->
 <main class="main-content-offset p-4 p-md-5 min-vh-100 d-flex flex-column flex-grow-1">
+
+    <!-- Top Navbar Fragment -->
     <nav th:replace="~{admin/fragments/navbar :: navbar}"></nav>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Header de sección -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h1 class="h3 fw-bold text-brand-dark mb-1">Registrar Compra Mayorista</h1>
-            <p class="text-muted small mb-0">Recepción de mercadería e incremento automático de stock.</p>
+            <h1 class="h3 fw-bold text-brand-dark mb-1">Registrar Compra a Proveedor</h1>
+            <p class="text-muted small mb-0">Gestión de órdenes de compra, ingreso de stock y emisión de facturas a proveedores mayoristas.</p>
+        </div>
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0 small">
+                    <li class="breadcrumb-item"><a th:href="@{/admin/registrar-venta}" class="text-decoration-none text-muted">Inicio</a></li>
+                    <li class="breadcrumb-item active text-brand-dark" aria-current="page">Compras a Proveedor</li>
+                </ol>
+            </nav>
         </div>
     </div>
 
-    <!-- Formulario sin th:object -->
-    <form th:action="@{/admin/compras/guardar}" method="POST">
-        <div class="card bg-white border-brand rounded-4 p-3 mb-4 shadow-sm">
-            <div class="row align-items-center g-3">
-                <div class="col-md-4">
-                    <label class="form-label small fw-bold">Seleccionar Proveedor Mayorista *</label>
-                    <select name="proveedorId" class="form-select border-brand" required>
-                        <option value="" disabled selected>-- Elija un proveedor --</option>
-                        <option th:each="p : ${proveedores}" th:value="${p.id}" th:text="${p.razonSocial} + ' (CUIT: ' + ${p.cuit} + ')'">Textil S.A.</option>
-                    </select>
+    <!-- Alertas -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show rounded-3 py-2 small" role="alert">
+        <i class="bi bi-check-circle-fill me-1"></i>
+        <span th:text="${successMessage}">Operación exitosa</span>
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show rounded-3 py-2 small" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+        <span th:text="${errorMessage}">Error en la operación</span>
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Formulario Principal de Orden de Compra -->
+    <form th:action="@{/admin/compras/guardar}" method="POST" id="formCompra">
+        <div class="row g-4">
+
+            <!-- Columna Izquierda: Datos Proveedor, Factura y Pago -->
+            <div class="col-lg-5">
+                <!-- Datos de la Factura y Proveedor -->
+                <div class="card bg-white border-brand rounded-4 p-4 shadow-sm mb-4">
+                    <h5 class="fw-bold mb-3 text-brand-dark"><i class="bi bi-building me-1"></i> 1. Proveedor y Facturación</h5>
+
+                    <!-- Selector y Búsqueda de Proveedor -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-brand-dark">Proveedor Mayorista <span class="text-danger">*</span></label>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
+                            <input type="text" id="filtroProveedor" class="form-control border-brand" placeholder="Buscar proveedor por razón social o CUIT..." autocomplete="off">
+                        </div>
+                        <select name="proveedorId" id="proveedorId" class="form-select border-brand" required>
+                            <option value="" disabled th:selected="${selectedProveedorId == null}">-- Seleccione un proveedor --</option>
+                            <option th:each="prov : ${proveedores}"
+                                    th:value="${prov.id}"
+                                    th:data-cuit="${prov.cuit}"
+                                    th:data-razon="${prov.razonSocial}"
+                                    th:text="${prov.razonSocial + ' (CUIT: ' + prov.cuit + ')'}"
+                                    th:selected="${selectedProveedorId == prov.id}">
+                                Indumentaria Textil S.A.
+                            </option>
+                            <option th:if="${proveedores == null || #lists.isEmpty(proveedores)}" value="" disabled>No hay proveedores registrados en la base de datos</option>
+                        </select>
+                        <div class="form-text">Compañía proveedora de la mercadería recuperada de la BD. Puede buscar escribiendo arriba.</div>
+                    </div>
+
+                    <!-- Número de Factura del Proveedor (Autoincremental) -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-brand-dark">Número de Factura / Remito</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted fw-bold">#FAC-</span>
+                            <input type="text" class="form-control border-brand bg-light" value="Autoincremental (generado automáticamente por el sistema)" readonly disabled />
+                        </div>
+                        <div class="form-text">El número de factura correlativo se asigna automáticamente de forma consecutiva.</div>
+                    </div>
+
+                    <!-- Estado de la Factura -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-brand-dark">Estado de la Factura <span class="text-danger">*</span></label>
+                        <select name="estado" id="estado" class="form-select border-brand" required>
+                            <option value="PAGADA" th:selected="${selectedEstado == 'PAGADA' || selectedEstado == null}">PAGADA</option>
+                            <option value="SIN_DEFINIR" th:selected="${selectedEstado == 'SIN_DEFINIR'}">SIN_DEFINIR</option>
+                            <option value="ANULADA" th:selected="${selectedEstado == 'ANULADA'}">ANULADA</option>
+                        </select>
+                        <div class="form-text">Estado actual de la factura a proveedor.</div>
+                    </div>
+
+                    <!-- Fecha y Hora Automática -->
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold text-brand-dark">Fecha y Hora de Emisión</label>
+                        <input type="text" class="form-control border-brand bg-light" value="Automático (marca de tiempo actual del sistema)" readonly disabled />
+                        <div class="form-text">Se registra automáticamente la fecha y hora exacta al confirmar la orden.</div>
+                    </div>
+                </div>
+
+                <!-- Forma de Pago -->
+                <div class="card bg-white border-brand rounded-4 p-4 shadow-sm mb-4">
+                    <h5 class="fw-bold mb-3 text-brand-dark"><i class="bi bi-credit-card me-1"></i> 2. Forma de Pago</h5>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold text-brand-dark">Método de Pago a Proveedor <span class="text-danger">*</span></label>
+                        <select name="formaDePago" id="formaDePago" class="form-select border-brand" required>
+                            <option value="TRANSFERENCIA" th:selected="${selectedFormaDePago == 'TRANSFERENCIA' || selectedFormaDePago == null}">Transferencia Bancaria</option>
+                            <option value="EFECTIVO" th:selected="${selectedFormaDePago == 'EFECTIVO'}">Efectivo</option>
+                            <option value="TARJETA_DEBITO" th:selected="${selectedFormaDePago == 'TARJETA_DEBITO'}">Tarjeta de Débito</option>
+                            <option value="TARJETA_CREDITO" th:selected="${selectedFormaDePago == 'TARJETA_CREDITO'}">Tarjeta de Crédito</option>
+                            <option value="BILLETERA_VIRTUAL" th:selected="${selectedFormaDePago == 'BILLETERA_VIRTUAL'}">Billetera Virtual</option>
+                        </select>
+                        <div class="form-text">Modalidad de pago empleada con el proveedor.</div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Detalle de Ítems -->
-        <div class="card bg-white border-brand rounded-4 shadow-sm overflow-hidden mb-4">
-            <!-- ... encabezado ... -->
-            <div class="table-responsive">
-                <table class="table align-middle mb-0">
-                    <thead class="bg-brand-dark">
-                    <tr>
-                        <th class="text-white ps-3">Producto</th>
-                        <th class="text-white text-center">Cantidad Recibida</th>
-                        <th class="text-white text-center">Costo Unitario</th>
-                        <th class="text-white text-center pe-3">Acción</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="item : ${detalles}">
-                        <td th:text="${item.producto.nombre}" class="ps-3 fw-semibold">Remera Zero</td>
-                        <td th:text="${item.cantidad}" class="text-center">+20</td>
-                        <td th:text="${#numbers.formatCurrency(item.costoUnitario)}" class="text-center">$45.00</td>
-                        <td class="text-center pe-3">
-                            <button type="button" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+            <!-- Columna Derecha: Selección de Productos a Pedir y Detalle Factura -->
+            <div class="col-lg-7">
+                <!-- Selector y Búsqueda de Productos -->
+                <div class="card bg-white border-brand rounded-4 p-4 shadow-sm mb-4">
+                    <h5 class="fw-bold mb-3 text-brand-dark"><i class="bi bi-box-seam me-1"></i> 3. Productos a Pedir (Detalle)</h5>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label small fw-semibold text-brand-dark">Producto del Catálogo <span class="text-danger">*</span></label>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
+                                <input type="text" id="filtroProducto" class="form-control border-brand" placeholder="Buscar por nombre o código..." autocomplete="off">
+                            </div>
+                            <select id="selectorProducto" class="form-select border-brand">
+                                <option value="" disabled selected>-- Elija un producto --</option>
+                                <option th:each="prod : ${productos}"
+                                        th:value="${prod.id}"
+                                        th:data-codigo="${prod.codigo}"
+                                        th:data-nombre="${prod.nombre}"
+                                        th:data-costo="${prod.precioActual != null ? prod.precioActual : 0.0}"
+                                        th:text="${prod.codigo + ' - ' + prod.nombre + ' ($' + #numbers.formatDecimal(prod.precioActual != null ? prod.precioActual : 0.0, 1, 2) + ')'}">
+                                    PROD-001 - Camiseta Deportiva
+                                </option>
+                                <option th:if="${productos == null || #lists.isEmpty(productos)}" value="" disabled>No hay productos registrados en el catálogo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold text-brand-dark">Costo Unit. (Base de Datos)</label>
+                            <input type="text" id="displayCosto" class="form-control border-brand bg-light fw-bold" placeholder="$0.00" readonly disabled />
+                            <input type="hidden" id="selectorCosto" value="0.00" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold text-brand-dark">Cantidad <span class="text-danger">*</span></label>
+                            <input type="number" id="selectorCantidad" class="form-control border-brand" min="1" value="10" />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" id="btnAgregarProducto" class="btn btn-dark w-100 d-flex align-items-center justify-content-center gap-1">
+                                <i class="bi bi-plus-lg"></i> Pedir
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-text mt-2">El costo unitario es recuperado automáticamente de la base de datos al seleccionar el producto.</div>
+                </div>
+
+                <!-- Tabla Detalle Factura Proveedor -->
+                <div class="card bg-white border-brand rounded-4 shadow-sm overflow-hidden mb-4">
+                    <div class="card-header bg-white border-bottom border-brand p-3 d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0 text-brand-dark"><i class="bi bi-receipt me-1"></i> Detalle de Factura / Remito</h5>
+                        <span class="badge bg-light text-dark border border-brand" id="badgeTotalItems">0 artículos</span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0" id="tablaDetalles">
+                            <thead class="bg-brand-dark">
+                            <tr>
+                                <th class="text-white ps-3">Producto</th>
+                                <th class="text-white text-center">Cantidad Pedida</th>
+                                <th class="text-white text-center">Costo Unit. (BD)</th>
+                                <th class="text-white text-center">Subtotal</th>
+                                <th class="text-white text-center pe-3">Acción</th>
+                            </tr>
+                            </thead>
+                            <tbody id="cuerpoTabla">
+                            <tr id="filaVacia">
+                                <td colspan="5" class="text-center py-4 text-muted small">
+                                    No hay productos agregados a la orden de compra.<br>
+                                    Seleccione un producto arriba, defina la cantidad y presione <strong>Pedir</strong>.
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Contenedor dinámico de inputs ocultos enviados al backend -->
+                    <div id="hiddenInputsContainer"></div>
+
+                    <!-- Footer con Total y Botón de Confirmación -->
+                    <div class="card-footer bg-white border-top border-brand p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="h5 mb-0 text-muted">Total de la Orden de Compra:</span>
+                            <span class="h3 fw-bold text-brand-dark mb-0" id="labelTotalCompra">$0.00</span>
+                        </div>
+                        <button type="submit" class="btn btn-dark btn-lg w-100 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-box-arrow-in-down fs-4"></i> Confirmar y Registrar Orden de Compra
+                        </button>
+                    </div>
+                </div>
             </div>
-            <!-- ... botones ... -->
+
         </div>
     </form>
 
+    <!-- Historial de Órdenes de Compra a Proveedores -->
+    <div class="card bg-white border-brand rounded-4 shadow-sm overflow-hidden mb-4 mt-2">
+        <div class="card-header bg-white border-bottom border-brand p-3 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-brand-dark"><i class="bi bi-clock-history me-1"></i> Órdenes de Compra Registradas</h5>
+            <span class="small fw-bold text-muted" th:text="${compras != null ? #lists.size(compras) + ' órdenes' : '0 órdenes'}">0 órdenes</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-brand-dark">
+                <tr>
+                    <th class="ps-3 text-white">Nº Factura</th>
+                    <th class="text-white">Proveedor</th>
+                    <th class="text-white">Fecha</th>
+                    <th class="text-white">Forma de Pago</th>
+                    <th class="text-white">Estado</th>
+                    <th class="text-white text-end">Total Pagado</th>
+                    <th class="text-center text-white pe-3">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${compras == null || #lists.isEmpty(compras)}">
+                    <td colspan="7" class="text-center py-4 text-muted small">No se registran órdenes de compra a proveedores actualmente.</td>
+                </tr>
+                <tr th:each="compra : ${compras}">
+                    <td class="ps-3 fw-bold text-brand-dark" th:text="${'#FAC-' + compra.numeroFactura}">#FAC-5001</td>
+                    <td class="fw-semibold text-brand-dark" th:text="${compra.proveedor != null ? compra.proveedor.razonSocial : 'Proveedor General'}">Indumentaria Textil S.A.</td>
+                    <td class="small text-muted" th:text="${#temporals.format(compra.fechaFactura, 'dd/MM/yyyy HH:mm')}">01/01/2025 10:00</td>
+                    <td>
+                        <span class="badge bg-light text-dark border border-brand"
+                              th:text="${compra.formaDePago != null && compra.formaDePago.tipoPago != null ? #strings.replace(compra.formaDePago.tipoPago.name(), '_', ' ') : 'Transferencia'}">Transferencia</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-success bg-opacity-75 text-white" th:text="${compra.estado}">PAGADA</span>
+                    </td>
+                    <td class="text-end fw-bold text-brand-bold" th:text="${#numbers.formatCurrency(compra.totalPagado)}">$0.00</td>
+                    <td class="text-center pe-3">
+                        <form th:action="@{/admin/purchase-orders/eliminar/{id}(id=${compra.id})}" method="POST" class="d-inline"
+                              onsubmit="return confirm('¿Seguro que deseas anular esta orden de compra a proveedor?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Dar de baja"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <footer th:replace="~{admin/fragments/footer :: footer}"></footer>
 </main>
+
 <div th:replace="~{admin/fragments/scripts :: scripts}"></div>
+
+<!-- Script interactivo de orden de compra -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const items = [];
+
+        const selectorProducto = document.getElementById("selectorProducto");
+        const selectorCantidad = document.getElementById("selectorCantidad");
+        const selectorCosto = document.getElementById("selectorCosto");
+        const displayCosto = document.getElementById("displayCosto");
+        const btnAgregar = document.getElementById("btnAgregarProducto");
+        const cuerpoTabla = document.getElementById("cuerpoTabla");
+        const filaVacia = document.getElementById("filaVacia");
+        const labelTotal = document.getElementById("labelTotalCompra");
+        const badgeTotalItems = document.getElementById("badgeTotalItems");
+        const hiddenInputsContainer = document.getElementById("hiddenInputsContainer");
+        const formCompra = document.getElementById("formCompra");
+        const filtroProveedor = document.getElementById("filtroProveedor");
+        const selectProveedor = document.getElementById("proveedorId");
+        const filtroProducto = document.getElementById("filtroProducto");
+
+        // Búsqueda / Filtro en tiempo real para Proveedores
+        if (filtroProveedor && selectProveedor) {
+            filtroProveedor.addEventListener("input", function () {
+                const term = this.value.toLowerCase().trim();
+                let primerCoincidente = null;
+                for (let i = 1; i < selectProveedor.options.length; i++) {
+                    const opt = selectProveedor.options[i];
+                    const text = opt.text.toLowerCase();
+                    const match = text.includes(term);
+                    opt.hidden = !match;
+                    if (match && !primerCoincidente && term.length > 0) {
+                        primerCoincidente = opt;
+                    }
+                }
+                if (primerCoincidente && term.length >= 2) {
+                    selectProveedor.value = primerCoincidente.value;
+                }
+            });
+        }
+
+        // Búsqueda / Filtro en tiempo real para Productos
+        if (filtroProducto && selectorProducto) {
+            filtroProducto.addEventListener("input", function () {
+                const term = this.value.toLowerCase().trim();
+                let primerCoincidente = null;
+                for (let i = 1; i < selectorProducto.options.length; i++) {
+                    const opt = selectorProducto.options[i];
+                    const text = opt.text.toLowerCase();
+                    const match = text.includes(term);
+                    opt.hidden = !match;
+                    if (match && !primerCoincidente && term.length > 0) {
+                        primerCoincidente = opt;
+                    }
+                }
+                if (primerCoincidente && term.length >= 2) {
+                    selectorProducto.value = primerCoincidente.value;
+                    actualizarCostoSeleccionado();
+                }
+            });
+        }
+
+        function actualizarCostoSeleccionado() {
+            if (selectorProducto.selectedIndex >= 0) {
+                const selectedOption = selectorProducto.options[selectorProducto.selectedIndex];
+                const costoSugerido = parseFloat(selectedOption.getAttribute("data-costo")) || 0;
+                selectorCosto.value = costoSugerido.toFixed(2);
+                displayCosto.value = "$" + costoSugerido.toFixed(2);
+            }
+        }
+
+        // Recuperar costo unitario de la base de datos automáticamente al seleccionar producto
+        selectorProducto.addEventListener("change", actualizarCostoSeleccionado);
+
+        // Agregar producto
+        btnAgregar.addEventListener("click", function () {
+            const prodId = selectorProducto.value;
+            const cant = parseInt(selectorCantidad.value, 10);
+            let costo = parseFloat(selectorCosto.value);
+
+            if (!prodId) {
+                alert("Por favor seleccione un producto del catálogo.");
+                return;
+            }
+            if (isNaN(cant) || cant <= 0) {
+                alert("La cantidad debe ser mayor a cero.");
+                return;
+            }
+            if (isNaN(costo) || costo < 0) {
+                costo = 0.0;
+            }
+
+            const selectedOption = selectorProducto.options[selectorProducto.selectedIndex];
+            const nombre = selectedOption.getAttribute("data-nombre");
+
+            // Verificar si ya está en la lista
+            const existente = items.find(it => it.id === prodId);
+            if (existente) {
+                existente.cantidad += cant;
+                existente.costo = costo;
+                existente.subtotal = Math.round(existente.cantidad * costo * 100) / 100;
+            } else {
+                items.push({
+                    id: prodId,
+                    nombre: nombre,
+                    costo: costo,
+                    cantidad: cant,
+                    subtotal: Math.round(cant * costo * 100) / 100
+                });
+            }
+
+            selectorCantidad.value = 10;
+            renderTabla();
+        });
+
+        // Renderizar tabla e inputs ocultos
+        function renderTabla() {
+            cuerpoTabla.innerHTML = "";
+            hiddenInputsContainer.innerHTML = "";
+
+            if (items.length === 0) {
+                cuerpoTabla.appendChild(filaVacia);
+                labelTotal.textContent = "$0.00";
+                badgeTotalItems.textContent = "0 artículos";
+                return;
+            }
+
+            let total = 0;
+            let totalCantidad = 0;
+
+            items.forEach((item, index) => {
+                total += item.subtotal;
+                totalCantidad += item.cantidad;
+
+                const tr = document.createElement("tr");
+
+                tr.innerHTML = `
+                    <td class="ps-3 fw-bold text-brand-dark">${item.nombre}</td>
+                    <td class="text-center font-monospace fw-bold text-success">+${item.cantidad}</td>
+                    <td class="text-center font-monospace">$${item.costo.toFixed(2)}</td>
+                    <td class="text-center fw-bold text-brand-dark">$${item.subtotal.toFixed(2)}</td>
+                    <td class="text-center pe-3">
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-item" data-index="${index}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+                cuerpoTabla.appendChild(tr);
+
+                // Inputs ocultos para enviar al backend
+                const inputId = document.createElement("input");
+                inputId.type = "hidden";
+                inputId.name = "productoIds";
+                inputId.value = item.id;
+                hiddenInputsContainer.appendChild(inputId);
+
+                const inputCant = document.createElement("input");
+                inputCant.type = "hidden";
+                inputCant.name = "cantidades";
+                inputCant.value = item.cantidad;
+                hiddenInputsContainer.appendChild(inputCant);
+
+                const inputCosto = document.createElement("input");
+                inputCosto.type = "hidden";
+                inputCosto.name = "costosUnitarios";
+                inputCosto.value = item.costo;
+                hiddenInputsContainer.appendChild(inputCosto);
+            });
+
+            labelTotal.textContent = "$" + total.toFixed(2);
+            badgeTotalItems.textContent = totalCantidad + " artículo(s)";
+
+            // Asignar eventos de eliminación
+            document.querySelectorAll(".btn-eliminar-item").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    const idx = parseInt(this.getAttribute("data-index"), 10);
+                    items.splice(idx, 1);
+                    renderTabla();
+                });
+            });
+        }
+
+        // Validación al enviar el formulario
+        formCompra.addEventListener("submit", function (e) {
+            if (items.length === 0) {
+                e.preventDefault();
+                alert("Debe agregar al menos un producto a la orden de compra antes de confirmar.");
+                return false;
+            }
+        });
+    });
+</script>
+
 </body>
 </html>

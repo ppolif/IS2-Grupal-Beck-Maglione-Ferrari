@@ -1,6 +1,7 @@
 package com.example.zero.services.persona;
 
 import com.example.zero.dto.persona.ClienteRegistroDTO;
+import com.example.zero.entidades.Imagen;
 import com.example.zero.entidades.empresa.Contacto;
 import com.example.zero.entidades.empresa.ContactoCorreoElectronico;
 import com.example.zero.entidades.empresa.ContactoTelefonico;
@@ -12,12 +13,15 @@ import com.example.zero.entidades.zona.Localidad;
 import com.example.zero.enums.RolUsuario;
 import com.example.zero.enums.TipoContacto;
 import com.example.zero.enums.TipoDocumento;
+import com.example.zero.enums.TipoImagen;
 import com.example.zero.enums.TipoTelefono;
 import com.example.zero.repositories.*;
+import com.example.zero.services.ImagenService;
 import com.example.zero.services.zona.ZonaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -34,9 +38,20 @@ public class ClienteService {
     private final ZonaService zonaService;
     private final DireccionRepository direccionRepository;
     private final ContactoRepository contactoRepository;
+    private final ImagenService imagenService;
 
     public ClienteService(ClienteRepository clienteRepository) {
-        this(clienteRepository, null, null, null, null, null, null);
+        this(clienteRepository, null, null, null, null, null, null, null);
+    }
+
+    public ClienteService(ClienteRepository clienteRepository,
+                          NacionalidadRepository nacionalidadRepository,
+                          UsuarioRepository usuarioRepository,
+                          UsuarioService usuarioService,
+                          ZonaService zonaService,
+                          DireccionRepository direccionRepository,
+                          ContactoRepository contactoRepository) {
+        this(clienteRepository, nacionalidadRepository, usuarioRepository, usuarioService, zonaService, direccionRepository, contactoRepository, null);
     }
 
     @Autowired
@@ -46,7 +61,8 @@ public class ClienteService {
                           UsuarioService usuarioService,
                           ZonaService zonaService,
                           DireccionRepository direccionRepository,
-                          ContactoRepository contactoRepository) {
+                          ContactoRepository contactoRepository,
+                          ImagenService imagenService) {
         this.clienteRepository = clienteRepository;
         this.nacionalidadRepository = nacionalidadRepository;
         this.usuarioRepository = usuarioRepository;
@@ -54,6 +70,7 @@ public class ClienteService {
         this.zonaService = zonaService;
         this.direccionRepository = direccionRepository;
         this.contactoRepository = contactoRepository;
+        this.imagenService = imagenService;
     }
 
     public void validar(String numeroDocumento, String nombre, String apellido) {
@@ -95,6 +112,11 @@ public class ClienteService {
 
     @Transactional
     public Usuario registrarCliente(ClienteRegistroDTO dto) {
+        return registrarCliente(dto, null);
+    }
+
+    @Transactional
+    public Usuario registrarCliente(ClienteRegistroDTO dto, MultipartFile fotoPerfil) {
         if (dto == null) {
             throw new IllegalArgumentException("Los datos de registro no pueden ser nulos");
         }
@@ -200,7 +222,21 @@ public class ClienteService {
             contacto = contactoRepository.save(contacto);
         }
 
-        // 6. Crear y Persistir Cliente
+        // 6. Gestionar Foto de Perfil (Opcional, con monigote por defecto)
+        List<Imagen> imagenes = new ArrayList<>();
+        if (imagenService != null) {
+            Imagen img;
+            if (fotoPerfil != null && !fotoPerfil.isEmpty()) {
+                img = imagenService.guardarImagen(fotoPerfil, TipoImagen.PERSONA);
+            } else {
+                img = imagenService.guardarMonigoteDefault();
+            }
+            if (img != null) {
+                imagenes.add(img);
+            }
+        }
+
+        // 7. Crear y Persistir Cliente
         List<Direccion> direcciones = new ArrayList<>();
         direcciones.add(direccion);
 
@@ -216,12 +252,13 @@ public class ClienteService {
                 .nacionalidad(nacionalidad)
                 .direccion(direcciones)
                 .contactos(contactos)
+                .imagen(imagenes)
                 .eliminado(false)
                 .build();
 
         cliente = clienteRepository.save(cliente);
 
-        // 7. Crear Usuario con Rol CLIENTE (inactivo hasta verificar correo)
+        // 8. Crear Usuario con Rol CLIENTE (inactivo hasta verificar correo)
         Usuario usuario = null;
         if (usuarioService != null) {
             usuario = usuarioService.crearUsuario(emailLimpio, dto.getPassword(), RolUsuario.CLIENTE, cliente, false);

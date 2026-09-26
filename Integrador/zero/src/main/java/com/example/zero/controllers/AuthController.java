@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -48,7 +49,7 @@ public class AuthController {
         Usuario usuarioLogueado = (Usuario) session.getAttribute("usuariosession");
         if (usuarioLogueado != null) {
             if (usuarioLogueado.getRol() == RolUsuario.ADMINISTRATIVO || usuarioLogueado.getRol() == RolUsuario.JEFE) {
-                return "redirect:/admin";
+                return "redirect:/admin/registrar-venta";
             }
             return "redirect:/";
         }
@@ -65,7 +66,7 @@ public class AuthController {
             session.setAttribute("usuariosession", usuario);
 
             if (usuario.getRol() == RolUsuario.ADMINISTRATIVO || usuario.getRol() == RolUsuario.JEFE) {
-                return "redirect:/admin";
+                return "redirect:/admin/registrar-venta";
             }
             return "redirect:/";
         } catch (IllegalArgumentException e) {
@@ -79,7 +80,7 @@ public class AuthController {
     public String showAdminRegisterPage(HttpSession session) {
         Usuario usuarioLogueado = (Usuario) session.getAttribute("usuariosession");
         if (usuarioLogueado != null) {
-            return "redirect:/admin";
+            return "redirect:/admin/registrar-venta";
         }
         return "admin/page-register";
     }
@@ -100,7 +101,7 @@ public class AuthController {
         try {
             Usuario nuevoUsuario = usuarioService.crearUsuario(email, password, RolUsuario.ADMINISTRATIVO, null);
             session.setAttribute("usuariosession", nuevoUsuario);
-            return "redirect:/admin";
+            return "redirect:/admin/registrar-venta";
         } catch (IllegalArgumentException e) {
             model.addAttribute("errorMessage", e.getMessage());
             return "admin/page-register";
@@ -128,9 +129,10 @@ public class AuthController {
     @PostMapping("/register")
     public String processRegister(@ModelAttribute("dto") ClienteRegistroDTO dto,
                                   @RequestParam(value = "accion", required = false) String accion,
+                                  @RequestParam(value = "fotoPerfil", required = false) MultipartFile fotoPerfil,
                                   HttpSession session,
                                   Model model) {
-        // Acciones dinámicas de recarga controladas por Thymeleaf y Spring MVC
+        // Acciones dinámicas de recarga en cascada gestionadas por el servidor
         if ("cambiarPais".equals(accion)) {
             dto.setProvinciaId(null);
             dto.setDepartamentoId(null);
@@ -161,10 +163,21 @@ public class AuthController {
             return "shop/register";
         }
 
+        // Si se envió un evento de cambio pero no es registrar
+        if (accion != null && !accion.trim().isEmpty() && !"registrar".equals(accion)) {
+            cargarDatosFormularioRegistro(model, dto);
+            model.addAttribute("dto", dto);
+            return "shop/register";
+        }
+
         // Procesamiento del registro de cliente
         try {
             if (clienteService != null) {
-                clienteService.registrarCliente(dto);
+                if (fotoPerfil != null && !fotoPerfil.isEmpty()) {
+                    clienteService.registrarCliente(dto, fotoPerfil);
+                } else {
+                    clienteService.registrarCliente(dto);
+                }
             }
             String emailDestino = (dto.getEmail() != null) ? dto.getEmail().trim() : "";
             String emailParam = java.net.URLEncoder.encode(emailDestino, java.nio.charset.StandardCharsets.UTF_8);
@@ -178,9 +191,16 @@ public class AuthController {
     }
 
     public String processRegister(ClienteRegistroDTO dto,
+                                  String accion,
                                   HttpSession session,
                                   Model model) {
-        return processRegister(dto, null, session, model);
+        return processRegister(dto, accion, null, session, model);
+    }
+
+    public String processRegister(ClienteRegistroDTO dto,
+                                  HttpSession session,
+                                  Model model) {
+        return processRegister(dto, null, null, session, model);
     }
 
     // Endpoints de confirmación y activación de cuenta por correo (rules/CONTROLLERS.md)

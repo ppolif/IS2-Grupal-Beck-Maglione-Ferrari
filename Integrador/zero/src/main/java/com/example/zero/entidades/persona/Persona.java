@@ -1,5 +1,6 @@
 package com.example.zero.entidades.persona;
 
+import com.example.zero.entidades.Imagen;
 import com.example.zero.enums.TipoDocumento;
 
 import com.example.zero.entidades.empresa.Contacto;
@@ -70,12 +71,10 @@ public abstract class Persona {
     @OneToOne(mappedBy = "persona", fetch = FetchType.LAZY)
     private Usuario usuario;
 
-    // --- Relaciones con clases que NO estan hechas todavia) ---
-
-    // Persona *..1 Imagen (cada persona puede tener una imagen de perfil).
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "imagen_id")
-    // private Imagen imagen;
+     //una persona puede tener muchas fotos por borrado logico
+     @OneToMany(fetch = FetchType.LAZY)
+     @JoinColumn(name = "persona_documento")
+     private List<Imagen> imagen;
 
     // Por borrado logico una persona tiene muchas direcciones
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
