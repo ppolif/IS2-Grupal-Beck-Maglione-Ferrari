@@ -1,15 +1,21 @@
 package com.example.zero.services.producto;
 
+import com.example.zero.entidades.Imagen;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.entidades.producto.SubCategoria;
 import com.example.zero.entidades.producto.VigenciaPrecio;
+import com.example.zero.enums.TipoImagen;
 import com.example.zero.repositories.ProductoRepository;
+import com.example.zero.services.ImagenService;
 import com.example.zero.services.SubCategoriaService;
 import com.example.zero.services.VigenciaPrecioService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,13 +25,23 @@ public class ProductoService {
     private final ProductoRepository productoRepository;
     private final SubCategoriaService subCategoriaService;
     private final VigenciaPrecioService vigenciaPrecioService;
+    private final ImagenService imagenService;
 
     public ProductoService(ProductoRepository productoRepository,
                            SubCategoriaService subCategoriaService,
                            VigenciaPrecioService vigenciaPrecioService) {
+        this(productoRepository, subCategoriaService, vigenciaPrecioService, null);
+    }
+
+    @Autowired
+    public ProductoService(ProductoRepository productoRepository,
+                           SubCategoriaService subCategoriaService,
+                           VigenciaPrecioService vigenciaPrecioService,
+                           ImagenService imagenService) {
         this.productoRepository = productoRepository;
         this.subCategoriaService = subCategoriaService;
         this.vigenciaPrecioService = vigenciaPrecioService;
+        this.imagenService = imagenService;
     }
 
     public void validar(String codigo, String nombre, String subCategoriaId) {
@@ -43,6 +59,29 @@ public class ProductoService {
     @Transactional
     public Producto crearProducto(String codigo, String nombre, String descripcion, String talle,
                                   String subCategoriaId, double precioInicial, boolean enOferta) {
+        return crearProductoInterno(codigo, nombre, descripcion, talle, subCategoriaId, precioInicial, enOferta, 0, null);
+    }
+
+    @Transactional
+    public Producto crearProducto(String codigo, String nombre, String descripcion, String talle,
+                                  String subCategoriaId, double precioInicial, boolean enOferta,
+                                  MultipartFile archivoImagen) {
+        return crearProducto(codigo, nombre, descripcion, talle, subCategoriaId, precioInicial, enOferta, 0, archivoImagen);
+    }
+
+    @Transactional
+    public Producto crearProducto(String codigo, String nombre, String descripcion, String talle,
+                                  String subCategoriaId, double precioInicial, boolean enOferta,
+                                  int stock, MultipartFile archivoImagen) {
+        if (archivoImagen == null || archivoImagen.isEmpty()) {
+            throw new IllegalArgumentException("La imagen del producto es obligatoria");
+        }
+        return crearProductoInterno(codigo, nombre, descripcion, talle, subCategoriaId, precioInicial, enOferta, stock, archivoImagen);
+    }
+
+    private Producto crearProductoInterno(String codigo, String nombre, String descripcion, String talle,
+                                          String subCategoriaId, double precioInicial, boolean enOferta,
+                                          int stock, MultipartFile archivoImagen) {
         validar(codigo, nombre, subCategoriaId);
         if (precioInicial <= 0) {
             throw new IllegalArgumentException("El precio inicial debe ser mayor a cero");
@@ -56,6 +95,14 @@ public class ProductoService {
 
         SubCategoria subCategoria = subCategoriaService.buscarPorId(subCategoriaId);
 
+        List<Imagen> imagenes = new ArrayList<>();
+        if (archivoImagen != null && !archivoImagen.isEmpty() && imagenService != null) {
+            Imagen img = imagenService.guardarImagen(archivoImagen, TipoImagen.PRODUCTO);
+            if (img != null) {
+                imagenes.add(img);
+            }
+        }
+
         //Patron builder
         Producto producto = Producto.builder()
                 .codigo(codigoLimpio)
@@ -64,6 +111,8 @@ public class ProductoService {
                 .talle(talle != null ? talle.trim() : null)
                 .subCategoria(subCategoria)
                 .enOferta(enOferta)
+                .stock(Math.max(0, stock))
+                .imagenes(imagenes)
                 .eliminado(false)
                 .build();
 
@@ -78,6 +127,12 @@ public class ProductoService {
     @Transactional
     public Producto modificarProducto(String id, String nombre, String descripcion, String talle,
                                       String subCategoriaId, Boolean enOferta) {
+        return modificarProducto(id, nombre, descripcion, talle, subCategoriaId, enOferta, null);
+    }
+
+    @Transactional
+    public Producto modificarProducto(String id, String nombre, String descripcion, String talle,
+                                      String subCategoriaId, Boolean enOferta, Integer stock) {
         if (id == null || id.trim().isEmpty()) {
             throw new IllegalArgumentException("El ID del producto no puede ser nulo o vacío");
         }
@@ -100,6 +155,9 @@ public class ProductoService {
         if (enOferta != null) {
             producto.setEnOferta(enOferta);
         }
+        if (stock != null && stock >= 0) {
+            producto.setStock(stock);
+        }
 
         return productoRepository.save(producto);
     }
@@ -117,6 +175,7 @@ public class ProductoService {
             throw new IllegalArgumentException("El ID del producto no puede ser nulo o vacío");
         }
         return productoRepository.findActive(id)
+                .or(() -> productoRepository.findById(id).filter(p -> !p.isEliminado()))
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró el producto activo con ID: " + id));
     }
 
@@ -152,7 +211,7 @@ public class ProductoService {
         return productoRepository.findByEnOfertaTrueAndEliminadoFalse();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public Producto marcarEnOferta(String id, boolean enOferta) {
         Producto producto = buscarPorId(id);
         producto.setEnOferta(enOferta);
@@ -160,7 +219,6 @@ public class ProductoService {
     }
 
     // ==================== GESTIÓN DE PRECIOS ====================
-    //A CHEQUEAR ESTO QUE NO SE PISE CON VIGENCIAPRECIO
     @Transactional
     public VigenciaPrecio actualizarPrecio(String productoId, double nuevoPrecio) {
         buscarPorId(productoId); // Validar existencia activa
@@ -200,7 +258,6 @@ public class ProductoService {
     }
 
     // ==================== GESTIÓN DE STOCK ====================
-    //A CHEQUEAR ESTO QUE NO SE PISE CON STOCK
 
     public boolean esStockCritico(int stockActual, int stockTotal) {
         if (stockTotal <= 0) {
@@ -258,10 +315,17 @@ public class ProductoService {
     }
 
     public int obtenerStock(Producto producto) {
-        return 10;
+        return (producto != null) ? producto.getStock() : 0;
     }
 
     public String obtenerImagenUrl(Producto producto) {
+        if (producto != null && producto.getImagenes() != null && !producto.getImagenes().isEmpty()) {
+            for (Imagen img : producto.getImagenes()) {
+                if (img != null && !img.isEliminado() && img.getId() != null) {
+                    return "/imagen/" + img.getId();
+                }
+            }
+        }
         return "/shop/img/product/p1.jpg";
     }
 

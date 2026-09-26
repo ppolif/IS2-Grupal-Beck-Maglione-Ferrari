@@ -24,7 +24,7 @@
     <div class="d-flex align-items-center gap-2">
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb mb-0 small">
-          <li class="breadcrumb-item"><a th:href="@{/admin}" class="text-decoration-none text-muted">Inicio</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/registrar-venta}" class="text-decoration-none text-muted">Inicio</a></li>
           <li class="breadcrumb-item active text-brand-dark" aria-current="page">Productos</li>
         </ol>
       </nav>
@@ -66,6 +66,7 @@
           <th class="text-uppercase small text-white">Subcategoría</th>
           <th class="text-uppercase small text-white">Talle</th>
           <th class="text-uppercase small text-white">Precio Vigente</th>
+          <th class="text-center text-uppercase small text-white">Stock</th>
           <th class="text-uppercase small text-white">Oferta</th>
           <th class="text-center text-uppercase small text-white pe-3">Acciones</th>
         </tr>
@@ -73,7 +74,7 @@
         <tbody>
         <!-- Mensaje si no hay productos -->
         <tr th:if="${products == null || #lists.isEmpty(products)}">
-          <td colspan="7" class="text-center py-5 text-muted small">
+          <td colspan="8" class="text-center py-5 text-muted small">
             <i class="bi bi-inbox fs-2 d-block mb-2"></i>
             No se encontraron productos registrados en el sistema.<br>
             <a th:href="@{/admin/products/nuevo}" class="btn btn-sm btn-dark mt-2">Crear el primer producto</a>
@@ -97,6 +98,11 @@
             <span class="badge bg-secondary bg-opacity-25 text-dark" th:text="${product.talle != null && !product.talle.isEmpty() ? product.talle : 'N/A'}">42</span>
           </td>
           <td class="small fw-bold text-brand-bold" th:text="${#numbers.formatCurrency(product.precioActual)}">$120.00</td>
+          <td class="text-center">
+            <span class="badge"
+                  th:classappend="${product.stock <= 5 ? 'bg-danger text-white' : 'bg-light text-dark border border-brand'}"
+                  th:text="${product.stock}">10</span>
+          </td>
           <td>
             <span th:if="${product.enOferta}" class="badge bg-warning text-dark"><i class="bi bi-tag-fill me-1"></i>En Oferta</span>
             <span th:unless="${product.enOferta}" class="badge bg-light text-muted border">Regular</span>
@@ -129,4 +135,3 @@
 
 </body>
 </html>
-

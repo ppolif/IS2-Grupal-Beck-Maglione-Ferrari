@@ -1,6 +1,7 @@
 package com.example.zero.services;
 
 import com.example.zero.dto.persona.ClienteRegistroDTO;
+import com.example.zero.entidades.Imagen;
 import com.example.zero.entidades.empresa.Contacto;
 import com.example.zero.entidades.empresa.ContactoCorreoElectronico;
 import com.example.zero.entidades.empresa.ContactoTelefonico;
@@ -11,6 +12,7 @@ import com.example.zero.entidades.zona.Direccion;
 import com.example.zero.entidades.zona.Localidad;
 import com.example.zero.enums.RolUsuario;
 import com.example.zero.enums.TipoDocumento;
+import com.example.zero.enums.TipoImagen;
 import com.example.zero.enums.TipoTelefono;
 import com.example.zero.repositories.*;
 import com.example.zero.services.persona.ClienteService;
@@ -21,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -39,6 +42,7 @@ class ClienteServiceRegistroTest {
     @Mock private ZonaService zonaService;
     @Mock private DireccionRepository direccionRepository;
     @Mock private ContactoRepository contactoRepository;
+    @Mock private ImagenService imagenService;
 
     private ClienteService clienteService;
 
@@ -51,7 +55,8 @@ class ClienteServiceRegistroTest {
                 usuarioService,
                 zonaService,
                 direccionRepository,
-                contactoRepository
+                contactoRepository,
+                imagenService
         );
     }
 
@@ -102,6 +107,51 @@ class ClienteServiceRegistroTest {
         verify(usuarioService, times(1)).crearUsuario(eq("cliente@test.com"), eq("pass1234"), eq(RolUsuario.CLIENTE), any(Cliente.class), eq(false));
         verify(usuarioService, times(1)).generarYAsignarCodigo("cliente@test.com");
         verify(usuarioService, times(1)).enviarCodigoConfirmacion("cliente@test.com", "123456");
+        verify(imagenService, times(1)).guardarMonigoteDefault();
+    }
+
+    @Test
+    void registrarCliente_conFotoPerfil_guardaImagenTipoPersona() {
+        ClienteRegistroDTO dto = ClienteRegistroDTO.builder()
+                .email("foto@test.com")
+                .password("pass1234")
+                .confirmPassword("pass1234")
+                .nombre("Juan")
+                .apellido("Pérez")
+                .tipoDocumento(TipoDocumento.DNI)
+                .numeroDocumento("40123457")
+                .fechaNacimiento(LocalDate.of(1998, 4, 15))
+                .nacionalidadId("nac-01")
+                .tipoContacto("EMAIL")
+                .contactoEmail("foto@test.com")
+                .calle("Av. Colón")
+                .numeracion("1234")
+                .localidadId("loc-cba-cba")
+                .build();
+
+        MockMultipartFile file = new MockMultipartFile("fotoPerfil", "foto.png", "image/png", new byte[]{1, 2, 3});
+        Imagen imagenMock = Imagen.builder().id("img-persona-1").tipoImagen(TipoImagen.PERSONA).build();
+        when(imagenService.guardarImagen(file, TipoImagen.PERSONA)).thenReturn(imagenMock);
+
+        Nacionalidad nac = Nacionalidad.builder().id("nac-01").nombre("Argentina").build();
+        Localidad loc = new Localidad(); loc.setId("loc-cba-cba"); loc.setNombre("Córdoba Ciudad");
+        Usuario usuarioMock = Usuario.builder().id("usr-foto").nombreUsuario("foto@test.com").rol(RolUsuario.CLIENTE).build();
+
+        when(usuarioRepository.findByNombreUsuarioAndEliminadoFalse("foto@test.com")).thenReturn(Optional.empty());
+        when(clienteRepository.findByNumeroDocumentoAndEliminadoFalse("40123457")).thenReturn(Optional.empty());
+        when(nacionalidadRepository.findActive("nac-01")).thenReturn(Optional.of(nac));
+        when(zonaService.buscarLocalidadPorId("loc-cba-cba")).thenReturn(loc);
+        when(direccionRepository.save(any(Direccion.class))).thenAnswer(i -> i.getArgument(0));
+        when(contactoRepository.save(any(Contacto.class))).thenAnswer(i -> i.getArgument(0));
+        when(clienteRepository.save(any(Cliente.class))).thenAnswer(i -> i.getArgument(0));
+        when(usuarioService.crearUsuario(eq("foto@test.com"), eq("pass1234"), eq(RolUsuario.CLIENTE), any(Cliente.class), eq(false)))
+                .thenReturn(usuarioMock);
+
+        Usuario resultado = clienteService.registrarCliente(dto, file);
+
+        assertNotNull(resultado);
+        verify(imagenService, times(1)).guardarImagen(file, TipoImagen.PERSONA);
+        verify(imagenService, never()).guardarMonigoteDefault();
     }
 
     @Test
@@ -193,4 +243,3 @@ class ClienteServiceRegistroTest {
         assertTrue(ex.getMessage().contains("Ya existe un usuario activo con el correo"));
     }
 }
-

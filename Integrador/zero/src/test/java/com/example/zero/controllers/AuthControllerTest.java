@@ -64,7 +64,7 @@ class AuthControllerTest {
 
         String vista = authController.showLoginPage(session);
 
-        assertEquals("redirect:/admin", vista);
+        assertEquals("redirect:/admin/registrar-venta", vista);
     }
 
     @Test
@@ -84,7 +84,7 @@ class AuthControllerTest {
 
         String vista = authController.processLogin("admin@zero.com", "admin123", session, model);
 
-        assertEquals("redirect:/admin", vista);
+        assertEquals("redirect:/admin/registrar-venta", vista);
         verify(session, times(1)).setAttribute("usuariosession", admin);
     }
 
@@ -137,7 +137,7 @@ class AuthControllerTest {
 
         String vista = authController.processAdminRegister("Nuevo Admin", "nuevo@zero.com", "pass123", "pass123", request, session, model);
 
-        assertEquals("redirect:/admin", vista);
+        assertEquals("redirect:/admin/registrar-venta", vista);
         verify(session, times(1)).setAttribute("usuariosession", nuevo);
     }
 

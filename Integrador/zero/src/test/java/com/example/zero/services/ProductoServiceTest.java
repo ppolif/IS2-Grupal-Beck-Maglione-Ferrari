@@ -1,7 +1,9 @@
 package com.example.zero.services;
 
+import com.example.zero.entidades.Imagen;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.entidades.producto.SubCategoria;
+import com.example.zero.enums.TipoImagen;
 import com.example.zero.repositories.ProductoRepository;
 import com.example.zero.services.producto.ProductoService;
 import org.junit.jupiter.api.Test;
@@ -9,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -30,6 +33,9 @@ class ProductoServiceTest {
 
     @Mock
     private VigenciaPrecioService vigenciaPrecioService;
+
+    @Mock
+    private ImagenService imagenService;
 
     @InjectMocks
     private ProductoService productoService;
@@ -62,6 +68,42 @@ class ProductoServiceTest {
 
         verify(productoRepository, times(1)).save(any(Producto.class));
         verify(vigenciaPrecioService, times(1)).crearVigenciaPrecio(eq("prod-1"), eq(15000.0), any(LocalDate.class));
+    }
+
+    @Test
+    void crearProducto_conImagen_asociaImagenYTipoProducto() {
+        String subId = "sub-1";
+        SubCategoria subCategoria = SubCategoria.builder().id(subId).nombre("Remeras").build();
+        MockMultipartFile file = new MockMultipartFile("imagen", "remera.jpg", "image/jpeg", new byte[]{1, 2});
+        Imagen imagenMock = Imagen.builder().id("img-prod-1").tipoImagen(TipoImagen.PRODUCTO).build();
+
+        when(productoRepository.findByCodigoAndEliminadoFalse("REM-002")).thenReturn(Optional.empty());
+        when(subCategoriaService.buscarPorId(subId)).thenReturn(subCategoria);
+        when(imagenService.guardarImagen(file, TipoImagen.PRODUCTO)).thenReturn(imagenMock);
+        when(productoRepository.save(any(Producto.class))).thenAnswer(inv -> {
+            Producto p = inv.getArgument(0);
+            p.setId("prod-2");
+            return p;
+        });
+
+        Producto resultado = productoService.crearProducto(
+                "REM-002", "Remera Estampada", "Desc", "L", subId, 18000.0, false, file
+        );
+
+        assertNotNull(resultado);
+        assertEquals(1, resultado.getImagenes().size());
+        assertEquals("img-prod-1", resultado.getImagenes().get(0).getId());
+        verify(imagenService).guardarImagen(file, TipoImagen.PRODUCTO);
+    }
+
+    @Test
+    void crearProducto_conImagenNulaOVacia_lanzaExcepcion() {
+        assertThrows(IllegalArgumentException.class, () ->
+                productoService.crearProducto("REM-003", "Nom", "Desc", "S", "sub-1", 100.0, false, null));
+
+        MockMultipartFile emptyFile = new MockMultipartFile("imagen", "", "image/jpeg", new byte[0]);
+        assertThrows(IllegalArgumentException.class, () ->
+                productoService.crearProducto("REM-003", "Nom", "Desc", "S", "sub-1", 100.0, false, emptyFile));
     }
 
     @Test
@@ -338,10 +380,13 @@ class ProductoServiceTest {
                 .nombre("Running")
                 .categoria(com.example.zero.entidades.producto.Categoria.builder().nombre("Calzado").build())
                 .build();
+        Imagen img = Imagen.builder().id("img-prod-99").eliminado(false).build();
         Producto producto = Producto.builder()
                 .id("prod-99")
                 .nombre("Zapatilla")
                 .subCategoria(sub)
+                .imagenes(List.of(img))
+                .stock(10)
                 .build();
 
         when(productoRepository.findById("prod-99")).thenReturn(Optional.of(producto));
@@ -350,14 +395,13 @@ class ProductoServiceTest {
         double precio = productoService.obtenerPrecioActual(producto);
         String categoria = productoService.obtenerNombreCategoria(producto);
         int stock = productoService.obtenerStock(producto);
-        String img = productoService.obtenerImagenUrl(producto);
+        String imgUrl = productoService.obtenerImagenUrl(producto);
         Producto preparado = productoService.prepararParaVista(producto);
 
         assertEquals(25000.0, precio);
         assertEquals("Calzado", categoria);
         assertEquals(10, stock);
-        assertNotNull(img);
+        assertEquals("/imagen/img-prod-99", imgUrl);
         assertEquals(25000.0, preparado.getPrecioActual());
     }
 }
-

@@ -49,6 +49,11 @@ class AdminVentaControllerTest {
     @InjectMocks
     private AdminVentaController controller;
 
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        lenient().when(ventaService.mapearFacturaAOrderDto(any(Factura.class))).thenCallRealMethod();
+    }
+
     @Test
     void showRegistrarVentaForm_agregaProductosClientesYRetornaVista() {
         Producto p1 = Producto.builder().id("p1").nombre("Zapatillas").build();

@@ -1,114 +1,17 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-
-<!-- 1. Fragmento Head corregido -->
-<head th:replace="~{admin/fragments/head :: head}"></head>
-
-<body class="d-flex">
-
-<!-- 2. Fragmento Sidebar corregido -->
-<aside th:replace="~{admin/fragments/sidebar :: sidebar}"></aside>
-
-<!-- Contenedor Principal -->
-<main class="main-content-offset p-4 p-md-5 min-vh-100 d-flex flex-column flex-grow-1">
-
-  <!-- 3. Fragmento Navbar corregido -->
-  <div th:replace="~{admin/fragments/navbar :: navbar}"></div>
-
-  <!-- Header del Dashboard -->
-  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-      <h1 class="h3 fw-bold text-brand-dark mb-1">Panel de Control</h1>
-      <p class="text-muted small mb-0">Gestión de inventario y ventas con precisión.</p>
-    </div>
-    <button class="btn btn-sm btn-outline-dark bg-white border-brand d-inline-flex align-items-center gap-2 rounded-3">
-      <i class="bi bi-calendar-event"></i>
-      <span th:text="${currentPeriod != null} ? ${currentPeriod} : 'Septiembre 2026'">Septiembre 2026</span>
-    </button>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0;url=/admin/registrar-venta">
+  <script th:inline="javascript">
+    window.location.replace(/*[[@{/admin/registrar-venta}]]*/ '/admin/registrar-venta');
+  </script>
+  <title>Redirigiendo a Registrar Venta...</title>
+</head>
+<body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f8f9fa;">
+  <div style="text-align: center;">
+    <h2>Cargando Registrar Venta...</h2>
+    <p>Si no es redirigido automáticamente, <a th:href="@{/admin/registrar-venta}">haga clic aquí</a>.</p>
   </div>
-
-  <!-- Grilla de Tarjetas Superiores (KPIs) -->
-  <div class="row g-4 mb-4">
-    <!-- Card Alerta Novedad -->
-    <div class="col-md-4">
-      <div class="card bg-brand-dark text-white rounded-4 p-4 h-100 shadow-sm border-0 d-flex flex-column justify-content-between">
-        <div>
-          <span class="badge bg-warning text-dark mb-2">Reporte</span>
-          <div class="small text-muted mb-1">Semana actual</div>
-          <h2 class="h5 fw-bold mb-0" th:text="${kpiSalesAlert != null} ? ${kpiSalesAlert} : 'Las ventas aumentaron un 40% este mes'">Las ventas aumentaron un 40% este mes</h2>
-        </div>
-        <a th:href="@{/admin/tables-basic}" class="text-brand-soft fw-bold small text-decoration-none mt-3 d-flex align-items-center gap-1">
-          Ver estadísticas <i class="bi bi-arrow-right"></i>
-        </a>
-      </div>
-    </div>
-
-    <!-- Card Ingresos Netos -->
-    <div class="col-md-4">
-      <div class="card bg-white rounded-4 p-4 h-100 shadow-sm border-brand">
-        <span class="small text-muted fw-bold">Ingresos Netos</span>
-        <div class="display-6 fw-bold text-brand-dark my-2"
-             th:text="${kpiNetIncome != null} ? ${#numbers.formatCurrency(kpiNetIncome)} : '$196,000'">$196,000</div>
-        <div class="small text-success fw-bold d-flex align-items-center gap-1"
-             th:text="${kpiIncomeGrowth != null} ? '+' + ${kpiIncomeGrowth} + '% respecto al mes anterior' : '+35% respecto al mes anterior'">
-          <i class="bi bi-arrow-up-right"></i> +35% respecto al mes anterior
-        </div>
-        <div id="income-sparkline" class="mt-3"></div>
-      </div>
-    </div>
-
-    <!-- Card Devoluciones -->
-    <div class="col-md-4">
-      <div class="card bg-white rounded-4 p-4 h-100 shadow-sm border-brand">
-        <span class="small text-muted fw-bold">Devoluciones</span>
-        <div class="display-6 fw-bold text-brand-dark my-2"
-             th:text="${kpiReturns != null} ? ${#numbers.formatCurrency(kpiReturns)} : '$32,000'">$32,000</div>
-        <div class="small text-danger fw-bold d-flex align-items-center gap-1"
-             th:text="${kpiReturnsRate != null} ? ${kpiReturnsRate} + '% respecto al mes anterior' : '-24% respecto al mes anterior'">
-          <i class="bi bi-arrow-down-left"></i> -24% respecto al mes anterior
-        </div>
-        <div id="return-sparkline" class="mt-3"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Sección Gráfico e Informes -->
-  <div class="row g-4">
-    <!-- Columna Gráfico de Rendimiento -->
-    <div class="col-lg-8">
-      <div class="card bg-white rounded-4 p-4 shadow-sm border-brand">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h2 class="h5 fw-bold text-brand-dark mb-0">Evolución de Ingresos</h2>
-          <div class="d-flex gap-2">
-            <span class="badge bg-dark text-white">Ingresos</span>
-            <span class="badge bg-secondary text-white">Gastos</span>
-          </div>
-        </div>
-        <div id="revenue-chart"></div>
-      </div>
-    </div>
-
-    <!-- Columna Rendimiento por Vistas -->
-    <div class="col-lg-4">
-      <div class="card bg-white rounded-4 p-4 shadow-sm border-brand h-100 d-flex flex-column justify-content-between">
-        <h2 class="h5 fw-bold text-brand-dark mb-3">Rendimiento por Canal</h2>
-        <div id="views-chart"></div>
-        <div class="bg-brand-surface rounded-3 p-3 mt-3">
-          <div class="small fw-bold text-brand-dark mb-1">Campaña de Temporada</div>
-          <p class="small text-muted mb-2">Optimiza las conversiones en indumentaria urbana.</p>
-          <a th:href="@{/admin/tables-basic}" class="btn btn-sm btn-primary w-100 rounded-3">Ver Órdenes</a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 4. Fragmento Footer corregido -->
-  <footer th:replace="~{admin/fragments/footer :: footer}"></footer>
-
-</main>
-
-<!-- 5. Fragmento Scripts corregido -->
-<div th:replace="~{admin/fragments/scripts :: scripts}"></div>
-
 </body>
 </html>

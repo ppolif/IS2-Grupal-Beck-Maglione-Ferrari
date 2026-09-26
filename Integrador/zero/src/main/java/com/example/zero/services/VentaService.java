@@ -1,6 +1,7 @@
 package com.example.zero.services;
 
 import com.example.zero.dto.OrderViewDto;
+import com.example.zero.entidades.Imagen;
 import com.example.zero.entidades.compra.Detalle;
 import com.example.zero.entidades.compra.Factura;
 import com.example.zero.entidades.compra.FormaDePago;
@@ -242,6 +243,16 @@ public class VentaService {
                 ? f.getCliente().getUsuario().getNombreUsuario()
                 : (f.getCliente() != null ? "DNI: " + f.getCliente().getNumeroDocumento() : "N/A");
 
+        String avatarUrl = "/admin/assets/images/avatar.png";
+        if (f.getCliente() != null && f.getCliente().getImagen() != null) {
+            for (Imagen img : f.getCliente().getImagen()) {
+                if (img != null && !img.isEliminado() && img.getId() != null) {
+                    avatarUrl = "/imagen/" + img.getId();
+                    break;
+                }
+            }
+        }
+
         StringBuilder summary = new StringBuilder();
         String category = "General";
         List<OrderViewDto.OrderItemDto> items = new ArrayList<>();
@@ -274,6 +285,7 @@ public class VentaService {
                 .numeroFactura(f.getNumeroFactura())
                 .customerName(clientName)
                 .customerEmail(email)
+                .customerAvatar(avatarUrl)
                 .customerPhone("+54 11 0000-0000")
                 .productSummary(summary.length() > 0 ? summary.toString() : "Venta General")
                 .categoryName(category)
@@ -289,4 +301,3 @@ public class VentaService {
                 .build();
     }
 }
-

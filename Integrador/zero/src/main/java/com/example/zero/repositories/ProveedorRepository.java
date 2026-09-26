@@ -21,19 +21,21 @@ public interface ProveedorRepository extends JpaRepository<Proveedor, String> {
         return id != null ? find(id.toString()) : Optional.empty();
     }
 
-    @Query("SELECT p FROM Proveedor p WHERE p.id = :id AND p.eliminado = false")
+    @Query("SELECT p FROM Proveedor p WHERE p.id = :id AND (p.eliminado = false OR p.eliminado IS NULL)")
     Optional<Proveedor> findActive(@Param("id") String id);
 
     default Optional<Proveedor> findActive(UUID id) {
         return id != null ? findActive(id.toString()) : Optional.empty();
     }
 
-    Optional<Proveedor> findByCuitAndEliminadoFalse(String cuit);
+    @Query("SELECT p FROM Proveedor p WHERE p.cuit = :cuit AND (p.eliminado = false OR p.eliminado IS NULL)")
+    Optional<Proveedor> findByCuitAndEliminadoFalse(@Param("cuit") String cuit);
 
     Optional<Proveedor> findByCuit(String cuit);
 
-    Optional<Proveedor> findByRazonSocialAndEliminadoFalse(String razonSocial);
+    @Query("SELECT p FROM Proveedor p WHERE p.razonSocial = :razonSocial AND (p.eliminado = false OR p.eliminado IS NULL)")
+    Optional<Proveedor> findByRazonSocialAndEliminadoFalse(@Param("razonSocial") String razonSocial);
 
+    @Query("SELECT p FROM Proveedor p WHERE (p.eliminado = false OR p.eliminado IS NULL) ORDER BY p.razonSocial ASC")
     List<Proveedor> findByEliminadoFalse();
 }
-

@@ -21,21 +21,24 @@ public interface ProductoRepository extends JpaRepository<Producto, String> {
         return id != null ? find(id.toString()) : Optional.empty();
     }
 
-    @Query("SELECT p FROM Producto p WHERE p.id = :id AND p.eliminado = false")
+    @Query("SELECT p FROM Producto p WHERE p.id = :id AND (p.eliminado = false OR p.eliminado IS NULL)")
     Optional<Producto> findActive(@Param("id") String id);
 
     default Optional<Producto> findActive(UUID id) {
         return id != null ? findActive(id.toString()) : Optional.empty();
     }
 
-    Optional<Producto> findByCodigoAndEliminadoFalse(String codigo);
+    @Query("SELECT p FROM Producto p WHERE p.codigo = :codigo AND (p.eliminado = false OR p.eliminado IS NULL)")
+    Optional<Producto> findByCodigoAndEliminadoFalse(@Param("codigo") String codigo);
 
     Optional<Producto> findByCodigo(String codigo);
 
+    @Query("SELECT p FROM Producto p WHERE (p.eliminado = false OR p.eliminado IS NULL) ORDER BY p.nombre ASC")
     List<Producto> findByEliminadoFalse();
 
+    @Query("SELECT p FROM Producto p WHERE p.enOferta = true AND (p.eliminado = false OR p.eliminado IS NULL) ORDER BY p.nombre ASC")
     List<Producto> findByEnOfertaTrueAndEliminadoFalse();
 
-    List<Producto> findBySubCategoriaIdAndEliminadoFalse(String subCategoriaId);
+    @Query("SELECT p FROM Producto p WHERE p.subCategoria.id = :subCategoriaId AND (p.eliminado = false OR p.eliminado IS NULL) ORDER BY p.nombre ASC")
+    List<Producto> findBySubCategoriaIdAndEliminadoFalse(@Param("subCategoriaId") String subCategoriaId);
 }
-

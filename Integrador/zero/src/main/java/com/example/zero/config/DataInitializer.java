@@ -35,6 +35,8 @@ public class DataInitializer implements CommandLineRunner {
     private final ProvinciaRepository provinciaRepository;
     private final DepartamentoRepository departamentoRepository;
     private final LocalidadRepository localidadRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     public DataInitializer(UsuarioRepository usuarioRepository,
                            UsuarioService usuarioService,
@@ -70,8 +72,22 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        // 0. Corrección automática de esquema para MySQL (Factura / Producto / Imagen)
         try {
-            // 1. Usuarios de prueba
+            if (jdbcTemplate != null) {
+                try { jdbcTemplate.execute("ALTER TABLE factura MODIFY COLUMN cliente_id VARCHAR(36) NULL"); } catch (Exception ignored) {}
+                try { jdbcTemplate.execute("ALTER TABLE factura MODIFY COLUMN proveedor_id VARCHAR(36) NULL"); } catch (Exception ignored) {}
+                try { jdbcTemplate.execute("ALTER TABLE factura MODIFY COLUMN orden_compra_id VARCHAR(36) NULL"); } catch (Exception ignored) {}
+
+                // Eliminar restricción obsoleta de CHECK en tabla imagen creada cuando TipoImagen solo contenía PERSONA
+                try { jdbcTemplate.execute("ALTER TABLE imagen DROP CHECK imagen_chk_1"); } catch (Exception ignored) {}
+                try { jdbcTemplate.execute("ALTER TABLE imagen DROP CONSTRAINT imagen_chk_1"); } catch (Exception ignored) {}
+            }
+        } catch (Exception ignored) {
+        }
+
+        // 1. Usuarios de prueba
+        try {
             if (usuarioRepository.findByNombreUsuarioAndEliminadoFalse("admin@zero.com").isEmpty()) {
                 usuarioService.crearUsuario("admin@zero.com", "admin123", RolUsuario.ADMINISTRATIVO, null, true);
                 System.out.println(">> [DataInitializer] Usuario administrador creado: admin@zero.com / admin123");
@@ -89,25 +105,40 @@ public class DataInitializer implements CommandLineRunner {
                     if (!u.isActivo()) { u.setActivo(true); usuarioRepository.save(u); }
                 });
             }
+        } catch (Exception e) {
+            System.err.println(">> [DataInitializer] Error en usuarios iniciales: " + e.getMessage());
+        }
 
-            // 2. Categorías y Subcategorías de prueba
-            Categoria catCalzado = categoriaRepository.findByNombreAndEliminadoFalse("Calzado Deportivo")
+        // 2. Categorías y Subcategorías de prueba
+        Categoria catCalzado = null;
+        Categoria catRopa = null;
+        SubCategoria subZapatillas = null;
+        SubCategoria subRemeras = null;
+        SubCategoria subPantalones = null;
+        try {
+            catCalzado = categoriaRepository.findByNombreAndEliminadoFalse("Calzado Deportivo")
                     .orElseGet(() -> categoriaService.crearCategoria("Calzado Deportivo"));
 
-            Categoria catRopa = categoriaRepository.findByNombreAndEliminadoFalse("Indumentaria")
+            catRopa = categoriaRepository.findByNombreAndEliminadoFalse("Indumentaria")
                     .orElseGet(() -> categoriaService.crearCategoria("Indumentaria"));
 
-            SubCategoria subZapatillas = subCategoriaRepository.findByNombreAndEliminadoFalse("Zapatillas Running")
-                    .orElseGet(() -> subCategoriaService.crearSubCategoria("Zapatillas Running", catCalzado.getId()));
+            final Categoria finalCatCalzado = catCalzado;
+            subZapatillas = subCategoriaRepository.findByNombreAndEliminadoFalse("Zapatillas Running")
+                    .orElseGet(() -> subCategoriaService.crearSubCategoria("Zapatillas Running", finalCatCalzado.getId()));
 
-            SubCategoria subRemeras = subCategoriaRepository.findByNombreAndEliminadoFalse("Remeras y Tops")
-                    .orElseGet(() -> subCategoriaService.crearSubCategoria("Remeras y Tops", catRopa.getId()));
+            final Categoria finalCatRopa = catRopa;
+            subRemeras = subCategoriaRepository.findByNombreAndEliminadoFalse("Remeras y Tops")
+                    .orElseGet(() -> subCategoriaService.crearSubCategoria("Remeras y Tops", finalCatRopa.getId()));
 
-            SubCategoria subPantalones = subCategoriaRepository.findByNombreAndEliminadoFalse("Pantalones y Joggers")
-                    .orElseGet(() -> subCategoriaService.crearSubCategoria("Pantalones y Joggers", catRopa.getId()));
+            subPantalones = subCategoriaRepository.findByNombreAndEliminadoFalse("Pantalones y Joggers")
+                    .orElseGet(() -> subCategoriaService.crearSubCategoria("Pantalones y Joggers", finalCatRopa.getId()));
+        } catch (Exception e) {
+            System.err.println(">> [DataInitializer] Error en categorías iniciales: " + e.getMessage());
+        }
 
-            // 3. Productos de prueba
-            if (productoRepository.findByCodigoAndEliminadoFalse("PROD-001").isEmpty()) {
+        // 3. Productos de prueba
+        try {
+            if (subZapatillas != null && productoRepository.findByCodigoAndEliminadoFalse("PROD-001").isEmpty()) {
                 productoService.crearProducto(
                         "PROD-001",
                         "Zero Velocity Nitro",
@@ -120,7 +151,7 @@ public class DataInitializer implements CommandLineRunner {
                 System.out.println(">> [DataInitializer] Producto inicial creado: PROD-001 (Zero Velocity Nitro)");
             }
 
-            if (productoRepository.findByCodigoAndEliminadoFalse("PROD-002").isEmpty()) {
+            if (subRemeras != null && productoRepository.findByCodigoAndEliminadoFalse("PROD-002").isEmpty()) {
                 productoService.crearProducto(
                         "PROD-002",
                         "Remera Zero Pro Breathable",
@@ -133,7 +164,7 @@ public class DataInitializer implements CommandLineRunner {
                 System.out.println(">> [DataInitializer] Producto inicial creado: PROD-002 (Remera Zero Pro Breathable)");
             }
 
-            if (productoRepository.findByCodigoAndEliminadoFalse("PROD-003").isEmpty()) {
+            if (subPantalones != null && productoRepository.findByCodigoAndEliminadoFalse("PROD-003").isEmpty()) {
                 productoService.crearProducto(
                         "PROD-003",
                         "Pantalón Jogger Dry-Fit",
@@ -145,8 +176,12 @@ public class DataInitializer implements CommandLineRunner {
                 );
                 System.out.println(">> [DataInitializer] Producto inicial creado: PROD-003 (Pantalón Jogger Dry-Fit)");
             }
+        } catch (Exception e) {
+            System.err.println(">> [DataInitializer] Error en productos iniciales: " + e.getMessage());
+        }
 
-            // 4. Proveedores de prueba
+        // 4. Proveedores de prueba (siempre se ejecutan aunque falle otro bloque)
+        try {
             if (proveedorRepository.findByCuitAndEliminadoFalse("30-71234567-8").isEmpty()) {
                 proveedorService.crearProveedor("Indumentaria Textil S.A.", "30-71234567-8");
                 System.out.println(">> [DataInitializer] Proveedor inicial creado: Indumentaria Textil S.A.");
@@ -156,8 +191,12 @@ public class DataInitializer implements CommandLineRunner {
                 proveedorService.crearProveedor("Calzados Deportivos del Plata", "30-65432109-7");
                 System.out.println(">> [DataInitializer] Proveedor inicial creado: Calzados Deportivos del Plata");
             }
+        } catch (Exception e) {
+            System.err.println(">> [DataInitializer] Error en proveedores iniciales: " + e.getMessage());
+        }
 
-            // 5. Nacionalidades de prueba
+        // 5. Nacionalidades de prueba
+        try {
             if (nacionalidadRepository != null && nacionalidadRepository.count() == 0) {
                 Nacionalidad nacArg = Nacionalidad.builder().id("nac-01").nombre("Argentina").eliminado(false).build();
                 Nacionalidad nacBra = Nacionalidad.builder().id("nac-02").nombre("Brasileña").eliminado(false).build();
@@ -169,8 +208,12 @@ public class DataInitializer implements CommandLineRunner {
                 nacionalidadRepository.save(nacChl);
                 System.out.println(">> [DataInitializer] Nacionalidades inicializadas");
             }
+        } catch (Exception e) {
+            System.err.println(">> [DataInitializer] Error en nacionalidades iniciales: " + e.getMessage());
+        }
 
-            // 6. Jerarquía geográfica inicial (País -> Provincia -> Departamento -> Localidad)
+        // 6. Jerarquía geográfica inicial (País -> Provincia -> Departamento -> Localidad)
+        try {
             if (paisRepository != null && paisRepository.count() == 0) {
                 Pais arg = new Pais(); arg.setId("pais-arg"); arg.setNombre("Argentina"); arg.setEliminado(false);
                 Pais bra = new Pais(); bra.setId("pais-bra"); bra.setNombre("Brasil"); bra.setEliminado(false);
@@ -214,9 +257,8 @@ public class DataInitializer implements CommandLineRunner {
                 localidadRepository.save(locMdp);
                 System.out.println(">> [DataInitializer] Jerarquía geográfica inicializada");
             }
-
         } catch (Exception e) {
-            System.err.println(">> [DataInitializer] Advertencia al inicializar datos de prueba: " + e.getMessage());
+            System.err.println(">> [DataInitializer] Error en geografía inicial: " + e.getMessage());
         }
     }
 }

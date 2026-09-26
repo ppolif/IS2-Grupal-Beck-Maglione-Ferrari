@@ -314,7 +314,7 @@ class VentaServiceTest {
     @Test
     void buscarOrderDtoPorIdentificador_noExistente_retornaNull() {
         when(facturaRepository.findByNumeroFacturaAndEliminadoFalse(9999L)).thenReturn(Optional.empty());
-        when(facturaRepository.findActive("9999")).thenReturn(Optional.empty());
+        when(facturaRepository.findActive(anyString())).thenReturn(Optional.empty());
 
         com.example.zero.dto.OrderViewDto dto = ventaService.buscarOrderDtoPorIdentificador("#ORD-9999");
 

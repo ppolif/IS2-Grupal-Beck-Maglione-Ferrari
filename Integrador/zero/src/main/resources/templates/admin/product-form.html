@@ -18,14 +18,14 @@
   <!-- Header de sección -->
   <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
-      <h1 class="h3 fw-bold text-brand-dark mb-1" th:text="${isEdit ? 'Modificar Producto' : 'Alta de Nuevo Producto'}">Alta de Producto</h1>
-      <p class="text-muted small mb-0" th:text="${isEdit ? 'Actualice la información y el precio del producto existente.' : 'Complete el formulario para registrar un nuevo producto en el catálogo.'}">Información de catálogo.</p>
+      <h1 class="h3 fw-bold text-brand-dark mb-1" th:text="${isEdit} ? 'Modificar Producto' : 'Alta de Nuevo Producto'">Alta de Producto</h1>
+      <p class="text-muted small mb-0" th:text="${isEdit} ? 'Actualice la información, precio y stock del producto existente.' : 'Complete el formulario para registrar un nuevo producto en el catálogo.'">Información de catálogo.</p>
     </div>
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb mb-0 small">
-        <li class="breadcrumb-item"><a th:href="@{/admin}" class="text-decoration-none text-muted">Inicio</a></li>
+        <li class="breadcrumb-item"><a th:href="@{/admin/registrar-venta}" class="text-decoration-none text-muted">Inicio</a></li>
         <li class="breadcrumb-item"><a th:href="@{/admin/products}" class="text-decoration-none text-muted">Productos</a></li>
-        <li class="breadcrumb-item active text-brand-dark" aria-current="page" th:text="${isEdit ? 'Modificar' : 'Nuevo'}">Nuevo</li>
+        <li class="breadcrumb-item active text-brand-dark" aria-current="page" th:text="${isEdit} ? 'Modificar' : 'Nuevo'">Nuevo</li>
       </ol>
     </nav>
   </div>
@@ -40,11 +40,11 @@
   <!-- Card Formulario -->
   <div class="card bg-white border-brand rounded-4 shadow-sm overflow-hidden mb-4" style="max-width: 800px;">
     <div class="card-header bg-white border-bottom border-brand p-3">
-      <h5 class="fw-bold mb-0 text-brand-dark" th:text="${isEdit ? 'Datos del Producto #' + producto.codigo : 'Datos del Nuevo Producto'}">Datos del Producto</h5>
+      <h5 class="fw-bold mb-0 text-brand-dark" th:text="${isEdit && producto != null && producto.codigo != null} ? 'Datos del Producto #' + ${producto.codigo} : 'Datos del Nuevo Producto'">Datos del Producto</h5>
     </div>
 
     <div class="card-body p-4">
-      <form th:action="${isEdit} ? @{/admin/products/editar/{id}(id=${producto.id})} : @{/admin/products/guardar}" method="POST">
+      <form th:action="${isEdit && producto != null && producto.id != null} ? @{'/admin/products/editar/' + ${producto.id}} : @{/admin/products/guardar}" method="POST" enctype="multipart/form-data">
 
         <div class="row g-3">
 
@@ -52,7 +52,7 @@
           <div class="col-md-6">
             <label for="codigo" class="form-label small fw-bold text-brand-dark">Código de Producto <span class="text-danger">*</span></label>
             <input type="text" class="form-control" id="codigo" name="codigo"
-                   th:value="${isEdit ? producto.codigo : (codigo != null ? codigo : '')}"
+                   th:value="${isEdit && producto != null ? producto.codigo : (codigo != null ? codigo : '')}"
                    th:readonly="${isEdit}"
                    placeholder="Ej: PROD-101" required>
             <div class="form-text" th:if="${isEdit}">El código es un identificador único y no puede modificarse.</div>
@@ -74,7 +74,7 @@
               <option th:each="sub : ${subcategorias}"
                       th:value="${sub.id}"
                       th:text="${sub.categoria != null ? sub.categoria.nombre + ' &gt; ' + sub.nombre : sub.nombre}"
-                      th:selected="${(producto != null && producto.subCategoria != null && producto.subCategoria.id == sub.id) || selectedSubcategoriaId == sub.id}">
+                      th:selected="${(producto != null && producto.subCategoria != null && producto.subCategoria.id == sub.id) || (selectedSubcategoriaId != null && selectedSubcategoriaId == sub.id)}">
                 Zapatillas Running
               </option>
             </select>
@@ -91,7 +91,7 @@
           <!-- Precio -->
           <div class="col-md-6">
             <label for="precio" class="form-label small fw-bold text-brand-dark">
-              <span th:text="${isEdit ? 'Precio Actual / Nuevo Precio ($)' : 'Precio Inicial ($)'}">Precio Inicial ($)</span>
+              <span th:text="${isEdit} ? 'Precio Actual / Nuevo Precio ($)' : 'Precio Inicial ($)'">Precio Inicial ($)</span>
               <span class="text-danger">*</span>
             </label>
             <div class="input-group">
@@ -103,6 +103,18 @@
             <div class="form-text" th:if="${isEdit}">Si ingresa un valor distinto, se generará una nueva vigencia de precio automáticamente.</div>
           </div>
 
+          <!-- Stock -->
+          <div class="col-md-6">
+            <label for="stock" class="form-label small fw-bold text-brand-dark">
+              <span>Stock Inicial / Disponible</span>
+              <span class="text-danger">*</span>
+            </label>
+            <input type="number" min="0" class="form-control" id="stock" name="stock"
+                   th:value="${producto != null && producto.stock > 0 ? producto.stock : (stock != null ? stock : 0)}"
+                   placeholder="0" required>
+            <div class="form-text">Cantidad física de unidades disponibles en inventario.</div>
+          </div>
+
           <!-- En Oferta -->
           <div class="col-md-6 d-flex align-items-center">
             <div class="form-check mt-3">
@@ -112,6 +124,13 @@
                 Destacar en Oferta en la Tienda
               </label>
             </div>
+          </div>
+
+          <!-- Imagen del Producto (Obligatoria para alta) -->
+          <div class="col-12" th:if="${!isEdit}">
+            <label for="imagen" class="form-label small fw-bold text-brand-dark">Imagen del Producto <span class="text-danger">*</span></label>
+            <input type="file" class="form-control" id="imagen" name="imagen" accept="image/*" required>
+            <div class="form-text">Debe seleccionar obligatoriamente una imagen del producto (tipo PRODUCTO).</div>
           </div>
 
           <!-- Descripción -->
@@ -131,7 +150,7 @@
           <a th:href="@{/admin/products}" class="btn btn-outline-secondary">Cancelar</a>
           <button type="submit" class="btn btn-dark d-flex align-items-center gap-1">
             <i class="bi bi-check2-circle"></i>
-            <span th:text="${isEdit ? 'Actualizar Producto' : 'Guardar Producto'}">Guardar Producto</span>
+            <span th:text="${isEdit} ? 'Actualizar Producto' : 'Guardar Producto'">Guardar Producto</span>
           </button>
         </div>
 
@@ -149,4 +168,3 @@
 
 </body>
 </html>
-
