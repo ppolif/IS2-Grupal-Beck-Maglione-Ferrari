@@ -29,7 +29,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = "clientes")
+@ToString
 public class Nacionalidad {
 
     @Id

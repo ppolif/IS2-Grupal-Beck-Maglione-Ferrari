@@ -1,7 +1,6 @@
 package com.example.zero.entidades.producto;
 
 import com.example.zero.entidades.Imagen;
-import com.example.zero.entidades.compra.Detalle;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -34,7 +33,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = {"subCategoria", "vigenciasPrecio", "detalles"})
+@ToString(exclude = {"subCategoria", "imagenes"})
 public class Producto {
 
     @Id

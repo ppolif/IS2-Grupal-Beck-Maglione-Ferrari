@@ -1,6 +1,5 @@
 package com.example.zero.entidades.persona;
 
-import com.example.zero.entidades.compra.Factura;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -33,7 +32,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@ToString(callSuper = true, exclude = {"nacionalidad", "facturas"})
+@ToString(callSuper = true, exclude = "nacionalidad")
 public class Cliente extends Persona {
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -33,7 +33,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = "facturas")
+@ToString
 public class FormaDePago {
 
     @Id

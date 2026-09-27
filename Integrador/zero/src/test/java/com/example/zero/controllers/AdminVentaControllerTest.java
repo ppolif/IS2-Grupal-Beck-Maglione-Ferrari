@@ -48,10 +48,7 @@ class AdminVentaControllerTest {
     @InjectMocks
     private AdminVentaController controller;
 
-    @org.junit.jupiter.api.BeforeEach
-    void setUp() {
-        lenient().when(ventaService.mapearFacturaAOrderDto(any(Factura.class))).thenCallRealMethod();
-    }
+
 
     @Test
     void showRegistrarVentaForm_agregaProductosClientesYRetornaVista() {

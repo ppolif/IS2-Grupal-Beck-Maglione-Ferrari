@@ -2,7 +2,6 @@ package com.example.zero.entidades.compra;
 
 
 
-import com.example.zero.entidades.producto.Producto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -29,7 +28,7 @@ import org.hibernate.annotations.UuidGenerator;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = "producto")
+@ToString(exclude = "detalle")
 public class Stock {
 
     @Id
