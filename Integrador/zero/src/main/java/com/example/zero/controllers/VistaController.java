@@ -205,11 +205,6 @@ public class VistaController {
         return "admin/page-404";
     }
 
-    @GetMapping({"/admin/ventas/nueva", "/admin/registrar-venta"})
-    public String adminRegistrarVenta() {
-        return "admin/registrar-venta";
-    }
-
     // Registrar Compra (Ingreso de mercadería con proveedores y stock)
     @GetMapping({"/admin/compras/nueva", "/admin/registrar-compra"})
     public String adminRegistrarCompra() {
