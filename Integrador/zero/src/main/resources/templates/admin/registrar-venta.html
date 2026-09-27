@@ -101,7 +101,8 @@
                                         th:value="${prod.id}"
                                         th:data-nombre="${prod.nombre}"
                                         th:data-precio="${prod.precioActual}"
-                                        th:text="${prod.codigo + ' - ' + prod.nombre + ' ($' + #numbers.formatDecimal(prod.precioActual, 1, 2) + ')'}">
+                                        th:data-stock="${prod.stock}"
+                                        th:text="${prod.codigo + ' - ' + prod.nombre + ' ($' + #numbers.formatDecimal(prod.precioActual, 1, 2) + ') - Stock: ' + prod.stock}">
                                     PROD-001 - Zapatillas ($120.00)
                                 </option>
                             </select>
@@ -218,9 +219,16 @@
             const selectedOption = selectorProducto.options[selectorProducto.selectedIndex];
             const nombre = selectedOption.getAttribute("data-nombre");
             const precio = parseFloat(selectedOption.getAttribute("data-precio")) || 0;
+            const stockDisponible = parseInt(selectedOption.getAttribute("data-stock"), 10);
 
             // Verificar si ya está en el carrito
             const existente = carrito.find(item => item.id === prodId);
+            const cantidadTotalSolicitada = (existente ? existente.cantidad : 0) + cant;
+            if (!isNaN(stockDisponible) && cantidadTotalSolicitada > stockDisponible) {
+                alert("Stock insuficiente para: " + nombre + " (Stock actual: " + stockDisponible + ")");
+                return;
+            }
+
             if (existente) {
                 existente.cantidad += cant;
                 existente.subtotal = Math.round(existente.cantidad * existente.precio * 100) / 100;

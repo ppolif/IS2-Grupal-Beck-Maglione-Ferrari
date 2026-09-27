@@ -41,6 +41,7 @@ public class MercadoPagoService {
     private final OrdenCompraRepository ordenCompraRepository;
     private final VentaService ventaService;
     private final FacturaRepository facturaRepository;
+    private final StockService stockService;
 
     /**
      * Inicializa la configuración de Mercado Pago con el token del proyecto.
@@ -65,6 +66,18 @@ public class MercadoPagoService {
         List<DetalleCompra> items = ordenCompraService.obtenerItemsActivos(carrito);
         if (items.isEmpty()) {
             throw new IllegalStateException("El carrito de compras no contiene productos para abonar.");
+        }
+
+        // Validación preventiva de stock antes de generar preferencia de pago
+        if (stockService != null) {
+            for (DetalleCompra item : items) {
+                if (item.getProducto() != null) {
+                    int stockActual = stockService.calcularStockActual(item.getProducto().getId());
+                    if (stockActual < item.getCantidad()) {
+                        throw new IllegalArgumentException("Stock insuficiente para: " + item.getProducto().getNombre());
+                    }
+                }
+            }
         }
 
         List<PreferenceItemRequest> mpItems = new ArrayList<>();

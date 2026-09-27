@@ -16,4 +16,14 @@ public interface StockRepository extends JpaRepository<Stock, String> {
     Optional<Stock> findActive(@Param("id") String id);
 
     List<Stock> findByEliminadoFalse();
+
+    @Query("SELECT s FROM Stock s WHERE s.detalle.producto.id = :prodId AND s.eliminado = false ORDER BY s.detalle.factura.fechaFactura DESC")
+    List<Stock> findStockPorProductoDesc(@Param("prodId") String prodId);
+
+    default Optional<Stock> findUltimoStockPorProducto(String prodId) {
+        List<Stock> list = findStockPorProductoDesc(prodId);
+        return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
+    }
 }
+
+

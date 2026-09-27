@@ -172,4 +172,35 @@ class PagosControllerTest {
         assertNotNull(res);
         assertEquals("https://mercadopago.com/init", res.get("url"));
     }
+
+    @Test
+    @DisplayName("mercadoPago con stock insuficiente redirige al carrito con mensaje de error")
+    void mercadoPago_conStockInsuficiente_redirigeACarritoConMensaje() throws Exception {
+        when(session.getAttribute("usuariosession")).thenReturn(usuarioCliente);
+        when(ordenCompraService.obtenerOAsociarCliente(usuarioCliente)).thenReturn(clienteMock);
+        when(ordenCompraService.obtenerOCrearCarrito(clienteMock)).thenReturn(carritoMock);
+
+        DetalleCompra item = DetalleCompra.builder().cantidad(5).precioUnitario(500.0).build();
+        when(ordenCompraService.obtenerItemsActivos(carritoMock)).thenReturn(List.of(item));
+
+        when(mercadoPagoService.crearPreferenciaParaCarrito(any(), any(), anyString()))
+                .thenThrow(new IllegalArgumentException("Stock insuficiente para: Zapatillas Zero"));
+
+        String vista = pagosController.mercadoPago(session, request, redirectAttributes);
+
+        assertEquals("redirect:/shop/cart", vista);
+        verify(redirectAttributes).addFlashAttribute("errorMessage", "Stock insuficiente para: Zapatillas Zero");
+    }
+
+    @Test
+    @DisplayName("pagoExitoso con error de stock redirige al carrito con mensaje de error")
+    void pagoExitoso_conErrorDeStock_redirigeACarritoConMensaje() {
+        when(mercadoPagoService.procesarPagoExitoso(any(), any(), any()))
+                .thenThrow(new IllegalArgumentException("Stock insuficiente para: Zapatillas Zero"));
+
+        String vista = pagosController.pagoExitoso("pay-99", "approved", "cart-123", "approved", session, redirectAttributes);
+
+        assertEquals("redirect:/shop/cart", vista);
+        verify(redirectAttributes).addFlashAttribute("errorMessage", "Stock insuficiente para: Zapatillas Zero");
+    }
 }

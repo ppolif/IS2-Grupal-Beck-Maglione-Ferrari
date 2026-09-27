@@ -3,26 +3,23 @@ package com.example.zero.services;
 import com.example.zero.entidades.compra.Detalle;
 import com.example.zero.entidades.compra.Factura;
 import com.example.zero.entidades.compra.FormaDePago;
+import com.example.zero.entidades.compra.Stock;
 import com.example.zero.entidades.persona.Cliente;
 import com.example.zero.entidades.persona.Nacionalidad;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.enums.EstadoFactura;
 import com.example.zero.enums.TipoDePago;
 import com.example.zero.enums.TipoDocumento;
-import com.example.zero.repositories.ClienteRepository;
-import com.example.zero.repositories.DetalleRepository;
-import com.example.zero.repositories.FacturaRepository;
-import com.example.zero.repositories.FormaDePagoRepository;
-import com.example.zero.repositories.NacionalidadRepository;
+import com.example.zero.repositories.*;
 import com.example.zero.services.persona.ClienteService;
 import com.example.zero.services.producto.ProductoService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -56,17 +53,42 @@ class VentaServiceTest {
     private ProductoService productoService;
 
     @Mock
-    private com.example.zero.repositories.UsuarioRepository usuarioRepository;
+    private ProductoRepository productoRepository;
+
+    @Mock
+    private StockService stockService;
+
+    @Mock
+    private UsuarioRepository usuarioRepository;
 
     @InjectMocks
     private VentaService ventaService;
 
     @Test
+    @DisplayName("validarVenta no lanza excepción con datos y stock suficientes")
     void validarVenta_conDatosValidos_noLanzaExcepcion() {
+        Producto prod = Producto.builder().id("prod-1").nombre("Zapatillas Running").stock(10).build();
+        when(productoService.buscarPorId("prod-1")).thenReturn(prod);
+        when(stockService.calcularStockActual("prod-1")).thenReturn(10);
+
         assertDoesNotThrow(() -> ventaService.validarVenta(
                 "12345678", "Juan", "Perez",
                 List.of("prod-1"), List.of(2)
         ));
+    }
+
+    @Test
+    @DisplayName("validarVenta lanza IllegalArgumentException con mensaje exacto del diagrama ante stock insuficiente")
+    void validarVenta_conStockInsuficiente_lanzaIllegalArgumentExceptionConMensajeExacto() {
+        Producto prod = Producto.builder().id("prod-1").nombre("Remera Zero Fit").stock(2).build();
+        when(productoService.buscarPorId("prod-1")).thenReturn(prod);
+        when(stockService.calcularStockActual("prod-1")).thenReturn(2);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                ventaService.validarVenta("12345678", "Juan", "Perez", List.of("prod-1"), List.of(5))
+        );
+
+        assertEquals("Stock insuficiente para: Remera Zero Fit", ex.getMessage());
     }
 
     @Test
@@ -123,6 +145,24 @@ class VentaServiceTest {
     }
 
     @Test
+    @DisplayName("registrarVenta con stock insuficiente interrumpe flujo y no persiste factura (rollback)")
+    void registrarVenta_conStockInsuficiente_lanzaExcepcionYNoPersisteFactura() {
+        Producto prod = Producto.builder().id("prod-1").nombre("Campera Pro").build();
+        when(productoService.buscarPorId("prod-1")).thenReturn(prod);
+        when(stockService.calcularStockActual("prod-1")).thenReturn(1);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                ventaService.registrarVenta("12345678", "Carlos", "Tevez", "carlos@test.com", "EFECTIVO",
+                        List.of("prod-1"), List.of(3))
+        );
+
+        assertEquals("Stock insuficiente para: Campera Pro", ex.getMessage());
+        verifyNoInteractions(facturaRepository);
+        verify(stockService, never()).crearStock(any(), anyInt(), anyString());
+    }
+
+    @Test
+    @DisplayName("registrarVenta con cliente existente descuenta stock, audita Stock y actualiza Producto")
     void registrarVenta_conClienteExistente_reutilizaClienteYPersisteFactura() {
         Cliente clienteExistente = Cliente.builder()
                 .numeroDocumento("12345678")
@@ -145,9 +185,11 @@ class VentaServiceTest {
         Factura ultimaFactura = Factura.builder().numeroFactura(1050L).build();
         when(facturaRepository.findTopByOrderByNumeroFacturaDesc()).thenReturn(Optional.of(ultimaFactura));
 
-        Producto prod = Producto.builder().id("p1").nombre("Zapatillas").build();
+        Producto prod = Producto.builder().id("p1").nombre("Zapatillas").stock(10).build();
         when(productoService.buscarPorId("p1")).thenReturn(prod);
         when(productoService.obtenerPrecioActual("p1")).thenReturn(2500.0);
+        when(stockService.calcularStockActual("p1")).thenReturn(10);
+        when(productoService.disminuirStock(10, 2)).thenReturn(8);
 
         when(facturaRepository.save(any(Factura.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -164,11 +206,16 @@ class VentaServiceTest {
         assertEquals(formaExistente, resultado.getFormaDePago());
         assertEquals(1, resultado.getDetalles().size());
 
+        // Verificación de descuento y auditoría de Stock
+        verify(stockService).crearStock(any(Detalle.class), eq(8), contains("Factura N° 1051"));
+        assertEquals(8, prod.getStock());
+        verify(productoRepository).save(prod);
         verify(clienteService, never()).crearCliente(any(), any(), any(), any(), any(), any());
         verify(facturaRepository).save(any(Factura.class));
     }
 
     @Test
+    @DisplayName("registrarVenta con cliente nuevo crea cliente, persiste factura y descuenta stock")
     void registrarVenta_conClienteNuevo_creaClienteYPersisteFactura() {
         when(clienteRepository.findByNumeroDocumentoAndEliminadoFalse("87654321"))
                 .thenReturn(Optional.empty());
@@ -197,9 +244,11 @@ class VentaServiceTest {
 
         when(facturaRepository.findTopByOrderByNumeroFacturaDesc()).thenReturn(Optional.empty());
 
-        Producto prod = Producto.builder().id("p2").nombre("Remera").build();
+        Producto prod = Producto.builder().id("p2").nombre("Remera").stock(20).build();
         when(productoService.buscarPorId("p2")).thenReturn(prod);
         when(productoService.obtenerPrecioActual("p2")).thenReturn(1500.0);
+        when(stockService.calcularStockActual("p2")).thenReturn(20);
+        when(productoService.disminuirStock(20, 3)).thenReturn(17);
 
         when(facturaRepository.save(any(Factura.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -212,6 +261,51 @@ class VentaServiceTest {
         assertEquals(1001L, resultado.getNumeroFactura());
         assertEquals(4500.0, resultado.getTotalPagado());
         verify(clienteService, times(1)).crearCliente(any(), any(), any(), any(), any(), any());
+        verify(stockService).crearStock(any(Detalle.class), eq(17), contains("Factura N° 1001"));
+        assertEquals(17, prod.getStock());
+        verify(productoRepository).save(prod);
+    }
+
+    @Test
+    @DisplayName("registrarVenta con múltiples productos descuenta el stock de cada uno y genera auditoría")
+    void registrarVenta_conMultiplesProductos_descuentaStockIndividualYAudita() {
+        Cliente cliente = Cliente.builder().numeroDocumento("11112222").nombre("Ana").apellido("Lopez").build();
+        when(clienteRepository.findByNumeroDocumentoAndEliminadoFalse("11112222")).thenReturn(Optional.of(cliente));
+        when(clienteRepository.save(any(Cliente.class))).thenAnswer(i -> i.getArgument(0));
+
+        FormaDePago fdp = FormaDePago.builder().tipoPago(TipoDePago.EFECTIVO).build();
+        when(formaDePagoRepository.findByTipoPagoAndEliminadoFalse(TipoDePago.EFECTIVO)).thenReturn(Optional.of(fdp));
+
+        when(facturaRepository.findTopByOrderByNumeroFacturaDesc()).thenReturn(Optional.empty());
+
+        Producto p1 = Producto.builder().id("prod-a").nombre("Medias Zero").stock(15).build();
+        Producto p2 = Producto.builder().id("prod-b").nombre("Gorra Zero").stock(8).build();
+
+        when(productoService.buscarPorId("prod-a")).thenReturn(p1);
+        when(productoService.buscarPorId("prod-b")).thenReturn(p2);
+        when(stockService.calcularStockActual("prod-a")).thenReturn(15);
+        when(stockService.calcularStockActual("prod-b")).thenReturn(8);
+
+        when(productoService.obtenerPrecioActual("prod-a")).thenReturn(500.0);
+        when(productoService.obtenerPrecioActual("prod-b")).thenReturn(1200.0);
+
+        when(productoService.disminuirStock(15, 2)).thenReturn(13);
+        when(productoService.disminuirStock(8, 1)).thenReturn(7);
+
+        when(facturaRepository.save(any(Factura.class))).thenAnswer(i -> i.getArgument(0));
+
+        Factura factura = ventaService.registrarVenta(
+                "11112222", "Ana", "Lopez", "ana@test.com", "EFECTIVO",
+                List.of("prod-a", "prod-b"), List.of(2, 1)
+        );
+
+        assertNotNull(factura);
+        assertEquals(2200.0, factura.getTotalPagado());
+        assertEquals(13, p1.getStock());
+        assertEquals(7, p2.getStock());
+        verify(productoRepository).save(p1);
+        verify(productoRepository).save(p2);
+        verify(stockService, times(2)).crearStock(any(Detalle.class), anyInt(), anyString());
     }
 
     @Test
@@ -330,4 +424,3 @@ class VentaServiceTest {
         assertNull(ventaService.buscarFacturaPorIdentificador("   "));
     }
 }
-

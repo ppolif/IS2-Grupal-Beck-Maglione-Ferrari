@@ -7,6 +7,8 @@ import com.example.zero.enums.TipoDePago;
 import com.example.zero.services.producto.ProductoService;
 import com.example.zero.services.VentaService;
 import com.example.zero.services.persona.ClienteService;
+import com.example.zero.services.StockService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -24,13 +26,17 @@ public class AdminVentaController {
     private final VentaService ventaService;
     private final ProductoService productoService;
     private final ClienteService clienteService;
+    private final StockService stockService;
 
+    @Autowired
     public AdminVentaController(VentaService ventaService,
                                 ProductoService productoService,
-                                ClienteService clienteService) {
+                                ClienteService clienteService,
+                                StockService stockService) {
         this.ventaService = ventaService;
         this.productoService = productoService;
         this.clienteService = clienteService;
+        this.stockService = stockService;
     }
 
     /**
@@ -43,6 +49,9 @@ public class AdminVentaController {
         for (Producto p : productos) {
             try {
                 p.setPrecioActual(productoService.obtenerPrecioActual(p.getId()));
+                if (stockService != null) {
+                    p.setStock(stockService.calcularStockActual(p.getId()));
+                }
             } catch (Exception ignored) {
                 p.setPrecioActual(0.0);
             }
@@ -86,6 +95,9 @@ public class AdminVentaController {
             for (Producto p : productos) {
                 try {
                     p.setPrecioActual(productoService.obtenerPrecioActual(p.getId()));
+                    if (stockService != null) {
+                        p.setStock(stockService.calcularStockActual(p.getId()));
+                    }
                 } catch (Exception ignored) {
                     p.setPrecioActual(0.0);
                 }

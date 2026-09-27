@@ -32,6 +32,8 @@ public class VentaService {
     private final ClienteService clienteService;
     private final NacionalidadRepository nacionalidadRepository;
     private final ProductoService productoService;
+    private final ProductoRepository productoRepository;
+    private final StockService stockService;
     private final UsuarioRepository usuarioRepository;
 
     public VentaService(FacturaRepository facturaRepository,
@@ -42,6 +44,21 @@ public class VentaService {
                         NacionalidadRepository nacionalidadRepository,
                         ProductoService productoService,
                         UsuarioRepository usuarioRepository) {
+        this(facturaRepository, detalleRepository, formaDePagoRepository, clienteRepository, clienteService,
+                nacionalidadRepository, productoService, null, null, usuarioRepository);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public VentaService(FacturaRepository facturaRepository,
+                        DetalleRepository detalleRepository,
+                        FormaDePagoRepository formaDePagoRepository,
+                        ClienteRepository clienteRepository,
+                        ClienteService clienteService,
+                        NacionalidadRepository nacionalidadRepository,
+                        ProductoService productoService,
+                        ProductoRepository productoRepository,
+                        StockService stockService,
+                        UsuarioRepository usuarioRepository) {
         this.facturaRepository = facturaRepository;
         this.detalleRepository = detalleRepository;
         this.formaDePagoRepository = formaDePagoRepository;
@@ -49,6 +66,8 @@ public class VentaService {
         this.clienteService = clienteService;
         this.nacionalidadRepository = nacionalidadRepository;
         this.productoService = productoService;
+        this.productoRepository = productoRepository;
+        this.stockService = stockService;
         this.usuarioRepository = usuarioRepository;
     }
 
@@ -73,6 +92,27 @@ public class VentaService {
             Integer cant = cantidades.get(i);
             if (cant == null || cant <= 0) {
                 throw new IllegalArgumentException("La cantidad de cada producto debe ser mayor a cero");
+            }
+        }
+
+        // Fase 1: Verificación de Stock Actual previo a la venta
+        if (stockService != null) {
+            Map<String, Integer> cantidadesPorProducto = new LinkedHashMap<>();
+            for (int i = 0; i < productoIds.size(); i++) {
+                String pId = productoIds.get(i);
+                int c = cantidades.get(i);
+                cantidadesPorProducto.put(pId, cantidadesPorProducto.getOrDefault(pId, 0) + c);
+            }
+
+            for (Map.Entry<String, Integer> entry : cantidadesPorProducto.entrySet()) {
+                String prodId = entry.getKey();
+                int cantidadSolicitada = entry.getValue();
+                Producto producto = productoService.buscarPorId(prodId);
+                int stockActual = stockService.calcularStockActual(prodId);
+
+                if (stockActual < cantidadSolicitada) {
+                    throw new IllegalArgumentException("Stock insuficiente para: " + producto.getNombre());
+                }
             }
         }
     }
@@ -192,7 +232,25 @@ public class VentaService {
 
         factura.setTotalPagado(Math.round(total * 100.0) / 100.0);
 
-        return facturaRepository.save(factura);
+        Factura facturaGuardada = facturaRepository.save(factura);
+
+        // Fase 2: Descuento de stock y creación de registro trazable en Stock
+        if (stockService != null && facturaGuardada.getDetalles() != null) {
+            for (Detalle detalle : facturaGuardada.getDetalles()) {
+                Producto prod = detalle.getProducto();
+                if (prod != null) {
+                    int stockActual = stockService.calcularStockActual(prod.getId());
+                    int nuevoBalance = productoService.disminuirStock(stockActual, detalle.getCantidad());
+                    stockService.crearStock(detalle, nuevoBalance, "Egreso por Venta - Factura N° " + facturaGuardada.getNumeroFactura());
+                    prod.setStock(nuevoBalance);
+                    if (productoRepository != null) {
+                        productoRepository.save(prod);
+                    }
+                }
+            }
+        }
+
+        return facturaGuardada;
     }
 
     @Transactional(readOnly = true)

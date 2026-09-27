@@ -75,6 +75,9 @@ public class PagosController {
             String redirectUrl = mercadoPagoService.crearPreferenciaParaCarrito(carrito, cliente, baseUrl);
             return "redirect:" + redirectUrl;
 
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/shop/cart";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Error al conectar con Mercado Pago: " + e.getMessage());
             return "redirect:/shop/cart";
@@ -140,6 +143,9 @@ public class PagosController {
             Factura factura = mercadoPagoService.procesarPagoExitoso(externalReference, paymentId, cliente);
             redirectAttributes.addFlashAttribute("successMessage", "¡Tu pago con Mercado Pago ha sido procesado exitosamente!");
             return "redirect:/shop/confirmation?orderNumber=" + factura.getNumeroFactura();
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/shop/cart";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Error al procesar la confirmación: " + e.getMessage());
             return "redirect:/shop/confirmation";

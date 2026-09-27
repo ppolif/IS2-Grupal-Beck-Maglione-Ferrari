@@ -35,6 +35,7 @@ public class OrdenCompraService {
     private final ClienteRepository clienteRepository;
     private final NacionalidadRepository nacionalidadRepository;
     private final UsuarioRepository usuarioRepository;
+    private final StockService stockService;
 
     /**
      * Recalcula y asigna el total acumulado de una orden de compra sumando los subtotales
@@ -247,9 +248,22 @@ public class OrdenCompraService {
 
         OrdenCompra carrito = obtenerOCrearCarrito(cliente);
 
+        int cantidadActualEnCarrito = 0;
         Optional<DetalleCompra> detalleExistente = carrito.getDetalles().stream()
                 .filter(d -> !d.isEliminado() && d.getProducto() != null && d.getProducto().getId().equals(producto.getId()))
                 .findFirst();
+
+        if (detalleExistente.isPresent()) {
+            cantidadActualEnCarrito = detalleExistente.get().getCantidad();
+        }
+
+        int cantidadTotalDeseada = cantidadActualEnCarrito + cantidad;
+        if (stockService != null) {
+            int stockDisponible = stockService.calcularStockActual(producto.getId());
+            if (stockDisponible < cantidadTotalDeseada) {
+                throw new IllegalArgumentException("Stock insuficiente para: " + producto.getNombre() + " (Stock disponible: " + stockDisponible + ")");
+            }
+        }
 
         if (detalleExistente.isPresent()) {
             DetalleCompra detalle = detalleExistente.get();
@@ -296,6 +310,13 @@ public class OrdenCompraService {
                 .filter(d -> !d.isEliminado() && d.getId().equals(detalleId.trim()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró el ítem en el carrito con ID: " + detalleId));
+
+        if (stockService != null && detalle.getProducto() != null) {
+            int stockDisponible = stockService.calcularStockActual(detalle.getProducto().getId());
+            if (stockDisponible < nuevaCantidad) {
+                throw new IllegalArgumentException("Stock insuficiente para: " + detalle.getProducto().getNombre() + " (Stock disponible: " + stockDisponible + ")");
+            }
+        }
 
         detalle.setCantidad(nuevaCantidad);
         recalcularSubtotal(detalle);
