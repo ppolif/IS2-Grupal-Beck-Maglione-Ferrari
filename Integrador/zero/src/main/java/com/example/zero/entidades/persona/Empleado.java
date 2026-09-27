@@ -1,7 +1,6 @@
 package com.example.zero.entidades.persona;
 
 
-import com.example.zero.entidades.compra.Factura;
 import com.example.zero.entidades.empresa.Empresa;
 import com.example.zero.enums.TipoEmpleado;
 import jakarta.persistence.*;
@@ -31,7 +30,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@ToString(callSuper = true, exclude = "facturas")
+@ToString(callSuper = true, exclude = "empresa")
 public class Empleado extends Persona {
 
     @Enumerated(EnumType.STRING)
