@@ -57,7 +57,6 @@ class CartControllerTest {
                 .build();
 
         clienteMock = Cliente.builder()
-                .id("cli-123")
                 .numeroDocumento("12345678")
                 .nombre("Juan")
                 .apellido("Perez")
