@@ -89,11 +89,12 @@
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-brand-dark">Estado de la Factura <span class="text-danger">*</span></label>
                         <select name="estado" id="estado" class="form-select border-brand" required>
-                            <option value="PAGADA" th:selected="${selectedEstado == 'PAGADA' || selectedEstado == null}">PAGADA</option>
-                            <option value="SIN_DEFINIR" th:selected="${selectedEstado == 'SIN_DEFINIR'}">SIN_DEFINIR</option>
+                            <option value="SIN_DEFINIR" th:selected="${selectedEstado == 'SIN_DEFINIR' || selectedEstado == null}">SIN_DEFINIR (Pendiente de Entrega)</option>
+                            <option value="ENTREGADA" th:selected="${selectedEstado == 'ENTREGADA'}">ENTREGADA (Ingreso Inmediato de Stock)</option>
+                            <option value="PAGADA" th:selected="${selectedEstado == 'PAGADA'}">PAGADA</option>
                             <option value="ANULADA" th:selected="${selectedEstado == 'ANULADA'}">ANULADA</option>
                         </select>
-                        <div class="form-text">Estado actual de la factura a proveedor.</div>
+                        <div class="form-text">Estado actual de la factura a proveedor. Si se selecciona SIN_DEFINIR, el stock se ingresará al marcar la orden como Entregada.</div>
                     </div>
 
                     <!-- Fecha y Hora Automática -->
@@ -245,10 +246,24 @@
                               th:text="${compra.formaDePago != null && compra.formaDePago.tipoPago != null ? #strings.replace(compra.formaDePago.tipoPago.name(), '_', ' ') : 'Transferencia'}">Transferencia</span>
                     </td>
                     <td>
-                        <span class="badge bg-success bg-opacity-75 text-white" th:text="${compra.estado}">PAGADA</span>
+                        <span th:if="${#strings.toString(compra.estado) == 'ENTREGADA'}" class="badge bg-success text-white"><i class="bi bi-check2-circle me-1"></i>ENTREGADA</span>
+                        <span th:if="${#strings.toString(compra.estado) == 'PAGADA'}" class="badge bg-primary text-white">PAGADA</span>
+                        <span th:if="${#strings.toString(compra.estado) == 'SIN_DEFINIR'}" class="badge bg-warning text-dark">PENDIENTE</span>
+                        <span th:if="${#strings.toString(compra.estado) == 'ANULADA'}" class="badge bg-danger text-white">ANULADA</span>
                     </td>
                     <td class="text-end fw-bold text-brand-bold" th:text="${#numbers.formatCurrency(compra.totalPagado)}">$0.00</td>
                     <td class="text-center pe-3">
+                        <!-- Botón para marcar como ENTREGADA y reponer stock (Diagrama de Secuencia) -->
+                        <span th:if="${#strings.toString(compra.estado) == 'ENTREGADA'}" class="badge bg-light text-success border border-success me-1">
+                            <i class="bi bi-check2-circle me-1"></i> Entregada
+                        </span>
+                        <form th:if="${#strings.toString(compra.estado) != 'ENTREGADA' && #strings.toString(compra.estado) != 'ANULADA'}"
+                              th:action="@{/admin/compras/{id}/entregar(id=${compra.id})}" method="POST" class="d-inline"
+                              onsubmit="return confirm('¿Confirmas la recepción de mercadería? Esta acción incrementará el stock de los productos incluidos.');">
+                            <button type="submit" class="btn btn-sm btn-success me-1" title="Recibir mercadería e ingresar stock">
+                                <i class="bi bi-box-seam me-1"></i> Entregar
+                            </button>
+                        </form>
                         <form th:action="@{/admin/purchase-orders/eliminar/{id}(id=${compra.id})}" method="POST" class="d-inline"
                               onsubmit="return confirm('¿Seguro que deseas anular esta orden de compra a proveedor?');">
                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Dar de baja"><i class="bi bi-trash"></i></button>

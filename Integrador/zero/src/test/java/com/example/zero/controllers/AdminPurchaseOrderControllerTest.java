@@ -100,4 +100,26 @@ class AdminPurchaseOrderControllerTest {
         assertEquals("redirect:/admin/registrar-compra?success=deleted", vista);
         verify(compraProveedorService).eliminarCompraProveedor("fp-1");
     }
+
+    @Test
+    void marcarComoEntregada_conExito_redirigeConFlashSuccess() {
+        when(compraProveedorService.marcarComoEntregada("fp-1")).thenReturn(new FacturaProveedor());
+
+        String vista = controller.marcarComoEntregada("fp-1", redirectAttributes);
+
+        assertEquals("redirect:/admin/registrar-compra", vista);
+        verify(redirectAttributes).addFlashAttribute("successMessage", "Mercadería recibida y stock actualizado");
+        verify(compraProveedorService).marcarComoEntregada("fp-1");
+    }
+
+    @Test
+    void marcarComoEntregada_yaEntregada_redirigeConFlashError() {
+        when(compraProveedorService.marcarComoEntregada("fp-1"))
+                .thenThrow(new IllegalStateException("La Factura ya fue entregada previamente"));
+
+        String vista = controller.marcarComoEntregada("fp-1", redirectAttributes);
+
+        assertEquals("redirect:/admin/registrar-compra", vista);
+        verify(redirectAttributes).addFlashAttribute("errorMessage", "La Factura ya fue entregada previamente");
+    }
 }

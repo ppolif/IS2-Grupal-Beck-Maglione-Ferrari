@@ -45,7 +45,7 @@ public class AdminPurchaseOrderController {
         cargarDatosModelo(model);
 
         if ("created".equals(success)) {
-            model.addAttribute("successMessage", "Orden de compra a proveedor registrada exitosamente y stock incrementado.");
+            model.addAttribute("successMessage", "Orden de compra a proveedor registrada exitosamente.");
         } else if ("deleted".equals(success)) {
             model.addAttribute("successMessage", "Orden de compra a proveedor eliminada exitosamente.");
         }
@@ -67,7 +67,7 @@ public class AdminPurchaseOrderController {
                                   @RequestParam(name = "fechaFactura", required = false)
                                   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFactura,
                                   @RequestParam(name = "formaDePago", defaultValue = "TRANSFERENCIA") String formaDePago,
-                                  @RequestParam(name = "estado", defaultValue = "PAGADA") String estado,
+                                  @RequestParam(name = "estado", defaultValue = "SIN_DEFINIR") String estado,
                                   @RequestParam("productoIds") List<String> productoIds,
                                   @RequestParam("cantidades") List<Integer> cantidades,
                                   @RequestParam(name = "costosUnitarios", required = false) List<Double> costosUnitarios,
@@ -85,7 +85,10 @@ public class AdminPurchaseOrderController {
                     cantidades,
                     costosUnitarios
             );
-            redirectAttributes.addFlashAttribute("successMessage", "Orden de compra a proveedor registrada exitosamente. Se ha incrementado el stock de los productos.");
+            String successMsg = "ENTREGADA".equalsIgnoreCase(estado != null ? estado.trim() : "")
+                    ? "Orden de compra a proveedor registrada exitosamente. Se ha incrementado el stock de los productos."
+                    : "Orden de compra a proveedor registrada exitosamente.";
+            redirectAttributes.addFlashAttribute("successMessage", successMsg);
             return "redirect:/admin/registrar-compra?success=created";
         } catch (Exception e) {
             cargarDatosModelo(model);
@@ -121,6 +124,25 @@ public class AdminPurchaseOrderController {
             return "redirect:/admin/registrar-compra?success=deleted";
         } catch (Exception e) {
             return "redirect:/admin/registrar-compra?error=" + e.getMessage();
+        }
+    }
+
+    /**
+     * Endpoint para marcar una orden de compra como ENTREGADA e ingresar el stock correspondiente,
+     * siguiendo el diagrama de secuencia.
+     */
+    @PostMapping({"/admin/compras/{id}/entregar", "/admin/purchase-orders/{id}/entregar", "/admin/compras/{id}/pagar", "/admin/purchase-orders/{id}/pagar"})
+    public String marcarComoEntregada(@PathVariable("id") String id, RedirectAttributes redirectAttributes) {
+        try {
+            compraProveedorService.marcarComoEntregada(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Mercadería recibida y stock actualizado");
+            return "redirect:/admin/registrar-compra";
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/admin/registrar-compra";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error al procesar la entrega: " + e.getMessage());
+            return "redirect:/admin/registrar-compra";
         }
     }
 
