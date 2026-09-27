@@ -14,20 +14,31 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
+import com.example.zero.entidades.Imagen;
+import com.example.zero.enums.TipoImagen;
+import com.example.zero.services.ImagenService;
+import org.springframework.web.multipart.MultipartFile;
+
 @Service
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final EmailService emailService;
+    private final ImagenService imagenService;
 
     public UsuarioService(UsuarioRepository usuarioRepository) {
-        this(usuarioRepository, null);
+        this(usuarioRepository, null, null);
+    }
+
+    public UsuarioService(UsuarioRepository usuarioRepository, EmailService emailService) {
+        this(usuarioRepository, emailService, null);
     }
 
     @Autowired
-    public UsuarioService(UsuarioRepository usuarioRepository, EmailService emailService) {
+    public UsuarioService(UsuarioRepository usuarioRepository, EmailService emailService, ImagenService imagenService) {
         this.usuarioRepository = usuarioRepository;
         this.emailService = emailService;
+        this.imagenService = imagenService;
     }
 
     public void validar(String nombreUsuario, String clave, RolUsuario rol) {
@@ -220,6 +231,18 @@ public class UsuarioService {
         }
 
         return usuarioRepository.save(usuario);
+    }
+
+    @Transactional
+    public Usuario actualizarPerfil(String id, String nuevoEmail, MultipartFile archivoFoto) {
+        String nuevaFotoUrl = null;
+        if (archivoFoto != null && !archivoFoto.isEmpty() && imagenService != null) {
+            Imagen img = imagenService.guardarImagen(archivoFoto, TipoImagen.PERSONA);
+            if (img != null && img.getId() != null) {
+                nuevaFotoUrl = "/imagen/" + img.getId();
+            }
+        }
+        return actualizarPerfil(id, nuevoEmail, nuevaFotoUrl);
     }
 
     @Transactional

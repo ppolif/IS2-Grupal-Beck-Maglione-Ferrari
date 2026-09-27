@@ -71,7 +71,7 @@ public class NewsletterService {
 
         for (Usuario usuario : usuarios) {
             try {
-                enviarCorreoHtml(usuario.getNombreUsuario().trim(), "🔥 ¡Nuevas Ofertas Imperdibles en ZERO!", contenidoHtml);
+                enviarCorreoHtml(usuario.getNombreUsuario().trim(), "🔥 ¡Nuevas Ofertas Imperdibles en ZERO!", contenidoHtml, ofertas);
                 enviados++;
             } catch (Exception e) {
                 logger.error("Error al enviar newsletter a {}: {}", usuario.getNombreUsuario(), e.getMessage());
@@ -81,7 +81,7 @@ public class NewsletterService {
         return enviados;
     }
 
-    private void enviarCorreoHtml(String destinatario, String asunto, String htmlBody) throws MessagingException {
+    private void enviarCorreoHtml(String destinatario, String asunto, String htmlBody, List<Producto> ofertas) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
@@ -89,6 +89,20 @@ public class NewsletterService {
         helper.setTo(destinatario);
         helper.setSubject(asunto);
         helper.setText(htmlBody, true);
+
+        if (ofertas != null) {
+            for (Producto prod : ofertas) {
+                if (prod != null && prod.getId() != null && prod.getImagenes() != null) {
+                    for (var img : prod.getImagenes()) {
+                        if (img != null && !img.isEliminado() && img.getContenido() != null && img.getContenido().length > 0) {
+                            String mime = (img.getMime() != null && !img.getMime().isBlank()) ? img.getMime() : "image/jpeg";
+                            helper.addInline("prod-img-" + prod.getId(), new org.springframework.core.io.ByteArrayResource(img.getContenido()), mime);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
 
         mailSender.send(message);
     }
@@ -101,6 +115,15 @@ public class NewsletterService {
             String precio = String.format("$%.2f", prod.getPrecioActual() != null ? prod.getPrecioActual() : 0.0);
             String desc = prod.getDescripcion() != null ? prod.getDescripcion() : "Máxima calidad y rendimiento garantizado.";
             String img = "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400";
+
+            if (prod.getImagenes() != null) {
+                for (var i : prod.getImagenes()) {
+                    if (i != null && !i.isEliminado() && i.getContenido() != null && i.getContenido().length > 0) {
+                        img = "cid:prod-img-" + prod.getId();
+                        break;
+                    }
+                }
+            }
 
             tarjetas.append(String.format("""
                 <div style="background: #ffffff; border: 1px solid #eeeeee; border-radius: 8px; margin-bottom: 20px; padding: 16px; display: flex; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">

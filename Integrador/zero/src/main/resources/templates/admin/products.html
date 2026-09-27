@@ -46,11 +46,82 @@
     <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
 
+  <!-- Tarjetas de Métricas de Stock por Sucursal -->
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+      <div class="card bg-white border-brand rounded-4 shadow-sm p-3">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <span class="text-muted small fw-bold text-uppercase">Stock Sucursal Central</span>
+            <h4 class="fw-bold mb-0 text-brand-dark" th:text="${totalStockUnidades != null ? totalStockUnidades : 0}">0</h4>
+            <span class="text-muted" style="font-size: 0.75rem;">Unidades totales en stock</span>
+          </div>
+          <div class="bg-light p-3 rounded-circle border border-brand text-brand-dark">
+            <i class="bi bi-boxes fs-4"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="card bg-white border-success rounded-4 shadow-sm p-3">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <span class="text-muted small fw-bold text-uppercase">Stock Bien (&gt; 50)</span>
+            <h4 class="fw-bold mb-0 text-success" th:text="${stockBienCount != null ? stockBienCount : 0}">0</h4>
+            <span class="text-success" style="font-size: 0.75rem;">Nivel óptimo</span>
+          </div>
+          <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success">
+            <i class="bi bi-check-circle fs-4"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="card bg-white border-warning rounded-4 shadow-sm p-3">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <span class="text-muted small fw-bold text-uppercase">Stock Regular (20 - 50)</span>
+            <h4 class="fw-bold mb-0 text-warning" th:text="${stockRegularCount != null ? stockRegularCount : 0}">0</h4>
+            <span class="text-warning" style="font-size: 0.75rem;">Requiere monitoreo</span>
+          </div>
+          <div class="bg-warning bg-opacity-10 p-3 rounded-circle text-warning">
+            <i class="bi bi-exclamation-circle fs-4"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="card bg-white border-danger rounded-4 shadow-sm p-3">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <span class="text-muted small fw-bold text-uppercase">Stock Malo (&lt; 20)</span>
+            <h4 class="fw-bold mb-0 text-danger" th:text="${stockMaloCount != null ? stockMaloCount : 0}">0</h4>
+            <span class="text-danger" style="font-size: 0.75rem;">Alerta: reposición urgente</span>
+          </div>
+          <div class="bg-danger bg-opacity-10 p-3 rounded-circle text-danger">
+            <i class="bi bi-shield-exclamation fs-4"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerta si hay productos con stock menor a 20 -->
+  <div th:if="${stockMaloCount != null && stockMaloCount > 0}" class="alert alert-danger rounded-4 shadow-sm p-3 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2" role="alert">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill fs-4 text-danger"></i>
+      <div>
+        <h6 class="fw-bold mb-0 text-danger">Alerta de Stock Crítico: <span th:text="${stockMaloCount}"></span> producto(s) con stock menor a 20 unidades.</h6>
+        <span class="small text-muted">Haz clic en el botón de WhatsApp en la fila correspondiente para solicitar al proveedor la cantidad exacta necesaria para alcanzar 50 unidades.</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Contenedor Card de la Tabla -->
   <div class="card bg-white border-brand rounded-4 shadow-sm overflow-hidden mb-4">
 
     <div class="card-header bg-white border-bottom border-brand p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <span class="small fw-bold text-brand-dark" th:text="${products != null ? #lists.size(products) + ' productos activos' : '0 productos'}">0 productos activos</span>
+      <span class="small fw-bold text-brand-dark" th:text="${products != null ? #lists.size(products) + ' productos activos en catálogo' : '0 productos'}">0 productos activos</span>
       <a th:href="@{/shop/category}" target="_blank" class="btn btn-sm btn-outline-dark d-flex align-items-center gap-1">
         <i class="bi bi-box-arrow-up-right"></i> Ver en Tienda
       </a>
@@ -61,20 +132,22 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="bg-brand-dark">
         <tr>
-          <th class="ps-3 text-uppercase small text-white">Código</th>
+          <th class="ps-3 text-uppercase small text-white" style="width: 55px;">Foto</th>
+          <th class="text-uppercase small text-white">Código</th>
           <th class="text-uppercase small text-white">Producto</th>
           <th class="text-uppercase small text-white">Subcategoría</th>
           <th class="text-uppercase small text-white">Talle</th>
           <th class="text-uppercase small text-white">Precio Vigente</th>
-          <th class="text-center text-uppercase small text-white">Stock</th>
+          <th class="text-center text-uppercase small text-white">Stock / Estado</th>
           <th class="text-uppercase small text-white">Oferta</th>
+          <th class="text-center text-uppercase small text-white">Reposición Proveedor</th>
           <th class="text-center text-uppercase small text-white pe-3">Acciones</th>
         </tr>
         </thead>
         <tbody>
         <!-- Mensaje si no hay productos -->
         <tr th:if="${products == null || #lists.isEmpty(products)}">
-          <td colspan="8" class="text-center py-5 text-muted small">
+          <td colspan="10" class="text-center py-5 text-muted small">
             <i class="bi bi-inbox fs-2 d-block mb-2"></i>
             No se encontraron productos registrados en el sistema.<br>
             <a th:href="@{/admin/products/nuevo}" class="btn btn-sm btn-dark mt-2">Crear el primer producto</a>
@@ -83,11 +156,19 @@
 
         <!-- Filas dinámicas -->
         <tr th:each="product : ${products}">
-          <td class="ps-3 fw-bold text-brand-dark" th:text="${product.codigo}">#PROD-001</td>
+          <td class="ps-3">
+            <img th:src="${product.imagenUrl}"
+                 src="/shop/img/product/p1.jpg"
+                 onerror="this.src='/shop/img/product/p1.jpg'"
+                 th:alt="${product.nombre}"
+                 class="rounded border shadow-sm"
+                 style="width: 44px; height: 44px; object-fit: cover;">
+          </td>
+          <td class="fw-bold text-brand-dark" th:text="${product.codigo}">#PROD-001</td>
           <td>
             <div>
               <div class="small fw-bold text-brand-dark" th:text="${product.nombre}">Zero Speedrunner Pro</div>
-              <div class="text-muted text-truncate" style="font-size: 0.75rem; max-width: 250px;" th:text="${product.descripcion}">Descripción del producto</div>
+              <div class="text-muted text-truncate" style="font-size: 0.75rem; max-width: 230px;" th:text="${product.descripcion}">Descripción del producto</div>
             </div>
           </td>
           <td>
@@ -99,13 +180,34 @@
           </td>
           <td class="small fw-bold text-brand-bold" th:text="${#numbers.formatCurrency(product.precioActual)}">$120.00</td>
           <td class="text-center">
-            <span class="badge"
-                  th:classappend="${product.stock <= 5 ? 'bg-danger text-white' : 'bg-light text-dark border border-brand'}"
-                  th:text="${product.stock}">10</span>
+            <div class="fw-bold fs-6 text-brand-dark" th:text="${product.stock}">10</div>
+            <span th:if="${product.stock > 50}" class="badge bg-success" title="Stock Bien (> 50)">
+              <i class="bi bi-check-circle-fill me-1"></i>Bien (&gt;50)
+            </span>
+            <span th:if="${product.stock <= 50 && product.stock >= 20}" class="badge bg-warning text-dark" title="Stock Regular (20-50)">
+              <i class="bi bi-exclamation-circle-fill me-1"></i>Regular (20-50)
+            </span>
+            <span th:if="${product.stock < 20}" class="badge bg-danger text-white" title="Stock Malo (< 20)">
+              <i class="bi bi-x-circle-fill me-1"></i>Malo (&lt;20)
+            </span>
           </td>
           <td>
             <span th:if="${product.enOferta}" class="badge bg-warning text-dark"><i class="bi bi-tag-fill me-1"></i>En Oferta</span>
             <span th:unless="${product.enOferta}" class="badge bg-light text-muted border">Regular</span>
+          </td>
+          <td class="text-center">
+            <a th:if="${product.stock < 20}"
+               th:href="${product.urlWhatsAppReposicion}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 shadow-sm px-2 py-1"
+               style="font-size: 0.78rem;"
+               title="Abrir WhatsApp para pedir reposición a proveedor (+54 2613072339)">
+              <i class="bi bi-whatsapp"></i> Pedir <span th:text="${product.cantidadFaltanteStock}"></span> u.
+            </a>
+            <span th:unless="${product.stock < 20}" class="text-muted small" style="font-size: 0.75rem;">
+              <i class="bi bi-check-all text-success me-1"></i>Óptimo
+            </span>
           </td>
           <td class="text-center pe-3">
             <div class="btn-group btn-group-sm">

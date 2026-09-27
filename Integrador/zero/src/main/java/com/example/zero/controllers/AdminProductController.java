@@ -35,15 +35,32 @@ public class AdminProductController {
                                @RequestParam(name = "success", required = false) String success,
                                @RequestParam(name = "error", required = false) String error) {
         List<Producto> productos = productoService.listarActivos();
+        int totalStockUnidades = 0;
+        int stockBienCount = 0;
+        int stockRegularCount = 0;
+        int stockMaloCount = 0;
+
         for (Producto p : productos) {
             try {
                 p.setPrecioActual(productoService.obtenerPrecioActual(p.getId()));
             } catch (Exception e) {
                 p.setPrecioActual(0.0);
             }
+            totalStockUnidades += p.getStock();
+            if (p.getStock() > 50) {
+                stockBienCount++;
+            } else if (p.getStock() >= 20) {
+                stockRegularCount++;
+            } else {
+                stockMaloCount++;
+            }
         }
 
         model.addAttribute("products", productos);
+        model.addAttribute("totalStockUnidades", totalStockUnidades);
+        model.addAttribute("stockBienCount", stockBienCount);
+        model.addAttribute("stockRegularCount", stockRegularCount);
+        model.addAttribute("stockMaloCount", stockMaloCount);
 
         if ("created".equals(success)) {
             model.addAttribute("successMessage", "Producto creado exitosamente.");
