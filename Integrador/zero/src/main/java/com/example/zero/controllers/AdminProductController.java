@@ -21,10 +21,19 @@ public class AdminProductController {
 
     private final ProductoService productoService;
     private final SubCategoriaService subCategoriaService;
+    private final com.example.zero.services.StockService stockService;
 
     public AdminProductController(ProductoService productoService, SubCategoriaService subCategoriaService) {
+        this(productoService, subCategoriaService, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public AdminProductController(ProductoService productoService,
+                                  SubCategoriaService subCategoriaService,
+                                  com.example.zero.services.StockService stockService) {
         this.productoService = productoService;
         this.subCategoriaService = subCategoriaService;
+        this.stockService = stockService;
     }
 
     /**
@@ -45,6 +54,9 @@ public class AdminProductController {
                 p.setPrecioActual(productoService.obtenerPrecioActual(p.getId()));
             } catch (Exception e) {
                 p.setPrecioActual(0.0);
+            }
+            if (stockService != null) {
+                p.setStock(stockService.calcularStockActual(p.getId()));
             }
             totalStockUnidades += p.getStock();
             if (p.getStock() > 50) {

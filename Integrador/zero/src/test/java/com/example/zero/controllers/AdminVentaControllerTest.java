@@ -43,24 +43,27 @@ class AdminVentaControllerTest {
     private ClienteService clienteService;
 
     @Mock
+    private com.example.zero.services.StockService stockService;
+
+    @Mock
     private Model model;
 
     @InjectMocks
     private AdminVentaController controller;
-
-
 
     @Test
     void showRegistrarVentaForm_agregaProductosClientesYRetornaVista() {
         Producto p1 = Producto.builder().id("p1").nombre("Zapatillas").build();
         when(productoService.listarActivos()).thenReturn(List.of(p1));
         when(productoService.obtenerPrecioActual("p1")).thenReturn(3500.0);
+        when(stockService.calcularStockActual("p1")).thenReturn(25);
         when(clienteService.listarActivos()).thenReturn(Collections.emptyList());
 
         String vista = controller.showRegistrarVentaForm(model, null);
 
         assertEquals("admin/registrar-venta", vista);
         assertEquals(3500.0, p1.getPrecioActual());
+        assertEquals(25, p1.getStock());
         verify(model).addAttribute(eq("productos"), anyList());
         verify(model).addAttribute(eq("clientes"), anyList());
         verify(model).addAttribute(eq("formasDePago"), any());
@@ -112,6 +115,28 @@ class AdminVentaControllerTest {
         verify(model).addAttribute("clienteDni", "");
         verify(model).addAttribute("clienteNombre", "Juan");
         verify(model).addAttribute(eq("productos"), anyList());
+    }
+
+    @Test
+    void procesarVenta_conStockInsuficiente_recargaFormularioYRenderizaErrorYRollback() {
+        when(ventaService.registrarVenta(any(), any(), any(), any(), any(), any(), any()))
+                .thenThrow(new IllegalArgumentException("Stock insuficiente para: Zapatillas"));
+
+        Producto p = Producto.builder().id("p1").nombre("Zapatillas").build();
+        when(productoService.listarActivos()).thenReturn(List.of(p));
+        when(productoService.obtenerPrecioActual("p1")).thenReturn(3500.0);
+        when(stockService.calcularStockActual("p1")).thenReturn(0);
+        when(clienteService.listarActivos()).thenReturn(Collections.emptyList());
+
+        String vista = controller.procesarVenta(
+                "12345678", "Juan", "Perez", "juan@test.com", "EFECTIVO",
+                List.of("p1"), List.of(2), model
+        );
+
+        assertEquals("admin/registrar-venta", vista);
+        assertEquals(0, p.getStock());
+        verify(model).addAttribute("errorMessage", "Stock insuficiente para: Zapatillas");
+        verify(model).addAttribute("productos", List.of(p));
     }
 
     @Test
