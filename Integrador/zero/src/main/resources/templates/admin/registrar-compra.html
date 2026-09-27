@@ -238,26 +238,26 @@
                     <td colspan="7" class="text-center py-4 text-muted small">No se registran órdenes de compra a proveedores actualmente.</td>
                 </tr>
                 <tr th:each="compra : ${compras}">
-                    <td class="ps-3 fw-bold text-brand-dark" th:text="${'#FAC-' + compra.numeroFactura}">#FAC-5001</td>
+                    <td class="ps-3 fw-bold text-brand-dark" th:text="${compra.numeroFactura != null ? '#FAC-' + compra.numeroFactura : (compra.id != null ? '#FAC-' + compra.id : '#FAC-')}">#FAC-5001</td>
                     <td class="fw-semibold text-brand-dark" th:text="${compra.proveedor != null ? compra.proveedor.razonSocial : 'Proveedor General'}">Indumentaria Textil S.A.</td>
-                    <td class="small text-muted" th:text="${#temporals.format(compra.fechaFactura, 'dd/MM/yyyy HH:mm')}">01/01/2025 10:00</td>
+                    <td class="small text-muted" th:text="${compra.fechaFactura != null ? #temporals.format(compra.fechaFactura, 'dd/MM/yyyy HH:mm') : '-'}">01/01/2025 10:00</td>
                     <td>
                         <span class="badge bg-light text-dark border border-brand"
                               th:text="${compra.formaDePago != null && compra.formaDePago.tipoPago != null ? #strings.replace(compra.formaDePago.tipoPago.name(), '_', ' ') : 'Transferencia'}">Transferencia</span>
                     </td>
                     <td>
-                        <span th:if="${#strings.toString(compra.estado) == 'ENTREGADA'}" class="badge bg-success text-white"><i class="bi bi-check2-circle me-1"></i>ENTREGADA</span>
-                        <span th:if="${#strings.toString(compra.estado) == 'PAGADA'}" class="badge bg-primary text-white">PAGADA</span>
-                        <span th:if="${#strings.toString(compra.estado) == 'SIN_DEFINIR'}" class="badge bg-warning text-dark">PENDIENTE</span>
-                        <span th:if="${#strings.toString(compra.estado) == 'ANULADA'}" class="badge bg-danger text-white">ANULADA</span>
+                        <span th:if="${compra.estado != null && #strings.toString(compra.estado) == 'ENTREGADA'}" class="badge bg-success text-white"><i class="bi bi-check2-circle me-1"></i>ENTREGADA</span>
+                        <span th:if="${compra.estado != null && #strings.toString(compra.estado) == 'PAGADA'}" class="badge bg-primary text-white">PAGADA</span>
+                        <span th:if="${compra.estado != null && #strings.toString(compra.estado) == 'SIN_DEFINIR'}" class="badge bg-warning text-dark">PENDIENTE</span>
+                        <span th:if="${compra.estado != null && #strings.toString(compra.estado) == 'ANULADA'}" class="badge bg-danger text-white">ANULADA</span>
                     </td>
-                    <td class="text-end fw-bold text-brand-bold" th:text="${#numbers.formatCurrency(compra.totalPagado)}">$0.00</td>
+                    <td class="text-end fw-bold text-brand-bold" th:text="${compra.totalPagado != null ? #numbers.formatCurrency(compra.totalPagado) : '$0.00'}">$0.00</td>
                     <td class="text-center pe-3">
                         <!-- Botón para marcar como ENTREGADA y reponer stock (Diagrama de Secuencia) -->
-                        <span th:if="${#strings.toString(compra.estado) == 'ENTREGADA'}" class="badge bg-light text-success border border-success me-1">
+                        <span th:if="${compra.estado != null && #strings.toString(compra.estado) == 'ENTREGADA'}" class="badge bg-light text-success border border-success me-1">
                             <i class="bi bi-check2-circle me-1"></i> Entregada
                         </span>
-                        <form th:if="${#strings.toString(compra.estado) != 'ENTREGADA' && #strings.toString(compra.estado) != 'ANULADA'}"
+                        <form th:if="${compra.estado == null || (#strings.toString(compra.estado) != 'ENTREGADA' && #strings.toString(compra.estado) != 'ANULADA')}"
                               th:action="@{/admin/compras/{id}/entregar(id=${compra.id})}" method="POST" class="d-inline"
                               onsubmit="return confirm('¿Confirmas la recepción de mercadería? Esta acción incrementará el stock de los productos incluidos.');">
                             <button type="submit" class="btn btn-sm btn-success me-1" title="Recibir mercadería e ingresar stock">

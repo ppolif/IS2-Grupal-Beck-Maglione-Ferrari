@@ -164,7 +164,12 @@ public class AdminPurchaseOrderController {
                 p.setPrecioActual(0.0);
             }
         }
-        List<FacturaProveedor> compras = compraProveedorService.listarComprasProveedor();
+        List<FacturaProveedor> compras;
+        try {
+            compras = compraProveedorService.listarComprasProveedor();
+        } catch (Exception e) {
+            compras = java.util.Collections.emptyList();
+        }
 
         model.addAttribute("proveedores", proveedores != null ? proveedores : java.util.Collections.emptyList());
         model.addAttribute("productos", productos != null ? productos : java.util.Collections.emptyList());
