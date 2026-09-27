@@ -132,8 +132,21 @@ public class AuthController {
                                   @RequestParam(value = "fotoPerfil", required = false) MultipartFile fotoPerfil,
                                   HttpSession session,
                                   Model model) {
+        // Normalizar accion en caso de valores duplicados o concatenados por comas (ej: ",registrar" o "registrar,registrar")
+        String accionLimpia = accion;
+        if (accionLimpia != null && accionLimpia.contains(",")) {
+            for (String parte : accionLimpia.split(",")) {
+                if ("registrar".equalsIgnoreCase(parte.trim())) {
+                    accionLimpia = "registrar";
+                    break;
+                } else if (!parte.trim().isEmpty()) {
+                    accionLimpia = parte.trim();
+                }
+            }
+        }
+
         // Acciones dinámicas de recarga en cascada gestionadas por el servidor
-        if ("cambiarPais".equals(accion)) {
+        if ("cambiarPais".equals(accionLimpia)) {
             dto.setProvinciaId(null);
             dto.setDepartamentoId(null);
             dto.setLocalidadId(null);
@@ -142,7 +155,7 @@ public class AuthController {
             return "shop/register";
         }
 
-        if ("cambiarProvincia".equals(accion)) {
+        if ("cambiarProvincia".equals(accionLimpia)) {
             dto.setDepartamentoId(null);
             dto.setLocalidadId(null);
             cargarDatosFormularioRegistro(model, dto);
@@ -150,21 +163,21 @@ public class AuthController {
             return "shop/register";
         }
 
-        if ("cambiarDepartamento".equals(accion)) {
+        if ("cambiarDepartamento".equals(accionLimpia)) {
             dto.setLocalidadId(null);
             cargarDatosFormularioRegistro(model, dto);
             model.addAttribute("dto", dto);
             return "shop/register";
         }
 
-        if ("cambiarContacto".equals(accion) || "actualizarZonas".equals(accion)) {
+        if ("cambiarContacto".equals(accionLimpia) || "actualizarZonas".equals(accionLimpia)) {
             cargarDatosFormularioRegistro(model, dto);
             model.addAttribute("dto", dto);
             return "shop/register";
         }
 
         // Si se envió un evento de cambio pero no es registrar
-        if (accion != null && !accion.trim().isEmpty() && !"registrar".equals(accion)) {
+        if (accionLimpia != null && !accionLimpia.trim().isEmpty() && !"registrar".equals(accionLimpia)) {
             cargarDatosFormularioRegistro(model, dto);
             model.addAttribute("dto", dto);
             return "shop/register";

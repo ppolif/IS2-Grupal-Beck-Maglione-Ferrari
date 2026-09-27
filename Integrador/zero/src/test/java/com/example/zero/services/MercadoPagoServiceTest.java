@@ -87,7 +87,6 @@ class MercadoPagoServiceTest {
     void procesarPagoExitoso_conOrdenValida_delegaEnVentaServiceYActualizaEstadoOrden() {
         Usuario usuario = Usuario.builder().id("u1").nombreUsuario("cliente@test.com").build();
         Cliente cliente = Cliente.builder()
-                .id("c1")
                 .numeroDocumento("40123456")
                 .nombre("Martin")
                 .apellido("Palermo")

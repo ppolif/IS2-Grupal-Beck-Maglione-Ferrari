@@ -42,9 +42,8 @@
               <p class="text-muted">Completa tus datos personales, de contacto y dirección para darte de alta como cliente.</p>
             </div>
 
-            <!-- Formulario gestionado por Java y Thymeleaf con recarga automática sin botones manuales -->
+            <!-- Formulario gestionado 100% por Java y Thymeleaf sin JavaScript -->
             <form th:action="@{/register}" th:object="${dto}" method="POST" id="registroClienteForm" enctype="multipart/form-data">
-              <input type="hidden" id="accionInput" name="accion" value="">
 
               <!-- SECCIÓN 1: USUARIO DE ACCESO -->
               <div class="mb-4 pb-2 border-bottom">
@@ -104,23 +103,25 @@
                 <h4 class="text-primary font-weight-bold mb-3"><i class="fa fa-phone mr-2"></i>3. Medio de Contacto</h4>
                 <p class="text-muted small mb-2">Selecciona si deseas registrar un Correo Electrónico o un Teléfono Celular:</p>
 
-                <div class="d-flex align-items-center mb-3">
-                  <div class="custom-control custom-radio mr-4">
+                <div class="d-flex align-items-center mb-3 flex-wrap">
+                  <div class="custom-control custom-radio mr-4 mb-2">
                     <input type="radio" id="contactoTipoEmail" name="tipoContacto" value="EMAIL" class="custom-control-input"
-                           th:field="*{tipoContacto}"
-                           onchange="this.form.noValidate = true; document.getElementById('accionInput').value = 'cambiarContacto'; this.form.submit();">
+                           th:field="*{tipoContacto}">
                     <label class="custom-control-label font-weight-bold" for="contactoTipoEmail">
                       <i class="fa fa-envelope text-secondary mr-1"></i> Correo Electrónico
                     </label>
                   </div>
-                  <div class="custom-control custom-radio mr-3">
+                  <div class="custom-control custom-radio mr-3 mb-2">
                     <input type="radio" id="contactoTipoCelular" name="tipoContacto" value="CELULAR" class="custom-control-input"
-                           th:field="*{tipoContacto}"
-                           onchange="this.form.noValidate = true; document.getElementById('accionInput').value = 'cambiarContacto'; this.form.submit();">
+                           th:field="*{tipoContacto}">
                     <label class="custom-control-label font-weight-bold" for="contactoTipoCelular">
                       <i class="fa fa-mobile text-secondary mr-1"></i> Teléfono Celular
                     </label>
                   </div>
+                  <!-- Botón nativo HTML5/Thymeleaf para alternar tipo de contacto sin JavaScript -->
+                  <button type="submit" name="accion" value="cambiarContacto" formnovalidate class="btn btn-outline-secondary btn-sm mb-2">
+                    <i class="fa fa-refresh mr-1"></i> Aplicar Selección
+                  </button>
                 </div>
 
                 <div class="row">
@@ -150,37 +151,52 @@
               <div class="mb-4 pb-2 border-bottom">
                 <h4 class="text-primary font-weight-bold mb-3"><i class="fa fa-map-marker mr-2"></i>4. Dirección y Ubicación Geográfica</h4>
 
-                <!-- COMBOBOXES EN CASCADA AUTOMÁTICOS (SIN BOTONES MANUALES) -->
+                <!-- COMBOBOXES EN CASCADA CON THYMELEAF (SIN JAVASCRIPT) -->
                 <div class="bg-light p-3 rounded mb-3 border">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small font-weight-bold text-dark">Selección Geográfica en Cascada (gestionado por Thymeleaf):</span>
+                    <button type="submit" name="accion" value="actualizarZonas" formnovalidate class="btn btn-outline-info btn-sm">
+                      <i class="fa fa-refresh mr-1"></i> Actualizar Opciones
+                    </button>
+                  </div>
+
                   <div class="row">
                     <!-- 1. País -->
                     <div class="col-md-3 form-group mb-2">
                       <label for="paisId" class="small font-weight-bold d-block">1. País *</label>
-                      <select class="form-control" id="paisId" th:field="*{paisId}"
-                              onchange="this.form.noValidate = true; document.getElementById('accionInput').value = 'cambiarPais'; this.form.submit();" required>
+                      <select class="form-control" id="paisId" th:field="*{paisId}" required>
                         <option value="">-- Seleccionar País --</option>
                         <option th:each="p : ${paises}" th:value="${p.id}" th:text="${p.nombre}">Argentina</option>
                       </select>
+                      <button type="submit" name="accion" value="cambiarPais" formnovalidate class="btn btn-outline-primary btn-sm btn-block mt-2">
+                        <i class="fa fa-arrow-down mr-1"></i> Cargar Provincias
+                      </button>
                     </div>
 
                     <!-- 2. Provincia -->
                     <div class="col-md-3 form-group mb-2">
                       <label for="provinciaId" class="small font-weight-bold d-block">2. Provincia *</label>
-                      <select class="form-control" id="provinciaId" th:field="*{provinciaId}" th:disabled="${#lists.isEmpty(provincias)}"
-                              onchange="this.form.noValidate = true; document.getElementById('accionInput').value = 'cambiarProvincia'; this.form.submit();" required>
+                      <select class="form-control" id="provinciaId" th:field="*{provinciaId}" th:disabled="${#lists.isEmpty(provincias)}" required>
                         <option value="">-- Seleccionar Provincia --</option>
                         <option th:each="prov : ${provincias}" th:value="${prov.id}" th:text="${prov.nombre}">Córdoba</option>
                       </select>
+                      <button type="submit" name="accion" value="cambiarProvincia" formnovalidate class="btn btn-outline-primary btn-sm btn-block mt-2"
+                              th:disabled="${#lists.isEmpty(provincias)}">
+                        <i class="fa fa-arrow-down mr-1"></i> Cargar Deptos
+                      </button>
                     </div>
 
                     <!-- 3. Departamento -->
                     <div class="col-md-3 form-group mb-2">
                       <label for="departamentoId" class="small font-weight-bold d-block">3. Departamento *</label>
-                      <select class="form-control" id="departamentoId" th:field="*{departamentoId}" th:disabled="${#lists.isEmpty(departamentos)}"
-                              onchange="this.form.noValidate = true; document.getElementById('accionInput').value = 'cambiarDepartamento'; this.form.submit();" required>
+                      <select class="form-control" id="departamentoId" th:field="*{departamentoId}" th:disabled="${#lists.isEmpty(departamentos)}" required>
                         <option value="">-- Seleccionar Departamento --</option>
                         <option th:each="dep : ${departamentos}" th:value="${dep.id}" th:text="${dep.nombre}">Capital</option>
                       </select>
+                      <button type="submit" name="accion" value="cambiarDepartamento" formnovalidate class="btn btn-outline-primary btn-sm btn-block mt-2"
+                              th:disabled="${#lists.isEmpty(departamentos)}">
+                        <i class="fa fa-arrow-down mr-1"></i> Cargar Localidades
+                      </button>
                     </div>
 
                     <!-- 4. Localidad -->
@@ -194,7 +210,7 @@
                         </option>
                       </select>
                       <small class="form-text text-muted mt-2 d-block" th:if="${#lists.isEmpty(localidades)}">
-                        Selecciona el país, provincia y departamento
+                        Cargue los pasos anteriores para habilitar
                       </small>
                     </div>
                   </div>
@@ -247,7 +263,7 @@
 
               <!-- BOTÓN FINAL DE REGISTRO -->
               <div class="mt-4 pt-3 text-center">
-                <button type="submit" name="accion" value="registrar" onclick="document.getElementById('accionInput').value = 'registrar';" class="btn btn-warning btn-block py-3 font-weight-bold shadow-sm" style="font-size: 1.1rem; border-radius: 8px;">
+                <button type="submit" name="accion" value="registrar" class="btn btn-warning btn-block py-3 font-weight-bold shadow-sm" style="font-size: 1.1rem; border-radius: 8px;">
                   <i class="fa fa-user-plus mr-2"></i> Registrarme como Cliente
                 </button>
                 <div class="mt-3">
