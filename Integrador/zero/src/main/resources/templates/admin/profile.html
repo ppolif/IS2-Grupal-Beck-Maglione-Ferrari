@@ -63,7 +63,7 @@
     </div>
 
     <div class="card-body p-4 p-md-5">
-      <form th:action="@{/admin/profile}" method="POST" id="formPerfilAdmin">
+      <form th:action="@{/admin/profile}" method="POST" id="formPerfilAdmin" enctype="multipart/form-data">
 
         <div class="row g-4">
           <!-- Columna Izquierda: Foto y Preview -->
@@ -75,10 +75,19 @@
                    onerror="this.src='/admin/assets/images/avatar.png'">
             </div>
             <h6 class="fw-bold text-brand-dark mb-1">Fotografía de Cuenta</h6>
-            <p class="text-muted small mb-3">Enlace web de tu imagen de perfil corporativo</p>
+            <p class="text-muted small mb-3">Sube tu foto corporativa o ingresa un enlace</p>
+
+            <div class="text-start mb-3">
+              <label for="adminArchivoFoto" class="form-label small fw-bold text-muted">
+                <i class="bi bi-upload me-1 text-warning"></i>Cargar desde tu dispositivo:
+              </label>
+              <input type="file" name="archivoFoto" id="adminArchivoFoto" class="form-control form-control-sm border-brand"
+                     accept="image/png, image/jpeg, image/jpg, image/webp"
+                     onchange="previewAdminImage(this)">
+            </div>
 
             <div class="text-start">
-              <label for="adminFotoInput" class="form-label small fw-bold text-muted">URL de Imagen / Foto:</label>
+              <label for="adminFotoInput" class="form-label small fw-bold text-muted">O enlace web de imagen:</label>
               <input type="url" name="foto" id="adminFotoInput" class="form-control form-control-sm border-brand"
                      placeholder="https://ejemplo.com/mifoto.jpg"
                      th:value="${usuario != null ? usuario.foto : ''}"
@@ -155,6 +164,21 @@
 
 <!-- Scripts Fragment -->
 <div th:replace="~{admin/fragments/scripts :: scripts}"></div>
+
+<script>
+  function previewAdminImage(input) {
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const preview = document.getElementById('adminAvatarPreview');
+        if (preview) preview.src = e.target.result;
+        const headerAvatar = document.getElementById('adminHeaderAvatar');
+        if (headerAvatar) headerAvatar.src = e.target.result;
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+</script>
 
 </body>
 </html>

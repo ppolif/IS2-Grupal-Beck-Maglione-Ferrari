@@ -13,6 +13,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -47,6 +48,7 @@ public class ProfileController {
     @PostMapping("/profile")
     public String actualizarPerfil(HttpSession session,
                                    @RequestParam("email") String email,
+                                   @RequestParam(value = "archivoFoto", required = false) MultipartFile archivoFoto,
                                    @RequestParam(value = "foto", required = false) String foto,
                                    RedirectAttributes redirectAttributes) {
         Usuario usuarioSession = (Usuario) session.getAttribute("usuariosession");
@@ -56,7 +58,12 @@ public class ProfileController {
         }
 
         try {
-            Usuario actualizado = usuarioService.actualizarPerfil(usuarioSession.getId(), email, foto);
+            Usuario actualizado;
+            if (archivoFoto != null && !archivoFoto.isEmpty()) {
+                actualizado = usuarioService.actualizarPerfil(usuarioSession.getId(), email, archivoFoto);
+            } else {
+                actualizado = usuarioService.actualizarPerfil(usuarioSession.getId(), email, foto);
+            }
             session.setAttribute("usuariosession", actualizado);
             redirectAttributes.addFlashAttribute("successMessage", "Perfil actualizado con éxito.");
         } catch (Exception e) {
@@ -64,6 +71,13 @@ public class ProfileController {
         }
 
         return "redirect:/profile";
+    }
+
+    public String actualizarPerfil(HttpSession session,
+                                   String email,
+                                   String foto,
+                                   RedirectAttributes redirectAttributes) {
+        return actualizarPerfil(session, email, null, foto, redirectAttributes);
     }
 }
 

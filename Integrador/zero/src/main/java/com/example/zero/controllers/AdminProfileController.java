@@ -53,6 +53,7 @@ public class AdminProfileController {
     @PostMapping
     public String actualizarPerfilAdmin(HttpSession session,
                                         @RequestParam("email") String email,
+                                        @RequestParam(value = "archivoFoto", required = false) org.springframework.web.multipart.MultipartFile archivoFoto,
                                         @RequestParam(value = "foto", required = false) String foto,
                                         RedirectAttributes redirectAttributes) {
         Usuario usuarioSession = (Usuario) session.getAttribute("usuariosession");
@@ -62,7 +63,12 @@ public class AdminProfileController {
         }
 
         try {
-            Usuario actualizado = usuarioService.actualizarPerfil(usuarioSession.getId(), email, foto);
+            Usuario actualizado;
+            if (archivoFoto != null && !archivoFoto.isEmpty()) {
+                actualizado = usuarioService.actualizarPerfil(usuarioSession.getId(), email, archivoFoto);
+            } else {
+                actualizado = usuarioService.actualizarPerfil(usuarioSession.getId(), email, foto);
+            }
             session.setAttribute("usuariosession", actualizado);
             redirectAttributes.addFlashAttribute("successMessage", "Perfil de administrador actualizado con éxito.");
         } catch (Exception e) {
@@ -70,6 +76,13 @@ public class AdminProfileController {
         }
 
         return "redirect:/admin/profile";
+    }
+
+    public String actualizarPerfilAdmin(HttpSession session,
+                                        String email,
+                                        String foto,
+                                        RedirectAttributes redirectAttributes) {
+        return actualizarPerfilAdmin(session, email, null, foto, redirectAttributes);
     }
 }
 

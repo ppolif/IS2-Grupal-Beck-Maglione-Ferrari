@@ -46,7 +46,9 @@
             <td>
               <div class="media">
                 <div class="d-flex mr-3">
-                  <img th:src="@{/shop/img/cart.jpg}"
+                  <img th:src="${item.producto != null ? item.producto.imagenUrl : '/shop/img/cart.jpg'}"
+                       src="/shop/img/cart.jpg"
+                       onerror="this.src='/shop/img/cart.jpg'"
                        th:alt="${item.producto != null ? item.producto.nombre : 'Producto'}"
                        style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;">
                 </div>
