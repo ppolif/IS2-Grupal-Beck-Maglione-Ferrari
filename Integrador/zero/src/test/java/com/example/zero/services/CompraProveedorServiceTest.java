@@ -10,6 +10,7 @@ import com.example.zero.enums.EstadoFactura;
 import com.example.zero.enums.TipoDePago;
 import com.example.zero.repositories.*;
 import com.example.zero.services.producto.ProductoService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,8 +18,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,6 +54,9 @@ class CompraProveedorServiceTest {
     @Mock
     private ProductoService productoService;
 
+    @Mock
+    private StockService stockService;
+
     @InjectMocks
     private CompraProveedorService compraProveedorService;
 
@@ -63,6 +69,8 @@ class CompraProveedorServiceTest {
 
         Producto prod = Producto.builder().id("p1").nombre("Remera").stock(10).build();
         when(productoService.buscarPorId("p1")).thenReturn(prod);
+        when(stockService.calcularStockActual("p1")).thenReturn(10);
+        when(productoService.aumentarStock(10, 25)).thenReturn(35);
 
         FormaDePago fdp = FormaDePago.builder().id("fdp-1").tipoPago(TipoDePago.TRANSFERENCIA).build();
         when(formaDePagoRepository.findByTipoPagoAndEliminadoFalse(TipoDePago.TRANSFERENCIA)).thenReturn(Optional.of(fdp));
@@ -81,7 +89,7 @@ class CompraProveedorServiceTest {
                 5001L,
                 LocalDateTime.now(),
                 "TRANSFERENCIA",
-                "PAGADA",
+                "ENTREGADA",
                 List.of("p1"),
                 List.of(25),
                 List.of(100.0)
@@ -95,8 +103,121 @@ class CompraProveedorServiceTest {
         assertEquals(35, prod.getStock()); // 10 iniciales + 25 pedidos
 
         verify(productoRepository).save(prod);
-        verify(stockRepository).save(any(Stock.class));
+        verify(stockService).crearStock(any(Detalle.class), eq(35), anyString());
         verify(facturaProveedorRepository).save(any(FacturaProveedor.class));
+    }
+
+    @Test
+    @DisplayName("registrarCompraProveedor con estado SIN_DEFINIR no incrementa stock ni crea Stock previo a entrega")
+    void registrarCompraProveedor_conEstadoSinDefinir_noIncrementaStockHastaEntrega() {
+        String provId = "prov-2";
+        Proveedor prov = Proveedor.builder().id(provId).razonSocial("Calzados S.A.").cuit("30-98765432-1").build();
+        when(proveedorRepository.findActive(provId)).thenReturn(Optional.of(prov));
+
+        Producto prod = Producto.builder().id("p2").nombre("Zapatillas").stock(5).build();
+        when(productoService.buscarPorId("p2")).thenReturn(prod);
+
+        FormaDePago fdp = FormaDePago.builder().id("fdp-2").tipoPago(TipoDePago.TRANSFERENCIA).build();
+        when(formaDePagoRepository.findByTipoPagoAndEliminadoFalse(TipoDePago.TRANSFERENCIA)).thenReturn(Optional.of(fdp));
+
+        when(facturaProveedorRepository.save(any(FacturaProveedor.class))).thenAnswer(inv -> {
+            FacturaProveedor fp = inv.getArgument(0);
+            fp.setId("fp-2");
+            return fp;
+        });
+        when(detalleRepository.save(any(Detalle.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        FacturaProveedor resultado = compraProveedorService.registrarCompraProveedor(
+                provId,
+                5002L,
+                LocalDateTime.now(),
+                "TRANSFERENCIA",
+                "SIN_DEFINIR",
+                List.of("p2"),
+                List.of(15),
+                List.of(200.0)
+        );
+
+        assertNotNull(resultado);
+        assertEquals(EstadoFactura.SIN_DEFINIR, resultado.getEstado());
+        assertEquals(5, prod.getStock()); // No se altera el stock
+        verify(productoRepository, never()).save(any(Producto.class));
+        verifyNoInteractions(stockService);
+    }
+
+    @Test
+    @DisplayName("marcarComoEntregada aumenta existencias, audita movimiento y actualiza estado a ENTREGADA")
+    void marcarComoEntregada_conFacturaValida_aumentaStockAuditaYActualizaEstado() {
+        Producto producto = Producto.builder().id("p-10").nombre("Pelota Zero").stock(15).build();
+        Detalle detalle = Detalle.builder()
+                .id("det-1")
+                .producto(producto)
+                .cantidad(10)
+                .eliminado(false)
+                .build();
+
+        FacturaProveedor factura = new FacturaProveedor();
+        factura.setId("fp-100");
+        factura.setNumeroFactura(5010L);
+        factura.setEstado(EstadoFactura.SIN_DEFINIR);
+        factura.setDetalles(new HashSet<>(Set.of(detalle)));
+
+        when(facturaProveedorRepository.findActive("fp-100")).thenReturn(Optional.of(factura));
+        when(stockService.calcularStockActual("p-10")).thenReturn(15);
+        when(productoService.aumentarStock(15, 10)).thenReturn(25);
+        when(facturaProveedorRepository.save(any(FacturaProveedor.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        FacturaProveedor resultado = compraProveedorService.marcarComoEntregada("fp-100");
+
+        assertNotNull(resultado);
+        assertEquals(EstadoFactura.ENTREGADA, resultado.getEstado());
+        assertEquals(25, producto.getStock());
+        verify(productoRepository).save(producto);
+        verify(stockService).crearStock(eq(detalle), eq(25), contains("Factura N° 5010"));
+        verify(facturaProveedorRepository).save(factura);
+    }
+
+    @Test
+    @DisplayName("marcarComoEntregada con factura ya entregada lanza IllegalStateException y evita duplicar stock")
+    void marcarComoEntregada_conFacturaYaEntregada_lanzaIllegalStateException() {
+        FacturaProveedor factura = new FacturaProveedor();
+        factura.setId("fp-200");
+        factura.setEstado(EstadoFactura.ENTREGADA);
+
+        when(facturaProveedorRepository.findActive("fp-200")).thenReturn(Optional.of(factura));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                compraProveedorService.marcarComoEntregada("fp-200"));
+
+        assertEquals("La Factura ya fue entregada previamente", ex.getMessage());
+        verifyNoInteractions(stockService);
+        verify(productoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("marcarComoEntregada con ID inexistente lanza IllegalArgumentException")
+    void marcarComoEntregada_facturaInexistente_lanzaIllegalArgumentException() {
+        when(facturaProveedorRepository.findActive("no-existe")).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () ->
+                compraProveedorService.marcarComoEntregada("no-existe"));
+    }
+
+    @Test
+    @DisplayName("marcarComoPagada delega en marcarComoEntregada")
+    void marcarComoPagada_delegaEnMarcarComoEntregada() {
+        FacturaProveedor factura = new FacturaProveedor();
+        factura.setId("fp-300");
+        factura.setEstado(EstadoFactura.SIN_DEFINIR);
+        factura.setDetalles(new HashSet<>());
+
+        when(facturaProveedorRepository.findActive("fp-300")).thenReturn(Optional.of(factura));
+        when(facturaProveedorRepository.save(any(FacturaProveedor.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        FacturaProveedor resultado = compraProveedorService.marcarComoPagada("fp-300");
+
+        assertNotNull(resultado);
+        assertEquals(EstadoFactura.ENTREGADA, resultado.getEstado());
     }
 
     @Test

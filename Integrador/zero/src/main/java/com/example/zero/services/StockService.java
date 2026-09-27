@@ -52,11 +52,14 @@ public class StockService {
     }
 
     /**
-     * Crea y persiste un nuevo registro histórico de Stock asociado a un Detalle.
+     * Crea o actualiza el registro histórico de Stock asociado a un Detalle.
+     * Si ya existe un registro de Stock vinculado a dicho Detalle, actualiza sus
+     * existencias y observación para garantizar idempotencia y evitar violaciones
+     * de la restricción UNIQUE sobre detalle_id.
      *
      * @param detalle Detalle de factura vinculado al movimiento
      * @param nuevoBalance Balance resultante de existencias tras el movimiento
-     * @param observacion Motivo o referencia del movimiento (ej. Egreso por Venta)
+     * @param observacion Motivo o referencia del movimiento (ej. Egreso por Venta o Ingreso por Compra)
      * @return entidad Stock persistida
      */
     @Transactional
@@ -68,12 +71,15 @@ public class StockService {
             throw new IllegalArgumentException("El balance de stock no puede ser negativo");
         }
 
-        Stock stock = Stock.builder()
-                .detalle(detalle)
-                .cantidadActual(nuevoBalance)
-                .observacion(observacion != null ? observacion.trim() : "Movimiento de stock")
-                .eliminado(false)
-                .build();
+        Optional<Stock> stockExistente = (detalle.getId() != null)
+                ? stockRepository.findByDetalleId(detalle.getId())
+                : Optional.empty();
+
+        Stock stock = stockExistente.orElseGet(() -> Stock.builder().detalle(detalle).build());
+        stock.setDetalle(detalle);
+        stock.setCantidadActual(nuevoBalance);
+        stock.setObservacion(observacion != null ? observacion.trim() : "Movimiento de stock");
+        stock.setEliminado(false);
 
         return stockRepository.save(stock);
     }

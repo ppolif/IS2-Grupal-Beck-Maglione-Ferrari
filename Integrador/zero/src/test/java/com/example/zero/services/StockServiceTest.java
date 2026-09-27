@@ -105,6 +105,32 @@ class StockServiceTest {
     }
 
     @Test
+    @DisplayName("crearStock actualiza el registro existente en lugar de insertar uno nuevo si ya existe para el detalle")
+    void crearStock_conStockExistente_actualizaRegistroEnLugarDeDuplicar() {
+        Detalle detalle = Detalle.builder().id("det-existente").build();
+        Stock stockExistente = Stock.builder()
+                .id("stk-existente")
+                .detalle(detalle)
+                .cantidadActual(10)
+                .observacion("Anterior")
+                .eliminado(false)
+                .build();
+
+        when(stockRepository.findByDetalleId("det-existente")).thenReturn(Optional.of(stockExistente));
+        when(stockRepository.save(any(Stock.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Stock resultado = stockService.crearStock(detalle, 25, "Ingreso por Entrega");
+
+        assertNotNull(resultado);
+        assertEquals("stk-existente", resultado.getId());
+        assertEquals(25, resultado.getCantidadActual());
+        assertEquals("Ingreso por Entrega", resultado.getObservacion());
+        assertFalse(resultado.isEliminado());
+        verify(stockRepository).findByDetalleId("det-existente");
+        verify(stockRepository).save(stockExistente);
+    }
+
+    @Test
     @DisplayName("crearStock lanza IllegalArgumentException si el balance es negativo")
     void crearStock_conBalanceNegativo_lanzaIllegalArgumentException() {
         Detalle detalle = Detalle.builder().id("det-1").build();

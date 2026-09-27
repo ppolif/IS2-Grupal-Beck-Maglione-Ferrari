@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Servicio de negocio para la gestión de compras y órdenes a Proveedores (FacturaProveedor).
@@ -32,6 +33,7 @@ public class CompraProveedorService {
     private final ProductoRepository productoRepository;
     private final FormaDePagoRepository formaDePagoRepository;
     private final ProductoService productoService;
+    private final StockService stockService;
 
     public CompraProveedorService(FacturaProveedorRepository facturaProveedorRepository,
                                   FacturaRepository facturaRepository,
@@ -41,6 +43,20 @@ public class CompraProveedorService {
                                   ProductoRepository productoRepository,
                                   FormaDePagoRepository formaDePagoRepository,
                                   ProductoService productoService) {
+        this(facturaProveedorRepository, facturaRepository, detalleRepository, stockRepository,
+                proveedorRepository, productoRepository, formaDePagoRepository, productoService, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public CompraProveedorService(FacturaProveedorRepository facturaProveedorRepository,
+                                  FacturaRepository facturaRepository,
+                                  DetalleRepository detalleRepository,
+                                  StockRepository stockRepository,
+                                  ProveedorRepository proveedorRepository,
+                                  ProductoRepository productoRepository,
+                                  FormaDePagoRepository formaDePagoRepository,
+                                  ProductoService productoService,
+                                  StockService stockService) {
         this.facturaProveedorRepository = facturaProveedorRepository;
         this.facturaRepository = facturaRepository;
         this.detalleRepository = detalleRepository;
@@ -49,6 +65,7 @@ public class CompraProveedorService {
         this.productoRepository = productoRepository;
         this.formaDePagoRepository = formaDePagoRepository;
         this.productoService = productoService;
+        this.stockService = stockService;
     }
 
     public void validarCompra(String proveedorId, List<String> productoIds, List<Integer> cantidades) {
@@ -115,9 +132,9 @@ public class CompraProveedorService {
         try {
             estado = (estadoStr != null && !estadoStr.trim().isEmpty())
                     ? EstadoFactura.valueOf(estadoStr.trim().toUpperCase())
-                    : EstadoFactura.PAGADA;
+                    : EstadoFactura.SIN_DEFINIR;
         } catch (IllegalArgumentException e) {
-            estado = EstadoFactura.PAGADA;
+            estado = EstadoFactura.SIN_DEFINIR;
         }
 
         // 4. Instanciar FacturaProveedor
@@ -131,7 +148,7 @@ public class CompraProveedorService {
         facturaProveedor.setEliminado(false);
         facturaProveedor.setDetalles(new HashSet<>());
 
-        // 5. Procesar detalles de compra e incrementar stock
+        // 5. Procesar detalles de compra e incrementar stock solo si es ENTREGADA
         double total = 0.0;
         List<Detalle> detallesList = new ArrayList<>();
 
@@ -165,29 +182,106 @@ public class CompraProveedorService {
             detallesList.add(detalle);
             facturaProveedor.getDetalles().add(detalle);
 
-            // Incremento automático de stock
-            producto.setStock(producto.getStock() + cantidad);
-            productoRepository.save(producto);
+            // Si el estado es ENTREGADA al registrar, se incrementa el stock inmediatamente
+            if (estado == EstadoFactura.ENTREGADA) {
+                int stockActual = (stockService != null)
+                        ? stockService.calcularStockActual(producto.getId())
+                        : producto.getStock();
+                int nuevoBalance = productoService.aumentarStock(stockActual, cantidad);
+                producto.setStock(nuevoBalance);
+                productoRepository.save(producto);
+            }
         }
 
         facturaProveedor.setTotalPagado(Math.round(total * 100.0) / 100.0);
         FacturaProveedor guardada = facturaProveedorRepository.save(facturaProveedor);
 
-        // Guardar detalles y registrar Stock trazable
+        // Guardar detalles y registrar Stock trazable si corresponde
         for (Detalle d : detallesList) {
             d.setFactura(guardada);
             Detalle detGuardado = detalleRepository.save(d);
 
-            Stock stock = Stock.builder()
-                    .cantidadActual(d.getCantidad())
-                    .observacion("Ingreso por orden de compra a proveedor: " + proveedor.getRazonSocial() + " - Factura #" + guardada.getNumeroFactura())
-                    .detalle(detGuardado)
-                    .eliminado(false)
-                    .build();
-            stockRepository.save(stock);
+            if (estado == EstadoFactura.ENTREGADA) {
+                int balance = d.getProducto().getStock();
+                String obs = "Ingreso por orden de compra a proveedor: " + proveedor.getRazonSocial() + " - Factura #" + guardada.getNumeroFactura();
+                if (stockService != null) {
+                    stockService.crearStock(detGuardado, balance, obs);
+                } else if (stockRepository != null) {
+                    Optional<Stock> existente = (detGuardado.getId() != null)
+                            ? stockRepository.findByDetalleId(detGuardado.getId())
+                            : Optional.empty();
+                    Stock stock = existente.orElseGet(() -> Stock.builder().detalle(detGuardado).build());
+                    stock.setCantidadActual(balance);
+                    stock.setObservacion(obs);
+                    stock.setDetalle(detGuardado);
+                    stock.setEliminado(false);
+                    stockRepository.save(stock);
+                }
+            }
         }
 
         return guardada;
+    }
+
+    /**
+     * Marca una orden de compra a proveedor como ENTREGADA, incrementando de manera
+     * atómica y trazable el stock de cada producto incluido según el diagrama de secuencia.
+     *
+     * @param facturaProveedorId ID de la orden de compra a proveedor
+     * @return entidad FacturaProveedor actualizada a ENTREGADA
+     * @throws IllegalStateException si la factura ya fue entregada previamente
+     */
+    @Transactional
+    public FacturaProveedor marcarComoEntregada(String facturaProveedorId) {
+        FacturaProveedor factura = buscarPorId(facturaProveedorId);
+
+        // alt [FacturaProveedor.getEstado() == EstadoFactura.ENTREGADA]
+        if (factura.getEstado() == EstadoFactura.ENTREGADA) {
+            throw new IllegalStateException("La Factura ya fue entregada previamente");
+        }
+
+        // Transacción: Actualización de existencias e inserción de registros Stock
+        if (factura.getDetalles() != null) {
+            for (Detalle detalle : factura.getDetalles()) {
+                if (detalle != null && !detalle.isEliminado() && detalle.getProducto() != null) {
+                    Producto producto = detalle.getProducto();
+                    int stockActual = (stockService != null)
+                            ? stockService.calcularStockActual(producto.getId())
+                            : producto.getStock();
+
+                    int nuevoBalance = productoService.aumentarStock(stockActual, detalle.getCantidad());
+
+                    if (stockService != null) {
+                        stockService.crearStock(
+                                detalle,
+                                nuevoBalance,
+                                "Ingreso por Entrega Proveedor - Factura N° " + factura.getNumeroFactura()
+                        );
+                    } else if (stockRepository != null) {
+                        Optional<Stock> existente = (detalle.getId() != null)
+                                ? stockRepository.findByDetalleId(detalle.getId())
+                                : Optional.empty();
+                        Stock stock = existente.orElseGet(() -> Stock.builder().detalle(detalle).build());
+                        stock.setCantidadActual(nuevoBalance);
+                        stock.setObservacion("Ingreso por Entrega Proveedor - Factura N° " + factura.getNumeroFactura());
+                        stock.setDetalle(detalle);
+                        stock.setEliminado(false);
+                        stockRepository.save(stock);
+                    }
+
+                    producto.setStock(nuevoBalance);
+                    productoRepository.save(producto);
+                }
+            }
+        }
+
+        factura.setEstado(EstadoFactura.ENTREGADA);
+        return facturaProveedorRepository.save(factura);
+    }
+
+    @Transactional
+    public FacturaProveedor marcarComoPagada(String facturaProveedorId) {
+        return marcarComoEntregada(facturaProveedorId);
     }
 
     @Transactional(readOnly = true)
