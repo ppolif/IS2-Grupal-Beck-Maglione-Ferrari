@@ -44,7 +44,7 @@ public class VistaController {
     }
 
     // Catálogo de Productos / Categorías
-    @GetMapping({"/shop/category", "/shop/categoria", "/shop/catalogo"})
+    @GetMapping({"/shop/category", "/shop/categoria", "/shop/catalogo", "/products"})
     public String shopCategory(@RequestParam(value = "categoryId", required = false) String categoryId,
                                @RequestParam(value = "maxPrice", required = false) Double maxPrice,
                                Model model) {
@@ -171,25 +171,36 @@ public class VistaController {
     }
 
     // Ficha de producto individual
-    @GetMapping({"/shop/single-product", "/shop/producto", "/shop/product/{id}"})
+    @GetMapping({"/products/{id}", "/shop/product/{id}", "/shop/single-product", "/shop/producto"})
     public String shopSingleProduct(@PathVariable(value = "id", required = false) String pathId,
                                     @RequestParam(value = "id", required = false) String paramId,
+                                    RedirectAttributes redirectAttributes,
                                     Model model) {
         String id = pathId != null ? pathId : paramId;
-        if (id != null && !id.trim().isEmpty()) {
-            try {
-                Producto p = productoService.buscarPorId(id.trim());
-                productoService.prepararParaVista(p);
-                model.addAttribute("product", p);
-                model.addAttribute("title", "Detalle del Producto");
-                model.addAttribute("subtitle", p.getNombre());
-                model.addAttribute("categoryName", productoService.obtenerNombreCategoria(p));
-                model.addAttribute("stock", productoService.obtenerStock(p));
-                model.addAttribute("imageUrl", productoService.obtenerImagenUrl(p));
-            } catch (Exception ignored) {
-            }
+        if (id == null || id.trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Debe seleccionar un producto para ver su detalle.");
+            return "redirect:/shop/category";
         }
-        return "shop/single-product";
+
+        try {
+            Producto p = productoService.buscarPorId(id.trim());
+            if (p == null || p.isEliminado()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "El producto solicitado no existe o ya no se encuentra disponible.");
+                return "redirect:/shop/category";
+            }
+
+            productoService.prepararParaVista(p);
+            model.addAttribute("product", p);
+            model.addAttribute("title", "Detalle del Producto");
+            model.addAttribute("subtitle", p.getNombre());
+            model.addAttribute("categoryName", productoService.obtenerNombreCategoria(p));
+            model.addAttribute("stock", productoService.obtenerStock(p));
+            model.addAttribute("imageUrl", productoService.obtenerImagenUrl(p));
+            return "shop/single-product";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No se encontró el producto solicitado.");
+            return "redirect:/shop/category";
+        }
     }
 
     // Panel Admin redirige directamente a Registrar Venta

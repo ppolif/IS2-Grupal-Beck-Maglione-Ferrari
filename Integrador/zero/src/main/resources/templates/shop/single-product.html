@@ -9,48 +9,114 @@
 <!-- Banner Fragment -->
 <section th:replace="~{shop/fragments/banner :: banner}"></section>
 
+<!-- Feedback Messages -->
+<div class="container mt-4" th:if="${successMessage != null or errorMessage != null}">
+  <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+    <i class="fa fa-check-circle mr-2"></i><span th:text="${successMessage}"></span>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+    <i class="fa fa-exclamation-triangle mr-2"></i><span th:text="${errorMessage}"></span>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+</div>
+
 <!--================Single Product Area =================-->
-<div class="product_image_area">
+<div class="product_image_area pb-5">
   <div class="container">
 
-    <div class="row s_product_inner">
-      <div class="col-lg-6">
-        <div class="s_Product_carousel">
-          <div class="single-prd-item">
-            <img class="img-fluid" th:src="${product != null && product.imageUrl != null} ? ${product.imageUrl} : @{/shop/img/category/s-p1.jpg}"
-                 src="/shop/img/category/s-p1.jpg"
-                 th:alt="${product != null} ? ${product.name} : 'Producto'">
+    <div class="row s_product_inner align-items-center">
+      <!-- Columna Izquierda: Imagen del Producto en Grande -->
+      <div class="col-lg-6 mb-4 mb-lg-0">
+        <div class="single-prd-item text-center p-3 position-relative overflow-hidden" style="background-color: var(--brand-surface, #FAF2E6); border-radius: 12px; border: 1px solid var(--brand-border, #E8D8C0);">
+          <img class="img-fluid rounded"
+               th:src="${product != null && product.imagenUrl != null} ? ${product.imagenUrl} : @{/shop/img/product/p1.jpg}"
+               src="/shop/img/product/p1.jpg"
+               onerror="this.src='/shop/img/product/p1.jpg'"
+               th:alt="${product != null ? product.nombre : 'Producto'}"
+               th:classappend="${product != null && product.stock <= 0} ? 'img-no-stock' : ''"
+               style="width: 100%; max-height: 480px; object-fit: contain;">
+          <!-- Overlay Sin Stock en Detalle -->
+          <div th:if="${product != null && product.stock <= 0}" class="overlay-no-stock">
+            <span class="badge-no-stock">Sin Stock</span>
           </div>
         </div>
       </div>
+
+      <!-- Columna Derecha: Información del Producto y Acciones -->
       <div class="col-lg-5 offset-lg-1">
-        <div class="s_product_text">
-          <h3 th:text="${product != null && product.name != null} ? ${product.name} : 'Zapatillas Zero Nitro Pro'">Zapatillas Zero Nitro Pro</h3>
-          <h2 th:text="${product != null && product.price != null} ? ${#numbers.formatCurrency(product.price)} : '$149.99'">$149.99</h2>
-          <ul class="list">
-            <li><span>Categoría</span> : <span th:text="${product != null && product.categoryName != null} ? ${product.categoryName} : 'Calzado Deportivo'">Calzado Deportivo</span></li>
+        <div class="s_product_text" style="margin-top: 0;">
+          <!-- Nombre del Producto como Título -->
+          <h3 class="font-weight-bold mb-2" th:text="${product != null ? product.nombre : 'Producto Zero'}">Zapatillas Zero Nitro Pro</h3>
+
+          <!-- Precio -->
+          <h2 class="font-weight-bold mb-3" style="color: var(--brand-primary, #E51A24);">
+            $<span th:text="${product != null && product.precioActual != null ? #numbers.formatDecimal(product.precioActual, 1, 'POINT', 2, 'POINT') : '0.00'}">149.99</span>
+          </h2>
+
+          <!-- Indicador de Oferta -->
+          <div class="mb-3">
+            <span th:if="${product != null && product.enOferta}" class="badge badge-danger text-uppercase font-weight-bold px-3 py-2 shadow-sm" style="font-size: 0.85rem; letter-spacing: 0.5px;">
+              <i class="fa fa-tag mr-1"></i> En Oferta Especial
+            </span>
+            <span th:if="${product != null && !product.enOferta}" class="badge badge-secondary text-uppercase font-weight-bold px-3 py-2" style="font-size: 0.85rem; letter-spacing: 0.5px;">
+              Precio Regular
+            </span>
+          </div>
+
+          <!-- Detalles adicionales: Categoría, Talle y Disponibilidad -->
+          <ul class="list mb-3">
+            <li>
+              <span>Categoría</span> :
+              <span th:text="${categoryName != null ? categoryName : (product != null && product.subCategoria != null && product.subCategoria.categoria != null ? product.subCategoria.categoria.nombre : 'Indumentaria')}">Calzado Deportivo</span>
+            </li>
+            <li th:if="${product != null && product.talle != null && !product.talle.isBlank()}">
+              <span>Talle</span> : <span class="font-weight-bold" th:text="${product.talle}">M</span>
+            </li>
             <li>
               <span>Disponibilidad</span> :
-              <span th:if="${product == null || product.stock > 0}" class="text-success font-weight-bold">En Stock</span>
-              <span th:if="${product != null && product.stock <= 0}" class="text-danger font-weight-bold">Agotado</span>
+              <span th:if="${product == null || product.stock > 0}" class="text-success font-weight-bold">
+                <i class="fa fa-check-circle mr-1"></i>En Stock (<span th:text="${product != null ? product.stock : 1}">10</span> disponibles)
+              </span>
+              <span th:if="${product != null && product.stock <= 0}" class="text-danger font-weight-bold">
+                <i class="fa fa-times-circle mr-1"></i>Agotado
+              </span>
             </li>
           </ul>
-          <p th:text="${product != null && product.description != null} ? ${product.description} : 'Diseñado para brindar el máximo soporte, amortiguación y velocidad en cada entrenamiento. Fabricado con materiales sostenibles de alto impacto.'">
+
+          <!-- Descripción -->
+          <p class="text-muted mb-4" th:text="${product != null && product.descripcion != null && !product.descripcion.isBlank() ? product.descripcion : 'Diseñado para brindar el máximo confort, durabilidad y rendimiento en cada entrenamiento deportivo.'}">
             Diseñado para brindar el máximo soporte, amortiguación y velocidad en cada entrenamiento. Fabricado con materiales sostenibles de alto impacto.
           </p>
 
           <!-- Formulario Agregar al Carrito (100% Server-side sin JavaScript) -->
           <form th:action="@{/shop/cart/add}" method="POST">
-            <input type="hidden" name="productId" th:value="${product != null ? product.id : 1}">
+            <input type="hidden" name="productId" th:value="${product != null ? product.id : ''}">
 
+            <!-- Selector de Cantidad -->
             <div class="product_count d-flex align-items-center mb-4">
-              <label for="sst" class="mr-2 mb-0 font-weight-bold">Cantidad:</label>
-              <input type="number" name="quantity" id="sst" min="1" max="50" value="1" title="Cantidad:" class="input-text qty form-control text-center" style="width: 80px;">
+              <label for="sst" class="mr-3 mb-0 font-weight-bold">Cantidad:</label>
+              <input type="number" name="quantity" id="sst" min="1"
+                     th:max="${product != null && product.stock > 0 ? product.stock : 1}"
+                     value="1"
+                     th:disabled="${product != null && product.stock <= 0}"
+                     title="Cantidad:" class="input-text qty form-control text-center" style="width: 80px;">
             </div>
 
-            <div class="card_area d-flex align-items-center">
-              <button type="submit" class="primary-btn border-0" th:disabled="${product != null && product.stock <= 0}">Agregar al Carrito</button>
-              <a class="icon_btn ml-3" th:href="@{/shop/category}" title="Ver más productos"><i class="lnr lnr-arrow-left"></i></a>
+            <!-- Botones de Acción: Agregar al Carrito y Volver a la Tienda -->
+            <div class="card_area d-flex align-items-center flex-wrap gap-2">
+              <button type="submit" class="primary-btn border-0 mr-3 mb-2"
+                      th:classappend="${product != null && product.stock <= 0} ? 'btn-no-stock' : ''"
+                      th:disabled="${product != null && product.stock <= 0}">
+                <span class="ti-bag mr-2"></span>Agregar al Carrito
+              </button>
+              <a class="gray_btn mb-2" th:href="@{/shop/category}">
+                <i class="fa fa-arrow-left mr-2"></i>Volver a la Tienda
+              </a>
             </div>
           </form>
 
@@ -61,11 +127,69 @@
 </div>
 <!--================End Single Product Area =================-->
 
+<!-- Modal Popup de Producto Agregado con Retorno Automático a la Tienda -->
+<div th:if="${successMessage}" class="modal fade" id="modalProductoAgregado" tabindex="-1" role="dialog" aria-labelledby="modalProductoAgregadoLabel" aria-hidden="true" data-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content border-0 shadow" style="border-radius: 12px; overflow: hidden;">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title text-white font-weight-bold" id="modalProductoAgregadoLabel">
+          <i class="fa fa-shopping-bag text-warning mr-2"></i>¡Producto Agregado al Carrito!
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar" onclick="window.location.href='/shop/category';">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body p-4 text-center">
+        <div class="mb-3">
+          <div class="rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 72px; height: 72px; background-color: #e8f5e9;">
+            <i class="fa fa-check text-success" style="font-size: 2.2rem;"></i>
+          </div>
+        </div>
+        <h4 class="font-weight-bold text-dark mb-2" th:text="${successMessage}">¡Producto agregado al carrito con éxito!</h4>
+        <p class="text-muted mb-3" th:if="${product != null}">
+          Has añadido <strong th:text="${product.nombre}">este producto</strong> a tu orden de compra.
+        </p>
+        <div class="alert alert-light border py-2 mb-0 small text-secondary">
+          <i class="fa fa-clock-o mr-1"></i>Regresando a la tienda en <strong id="countdownVal">2</strong> segundos...
+        </div>
+      </div>
+      <div class="modal-footer bg-light justify-content-center">
+        <a th:href="@{/shop/category}" class="primary-btn border-0 mr-2" style="line-height: 38px; padding: 0 25px; border-radius: 8px;">
+          <i class="fa fa-arrow-left mr-2"></i>Volver a la Tienda ahora
+        </a>
+        <a th:href="@{/shop/cart}" class="gray_btn" style="line-height: 38px; padding: 0 25px; border-radius: 8px;">
+          <i class="fa fa-shopping-cart mr-2"></i>Ir al Carrito
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Footer Fragment -->
 <footer th:replace="~{shop/fragments/footer :: footer}"></footer>
 
 <!-- Scripts Fragment -->
 <div th:replace="~{shop/fragments/scripts :: scripts}"></div>
+
+<!-- Script para Popup y Retorno Automático -->
+<script th:if="${successMessage}" th:inline="javascript">
+  $(document).ready(function() {
+    $('#modalProductoAgregado').modal('show');
+    var seconds = 2;
+    var countdownEl = document.getElementById('countdownVal');
+    var redirectUrl = /*[[@{/shop/category}]]*/ '/shop/category';
+    var timer = setInterval(function() {
+      seconds--;
+      if (countdownEl) {
+        countdownEl.innerText = seconds;
+      }
+      if (seconds <= 0) {
+        clearInterval(timer);
+        window.location.href = redirectUrl;
+      }
+    }, 1000);
+  });
+</script>
 
 </body>
 </html>

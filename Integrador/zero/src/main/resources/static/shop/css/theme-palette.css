@@ -57,3 +57,77 @@ body, button, input, select, textarea, .nice-select {
 .header_area .navbar {
     background: var(--brand-surface) !important;
 }
+
+
+/* ==================== Stock Agotado (Filtro B&W + Overlay) ==================== */
+.product-img-wrap {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    width: 100%;
+}
+
+.img-no-stock {
+    filter: grayscale(100%) contrast(90%);
+    opacity: 0.72;
+    transition: opacity 0.3s ease;
+}
+
+.overlay-no-stock {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(20, 18, 18, 0.42);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.badge-no-stock {
+    background: rgba(20, 18, 18, 0.88);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* ==================== Botón Añadir Carrito Sin Stock ==================== */
+.primary-btn:disabled,
+.primary-btn.disabled,
+.btn-no-stock {
+    background: #cccccc !important;
+    border-color: #cccccc !important;
+    color: #ffffff !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    -webkit-transition: none !important;
+    -moz-transition: none !important;
+    transition: none !important;
+    -webkit-transform: none !important;
+    transform: none !important;
+}
+
+.primary-btn:disabled:before,
+.primary-btn.disabled:before,
+.btn-no-stock:before {
+    display: none !important;
+    content: none !important;
+}
+
+.primary-btn:disabled:hover,
+.primary-btn.disabled:hover,
+.btn-no-stock:hover {
+    background: #cccccc !important;
+    border-color: #cccccc !important;
+    color: #ffffff !important;
+    transform: none !important;
+}
