@@ -311,4 +311,21 @@ public class AdminProductController {
         productoService.eliminarProducto(id);
         return "redirect:/admin/products?success=deleted";
     }
+
+    /**
+     * Endpoint para actualización manual de precios por inflación (Admin).
+     */
+    @PostMapping("/inflacion")
+    public String aplicarAumentoInflacion(@RequestParam("porcentaje") double porcentaje,
+                                          RedirectAttributes redirectAttributes) {
+        try {
+            int actualizados = productoService.aplicarAumentoGeneralPorInflacion(porcentaje);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    String.format(java.util.Locale.US, "Se aplicó exitosamente un aumento por inflación del %.2f%% a %d productos.", porcentaje, actualizados));
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Error al aplicar aumento por inflación: " + (e.getMessage() != null ? e.getMessage() : "Error inesperado"));
+        }
+        return "redirect:/admin/products";
+    }
 }

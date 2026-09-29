@@ -9,7 +9,17 @@ import com.example.zero.repositories.ProductoRepository;
 import com.example.zero.services.ImagenService;
 import com.example.zero.services.SubCategoriaService;
 import com.example.zero.services.VigenciaPrecioService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,6 +31,17 @@ import java.util.Optional;
 
 @Service
 public class ProductoService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ProductoService.class);
+
+    @Value("${inflacion.porcentaje-bimestral:8.0}")
+    private double porcentajeBimestral = 8.0;
+
+    @Value("${inflacion.batch-size:100}")
+    private int defaultBatchSize = 100;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final ProductoRepository productoRepository;
     private final SubCategoriaService subCategoriaService;
@@ -225,19 +246,89 @@ public class ProductoService {
         return nuevoPrecio;
     }
 
+    /**
+     * Tarea programada para actualización bimestral de precios por inflación en Argentina.
+     * Se ejecuta automáticamente cada 2 meses según la expresión cron configurada.
+     */
+    @Scheduled(cron = "${inflacion.cron:0 0 2 1 */2 ?}")
+    public void actualizarPreciosPorInflacionProgramado() {
+        logger.info("Iniciando tarea programada: Actualización bimestral de precios por inflación en Argentina ({}%).", porcentajeBimestral);
+        try {
+            int actualizados = aplicarAumentoGeneralPorInflacion(porcentajeBimestral, defaultBatchSize);
+            logger.info("Tarea programada de inflación finalizada exitosamente. Total de productos actualizados: {}", actualizados);
+        } catch (Exception e) {
+            logger.error("Error al ejecutar tarea programada de actualización de precios por inflación: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Aplica aumento general de precios por inflación utilizando paginación en base de datos.
+     * Procesa lotes para soportar catálogos con volúmenes masivos de datos sin agotar la memoria.
+     *
+     * @param porcentaje Porcentaje de incremento (debe ser mayor a 0)
+     * @param pageSize Tamaño de cada página / lote de productos
+     * @return Cantidad total de productos actualizados
+     */
     @Transactional
-    public void aplicarAumentoGeneralPorInflacion(double porcentaje) {
+    public int aplicarAumentoGeneralPorInflacion(double porcentaje, int pageSize) {
         if (porcentaje <= 0) {
             throw new IllegalArgumentException("El porcentaje de aumento debe ser mayor a cero");
         }
-        List<Producto> productosActivos = listarActivos();
-        for (Producto producto : productosActivos) {
-            try {
-                aplicarAumentoPorInflacion(producto.getId(), porcentaje);
-            } catch (Exception ignored) {
-                // Si algún producto no tiene precio asignado, se continúa con los demás
+        int tamanoPagina = (pageSize > 0) ? pageSize : defaultBatchSize;
+        int pageNumber = 0;
+        int totalActualizados = 0;
+        Page<Producto> pagina;
+
+        logger.info("Iniciando actualización masiva de precios por inflación: +{}% en lotes de {}", porcentaje, tamanoPagina);
+
+        do {
+            Pageable pageable = PageRequest.of(pageNumber, tamanoPagina, Sort.by("id").ascending());
+            pagina = productoRepository.findByEliminadoFalse(pageable);
+            List<Producto> lote = (pagina != null) ? pagina.getContent() : List.of();
+
+            int totalPaginas = (pagina != null && pagina.getTotalPages() > 0) ? pagina.getTotalPages() : 1;
+            logger.info("Procesando lote de precios - Página {} de {} ({} productos)",
+                    pageNumber + 1, totalPaginas, lote.size());
+
+            for (Producto producto : lote) {
+                if (producto != null && producto.getId() != null) {
+                    try {
+                        aplicarAumentoPorInflacion(producto.getId(), porcentaje);
+                        totalActualizados++;
+                    } catch (Exception e) {
+                        logger.warn("No se pudo actualizar el precio del producto ID {}: {}", producto.getId(), e.getMessage());
+                    }
+                }
             }
-        }
+
+            // Liberar memoria del contexto de persistencia de Hibernate para no acumular entidades en memoria
+            if (entityManager != null) {
+                entityManager.flush();
+                entityManager.clear();
+            }
+
+            pageNumber++;
+        } while (pagina != null && pagina.hasNext());
+
+        logger.info("Actualización masiva de precios finalizada. Total actualizados: {}", totalActualizados);
+        return totalActualizados;
+    }
+
+    @Transactional
+    public int aplicarAumentoGeneralPorInflacion(double porcentaje) {
+        return aplicarAumentoGeneralPorInflacion(porcentaje, defaultBatchSize);
+    }
+
+    public void setEntityManager(EntityManager entityManager) {
+        this.entityManager = entityManager;
+    }
+
+    public void setPorcentajeBimestral(double porcentajeBimestral) {
+        this.porcentajeBimestral = porcentajeBimestral;
+    }
+
+    public void setDefaultBatchSize(int defaultBatchSize) {
+        this.defaultBatchSize = defaultBatchSize;
     }
 
     // ==================== MÉTODOS HELPER PARA VISTA Y NEGOCIO ====================

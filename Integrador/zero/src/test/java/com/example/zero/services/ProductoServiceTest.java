@@ -6,14 +6,20 @@ import com.example.zero.entidades.producto.SubCategoria;
 import com.example.zero.enums.TipoImagen;
 import com.example.zero.repositories.ProductoRepository;
 import com.example.zero.services.producto.ProductoService;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,6 +42,9 @@ class ProductoServiceTest {
 
     @Mock
     private ImagenService imagenService;
+
+    @Mock
+    private EntityManager entityManager;
 
     @InjectMocks
     private ProductoService productoService;
@@ -287,19 +296,93 @@ class ProductoServiceTest {
     }
 
     @Test
-    void aplicarAumentoGeneralPorInflacion_aplicaATodosLosActivos() {
+    void aplicarAumentoGeneralPorInflacion_aplicaATodosLosActivosPaginados() {
         Producto p1 = Producto.builder().id("p1").build();
         Producto p2 = Producto.builder().id("p2").build();
-        when(productoRepository.findByEliminadoFalse()).thenReturn(List.of(p1, p2));
+        Page<Producto> pagina = new PageImpl<>(List.of(p1, p2), PageRequest.of(0, 100, org.springframework.data.domain.Sort.by("id").ascending()), 2);
+
+        when(productoRepository.findByEliminadoFalse(any(Pageable.class))).thenReturn(pagina);
         when(productoRepository.findActive("p1")).thenReturn(Optional.of(p1));
         when(productoRepository.findActive("p2")).thenReturn(Optional.of(p2));
         when(vigenciaPrecioService.obtenerPrecioActual("p1")).thenReturn(100.0);
         when(vigenciaPrecioService.obtenerPrecioActual("p2")).thenReturn(200.0);
 
-        productoService.aplicarAumentoGeneralPorInflacion(15.0);
+        int actualizados = productoService.aplicarAumentoGeneralPorInflacion(15.0);
 
+        assertEquals(2, actualizados);
         verify(vigenciaPrecioService, times(1)).actualizarPrecio("p1", 115.0);
         verify(vigenciaPrecioService, times(1)).actualizarPrecio("p2", 230.0);
+        verify(entityManager, times(1)).flush();
+        verify(entityManager, times(1)).clear();
+    }
+
+    @Test
+    void aplicarAumentoGeneralPorInflacion_conMultiplesPaginas_iteraYActualizaTodos() {
+        Producto p1 = Producto.builder().id("p1").build();
+        Producto p2 = Producto.builder().id("p2").build();
+        Producto p3 = Producto.builder().id("p3").build();
+
+        Pageable page0 = PageRequest.of(0, 2, org.springframework.data.domain.Sort.by("id").ascending());
+        Pageable page1 = PageRequest.of(1, 2, org.springframework.data.domain.Sort.by("id").ascending());
+
+        Page<Producto> pagina0 = new PageImpl<>(List.of(p1, p2), page0, 3);
+        Page<Producto> pagina1 = new PageImpl<>(List.of(p3), page1, 3);
+
+        when(productoRepository.findByEliminadoFalse(page0)).thenReturn(pagina0);
+        when(productoRepository.findByEliminadoFalse(page1)).thenReturn(pagina1);
+
+        when(productoRepository.findActive("p1")).thenReturn(Optional.of(p1));
+        when(productoRepository.findActive("p2")).thenReturn(Optional.of(p2));
+        when(productoRepository.findActive("p3")).thenReturn(Optional.of(p3));
+
+        when(vigenciaPrecioService.obtenerPrecioActual("p1")).thenReturn(1000.0);
+        when(vigenciaPrecioService.obtenerPrecioActual("p2")).thenReturn(2000.0);
+        when(vigenciaPrecioService.obtenerPrecioActual("p3")).thenReturn(3000.0);
+
+        int total = productoService.aplicarAumentoGeneralPorInflacion(10.0, 2);
+
+        assertEquals(3, total);
+        verify(vigenciaPrecioService, times(1)).actualizarPrecio("p1", 1100.0);
+        verify(vigenciaPrecioService, times(1)).actualizarPrecio("p2", 2200.0);
+        verify(vigenciaPrecioService, times(1)).actualizarPrecio("p3", 3300.0);
+        verify(entityManager, times(2)).flush();
+        verify(entityManager, times(2)).clear();
+    }
+
+    @Test
+    void aplicarAumentoGeneralPorInflacion_catalogoVacio_retornaCero() {
+        Page<Producto> paginaVacia = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 100), 0);
+        when(productoRepository.findByEliminadoFalse(any(Pageable.class))).thenReturn(paginaVacia);
+
+        int total = productoService.aplicarAumentoGeneralPorInflacion(10.0);
+
+        assertEquals(0, total);
+        verify(vigenciaPrecioService, never()).actualizarPrecio(anyString(), anyDouble());
+    }
+
+    @Test
+    void aplicarAumentoGeneralPorInflacion_porcentajeInvalido_lanzaIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () ->
+                productoService.aplicarAumentoGeneralPorInflacion(0.0));
+        assertThrows(IllegalArgumentException.class, () ->
+                productoService.aplicarAumentoGeneralPorInflacion(-10.0));
+    }
+
+    @Test
+    void actualizarPreciosPorInflacionProgramado_ejecutaAumentoBimestral() {
+        Producto p1 = Producto.builder().id("p1").build();
+        Page<Producto> pagina = new PageImpl<>(List.of(p1), PageRequest.of(0, 100, org.springframework.data.domain.Sort.by("id").ascending()), 1);
+
+        when(productoRepository.findByEliminadoFalse(any(Pageable.class))).thenReturn(pagina);
+        when(productoRepository.findActive("p1")).thenReturn(Optional.of(p1));
+        when(vigenciaPrecioService.obtenerPrecioActual("p1")).thenReturn(100.0);
+
+        productoService.setPorcentajeBimestral(8.0);
+        productoService.setDefaultBatchSize(100);
+
+        productoService.actualizarPreciosPorInflacionProgramado();
+
+        verify(vigenciaPrecioService, times(1)).actualizarPrecio("p1", 108.0);
     }
 
     @Test

@@ -37,7 +37,7 @@ public class NewsletterService {
      * Tarea programada cada 10 días a las 09:00 hs mediante notación cron.
      * Formato cron: segundo minuto hora día-del-mes mes día-de-la-semana
      */
-    @Scheduled(cron = "${newsletter.cron:0 0 9 */10 * *}")
+    @Scheduled(cron = "0 0 9 */10 * *")
     public void enviarNewsletterProgramado() {
         logger.info("Iniciando tarea programada: Envío de newsletter de ofertas cada 10 días.");
         int enviados = enviarNewsletterOfertas();
