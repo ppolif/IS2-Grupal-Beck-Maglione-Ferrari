@@ -230,8 +230,16 @@ public class MercadoPagoService {
                 ? clienteOrden.getNombre() : "Cliente";
         String apellido = (clienteOrden.getApellido() != null && !clienteOrden.getApellido().isBlank())
                 ? clienteOrden.getApellido() : "Zero";
-        String email = (clienteOrden.getUsuario() != null && clienteOrden.getUsuario().getNombreUsuario() != null)
-                ? clienteOrden.getUsuario().getNombreUsuario() : "";
+        String email = (clienteOrden.getUsuario() != null && clienteOrden.getUsuario().getNombreUsuario() != null && clienteOrden.getUsuario().getNombreUsuario().contains("@"))
+                ? clienteOrden.getUsuario().getNombreUsuario().trim() : "";
+        if (email.isBlank() && clienteOrden.getContactos() != null) {
+            for (var c : clienteOrden.getContactos()) {
+                if (c instanceof com.example.zero.entidades.empresa.ContactoCorreoElectronico ce && !ce.isEliminado() && ce.getEmail() != null && ce.getEmail().contains("@")) {
+                    email = ce.getEmail().trim();
+                    break;
+                }
+            }
+        }
 
         // Registra venta con medio de pago BILLETERA_VIRTUAL (Mercado Pago)
         Factura factura = ventaService.registrarVenta(dni, nombre, apellido, email, "BILLETERA_VIRTUAL", prodIds, cantidades);

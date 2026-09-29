@@ -14,6 +14,9 @@ import com.example.zero.enums.TipoDocumento;
 import com.example.zero.repositories.*;
 import com.example.zero.services.persona.ClienteService;
 import com.example.zero.services.producto.ProductoService;
+import com.example.zero.services.mail.EmailService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +30,8 @@ import java.util.*;
 @Service
 public class VentaService {
 
+    private static final Logger logger = LoggerFactory.getLogger(VentaService.class);
+
     private final FacturaRepository facturaRepository;
     private final DetalleRepository detalleRepository;
     private final FormaDePagoRepository formaDePagoRepository;
@@ -37,6 +42,7 @@ public class VentaService {
     private final ProductoRepository productoRepository;
     private final StockService stockService;
     private final UsuarioRepository usuarioRepository;
+    private final EmailService emailService;
 
     public VentaService(FacturaRepository facturaRepository,
                         DetalleRepository detalleRepository,
@@ -47,7 +53,21 @@ public class VentaService {
                         ProductoService productoService,
                         UsuarioRepository usuarioRepository) {
         this(facturaRepository, detalleRepository, formaDePagoRepository, clienteRepository, clienteService,
-                nacionalidadRepository, productoService, null, null, usuarioRepository);
+                nacionalidadRepository, productoService, null, null, usuarioRepository, null);
+    }
+
+    public VentaService(FacturaRepository facturaRepository,
+                        DetalleRepository detalleRepository,
+                        FormaDePagoRepository formaDePagoRepository,
+                        ClienteRepository clienteRepository,
+                        ClienteService clienteService,
+                        NacionalidadRepository nacionalidadRepository,
+                        ProductoService productoService,
+                        ProductoRepository productoRepository,
+                        StockService stockService,
+                        UsuarioRepository usuarioRepository) {
+        this(facturaRepository, detalleRepository, formaDePagoRepository, clienteRepository, clienteService,
+                nacionalidadRepository, productoService, productoRepository, stockService, usuarioRepository, null);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -60,7 +80,8 @@ public class VentaService {
                         ProductoService productoService,
                         ProductoRepository productoRepository,
                         StockService stockService,
-                        UsuarioRepository usuarioRepository) {
+                        UsuarioRepository usuarioRepository,
+                        EmailService emailService) {
         this.facturaRepository = facturaRepository;
         this.detalleRepository = detalleRepository;
         this.formaDePagoRepository = formaDePagoRepository;
@@ -71,6 +92,7 @@ public class VentaService {
         this.productoRepository = productoRepository;
         this.stockService = stockService;
         this.usuarioRepository = usuarioRepository;
+        this.emailService = emailService;
     }
 
     public void validarVenta(String clienteDni, String clienteNombre, String clienteApellido,
@@ -245,6 +267,25 @@ public class VentaService {
                     int nuevoBalance = stockService.disminuirStock(stockActual, detalle.getCantidad());
                     stockService.crearStock(detalle, nuevoBalance, "Egreso por Venta - Factura N° " + facturaGuardada.getNumeroFactura());
                 }
+            }
+        }
+
+        // Fase 3: Despacho de comprobante y detalle de compra por correo electrónico
+        if (emailService != null) {
+            String emailDestino = (clienteEmail != null && !clienteEmail.trim().isEmpty() && clienteEmail.contains("@"))
+                    ? clienteEmail.trim()
+                    : facturaGuardada.getCustomerEmail();
+
+            if (emailDestino != null && !emailDestino.trim().isEmpty() && emailDestino.contains("@")) {
+                try {
+                    emailService.enviarComprobanteCompra(facturaGuardada, emailDestino.trim());
+                } catch (Exception e) {
+                    logger.error("No se pudo enviar el correo de confirmación de compra para factura {}: {}",
+                            facturaGuardada.getOrderNumber(), e.getMessage());
+                }
+            } else {
+                logger.info("No se encontró una dirección de correo válida para notificar la compra de la factura {}",
+                        facturaGuardada.getOrderNumber());
             }
         }
 

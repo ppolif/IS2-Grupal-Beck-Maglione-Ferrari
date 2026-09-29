@@ -56,6 +56,9 @@ class VentaServiceTest {
     @Mock
     private ProductoService productoService;
 
+    @Mock
+    private com.example.zero.services.mail.EmailService emailService;
+
     @InjectMocks
     private VentaService ventaService;
 
@@ -326,6 +329,85 @@ class VentaServiceTest {
     void buscarFacturaPorIdentificador_nuloOVacio_retornaNull() {
         assertNull(ventaService.buscarFacturaPorIdentificador(null));
         assertNull(ventaService.buscarFacturaPorIdentificador("   "));
+    }
+
+    @Test
+    void registrarVenta_conEmailValido_llamaEnviarComprobanteCompra() {
+        Cliente cliente = Cliente.builder()
+                .numeroDocumento("44556677")
+                .nombre("Martin")
+                .apellido("Palermo")
+                .eliminado(false)
+                .build();
+        when(clienteRepository.findByNumeroDocumentoAndEliminadoFalse("44556677"))
+                .thenReturn(Optional.of(cliente));
+        when(clienteRepository.save(any(Cliente.class))).thenAnswer(i -> i.getArgument(0));
+
+        FormaDePago fdp = FormaDePago.builder()
+                .id("fdp-1")
+                .tipoPago(TipoDePago.BILLETERA_VIRTUAL)
+                .eliminado(false)
+                .build();
+        when(formaDePagoRepository.findByTipoPagoAndEliminadoFalse(TipoDePago.BILLETERA_VIRTUAL))
+                .thenReturn(Optional.of(fdp));
+
+        Factura ultimaFactura = Factura.builder().numeroFactura(1010L).build();
+        when(facturaRepository.findTopByOrderByNumeroFacturaDesc()).thenReturn(Optional.of(ultimaFactura));
+
+        Producto prod = Producto.builder().id("p9").nombre("Botines Goleador").build();
+        when(productoService.buscarPorId("p9")).thenReturn(prod);
+        when(productoService.obtenerPrecioActual("p9")).thenReturn(12000.0);
+
+        when(facturaRepository.save(any(Factura.class))).thenAnswer(i -> i.getArgument(0));
+
+        Factura resultado = ventaService.registrarVenta(
+                "44556677", "Martin", "Palermo", "titancito@test.com", "BILLETERA_VIRTUAL",
+                List.of("p9"), List.of(1)
+        );
+
+        assertNotNull(resultado);
+        verify(emailService, times(1)).enviarComprobanteCompra(any(Factura.class), eq("titancito@test.com"));
+    }
+
+    @Test
+    void registrarVenta_cuandoFallaEmailService_noInterrumpeLaVenta() {
+        Cliente cliente = Cliente.builder()
+                .numeroDocumento("44556677")
+                .nombre("Martin")
+                .apellido("Palermo")
+                .eliminado(false)
+                .build();
+        when(clienteRepository.findByNumeroDocumentoAndEliminadoFalse("44556677"))
+                .thenReturn(Optional.of(cliente));
+        when(clienteRepository.save(any(Cliente.class))).thenAnswer(i -> i.getArgument(0));
+
+        FormaDePago fdp = FormaDePago.builder()
+                .id("fdp-1")
+                .tipoPago(TipoDePago.EFECTIVO)
+                .eliminado(false)
+                .build();
+        when(formaDePagoRepository.findByTipoPagoAndEliminadoFalse(TipoDePago.EFECTIVO))
+                .thenReturn(Optional.of(fdp));
+
+        when(facturaRepository.findTopByOrderByNumeroFacturaDesc()).thenReturn(Optional.empty());
+
+        Producto prod = Producto.builder().id("p9").nombre("Botines Goleador").build();
+        when(productoService.buscarPorId("p9")).thenReturn(prod);
+        when(productoService.obtenerPrecioActual("p9")).thenReturn(12000.0);
+
+        when(facturaRepository.save(any(Factura.class))).thenAnswer(i -> i.getArgument(0));
+
+        doThrow(new RuntimeException("Conexión SMTP caída")).when(emailService)
+                .enviarComprobanteCompra(any(Factura.class), anyString());
+
+        Factura resultado = assertDoesNotThrow(() -> ventaService.registrarVenta(
+                "44556677", "Martin", "Palermo", "titancito@test.com", "EFECTIVO",
+                List.of("p9"), List.of(1)
+        ));
+
+        assertNotNull(resultado);
+        assertEquals(1001L, resultado.getNumeroFactura());
+        verify(emailService, times(1)).enviarComprobanteCompra(any(Factura.class), eq("titancito@test.com"));
     }
 }
 
