@@ -33,5 +33,8 @@ public interface CategoriaRepository extends JpaRepository<Categoria, String> {
     Optional<Categoria> findByNombreAndEliminadoFalse(String nombre);
 
     List<Categoria> findByEliminadoFalse();
+
+    @Query("SELECT DISTINCT c FROM Categoria c LEFT JOIN FETCH c.subCategorias s WHERE c.eliminado = false AND (s.eliminado = false OR s.id IS NULL) ORDER BY c.nombre ASC")
+    List<Categoria> findActiveWithSubCategorias();
 }
 

@@ -30,6 +30,8 @@ public interface SubCategoriaRepository extends JpaRepository<SubCategoria, Stri
 
     Optional<SubCategoria> findByNombreAndEliminadoFalse(String nombre);
 
+    Optional<SubCategoria> findByNombreAndCategoriaIdAndEliminadoFalse(String nombre, String categoriaId);
+
     @Query("SELECT s FROM SubCategoria s LEFT JOIN FETCH s.categoria WHERE s.categoria.id = :categoriaId AND (s.eliminado = false OR s.eliminado IS NULL) ORDER BY s.nombre ASC")
     List<SubCategoria> findByCategoriaIdAndEliminadoFalse(@Param("categoriaId") String categoriaId);
 

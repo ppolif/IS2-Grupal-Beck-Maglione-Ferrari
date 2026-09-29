@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @Transactional
@@ -145,72 +146,137 @@ public class DataInitializer implements CommandLineRunner {
             System.err.println(">> [DataInitializer] Error en usuarios iniciales: " + e.getMessage());
         }
 
-        // 2. Categorías y Subcategorías de prueba
-        Categoria catCalzado = null;
-        Categoria catRopa = null;
-        SubCategoria subZapatillas = null;
-        SubCategoria subRemeras = null;
-        SubCategoria subPantalones = null;
+        // 2. Categorías y Subcategorías del sistema
+        // "Niños", "Niñas", "Mujeres" y "Hombres", cada una con "Ropa", "Calzado" y "Accesorios"
+        String[] categoriasPrincipales = {"Niños", "Niñas", "Mujeres", "Hombres"};
+        String[] subcategoriasPrincipales = {"Ropa", "Calzado", "Accesorios"};
+
         try {
-            catCalzado = categoriaRepository.findByNombreAndEliminadoFalse("Calzado Deportivo")
-                    .orElseGet(() -> categoriaService.crearCategoria("Calzado Deportivo"));
+            // Limpieza de categorías obsoletas anteriores (Indumentaria, Calzado Deportivo)
+            List<String> viejasCategorias = List.of("Indumentaria", "Calzado Deportivo", "Calzado");
+            for (String nombreViejo : viejasCategorias) {
+                categoriaRepository.findByNombre(nombreViejo).ifPresent(catVieja -> {
+                    List<SubCategoria> subsViejas = subCategoriaRepository.findByCategoriaIdAndEliminadoFalse(catVieja.getId());
+                    for (SubCategoria sub : subsViejas) {
+                        sub.setEliminado(true);
+                        subCategoriaRepository.save(sub);
+                    }
+                    catVieja.setEliminado(true);
+                    categoriaRepository.save(catVieja);
+                    System.out.println(">> [DataInitializer] Categoría obsoleta eliminada: " + nombreViejo);
+                });
+            }
+            if (jdbcTemplate != null) {
+                try {
+                    jdbcTemplate.execute("UPDATE categoria SET eliminado = 1 WHERE nombre IN ('Indumentaria', 'Calzado Deportivo', 'Calzado')");
+                    jdbcTemplate.execute("UPDATE subcategoria SET eliminado = 1 WHERE nombre IN ('Zapatillas Running', 'Remeras y Tops', 'Pantalones y Joggers')");
+                } catch (Exception ignored) {}
+            }
 
-            catRopa = categoriaRepository.findByNombreAndEliminadoFalse("Indumentaria")
-                    .orElseGet(() -> categoriaService.crearCategoria("Indumentaria"));
+            for (String catNombre : categoriasPrincipales) {
+                Categoria cat = categoriaRepository.findByNombre(catNombre).orElse(null);
+                if (cat == null) {
+                    cat = categoriaService.crearCategoria(catNombre);
+                } else if (cat.isEliminado()) {
+                    cat.setEliminado(false);
+                    categoriaRepository.save(cat);
+                }
 
-            final Categoria finalCatCalzado = catCalzado;
-            subZapatillas = subCategoriaRepository.findByNombreAndEliminadoFalse("Zapatillas Running")
-                    .orElseGet(() -> subCategoriaService.crearSubCategoria("Zapatillas Running", finalCatCalzado.getId()));
-
-            final Categoria finalCatRopa = catRopa;
-            subRemeras = subCategoriaRepository.findByNombreAndEliminadoFalse("Remeras y Tops")
-                    .orElseGet(() -> subCategoriaService.crearSubCategoria("Remeras y Tops", finalCatRopa.getId()));
-
-            subPantalones = subCategoriaRepository.findByNombreAndEliminadoFalse("Pantalones y Joggers")
-                    .orElseGet(() -> subCategoriaService.crearSubCategoria("Pantalones y Joggers", finalCatRopa.getId()));
+                for (String subNombre : subcategoriasPrincipales) {
+                    final String catId = cat.getId();
+                    SubCategoria subCat = subCategoriaRepository
+                            .findByNombreAndCategoriaIdAndEliminadoFalse(subNombre, catId)
+                            .orElse(null);
+                    if (subCat == null) {
+                        subCategoriaService.crearSubCategoria(subNombre, catId);
+                    } else if (subCat.isEliminado()) {
+                        subCat.setEliminado(false);
+                        subCategoriaRepository.save(subCat);
+                    }
+                }
+            }
+            System.out.println(">> [DataInitializer] Categorías y Subcategorías inicializadas correctamente.");
         } catch (Exception e) {
             System.err.println(">> [DataInitializer] Error en categorías iniciales: " + e.getMessage());
         }
 
-        // 3. Productos de prueba
+        // 3. Productos de prueba (2 productos por cada combinación categoría-subcategoría: 24 productos)
+        // Se preservan PROD-001 (Zero Velocity Nitro), PROD-002 (Remera Zero Pro Breathable) y PROD-003 (Pantalón Jogger Dry-Fit)
+        List<ProductoSeed> productosSeed = List.of(
+                // Niños - Ropa
+                new ProductoSeed("PROD-004", "Remera Infantil Estampada Dino", "Remera 100% algodón suave con divertido estampado de dinosaurios.", "6", "Niños", "Ropa", 18.50, false),
+                new ProductoSeed("PROD-005", "Pantalón Jogger Niños Deportivo", "Pantalón rústico con cintura elástica y puños reforzados para niños.", "8", "Niños", "Ropa", 26.00, true),
+                // Niños - Calzado
+                new ProductoSeed("PROD-006", "Zapatillas Urbanas Velcro Niños", "Zapatillas urbanas con doble cierre adhesivo y suela de goma antideslizante.", "28", "Niños", "Calzado", 42.00, false),
+                new ProductoSeed("PROD-007", "Botas de Lluvia Infantil Azul", "Botas de lluvia impermeables de caucho flexible para niños.", "30", "Niños", "Calzado", 34.50, false),
+                // Niños - Accesorios
+                new ProductoSeed("PROD-008", "Gorra Infantil con Visera Curva", "Gorra deportiva de gabardina con visera curva y ajuste trasero.", "Único", "Niños", "Accesorios", 12.00, false),
+                new ProductoSeed("PROD-009", "Mochila Escolar Espacial Niños", "Mochila escolar liviana con diseño espacial y tiras acolchadas.", "Único", "Niños", "Accesorios", 29.99, true),
+
+                // Niñas - Ropa
+                new ProductoSeed("PROD-010", "Vestido Casual Flores Niña", "Vestido de poplín de algodón fresco con estampado floral y detalle de moño.", "6", "Niñas", "Ropa", 24.99, false),
+                new ProductoSeed("PROD-011", "Calza Deportiva Estampada Niñas", "Calza elastizada de microfibra suave ideal para juegos y deporte.", "8", "Niñas", "Ropa", 19.50, true),
+                // Niñas - Calzado
+                new ProductoSeed("PROD-012", "Zapatillas Deportivas Glitter Niñas", "Zapatillas deportivas con detalles de glitter y plantilla acolchada.", "29", "Niñas", "Calzado", 46.00, false),
+                new ProductoSeed("PROD-013", "Sandalias Playeras Niñas", "Sandalias de verano livianas con tiras ajustables y suela ergonómica.", "31", "Niñas", "Calzado", 32.00, false),
+                // Niñas - Accesorios
+                new ProductoSeed("PROD-014", "Set de Hebillas y Vincha Niñas", "Set decorativo compuesto por 4 hebillas con flores y vincha elástica.", "Único", "Niñas", "Accesorios", 9.50, false),
+                new ProductoSeed("PROD-015", "Mini Cartera Bandolera Corazón", "Bandolera pequeña con forma de corazón, textura holográfica y correa ajustable.", "Único", "Niñas", "Accesorios", 16.80, true),
+
+                // Mujeres - Ropa
+                new ProductoSeed("PROD-016", "Blusa Elegante Satinada Mujer", "Blusa de satén con cuello camisero fluido y botones frontales.", "M", "Mujeres", "Ropa", 54.00, false),
+                new ProductoSeed("PROD-017", "Jeans Skinny High-Waist Mujer", "Jean tiro alto elastizado de calce estilizado con lavado clásico.", "38", "Mujeres", "Ropa", 68.50, true),
+                // Mujeres - Calzado
+                new ProductoSeed("PROD-018", "Stilettos Clásicos Cuero Mujer", "Zapatos de taco medio en eco-cuero con terminación en punta fina.", "37", "Mujeres", "Calzado", 89.00, false),
+                new ProductoSeed("PROD-019", "Zapatillas Running Mujer Pro", "Calzado deportivo de running con amortiguación reactiva y malla transpirable.", "38", "Mujeres", "Calzado", 115.00, true),
+                // Mujeres - Accesorios
+                new ProductoSeed("PROD-020", "Cartera Tote Bag Cuero Sintético", "Cartera espaciosa de mano y hombro con cierre superior y organizador interno.", "Único", "Mujeres", "Accesorios", 75.00, false),
+                new ProductoSeed("PROD-021", "Cinturón de Cuero Fino Hebilla Dorada", "Cinturón femenino de cuero legítimo con hebilla metálica circular dorada.", "90", "Mujeres", "Accesorios", 22.00, false),
+
+                // Hombres - Ropa (Incluye los productos de prueba de compras PROD-002 y PROD-003)
+                new ProductoSeed("PROD-002", "Remera Zero Pro Breathable", "Camiseta de alta respirabilidad con costuras planas antirozaduras para entrenamientos.", "M", "Hombres", "Ropa", 45.50, false),
+                new ProductoSeed("PROD-003", "Pantalón Jogger Dry-Fit", "Pantalón deportivo con bolsillos con cierre y ajuste térmico elástico.", "L", "Hombres", "Ropa", 68.00, true),
+                // Hombres - Calzado (Incluye el producto de prueba de compras PROD-001)
+                new ProductoSeed("PROD-001", "Zero Velocity Nitro", "Calzado ultraligero con placa de propulsión y suela de máxima tracción para maratones.", "42", "Hombres", "Calzado", 149.99, true),
+                new ProductoSeed("PROD-022", "Zapatos de Vestir Oxford Hombre", "Zapatos formales de cuero vacuno legítimo con picado clásico Brogue.", "42", "Hombres", "Calzado", 129.00, false),
+                // Hombres - Accesorios
+                new ProductoSeed("PROD-023", "Billetera Bifold de Cuero Hombre", "Billetera clásica de cuero genuino con tarjetero y división para billetes.", "Único", "Hombres", "Accesorios", 28.00, false),
+                new ProductoSeed("PROD-024", "Reloj Analógico Deportivo Hombre", "Reloj con caja de acero inoxidable, correa de silicona resistente al agua y fechador.", "Único", "Hombres", "Accesorios", 85.00, true)
+        );
+
         try {
-            if (subZapatillas != null && productoRepository.findByCodigoAndEliminadoFalse("PROD-001").isEmpty()) {
-                productoService.crearProducto(
-                        "PROD-001",
-                        "Zero Velocity Nitro",
-                        "Calzado ultraligero con placa de propulsión y suela de máxima tracción para maratones.",
-                        "42",
-                        subZapatillas.getId(),
-                        149.99,
-                        true
-                );
-                System.out.println(">> [DataInitializer] Producto inicial creado: PROD-001 (Zero Velocity Nitro)");
-            }
+            for (ProductoSeed seed : productosSeed) {
+                Categoria cat = categoriaRepository.findByNombreAndEliminadoFalse(seed.categoria()).orElse(null);
+                if (cat != null) {
+                    SubCategoria subCat = subCategoriaRepository
+                            .findByNombreAndCategoriaIdAndEliminadoFalse(seed.subcategoria(), cat.getId())
+                            .orElse(null);
 
-            if (subRemeras != null && productoRepository.findByCodigoAndEliminadoFalse("PROD-002").isEmpty()) {
-                productoService.crearProducto(
-                        "PROD-002",
-                        "Remera Zero Pro Breathable",
-                        "Camiseta de alta respirabilidad con costuras planas antirozaduras para entrenamientos.",
-                        "M",
-                        subRemeras.getId(),
-                        45.50,
-                        false
-                );
-                System.out.println(">> [DataInitializer] Producto inicial creado: PROD-002 (Remera Zero Pro Breathable)");
-            }
-
-            if (subPantalones != null && productoRepository.findByCodigoAndEliminadoFalse("PROD-003").isEmpty()) {
-                productoService.crearProducto(
-                        "PROD-003",
-                        "Pantalón Jogger Dry-Fit",
-                        "Pantalón deportivo con bolsillos con cierre y ajuste térmico elástico.",
-                        "L",
-                        subPantalones.getId(),
-                        68.00,
-                        true
-                );
-                System.out.println(">> [DataInitializer] Producto inicial creado: PROD-003 (Pantalón Jogger Dry-Fit)");
+                    if (subCat != null) {
+                        Optional<Producto> prodExistente = productoRepository.findByCodigoAndEliminadoFalse(seed.codigo());
+                        if (prodExistente.isEmpty()) {
+                            productoService.crearProducto(
+                                    seed.codigo(),
+                                    seed.nombre(),
+                                    seed.descripcion(),
+                                    seed.talle(),
+                                    subCat.getId(),
+                                    seed.precio(),
+                                    seed.enOferta()
+                            );
+                            System.out.println(">> [DataInitializer] Producto inicial creado: " + seed.codigo() + " (" + seed.nombre() + ")");
+                        } else {
+                            // Si ya existía, asegurarse de que su subcategoría sea la válida activa
+                            Producto p = prodExistente.get();
+                            if (p.getSubCategoria() == null || p.getSubCategoria().isEliminado() ||
+                                    p.getSubCategoria().getCategoria() == null || p.getSubCategoria().getCategoria().isEliminado()) {
+                                p.setSubCategoria(subCat);
+                                productoRepository.save(p);
+                                System.out.println(">> [DataInitializer] Producto reasignado a subcategoría activa: " + p.getCodigo());
+                            }
+                        }
+                    }
+                }
             }
         } catch (Exception e) {
             System.err.println(">> [DataInitializer] Error en productos iniciales: " + e.getMessage());
@@ -505,4 +571,15 @@ public class DataInitializer implements CommandLineRunner {
             System.err.println(">> [DataInitializer] Error en facturas de compras iniciales: " + e.getMessage());
         }
     }
+
+    private record ProductoSeed(
+            String codigo,
+            String nombre,
+            String descripcion,
+            String talle,
+            String categoria,
+            String subcategoria,
+            double precio,
+            boolean enOferta
+    ) {}
 }
