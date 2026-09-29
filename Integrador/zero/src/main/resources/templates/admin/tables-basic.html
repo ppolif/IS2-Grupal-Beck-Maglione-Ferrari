@@ -114,10 +114,10 @@
               <a th:href="@{/admin/orders/{id}(id=${order.id})}" class="btn btn-outline-dark" title="Ver Factura / Comprobante">
                 <i class="bi bi-eye"></i>
               </a>
-              <form th:if="${order.isCompraProveedor() and order.status != 'ENTREGADA' and order.status != 'ANULADA'}"
+              <form th:if="${order.isCompraProveedor() and (#strings.toString(order.estado) != 'ENTREGADA' and #strings.toString(order.estado) != 'ANULADA' and order.status != 'ENTREGADA' and order.status != 'ANULADA')}"
                     th:action="@{/admin/compras/{id}/entregar(id=${order.id})}" method="POST" class="d-inline"
                     onsubmit="return confirm('¿Confirmas la recepción de mercadería? Esta acción incrementará el stock de los productos incluidos.');">
-                <button type="submit" class="btn btn-outline-success" title="Recibir mercadería e ingresar stock">
+                <button type="submit" class="btn btn-outline-success" title="Marcar como entregada e ingresar stock">
                   <i class="bi bi-box-seam"></i>
                 </button>
               </form>

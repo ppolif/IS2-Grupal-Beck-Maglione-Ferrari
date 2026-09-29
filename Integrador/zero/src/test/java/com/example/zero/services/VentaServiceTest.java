@@ -305,27 +305,27 @@ class VentaServiceTest {
 
         when(facturaRepository.findByNumeroFacturaAndEliminadoFalse(1001L)).thenReturn(Optional.of(f));
 
-        com.example.zero.dto.OrderViewDto dto = ventaService.buscarOrderDtoPorIdentificador("#ORD-1001");
+        Factura factura = ventaService.buscarFacturaPorIdentificador("#ORD-1001");
 
-        assertNotNull(dto);
-        assertEquals("#ORD-1001", dto.getOrderNumber());
-        assertEquals(1500.0, dto.getTotalAmount());
+        assertNotNull(factura);
+        assertEquals(1001L, factura.getNumeroFactura());
+        assertEquals(1500.0, factura.getTotalPagado());
     }
 
     @Test
-    void buscarOrderDtoPorIdentificador_noExistente_retornaNull() {
+    void buscarFacturaPorIdentificador_noExistente_retornaNull() {
         when(facturaRepository.findByNumeroFacturaAndEliminadoFalse(9999L)).thenReturn(Optional.empty());
         when(facturaRepository.findActive("9999")).thenReturn(Optional.empty());
 
-        com.example.zero.dto.OrderViewDto dto = ventaService.buscarOrderDtoPorIdentificador("#ORD-9999");
+        Factura factura = ventaService.buscarFacturaPorIdentificador("#ORD-9999");
 
-        assertNull(dto);
+        assertNull(factura);
     }
 
     @Test
-    void buscarOrderDtoPorIdentificador_nuloOVacio_retornaNull() {
-        assertNull(ventaService.buscarOrderDtoPorIdentificador(null));
-        assertNull(ventaService.buscarOrderDtoPorIdentificador("   "));
+    void buscarFacturaPorIdentificador_nuloOVacio_retornaNull() {
+        assertNull(ventaService.buscarFacturaPorIdentificador(null));
+        assertNull(ventaService.buscarFacturaPorIdentificador("   "));
     }
 }
 
