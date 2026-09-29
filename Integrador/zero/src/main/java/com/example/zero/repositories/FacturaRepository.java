@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,5 +34,12 @@ public interface FacturaRepository extends JpaRepository<Factura, String> {
     List<Factura> findByEliminadoFalseOrderByFechaFacturaDesc();
 
     Optional<Factura> findTopByOrderByNumeroFacturaDesc();
+
+    @Query("SELECT f FROM Factura f " +
+           "WHERE f.fechaFactura BETWEEN :inicio AND :fin " +
+           "AND (f.eliminado = false OR f.eliminado IS NULL) " +
+           "AND TYPE(f) != FacturaProveedor " +
+           "ORDER BY f.fechaFactura DESC")
+    List<Factura> findVentasEntreFechas(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 }
 

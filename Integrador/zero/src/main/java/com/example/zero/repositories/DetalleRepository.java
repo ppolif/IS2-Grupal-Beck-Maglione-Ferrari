@@ -39,5 +39,13 @@ public interface DetalleRepository extends JpaRepository<Detalle, String> {
     List<Detalle> findDetallesByProveedorAndProductoOrderByFechaDesc(
             @Param("proveedorId") String proveedorId,
             @Param("productoId") String productoId);
+
+    @Query("SELECT d FROM FacturaProveedor fp JOIN fp.detalles d " +
+           "WHERE d.producto.id = :productoId " +
+           "AND (fp.eliminado = false OR fp.eliminado IS NULL) " +
+           "AND (d.eliminado = false OR d.eliminado IS NULL) " +
+           "AND d.cantidad > 0 " +
+           "ORDER BY (d.subtotal / d.cantidad) ASC, fp.fechaFactura DESC")
+    List<Detalle> findDetallesConMenorCostoPorProducto(@Param("productoId") String productoId);
 }
 

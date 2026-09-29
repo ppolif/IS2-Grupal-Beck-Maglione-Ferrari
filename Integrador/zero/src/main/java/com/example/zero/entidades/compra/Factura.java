@@ -88,19 +88,27 @@ public class Factura {
         return numeroFactura != null ? "#ORD-" + numeroFactura : (id != null ? "#ORD-" + id : "");
     }
 
+    public Factura getInstanciaReal() {
+        try {
+            return (Factura) org.hibernate.Hibernate.unproxy(this);
+        } catch (Exception e) {
+            return this;
+        }
+    }
+
     public boolean isCompraProveedor() {
-        return (this instanceof FacturaProveedor);
+        return (getInstanciaReal() instanceof FacturaProveedor);
     }
 
     public Proveedor getProveedor() {
-        if (this instanceof FacturaProveedor fp) {
+        if (getInstanciaReal() instanceof FacturaProveedor fp) {
             return fp.getProveedor();
         }
         return null;
     }
 
     public String getCustomerName() {
-        if (this instanceof FacturaProveedor fp && fp.getProveedor() != null) {
+        if (getInstanciaReal() instanceof FacturaProveedor fp && fp.getProveedor() != null) {
             String razon = fp.getProveedor().getRazonSocial();
             if (razon != null && !razon.isBlank()) {
                 return razon.trim();
@@ -118,7 +126,7 @@ public class Factura {
     }
 
     public String getCustomerEmail() {
-        if (this instanceof FacturaProveedor fp && fp.getProveedor() != null) {
+        if (getInstanciaReal() instanceof FacturaProveedor fp && fp.getProveedor() != null) {
             return "CUIT: " + fp.getProveedor().getCuit();
         }
         if (cliente != null) {
