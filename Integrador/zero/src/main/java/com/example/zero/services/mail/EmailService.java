@@ -24,7 +24,7 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
-    /**
+    /**     
      * Envía un correo electrónico con el código de activación de 6 dígitos con formato HTML institucional ZERO.
      *
      * @param destinatario Dirección de correo del cliente receptor

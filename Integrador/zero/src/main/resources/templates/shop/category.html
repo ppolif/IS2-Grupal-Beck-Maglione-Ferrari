@@ -106,42 +106,28 @@
         <div class="row">
 
           <!-- Productos Dinámicos desde Backend -->
-          <div class="col-lg-4 col-md-6" th:if="${products != null && !#lists.isEmpty(products)}" th:each="prod : ${products}">
-            <div class="single-product position-relative">
-              <div class="position-absolute" style="top: 10px; left: 10px; z-index: 2;" th:if="${prod.enOferta}">
+          <div class="col-lg-4 col-md-6 mb-4" th:if="${products != null && !#lists.isEmpty(products)}" th:each="prod : ${products}">
+            <div class="single-product position-relative bg-white p-3 rounded shadow-sm" style="margin-top: 0; margin-bottom: 0;">
+              <div class="position-absolute" style="top: 15px; left: 15px; z-index: 2;" th:if="${prod.enOferta}">
                 <span class="badge badge-danger text-uppercase font-weight-bold px-2 py-1 shadow-sm">OFERTA</span>
               </div>
               <a th:href="@{/product/{id}(id=${prod.id})}">
-                <div class="product-img-wrap">
-                  <img class="img-fluid" th:src="${prod.imagenUrl}" th:alt="${prod.nombre}"
+                <div class="product-img-wrap mb-3 position-relative">
+                  <img class="img-fluid rounded" th:src="${prod.imagenUrl}" th:alt="${prod.nombre}"
                        src="/shop/img/product/p1.jpg" onerror="this.src='/shop/img/product/p1.jpg'"
                        th:classappend="${prod.stock <= 0} ? 'img-no-stock' : ''"
-                       style="width: 100%; height: 260px; object-fit: cover;">
+                       style="width: 100%; height: 220px; object-fit: cover; margin-bottom: 0;">
                   <div th:if="${prod.stock <= 0}" class="overlay-no-stock">
                     <span class="badge-no-stock">Sin Stock</span>
                   </div>
                 </div>
               </a>
-              <div class="product-details">
+              <div class="product-details text-center">
                 <a th:href="@{/product/{id}(id=${prod.id})}" class="text-dark d-block">
-                  <h6 th:text="${prod.nombre}">Zapatillas Zero Runner</h6>
+                  <h6 class="font-weight-bold text-dark text-truncate" th:text="${prod.nombre}">Zapatillas Zero Runner</h6>
                 </a>
-                <div class="price">
-                  <h6 th:classappend="${prod.enOferta} ? 'text-danger font-weight-bold' : ''">$<span th:text="${#numbers.formatDecimal(prod.precioActual != null ? prod.precioActual : 0, 1, 'POINT', 2, 'POINT')}">150.00</span></h6>
-                </div>
-                <div class="prd-bottom">
-                  <form th:if="${prod.stock > 0 and (session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE')}" action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
-                    <input type="hidden" name="productId" th:value="${prod.id}">
-                    <input type="hidden" name="quantity" value="1">
-                    <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
-                      <span class="ti-bag"></span>
-                      <p class="hover-text">Al carrito</p>
-                    </button>
-                  </form>
-                  <a th:href="@{/product/{id}(id=${prod.id})}" class="social-info" title="Ver Detalle">
-                    <span class="lnr lnr-move"></span>
-                    <p class="hover-text">Detalle</p>
-                  </a>
+                <div class="price mb-2">
+                  <h6 th:classappend="${prod.enOferta} ? 'text-danger font-weight-bold' : 'text-dark font-weight-bold'">$<span th:text="${#numbers.formatDecimal(prod.precioActual != null ? prod.precioActual : 0, 1, 'POINT', 2, 'POINT')}">150.00</span></h6>
                 </div>
               </div>
             </div>
