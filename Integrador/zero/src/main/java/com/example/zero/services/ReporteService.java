@@ -180,6 +180,14 @@ public class ReporteService {
                 Detalle mejorDetalle = detallesMenorCosto.get(0);
                 menorCosto = mejorDetalle.getUnitPrice();
                 Proveedor prov = mejorDetalle.getProveedor();
+                if (prov == null && mejorDetalle.getFactura() != null) {
+                    try {
+                        Object unp = org.hibernate.Hibernate.unproxy(mejorDetalle.getFactura());
+                        if (unp instanceof com.example.zero.entidades.compraProveedor.FacturaProveedor fp) {
+                            prov = fp.getProveedor();
+                        }
+                    } catch (Exception ignored) {}
+                }
                 if (prov != null) {
                     provId = prov.getId();
                     provNombre = prov.getRazonSocial();
@@ -253,6 +261,14 @@ public class ReporteService {
                 Detalle d = detalles.get(0);
                 menorCosto = d.getUnitPrice();
                 Proveedor prov = d.getProveedor();
+                if (prov == null && d.getFactura() != null) {
+                    try {
+                        Object unp = org.hibernate.Hibernate.unproxy(d.getFactura());
+                        if (unp instanceof com.example.zero.entidades.compraProveedor.FacturaProveedor fp) {
+                            prov = fp.getProveedor();
+                        }
+                    } catch (Exception ignored) {}
+                }
                 if (prov != null) {
                     provId = prov.getId();
                     provRazon = prov.getRazonSocial();
