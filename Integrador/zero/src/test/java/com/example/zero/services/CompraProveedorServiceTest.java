@@ -67,10 +67,10 @@ class CompraProveedorServiceTest {
         Proveedor prov = Proveedor.builder().id(provId).razonSocial("Textil S.A.").cuit("30-12345678-9").build();
         when(proveedorRepository.findActive(provId)).thenReturn(Optional.of(prov));
 
-        Producto prod = Producto.builder().id("p1").nombre("Remera").stock(10).build();
+        Producto prod = Producto.builder().id("p1").nombre("Remera").build();
         when(productoService.buscarPorId("p1")).thenReturn(prod);
         when(stockService.calcularStockActual("p1")).thenReturn(10);
-        when(productoService.aumentarStock(10, 25)).thenReturn(35);
+        when(stockService.aumentarStock(10, 25)).thenReturn(35);
 
         FormaDePago fdp = FormaDePago.builder().id("fdp-1").tipoPago(TipoDePago.TRANSFERENCIA).build();
         when(formaDePagoRepository.findByTipoPagoAndEliminadoFalse(TipoDePago.TRANSFERENCIA)).thenReturn(Optional.of(fdp));
@@ -100,9 +100,7 @@ class CompraProveedorServiceTest {
         assertEquals("fp-1", resultado.getId());
         assertEquals(5001L, resultado.getNumeroFactura());
         assertEquals(2500.0, resultado.getTotalPagado());
-        assertEquals(35, prod.getStock()); // 10 iniciales + 25 pedidos
 
-        verify(productoRepository).save(prod);
         verify(stockService).crearStock(any(Detalle.class), eq(35), anyString());
         verify(facturaProveedorRepository).save(any(FacturaProveedor.class));
     }
@@ -114,7 +112,7 @@ class CompraProveedorServiceTest {
         Proveedor prov = Proveedor.builder().id(provId).razonSocial("Calzados S.A.").cuit("30-98765432-1").build();
         when(proveedorRepository.findActive(provId)).thenReturn(Optional.of(prov));
 
-        Producto prod = Producto.builder().id("p2").nombre("Zapatillas").stock(5).build();
+        Producto prod = Producto.builder().id("p2").nombre("Zapatillas").build();
         when(productoService.buscarPorId("p2")).thenReturn(prod);
 
         FormaDePago fdp = FormaDePago.builder().id("fdp-2").tipoPago(TipoDePago.TRANSFERENCIA).build();
@@ -140,7 +138,6 @@ class CompraProveedorServiceTest {
 
         assertNotNull(resultado);
         assertEquals(EstadoFactura.SIN_DEFINIR, resultado.getEstado());
-        assertEquals(5, prod.getStock()); // No se altera el stock
         verify(productoRepository, never()).save(any(Producto.class));
         verifyNoInteractions(stockService);
     }
@@ -148,7 +145,7 @@ class CompraProveedorServiceTest {
     @Test
     @DisplayName("marcarComoEntregada aumenta existencias, audita movimiento y actualiza estado a ENTREGADA")
     void marcarComoEntregada_conFacturaValida_aumentaStockAuditaYActualizaEstado() {
-        Producto producto = Producto.builder().id("p-10").nombre("Pelota Zero").stock(15).build();
+        Producto producto = Producto.builder().id("p-10").nombre("Pelota Zero").build();
         Detalle detalle = Detalle.builder()
                 .id("det-1")
                 .producto(producto)
@@ -164,15 +161,13 @@ class CompraProveedorServiceTest {
 
         when(facturaProveedorRepository.findActive("fp-100")).thenReturn(Optional.of(factura));
         when(stockService.calcularStockActual("p-10")).thenReturn(15);
-        when(productoService.aumentarStock(15, 10)).thenReturn(25);
+        when(stockService.aumentarStock(15, 10)).thenReturn(25);
         when(facturaProveedorRepository.save(any(FacturaProveedor.class))).thenAnswer(inv -> inv.getArgument(0));
 
         FacturaProveedor resultado = compraProveedorService.marcarComoEntregada("fp-100");
 
         assertNotNull(resultado);
         assertEquals(EstadoFactura.ENTREGADA, resultado.getEstado());
-        assertEquals(25, producto.getStock());
-        verify(productoRepository).save(producto);
         verify(stockService).crearStock(eq(detalle), eq(25), contains("Factura N° 5010"));
         verify(facturaProveedorRepository).save(factura);
     }
@@ -277,5 +272,38 @@ class CompraProveedorServiceTest {
 
         assertTrue(fp.isEliminado());
         verify(facturaProveedorRepository).save(fp);
+    }
+
+    @Test
+    void obtenerUltimoCostoUnitario_conHistorial_retornaPrecioUnitarioDeDetalle() {
+        Detalle detalle = Detalle.builder()
+                .cantidad(10)
+                .subtotal(250.0)
+                .build();
+
+        when(detalleRepository.findDetallesByProveedorAndProductoOrderByFechaDesc("prov-1", "prod-1"))
+                .thenReturn(List.of(detalle));
+
+        Double costo = compraProveedorService.obtenerUltimoCostoUnitario("prov-1", "prod-1");
+
+        assertEquals(25.0, costo);
+        verify(detalleRepository).findDetallesByProveedorAndProductoOrderByFechaDesc("prov-1", "prod-1");
+    }
+
+    @Test
+    void obtenerUltimoCostoUnitario_sinHistorial_retornaCero() {
+        when(detalleRepository.findDetallesByProveedorAndProductoOrderByFechaDesc("prov-1", "prod-1"))
+                .thenReturn(List.of());
+
+        Double costo = compraProveedorService.obtenerUltimoCostoUnitario("prov-1", "prod-1");
+
+        assertEquals(0.0, costo);
+    }
+
+    @Test
+    void obtenerUltimoCostoUnitario_conParametrosNulos_retornaCero() {
+        assertEquals(0.0, compraProveedorService.obtenerUltimoCostoUnitario(null, "prod-1"));
+        assertEquals(0.0, compraProveedorService.obtenerUltimoCostoUnitario("prov-1", null));
+        verifyNoInteractions(detalleRepository);
     }
 }

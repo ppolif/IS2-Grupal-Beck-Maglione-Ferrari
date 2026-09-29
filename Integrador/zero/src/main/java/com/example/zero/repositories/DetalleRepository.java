@@ -29,5 +29,15 @@ public interface DetalleRepository extends JpaRepository<Detalle, String> {
     }
 
     List<Detalle> findByFacturaIdAndEliminadoFalse(String facturaId);
+
+    @Query("SELECT d FROM FacturaProveedor fp JOIN fp.detalles d " +
+           "WHERE fp.proveedor.id = :proveedorId " +
+           "AND d.producto.id = :productoId " +
+           "AND (fp.eliminado = false OR fp.eliminado IS NULL) " +
+           "AND (d.eliminado = false OR d.eliminado IS NULL) " +
+           "ORDER BY fp.fechaFactura DESC")
+    List<Detalle> findDetallesByProveedorAndProductoOrderByFechaDesc(
+            @Param("proveedorId") String proveedorId,
+            @Param("productoId") String productoId);
 }
 

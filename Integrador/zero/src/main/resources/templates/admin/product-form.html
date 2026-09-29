@@ -103,18 +103,6 @@
             <div class="form-text" th:if="${isEdit}">Si ingresa un valor distinto, se generará una nueva vigencia de precio automáticamente.</div>
           </div>
 
-          <!-- Stock -->
-          <div class="col-md-6">
-            <label for="stock" class="form-label small fw-bold text-brand-dark">
-              <span>Stock Inicial / Disponible</span>
-              <span class="text-danger">*</span>
-            </label>
-            <input type="number" min="0" class="form-control" id="stock" name="stock"
-                   th:value="${producto != null && producto.stock > 0 ? producto.stock : (stock != null ? stock : 0)}"
-                   placeholder="0" required>
-            <div class="form-text">Cantidad física de unidades disponibles en inventario.</div>
-          </div>
-
           <!-- En Oferta -->
           <div class="col-md-6 d-flex align-items-center">
             <div class="form-check mt-3">
@@ -124,6 +112,17 @@
                 Destacar en Oferta en la Tienda
               </label>
             </div>
+          </div>
+
+          <!-- Stock Actual (Informativo / Solo lectura en edición) -->
+          <div class="col-md-6" th:if="${isEdit}">
+            <label for="stockDisplay" class="form-label small fw-bold text-brand-dark">Stock en Inventario</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="bi bi-boxes"></i></span>
+              <input type="text" class="form-control bg-light" id="stockDisplay"
+                     th:value="${stock != null ? stock + ' unidades' : '0 unidades'}" readonly disabled>
+            </div>
+            <div class="form-text">El stock se actualiza mediante compras a proveedores y ventas.</div>
           </div>
 
           <!-- Imagen del Producto (Obligatoria para alta) -->

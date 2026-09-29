@@ -1,13 +1,20 @@
 package com.example.zero.config;
 
+import com.example.zero.entidades.compra.Detalle;
+import com.example.zero.entidades.compra.FormaDePago;
+import com.example.zero.entidades.compraProveedor.FacturaProveedor;
+import com.example.zero.entidades.compraProveedor.Proveedor;
 import com.example.zero.entidades.persona.Nacionalidad;
 import com.example.zero.entidades.producto.Categoria;
+import com.example.zero.entidades.producto.Producto;
 import com.example.zero.entidades.producto.SubCategoria;
 import com.example.zero.entidades.zona.Departamento;
 import com.example.zero.entidades.zona.Localidad;
 import com.example.zero.entidades.zona.Pais;
 import com.example.zero.entidades.zona.Provincia;
+import com.example.zero.enums.EstadoFactura;
 import com.example.zero.enums.RolUsuario;
+import com.example.zero.enums.TipoDePago;
 import com.example.zero.repositories.*;
 import com.example.zero.services.CategoriaService;
 import com.example.zero.services.producto.ProductoService;
@@ -16,8 +23,14 @@ import com.example.zero.services.SubCategoriaService;
 import com.example.zero.services.persona.UsuarioService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
 
 @Component
+@Transactional
 public class DataInitializer implements CommandLineRunner {
 
     private final UsuarioRepository usuarioRepository;
@@ -35,6 +48,10 @@ public class DataInitializer implements CommandLineRunner {
     private final ProvinciaRepository provinciaRepository;
     private final DepartamentoRepository departamentoRepository;
     private final LocalidadRepository localidadRepository;
+    private final FacturaRepository facturaRepository;
+    private final FacturaProveedorRepository facturaProveedorRepository;
+    private final DetalleRepository detalleRepository;
+    private final FormaDePagoRepository formaDePagoRepository;
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
@@ -52,7 +69,11 @@ public class DataInitializer implements CommandLineRunner {
                            PaisRepository paisRepository,
                            ProvinciaRepository provinciaRepository,
                            DepartamentoRepository departamentoRepository,
-                           LocalidadRepository localidadRepository) {
+                           LocalidadRepository localidadRepository,
+                           FacturaRepository facturaRepository,
+                           FacturaProveedorRepository facturaProveedorRepository,
+                           DetalleRepository detalleRepository,
+                           FormaDePagoRepository formaDePagoRepository) {
         this.usuarioRepository = usuarioRepository;
         this.usuarioService = usuarioService;
         this.categoriaRepository = categoriaRepository;
@@ -68,6 +89,10 @@ public class DataInitializer implements CommandLineRunner {
         this.provinciaRepository = provinciaRepository;
         this.departamentoRepository = departamentoRepository;
         this.localidadRepository = localidadRepository;
+        this.facturaRepository = facturaRepository;
+        this.facturaProveedorRepository = facturaProveedorRepository;
+        this.detalleRepository = detalleRepository;
+        this.formaDePagoRepository = formaDePagoRepository;
     }
 
     @Override
@@ -259,6 +284,214 @@ public class DataInitializer implements CommandLineRunner {
             }
         } catch (Exception e) {
             System.err.println(">> [DataInitializer] Error en geografía inicial: " + e.getMessage());
+        }
+
+        // 7. Facturas de Compras a Proveedores de prueba con costos diferenciados por proveedor
+        try {
+            if (facturaProveedorRepository != null && facturaRepository != null) {
+                Proveedor provTextil = proveedorRepository.findByCuitAndEliminadoFalse("30-71234567-8")
+                        .orElseGet(() -> {
+                            List<Proveedor> lista = proveedorRepository.findByEliminadoFalse();
+                            for (Proveedor p : lista) {
+                                if (p.getRazonSocial() != null && p.getRazonSocial().toLowerCase().contains("textil")) {
+                                    return p;
+                                }
+                            }
+                            return !lista.isEmpty() ? lista.get(0) : null;
+                        });
+
+                Proveedor provCalzados = proveedorRepository.findByCuitAndEliminadoFalse("30-65432109-7")
+                        .orElseGet(() -> {
+                            List<Proveedor> lista = proveedorRepository.findByEliminadoFalse();
+                            for (Proveedor p : lista) {
+                                if (p.getRazonSocial() != null && p.getRazonSocial().toLowerCase().contains("calzado")) {
+                                    return p;
+                                }
+                            }
+                            return lista.size() > 1 ? lista.get(1) : null;
+                        });
+
+                Producto prod1 = productoRepository.findByCodigoAndEliminadoFalse("PROD-001")
+                        .orElseGet(() -> {
+                            List<Producto> lista = productoRepository.findByEliminadoFalse();
+                            return !lista.isEmpty() ? lista.get(0) : null;
+                        });
+                Producto prod2 = productoRepository.findByCodigoAndEliminadoFalse("PROD-002")
+                        .orElseGet(() -> {
+                            List<Producto> lista = productoRepository.findByEliminadoFalse();
+                            return lista.size() > 1 ? lista.get(1) : null;
+                        });
+                Producto prod3 = productoRepository.findByCodigoAndEliminadoFalse("PROD-003")
+                        .orElseGet(() -> {
+                            List<Producto> lista = productoRepository.findByEliminadoFalse();
+                            return lista.size() > 2 ? lista.get(2) : null;
+                        });
+
+                FormaDePago fdpTransferencia = formaDePagoRepository.findByTipoPagoAndEliminadoFalse(TipoDePago.TRANSFERENCIA)
+                        .orElseGet(() -> formaDePagoRepository.save(
+                                FormaDePago.builder()
+                                        .tipoPago(TipoDePago.TRANSFERENCIA)
+                                        .observacion("Transferencia Bancaria")
+                                        .eliminado(false)
+                                        .build()
+                        ));
+
+                LocalDateTime ahora = LocalDateTime.now();
+
+                // Factura 6001 para Indumentaria Textil S.A.
+                if (provTextil != null && prod1 != null && prod2 != null && prod3 != null) {
+                    FacturaProveedor fp1 = (FacturaProveedor) facturaRepository.findByNumeroFacturaAndEliminadoFalse(6001L)
+                            .orElseGet(() -> {
+                                FacturaProveedor nuevo = new FacturaProveedor();
+                                nuevo.setNumeroFactura(6001L);
+                                return nuevo;
+                            });
+                    fp1.setProveedor(provTextil);
+                    fp1.setFechaFactura(ahora.minusDays(20));
+                    fp1.setEstado(EstadoFactura.ENTREGADA);
+                    fp1.setFormaDePago(fdpTransferencia);
+                    fp1.setTotalPagado(1800.0);
+                    fp1.setEliminado(false);
+                    if (fp1.getDetalles() == null) {
+                        fp1.setDetalles(new HashSet<>());
+                    } else {
+                        fp1.getDetalles().clear();
+                    }
+
+                    Detalle d1_1 = Detalle.builder().factura(fp1).producto(prod1).cantidad(10).subtotal(850.0).eliminado(false).build();
+                    Detalle d1_2 = Detalle.builder().factura(fp1).producto(prod2).cantidad(20).subtotal(440.0).eliminado(false).build();
+                    Detalle d1_3 = Detalle.builder().factura(fp1).producto(prod3).cantidad(15).subtotal(510.0).eliminado(false).build();
+
+                    fp1.getDetalles().add(d1_1);
+                    fp1.getDetalles().add(d1_2);
+                    fp1.getDetalles().add(d1_3);
+
+                    FacturaProveedor fp1Guardada = facturaProveedorRepository.save(fp1);
+                    detalleRepository.save(d1_1);
+                    detalleRepository.save(d1_2);
+                    detalleRepository.save(d1_3);
+                }
+
+                // Factura 6002 para Indumentaria Textil S.A. (más reciente: PROD-001 @ $85.00, PROD-002 @ $24.00, PROD-003 @ $35.00)
+                if (provTextil != null && prod1 != null && prod2 != null && prod3 != null) {
+                    FacturaProveedor fp2 = (FacturaProveedor) facturaRepository.findByNumeroFacturaAndEliminadoFalse(6002L)
+                            .orElseGet(() -> {
+                                FacturaProveedor nuevo = new FacturaProveedor();
+                                nuevo.setNumeroFactura(6002L);
+                                return nuevo;
+                            });
+                    fp2.setProveedor(provTextil);
+                    fp2.setFechaFactura(ahora.plusHours(1));
+                    fp2.setEstado(EstadoFactura.ENTREGADA);
+                    fp2.setFormaDePago(fdpTransferencia);
+                    fp2.setTotalPagado(2270.0);
+                    fp2.setEliminado(false);
+                    if (fp2.getDetalles() == null) {
+                        fp2.setDetalles(new HashSet<>());
+                    } else {
+                        fp2.getDetalles().clear();
+                    }
+
+                    Detalle d2_1 = Detalle.builder().factura(fp2).producto(prod1).cantidad(10).subtotal(850.0).eliminado(false).build(); // Costo $85.00
+                    Detalle d2_2 = Detalle.builder().factura(fp2).producto(prod2).cantidad(30).subtotal(720.0).eliminado(false).build(); // Costo $24.00
+                    Detalle d2_3 = Detalle.builder().factura(fp2).producto(prod3).cantidad(20).subtotal(700.0).eliminado(false).build(); // Costo $35.00
+
+                    fp2.getDetalles().add(d2_1);
+                    fp2.getDetalles().add(d2_2);
+                    fp2.getDetalles().add(d2_3);
+
+                    FacturaProveedor fp2Guardada = facturaProveedorRepository.save(fp2);
+                    detalleRepository.save(d2_1);
+                    detalleRepository.save(d2_2);
+                    detalleRepository.save(d2_3);
+                }
+
+                // Factura 6003 para Calzados Deportivos del Plata (más reciente: PROD-001 @ $78.00, PROD-002 @ $27.00, PROD-003 @ $38.00)
+                if (provCalzados != null && prod1 != null && prod2 != null && prod3 != null) {
+                    FacturaProveedor fp3 = (FacturaProveedor) facturaRepository.findByNumeroFacturaAndEliminadoFalse(6003L)
+                            .orElseGet(() -> {
+                                FacturaProveedor nuevo = new FacturaProveedor();
+                                nuevo.setNumeroFactura(6003L);
+                                return nuevo;
+                            });
+                    fp3.setProveedor(provCalzados);
+                    fp3.setFechaFactura(ahora.plusHours(2));
+                    fp3.setEstado(EstadoFactura.ENTREGADA);
+                    fp3.setFormaDePago(fdpTransferencia);
+                    fp3.setTotalPagado(2735.0);
+                    fp3.setEliminado(false);
+                    if (fp3.getDetalles() == null) {
+                        fp3.setDetalles(new HashSet<>());
+                    } else {
+                        fp3.getDetalles().clear();
+                    }
+
+                    Detalle d3_1 = Detalle.builder().factura(fp3).producto(prod1).cantidad(25).subtotal(1950.0).eliminado(false).build(); // Costo $78.00
+                    Detalle d3_2 = Detalle.builder().factura(fp3).producto(prod2).cantidad(15).subtotal(405.0).eliminado(false).build();  // Costo $27.00
+                    Detalle d3_3 = Detalle.builder().factura(fp3).producto(prod3).cantidad(10).subtotal(380.0).eliminado(false).build();  // Costo $38.00
+
+                    fp3.getDetalles().add(d3_1);
+                    fp3.getDetalles().add(d3_2);
+                    fp3.getDetalles().add(d3_3);
+
+                    FacturaProveedor fp3Guardada = facturaProveedorRepository.save(fp3);
+                    detalleRepository.save(d3_1);
+                    detalleRepository.save(d3_2);
+                    detalleRepository.save(d3_3);
+                }
+
+                // Asegurar que cualquier proveedor activo en el sistema tenga al menos una factura previa de abastecimiento
+                List<Proveedor> todosProveedores = proveedorRepository.findByEliminadoFalse();
+                List<Producto> todosProductos = productoRepository.findByEliminadoFalse();
+                if (todosProveedores != null && !todosProveedores.isEmpty() && todosProductos != null && !todosProductos.isEmpty()) {
+                    long baseNum = 6100L;
+                    for (Proveedor prov : todosProveedores) {
+                        List<FacturaProveedor> existentes = facturaProveedorRepository.findByProveedorIdAndEliminadoFalse(prov.getId());
+                        if (existentes == null || existentes.isEmpty()) {
+                            FacturaProveedor fpGen = new FacturaProveedor();
+                            fpGen.setProveedor(prov);
+                            fpGen.setNumeroFactura(baseNum++);
+                            fpGen.setFechaFactura(LocalDateTime.now().minusDays(15));
+                            fpGen.setEstado(EstadoFactura.ENTREGADA);
+                            fpGen.setFormaDePago(fdpTransferencia);
+                            fpGen.setEliminado(false);
+                            fpGen.setDetalles(new HashSet<>());
+                            double totalGen = 0.0;
+                            double factorCosto = prov.getRazonSocial() != null && prov.getRazonSocial().toLowerCase().contains("calzados") ? 0.55 : 0.50;
+
+                            for (Producto p : todosProductos) {
+                                double precioVenta = 50.0;
+                                try {
+                                    precioVenta = productoService.obtenerPrecioActual(p.getId());
+                                } catch (Exception ignored) {}
+                                if (precioVenta <= 0) precioVenta = 50.0;
+                                double costoUnit = Math.round(precioVenta * factorCosto * 100.0) / 100.0;
+                                int cant = 10;
+                                double sub = Math.round(costoUnit * cant * 100.0) / 100.0;
+                                totalGen += sub;
+                                Detalle d = Detalle.builder()
+                                        .factura(fpGen)
+                                        .producto(p)
+                                        .cantidad(cant)
+                                        .subtotal(sub)
+                                        .eliminado(false)
+                                        .build();
+                                fpGen.getDetalles().add(d);
+                            }
+                            fpGen.setTotalPagado(Math.round(totalGen * 100.0) / 100.0);
+                            FacturaProveedor fpGenGuardada = facturaProveedorRepository.save(fpGen);
+                            for (Detalle d : fpGen.getDetalles()) {
+                                d.setFactura(fpGenGuardada);
+                                detalleRepository.save(d);
+                            }
+                        }
+                    }
+                }
+
+                System.out.println(">> [DataInitializer] Facturas de compra a proveedores inicializadas con costos diferenciados");
+            }
+        } catch (Exception e) {
+            System.err.println(">> [DataInitializer] Error en facturas de compras iniciales: " + e.getMessage());
         }
     }
 }

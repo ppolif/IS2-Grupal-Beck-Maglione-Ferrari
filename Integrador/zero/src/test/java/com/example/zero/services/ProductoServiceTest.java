@@ -302,78 +302,6 @@ class ProductoServiceTest {
         verify(vigenciaPrecioService, times(1)).actualizarPrecio("p2", 230.0);
     }
 
-    // ==================== TESTS DE STOCK E INVENTARIO ====================
-
-    @Test
-    void esStockCritico_menorAl20PorCiento_retornaTrue() {
-        // 19 de 100 es 19% (< 20%) -> crítico
-        assertTrue(productoService.esStockCritico(19, 100));
-        // 0 de 100 -> crítico
-        assertTrue(productoService.esStockCritico(0, 100));
-        // 1 de 10 es 10% -> crítico
-        assertTrue(productoService.esStockCritico(1, 10));
-    }
-
-    @Test
-    void esStockCritico_mayorOIgualAl20PorCiento_retornaFalse() {
-        // 20 de 100 es 20% -> no crítico
-        assertFalse(productoService.esStockCritico(20, 100));
-        // 50 de 100 es 50% -> no crítico
-        assertFalse(productoService.esStockCritico(50, 100));
-    }
-
-    @Test
-    void esStockCritico_stockTotalInvalido_lanzaIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> productoService.esStockCritico(5, 0));
-        assertThrows(IllegalArgumentException.class, () -> productoService.esStockCritico(5, -10));
-        assertThrows(IllegalArgumentException.class, () -> productoService.esStockCritico(-1, 100));
-    }
-
-    @Test
-    void disminuirStock_conStockSuficiente_restaCantidad() {
-        // Al confirmarse un pago de cliente
-        int stockActual = 50;
-        int cantidadComprada = 5;
-
-        int nuevoStock = productoService.disminuirStock(stockActual, cantidadComprada);
-
-        assertEquals(45, nuevoStock);
-    }
-
-    @Test
-    void disminuirStock_conStockInsuficiente_lanzaIllegalArgumentException() {
-        int stockActual = 3;
-        int cantidadComprada = 5;
-
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> productoService.disminuirStock(stockActual, cantidadComprada));
-        assertTrue(ex.getMessage().contains("Stock insuficiente"));
-    }
-
-    @Test
-    void disminuirStock_cantidadInvalida_lanzaIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> productoService.disminuirStock(10, 0));
-        assertThrows(IllegalArgumentException.class, () -> productoService.disminuirStock(10, -3));
-    }
-
-    @Test
-    void aumentarStock_conCantidadValida_sumaCantidad() {
-        // Al recibir una orden de compra de proveedor
-        int stockActual = 10;
-        int cantidadRecibida = 40;
-
-        int nuevoStock = productoService.aumentarStock(stockActual, cantidadRecibida);
-
-        assertEquals(50, nuevoStock);
-    }
-
-    @Test
-    void aumentarStock_cantidadInvalida_lanzaIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> productoService.aumentarStock(10, 0));
-        assertThrows(IllegalArgumentException.class, () -> productoService.aumentarStock(10, -5));
-        assertThrows(IllegalArgumentException.class, () -> productoService.aumentarStock(-1, 10));
-    }
-
     @Test
     void helperMethods_obtenerDatosParaVista() {
         SubCategoria sub = SubCategoria.builder()
@@ -386,22 +314,16 @@ class ProductoServiceTest {
                 .nombre("Zapatilla")
                 .subCategoria(sub)
                 .imagenes(List.of(img))
-                .stock(10)
                 .build();
 
-        lenient().when(productoRepository.findById("prod-99")).thenReturn(Optional.of(producto));
         when(vigenciaPrecioService.obtenerPrecioActual("prod-99")).thenReturn(25000.0);
 
         double precio = productoService.obtenerPrecioActual(producto);
         String categoria = productoService.obtenerNombreCategoria(producto);
-        int stock = productoService.obtenerStock(producto);
         String imgUrl = productoService.obtenerImagenUrl(producto);
-        Producto preparado = productoService.prepararParaVista(producto);
 
         assertEquals(25000.0, precio);
         assertEquals("Calzado", categoria);
-        assertEquals(10, stock);
         assertEquals("/imagen/img-prod-99", imgUrl);
-        assertEquals(25000.0, preparado.getPrecioActual());
     }
 }

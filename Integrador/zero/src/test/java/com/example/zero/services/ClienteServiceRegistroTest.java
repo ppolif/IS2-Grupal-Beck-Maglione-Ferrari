@@ -146,10 +146,12 @@ class ClienteServiceRegistroTest {
         when(clienteRepository.save(any(Cliente.class))).thenAnswer(i -> i.getArgument(0));
         when(usuarioService.crearUsuario(eq("foto@test.com"), eq("pass1234"), eq(RolUsuario.CLIENTE), any(Cliente.class), eq(false)))
                 .thenReturn(usuarioMock);
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
 
         Usuario resultado = clienteService.registrarCliente(dto, file);
 
         assertNotNull(resultado);
+        assertEquals("/imagen/img-persona-1", resultado.getFoto());
         verify(imagenService, times(1)).guardarImagen(file, TipoImagen.PERSONA);
         verify(imagenService, never()).guardarMonigoteDefault();
     }

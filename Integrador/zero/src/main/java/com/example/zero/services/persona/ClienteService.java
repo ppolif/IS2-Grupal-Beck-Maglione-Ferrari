@@ -224,15 +224,20 @@ public class ClienteService {
 
         // 6. Gestionar Foto de Perfil (Opcional, con monigote por defecto)
         List<Imagen> imagenes = new ArrayList<>();
+        String fotoUrl = null;
         if (imagenService != null) {
-            Imagen img;
+            Imagen img = null;
             if (fotoPerfil != null && !fotoPerfil.isEmpty()) {
                 img = imagenService.guardarImagen(fotoPerfil, TipoImagen.PERSONA);
-            } else {
+            }
+            if (img == null) {
                 img = imagenService.guardarMonigoteDefault();
             }
             if (img != null) {
                 imagenes.add(img);
+                if (img.getId() != null) {
+                    fotoUrl = "/imagen/" + img.getId();
+                }
             }
         }
 
@@ -262,6 +267,12 @@ public class ClienteService {
         Usuario usuario = null;
         if (usuarioService != null) {
             usuario = usuarioService.crearUsuario(emailLimpio, dto.getPassword(), RolUsuario.CLIENTE, cliente, false);
+            if (fotoUrl != null) {
+                usuario.setFoto(fotoUrl);
+                if (usuarioRepository != null) {
+                    usuario = usuarioRepository.save(usuario);
+                }
+            }
             cliente.setUsuario(usuario);
             clienteRepository.save(cliente);
 

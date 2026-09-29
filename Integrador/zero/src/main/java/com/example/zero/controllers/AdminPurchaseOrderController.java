@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -115,15 +116,27 @@ public class AdminPurchaseOrderController {
     }
 
     /**
+     * Endpoint AJAX para consultar el costo unitario más reciente de un producto provisto por un proveedor específico.
+     */
+    @GetMapping("/admin/compras/costo-unitario")
+    @ResponseBody
+    public java.util.Map<String, Object> obtenerCostoUnitario(
+            @RequestParam("proveedorId") String proveedorId,
+            @RequestParam("productoId") String productoId) {
+        Double costo = compraProveedorService.obtenerUltimoCostoUnitario(proveedorId, productoId);
+        return java.util.Map.of("costo", costo != null ? costo : 0.0);
+    }
+
+    /**
      * Baja lógica de una orden de compra a proveedor.
      */
     @PostMapping("/admin/purchase-orders/eliminar/{id}")
     public String eliminarCompra(@PathVariable("id") String id, RedirectAttributes redirectAttributes) {
         try {
             compraProveedorService.eliminarCompraProveedor(id);
-            return "redirect:/admin/registrar-compra?success=deleted";
+            return "redirect:/admin/orders?success=deleted";
         } catch (Exception e) {
-            return "redirect:/admin/registrar-compra?error=" + e.getMessage();
+            return "redirect:/admin/orders?error=" + e.getMessage();
         }
     }
 
@@ -136,13 +149,13 @@ public class AdminPurchaseOrderController {
         try {
             compraProveedorService.marcarComoEntregada(id);
             redirectAttributes.addFlashAttribute("successMessage", "Mercadería recibida y stock actualizado");
-            return "redirect:/admin/registrar-compra";
+            return "redirect:/admin/orders";
         } catch (IllegalStateException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/admin/registrar-compra";
+            return "redirect:/admin/orders";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Error al procesar la entrega: " + e.getMessage());
-            return "redirect:/admin/registrar-compra";
+            return "redirect:/admin/orders";
         }
     }
 
@@ -157,11 +170,15 @@ public class AdminPurchaseOrderController {
             productos = productoService.listarTodos();
         }
 
-        for (Producto p : productos) {
-            try {
-                p.setPrecioActual(productoService.obtenerPrecioActual(p.getId()));
-            } catch (Exception ignored) {
-                p.setPrecioActual(0.0);
+        List<com.example.zero.dto.producto.ProductoDTO> prodDtos = new ArrayList<>();
+        if (productos != null) {
+            for (Producto p : productos) {
+                double precio = 0.0;
+                try {
+                    precio = productoService.obtenerPrecioActual(p.getId());
+                } catch (Exception ignored) {
+                }
+                prodDtos.add(com.example.zero.dto.producto.ProductoDTO.de(p, precio, 0, null));
             }
         }
         List<FacturaProveedor> compras;
@@ -172,7 +189,7 @@ public class AdminPurchaseOrderController {
         }
 
         model.addAttribute("proveedores", proveedores != null ? proveedores : java.util.Collections.emptyList());
-        model.addAttribute("productos", productos != null ? productos : java.util.Collections.emptyList());
+        model.addAttribute("productos", prodDtos);
         model.addAttribute("formasDePago", TipoDePago.values());
         model.addAttribute("estadosFactura", EstadoFactura.values());
         model.addAttribute("compras", compras != null ? compras : java.util.Collections.emptyList());

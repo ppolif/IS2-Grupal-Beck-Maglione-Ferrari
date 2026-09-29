@@ -1,15 +1,19 @@
 package com.example.zero.controllers;
 
+import com.example.zero.dto.producto.ProductoDTO;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.entidades.producto.SubCategoria;
-import com.example.zero.services.producto.ProductoService;
+import com.example.zero.services.StockService;
 import com.example.zero.services.SubCategoriaService;
+import com.example.zero.services.VigenciaPrecioService;
+import com.example.zero.services.producto.ProductoService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -21,19 +25,22 @@ public class AdminProductController {
 
     private final ProductoService productoService;
     private final SubCategoriaService subCategoriaService;
-    private final com.example.zero.services.StockService stockService;
+    private final StockService stockService;
+    private final VigenciaPrecioService vigenciaPrecioService;
 
     public AdminProductController(ProductoService productoService, SubCategoriaService subCategoriaService) {
-        this(productoService, subCategoriaService, null);
+        this(productoService, subCategoriaService, null, null);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
     public AdminProductController(ProductoService productoService,
                                   SubCategoriaService subCategoriaService,
-                                  com.example.zero.services.StockService stockService) {
+                                  StockService stockService,
+                                  VigenciaPrecioService vigenciaPrecioService) {
         this.productoService = productoService;
         this.subCategoriaService = subCategoriaService;
         this.stockService = stockService;
+        this.vigenciaPrecioService = vigenciaPrecioService;
     }
 
     /**
@@ -44,31 +51,38 @@ public class AdminProductController {
                                @RequestParam(name = "success", required = false) String success,
                                @RequestParam(name = "error", required = false) String error) {
         List<Producto> productos = productoService.listarActivos();
+        List<ProductoDTO> dtos = new ArrayList<>();
         int totalStockUnidades = 0;
         int stockBienCount = 0;
         int stockRegularCount = 0;
         int stockMaloCount = 0;
 
         for (Producto p : productos) {
+            double precio = 0.0;
             try {
-                p.setPrecioActual(productoService.obtenerPrecioActual(p.getId()));
-            } catch (Exception e) {
-                p.setPrecioActual(0.0);
+                if (vigenciaPrecioService != null) {
+                    precio = vigenciaPrecioService.obtenerPrecioActual(p.getId());
+                } else {
+                    precio = productoService.obtenerPrecioActual(p.getId());
+                }
+            } catch (Exception ignored) {
             }
-            if (stockService != null) {
-                p.setStock(stockService.calcularStockActual(p.getId()));
-            }
-            totalStockUnidades += p.getStock();
-            if (p.getStock() > 50) {
+
+            int stock = (stockService != null) ? stockService.calcularStockActual(p.getId()) : 0;
+            ProductoDTO dto = ProductoDTO.de(p, precio, stock, stockService);
+            dtos.add(dto);
+
+            totalStockUnidades += stock;
+            if (stock > 50) {
                 stockBienCount++;
-            } else if (p.getStock() >= 20) {
+            } else if (stock >= 20) {
                 stockRegularCount++;
             } else {
                 stockMaloCount++;
             }
         }
 
-        model.addAttribute("products", productos);
+        model.addAttribute("products", dtos);
         model.addAttribute("totalStockUnidades", totalStockUnidades);
         model.addAttribute("stockBienCount", stockBienCount);
         model.addAttribute("stockRegularCount", stockRegularCount);
@@ -110,7 +124,7 @@ public class AdminProductController {
     }
 
     /**
-     * Procesar la creación de un nuevo producto con imagen obligatoria y stock.
+     * Procesar la creación de un nuevo producto con imagen obligatoria.
      */
     @PostMapping("/guardar")
     public String createProduct(@RequestParam("codigo") String codigo,
@@ -140,11 +154,7 @@ public class AdminProductController {
         }
 
         try {
-            if (stock > 0) {
-                productoService.crearProducto(codigo, nombre, descripcion, talle, subCategoriaId, precio, enOferta, stock, imagen);
-            } else {
-                productoService.crearProducto(codigo, nombre, descripcion, talle, subCategoriaId, precio, enOferta, imagen);
-            }
+            productoService.crearProducto(codigo, nombre, descripcion, talle, subCategoriaId, precio, enOferta, imagen);
             return "redirect:/admin/products?success=created";
         } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "Error al crear el producto");
@@ -205,14 +215,18 @@ public class AdminProductController {
             Producto producto = productoService.buscarPorId(id);
             double precioActual = 0.0;
             try {
-                precioActual = productoService.obtenerPrecioActual(id);
+                if (vigenciaPrecioService != null) {
+                    precioActual = vigenciaPrecioService.obtenerPrecioActual(id);
+                } else {
+                    precioActual = productoService.obtenerPrecioActual(id);
+                }
             } catch (Exception ignored) {
             }
-            producto.setPrecioActual(precioActual);
+            int stockActual = (stockService != null) ? stockService.calcularStockActual(id) : 0;
 
             model.addAttribute("producto", producto);
             model.addAttribute("precioActual", precioActual);
-            model.addAttribute("stock", producto.getStock());
+            model.addAttribute("stock", stockActual);
             model.addAttribute("subcategorias", subCategoriaService.listarActivas());
             model.addAttribute("isEdit", true);
             return "admin/product-form";
@@ -235,16 +249,16 @@ public class AdminProductController {
                                 @RequestParam(name = "enOferta", defaultValue = "false") boolean enOferta,
                                 Model model) {
         try {
-            if (stock != null) {
-                productoService.modificarProducto(id, nombre, descripcion, talle, subCategoriaId, enOferta, stock);
-            } else {
-                productoService.modificarProducto(id, nombre, descripcion, talle, subCategoriaId, enOferta);
-            }
+            productoService.modificarProducto(id, nombre, descripcion, talle, subCategoriaId, enOferta);
 
             if (precio != null && precio > 0) {
                 double precioActual = 0.0;
                 try {
-                    precioActual = productoService.obtenerPrecioActual(id);
+                    if (vigenciaPrecioService != null) {
+                        precioActual = vigenciaPrecioService.obtenerPrecioActual(id);
+                    } else {
+                        precioActual = productoService.obtenerPrecioActual(id);
+                    }
                 } catch (Exception ignored) {
                 }
                 if (Math.abs(precioActual - precio) > 0.001) {
@@ -263,9 +277,6 @@ public class AdminProductController {
                 prod.setDescripcion(descripcion);
                 prod.setTalle(talle);
                 prod.setEnOferta(enOferta);
-                if (stock != null) {
-                    prod.setStock(stock);
-                }
                 model.addAttribute("producto", prod);
             } catch (Exception ignored) {
             }

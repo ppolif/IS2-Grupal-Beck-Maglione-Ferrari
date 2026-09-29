@@ -242,8 +242,7 @@ public class OrdenCompraService {
         try {
             precioUnitario = productoService.obtenerPrecioActual(producto.getId());
         } catch (Exception e) {
-            Double pActual = producto.getPrecioActual();
-            precioUnitario = (pActual != null && pActual > 0) ? pActual : 100.0;
+            precioUnitario = 100.0;
         }
 
         OrdenCompra carrito = obtenerOCrearCarrito(cliente);

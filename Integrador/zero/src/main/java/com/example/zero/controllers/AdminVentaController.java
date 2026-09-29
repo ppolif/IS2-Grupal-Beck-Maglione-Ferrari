@@ -8,6 +8,10 @@ import com.example.zero.services.producto.ProductoService;
 import com.example.zero.services.VentaService;
 import com.example.zero.services.persona.ClienteService;
 import com.example.zero.services.StockService;
+import com.example.zero.entidades.compraProveedor.FacturaProveedor;
+import com.example.zero.entidades.empresa.Empresa;
+import com.example.zero.enums.TipoEmpresa;
+import com.example.zero.services.EmpresaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,16 +31,26 @@ public class AdminVentaController {
     private final ProductoService productoService;
     private final ClienteService clienteService;
     private final StockService stockService;
+    private final EmpresaService empresaService;
+
+    public AdminVentaController(VentaService ventaService,
+                                ProductoService productoService,
+                                ClienteService clienteService,
+                                StockService stockService) {
+        this(ventaService, productoService, clienteService, stockService, null);
+    }
 
     @Autowired
     public AdminVentaController(VentaService ventaService,
                                 ProductoService productoService,
                                 ClienteService clienteService,
-                                StockService stockService) {
+                                StockService stockService,
+                                @Autowired(required = false) EmpresaService empresaService) {
         this.ventaService = ventaService;
         this.productoService = productoService;
         this.clienteService = clienteService;
         this.stockService = stockService;
+        this.empresaService = empresaService;
     }
 
     /**
@@ -46,18 +60,18 @@ public class AdminVentaController {
     public String showRegistrarVentaForm(Model model,
                                          @RequestParam(name = "error", required = false) String error) {
         List<Producto> productos = productoService.listarActivos();
+        List<com.example.zero.dto.producto.ProductoDTO> dtos = new ArrayList<>();
         for (Producto p : productos) {
+            double precio = 0.0;
             try {
-                p.setPrecioActual(productoService.obtenerPrecioActual(p.getId()));
-                if (stockService != null) {
-                    p.setStock(stockService.calcularStockActual(p.getId()));
-                }
+                precio = productoService.obtenerPrecioActual(p.getId());
             } catch (Exception ignored) {
-                p.setPrecioActual(0.0);
             }
+            int stock = (stockService != null) ? stockService.calcularStockActual(p.getId()) : 0;
+            dtos.add(com.example.zero.dto.producto.ProductoDTO.de(p, precio, stock, stockService));
         }
 
-        model.addAttribute("productos", productos);
+        model.addAttribute("productos", dtos);
         model.addAttribute("clientes", clienteService.listarActivos());
         model.addAttribute("formasDePago", TipoDePago.values());
 
@@ -92,17 +106,17 @@ public class AdminVentaController {
             model.addAttribute("formaDePagoSeleccionada", formaDePago);
 
             List<Producto> productos = productoService.listarActivos();
+            List<com.example.zero.dto.producto.ProductoDTO> dtos = new ArrayList<>();
             for (Producto p : productos) {
+                double precio = 0.0;
                 try {
-                    p.setPrecioActual(productoService.obtenerPrecioActual(p.getId()));
-                    if (stockService != null) {
-                        p.setStock(stockService.calcularStockActual(p.getId()));
-                    }
+                    precio = productoService.obtenerPrecioActual(p.getId());
                 } catch (Exception ignored) {
-                    p.setPrecioActual(0.0);
                 }
+                int stock = (stockService != null) ? stockService.calcularStockActual(p.getId()) : 0;
+                dtos.add(com.example.zero.dto.producto.ProductoDTO.de(p, precio, stock, stockService));
             }
-            model.addAttribute("productos", productos);
+            model.addAttribute("productos", dtos);
             model.addAttribute("clientes", clienteService.listarActivos());
             model.addAttribute("formasDePago", TipoDePago.values());
             return "admin/registrar-venta";
@@ -166,7 +180,7 @@ public class AdminVentaController {
     }
 
     /**
-     * Detalle administrativo de una factura / orden de venta.
+     * Detalle administrativo de una factura (venta a cliente o compra a proveedor).
      */
     @GetMapping({"/admin/orders/{id}", "/admin/orders/detalle/{id}"})
     public String orderDetail(@PathVariable("id") String id, Model model, RedirectAttributes redirectAttributes) {
@@ -175,8 +189,27 @@ public class AdminVentaController {
             redirectAttributes.addFlashAttribute("errorMessage", "No se encontró la factura u orden: " + id);
             return "redirect:/admin/orders";
         }
+
+        boolean esCompraProveedor = factura instanceof FacturaProveedor;
         model.addAttribute("factura", factura);
         model.addAttribute("order", factura);
+        model.addAttribute("esCompraProveedor", esCompraProveedor);
+
+        if (esCompraProveedor) {
+            FacturaProveedor fp = (FacturaProveedor) factura;
+            model.addAttribute("facturaProveedor", fp);
+            model.addAttribute("proveedor", fp.getProveedor());
+            Empresa sucursal = (empresaService != null) ? empresaService.obtenerSucursalActiva() : null;
+            if (sucursal == null) {
+                sucursal = new Empresa();
+                sucursal.setId("SUC-001");
+                sucursal.setRazonSocial("ZERO Argentina S.A. - Sucursal Central");
+                sucursal.setCuit("30-71829384-9");
+                sucursal.setTipoSucursal(TipoEmpresa.SEDE_CENTRAL);
+            }
+            model.addAttribute("sucursal", sucursal);
+        }
+
         return "admin/order-detail";
     }
 }

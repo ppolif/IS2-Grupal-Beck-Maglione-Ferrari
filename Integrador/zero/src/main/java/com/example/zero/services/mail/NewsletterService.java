@@ -55,8 +55,6 @@ public class NewsletterService {
             return 0;
         }
 
-        productoService.prepararParaVista(ofertas);
-
         List<Usuario> usuarios = usuarioRepository.findAll().stream()
                 .filter(u -> !u.isEliminado() && u.getNombreUsuario() != null && u.getNombreUsuario().contains("@"))
                 .toList();
@@ -112,7 +110,8 @@ public class NewsletterService {
 
         for (Producto prod : ofertas) {
             String nombre = prod.getNombre() != null ? prod.getNombre() : "Producto Deportivo ZERO";
-            String precio = String.format("$%.2f", prod.getPrecioActual() != null ? prod.getPrecioActual() : 0.0);
+            double precioVal = prod.getId() != null ? productoService.obtenerPrecioActual(prod.getId()) : 0.0;
+            String precio = String.format(java.util.Locale.US, "$%.2f", precioVal);
             String desc = prod.getDescripcion() != null ? prod.getDescripcion() : "Máxima calidad y rendimiento garantizado.";
             String img = "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400";
 

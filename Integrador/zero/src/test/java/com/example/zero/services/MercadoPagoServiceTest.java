@@ -93,7 +93,7 @@ class MercadoPagoServiceTest {
                 .usuario(usuario)
                 .build();
 
-        Producto producto = Producto.builder().id("prod-10").nombre("Botines Zero").stock(10).build();
+        Producto producto = Producto.builder().id("prod-10").nombre("Botines Zero").build();
         DetalleCompra item = DetalleCompra.builder()
                 .id("item-1")
                 .producto(producto)

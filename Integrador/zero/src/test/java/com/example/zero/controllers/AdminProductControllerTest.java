@@ -48,7 +48,6 @@ class AdminProductControllerTest {
 
         assertEquals("admin/products", vista);
         verify(model).addAttribute(eq("products"), anyList());
-        assertEquals(100.0, prod.getPrecioActual());
     }
 
     @Test

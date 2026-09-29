@@ -26,30 +26,36 @@ public class VistaController {
     private final ProductoService productoService;
     private final CategoriaService categoriaService;
     private final VentaService ventaService;
+    private final AdminVentaController adminVentaController;
     private final CategoriaRepository categoriaRepository;
     private final com.example.zero.services.OrdenCompraService ordenCompraService;
+    private final com.example.zero.services.VigenciaPrecioService vigenciaPrecioService;
+    private final com.example.zero.services.StockService stockService;
 
     // Inicio / Portada
     @GetMapping({"/", "/shop", "/shop/index"})
     public String shopIndex(Model model) {
-        List<Producto> featured = productoService.listarActivos();
-        productoService.prepararParaVista(featured);
+        List<com.example.zero.dto.producto.ProductoDTO> featured = productoService.listarActivos().stream()
+                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService))
+                .toList();
         model.addAttribute("featuredProducts", featured);
 
-        List<Producto> sale = productoService.listarEnOferta();
-        productoService.prepararParaVista(sale);
+        List<com.example.zero.dto.producto.ProductoDTO> sale = productoService.listarEnOferta().stream()
+                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService))
+                .toList();
         model.addAttribute("saleProducts", sale);
 
         return "shop/index";
     }
 
     // Catálogo de Productos / Categorías
-    @GetMapping({"/shop/category", "/shop/categoria", "/shop/catalogo", "/products"})
+    @GetMapping({"/shop/category", "/shop/categoria", "/shop/catalogo"})
     public String shopCategory(@RequestParam(value = "categoryId", required = false) String categoryId,
                                @RequestParam(value = "maxPrice", required = false) Double maxPrice,
                                Model model) {
-        List<Producto> products = productoService.listarActivos();
-        productoService.prepararParaVista(products);
+        List<com.example.zero.dto.producto.ProductoDTO> products = productoService.listarActivos().stream()
+                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService))
+                .toList();
         if (categoryId != null && !categoryId.trim().isEmpty()) {
             products = products.stream()
                     .filter(p -> p.getSubCategoria() != null && p.getSubCategoria().getCategoria() != null &&
@@ -59,7 +65,7 @@ public class VistaController {
         }
         if (maxPrice != null && maxPrice > 0) {
             products = products.stream()
-                    .filter(p -> p.getPrecioActual() != null && p.getPrecioActual() <= maxPrice)
+                    .filter(p -> p.getPrecioActual() <= maxPrice)
                     .toList();
         }
 
@@ -72,8 +78,9 @@ public class VistaController {
     // Catálogo de Ofertas
     @GetMapping({"/offers", "/ofertas", "/shop/offers", "/shop/ofertas"})
     public String shopOffers(Model model) {
-        List<Producto> offers = productoService.listarEnOferta();
-        productoService.prepararParaVista(offers);
+        List<com.example.zero.dto.producto.ProductoDTO> offers = productoService.listarEnOferta().stream()
+                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService))
+                .toList();
         model.addAttribute("products", offers);
         model.addAttribute("totalProducts", offers.size());
         model.addAttribute("categories", categoriaRepository.findByEliminadoFalse());
@@ -171,36 +178,25 @@ public class VistaController {
     }
 
     // Ficha de producto individual
-    @GetMapping({"/products/{id}", "/shop/product/{id}", "/shop/single-product", "/shop/producto"})
+    @GetMapping({"/shop/single-product", "/shop/producto", "/shop/product/{id}"})
     public String shopSingleProduct(@PathVariable(value = "id", required = false) String pathId,
                                     @RequestParam(value = "id", required = false) String paramId,
-                                    RedirectAttributes redirectAttributes,
                                     Model model) {
         String id = pathId != null ? pathId : paramId;
-        if (id == null || id.trim().isEmpty()) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Debe seleccionar un producto para ver su detalle.");
-            return "redirect:/shop/category";
-        }
-
-        try {
-            Producto p = productoService.buscarPorId(id.trim());
-            if (p == null || p.isEliminado()) {
-                redirectAttributes.addFlashAttribute("errorMessage", "El producto solicitado no existe o ya no se encuentra disponible.");
-                return "redirect:/shop/category";
+        if (id != null && !id.trim().isEmpty()) {
+            try {
+                Producto p = productoService.buscarPorId(id.trim());
+                com.example.zero.dto.producto.ProductoDTO dto = com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService);
+                model.addAttribute("product", dto);
+                model.addAttribute("title", "Detalle del Producto");
+                model.addAttribute("subtitle", p.getNombre());
+                model.addAttribute("categoryName", dto.getCategoryName());
+                model.addAttribute("stock", dto.getStock());
+                model.addAttribute("imageUrl", dto.getImageUrl());
+            } catch (Exception ignored) {
             }
-
-            productoService.prepararParaVista(p);
-            model.addAttribute("product", p);
-            model.addAttribute("title", "Detalle del Producto");
-            model.addAttribute("subtitle", p.getNombre());
-            model.addAttribute("categoryName", productoService.obtenerNombreCategoria(p));
-            model.addAttribute("stock", productoService.obtenerStock(p));
-            model.addAttribute("imageUrl", productoService.obtenerImagenUrl(p));
-            return "shop/single-product";
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "No se encontró el producto solicitado.");
-            return "redirect:/shop/category";
         }
+        return "shop/single-product";
     }
 
     // Panel Admin redirige directamente a Registrar Venta

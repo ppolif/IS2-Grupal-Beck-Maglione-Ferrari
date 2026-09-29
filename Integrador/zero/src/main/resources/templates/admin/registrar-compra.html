@@ -75,18 +75,8 @@
                         <div class="form-text">Compañía proveedora de la mercadería recuperada de la BD. Puede buscar escribiendo arriba.</div>
                     </div>
 
-                    <!-- Número de Factura del Proveedor (Autoincremental) -->
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-brand-dark">Número de Factura / Remito</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light text-muted fw-bold">#FAC-</span>
-                            <input type="text" class="form-control border-brand bg-light" value="Autoincremental (generado automáticamente por el sistema)" readonly disabled />
-                        </div>
-                        <div class="form-text">El número de factura correlativo se asigna automáticamente de forma consecutiva.</div>
-                    </div>
-
                     <!-- Estado de la Factura -->
-                    <div class="mb-3">
+                    <div class="mb-0">
                         <label class="form-label small fw-semibold text-brand-dark">Estado de la Factura <span class="text-danger">*</span></label>
                         <select name="estado" id="estado" class="form-select border-brand" required>
                             <option value="SIN_DEFINIR" th:selected="${selectedEstado == 'SIN_DEFINIR' || selectedEstado == null}">SIN_DEFINIR (Pendiente de Entrega)</option>
@@ -95,13 +85,6 @@
                             <option value="ANULADA" th:selected="${selectedEstado == 'ANULADA'}">ANULADA</option>
                         </select>
                         <div class="form-text">Estado actual de la factura a proveedor. Si se selecciona SIN_DEFINIR, el stock se ingresará al marcar la orden como Entregada.</div>
-                    </div>
-
-                    <!-- Fecha y Hora Automática -->
-                    <div class="mb-2">
-                        <label class="form-label small fw-semibold text-brand-dark">Fecha y Hora de Emisión</label>
-                        <input type="text" class="form-control border-brand bg-light" value="Automático (marca de tiempo actual del sistema)" readonly disabled />
-                        <div class="form-text">Se registra automáticamente la fecha y hora exacta al confirmar la orden.</div>
                     </div>
                 </div>
 
@@ -140,15 +123,14 @@
                                         th:value="${prod.id}"
                                         th:data-codigo="${prod.codigo}"
                                         th:data-nombre="${prod.nombre}"
-                                        th:data-costo="${prod.precioActual != null ? prod.precioActual : 0.0}"
-                                        th:text="${prod.codigo + ' - ' + prod.nombre + ' ($' + #numbers.formatDecimal(prod.precioActual != null ? prod.precioActual : 0.0, 1, 2) + ')'}">
+                                        th:text="${prod.codigo + ' - ' + prod.nombre}">
                                     PROD-001 - Camiseta Deportiva
                                 </option>
                                 <option th:if="${productos == null || #lists.isEmpty(productos)}" value="" disabled>No hay productos registrados en el catálogo</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label small fw-semibold text-brand-dark">Costo Unit. (Base de Datos)</label>
+                            <label class="form-label small fw-semibold text-brand-dark">Costo Unit. (Proveedor)</label>
                             <input type="text" id="displayCosto" class="form-control border-brand bg-light fw-bold" placeholder="$0.00" readonly disabled />
                             <input type="hidden" id="selectorCosto" value="0.00" />
                         </div>
@@ -162,7 +144,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="form-text mt-2">El costo unitario es recuperado automáticamente de la base de datos al seleccionar el producto.</div>
+                    <div class="form-text mt-2">El costo unitario es consultado automáticamente de la factura más reciente del proveedor seleccionado.</div>
                 </div>
 
                 <!-- Tabla Detalle Factura Proveedor -->
@@ -178,7 +160,7 @@
                             <tr>
                                 <th class="text-white ps-3">Producto</th>
                                 <th class="text-white text-center">Cantidad Pedida</th>
-                                <th class="text-white text-center">Costo Unit. (BD)</th>
+                                <th class="text-white text-center">Costo Unit. (Compra)</th>
                                 <th class="text-white text-center">Subtotal</th>
                                 <th class="text-white text-center pe-3">Acción</th>
                             </tr>
@@ -187,7 +169,7 @@
                             <tr id="filaVacia">
                                 <td colspan="5" class="text-center py-4 text-muted small">
                                     No hay productos agregados a la orden de compra.<br>
-                                    Seleccione un producto arriba, defina la cantidad y presione <strong>Pedir</strong>.
+                                    Seleccione un proveedor y un producto arriba, defina la cantidad y presione <strong>Pedir</strong>.
                                 </td>
                             </tr>
                             </tbody>
@@ -212,68 +194,6 @@
 
         </div>
     </form>
-
-    <!-- Historial de Órdenes de Compra a Proveedores -->
-    <div class="card bg-white border-brand rounded-4 shadow-sm overflow-hidden mb-4 mt-2">
-        <div class="card-header bg-white border-bottom border-brand p-3 d-flex justify-content-between align-items-center">
-            <h5 class="fw-bold mb-0 text-brand-dark"><i class="bi bi-clock-history me-1"></i> Órdenes de Compra Registradas</h5>
-            <span class="small fw-bold text-muted" th:text="${compras != null ? #lists.size(compras) + ' órdenes' : '0 órdenes'}">0 órdenes</span>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-brand-dark">
-                <tr>
-                    <th class="ps-3 text-white">Nº Factura</th>
-                    <th class="text-white">Proveedor</th>
-                    <th class="text-white">Fecha</th>
-                    <th class="text-white">Forma de Pago</th>
-                    <th class="text-white">Estado</th>
-                    <th class="text-white text-end">Total Pagado</th>
-                    <th class="text-center text-white pe-3">Acciones</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:if="${compras == null || #lists.isEmpty(compras)}">
-                    <td colspan="7" class="text-center py-4 text-muted small">No se registran órdenes de compra a proveedores actualmente.</td>
-                </tr>
-                <tr th:each="compra : ${compras}">
-                    <td class="ps-3 fw-bold text-brand-dark" th:text="${compra.numeroFactura != null ? '#FAC-' + compra.numeroFactura : (compra.id != null ? '#FAC-' + compra.id : '#FAC-')}">#FAC-5001</td>
-                    <td class="fw-semibold text-brand-dark" th:text="${compra.proveedor != null ? compra.proveedor.razonSocial : 'Proveedor General'}">Indumentaria Textil S.A.</td>
-                    <td class="small text-muted" th:text="${compra.fechaFactura != null ? #temporals.format(compra.fechaFactura, 'dd/MM/yyyy HH:mm') : '-'}">01/01/2025 10:00</td>
-                    <td>
-                        <span class="badge bg-light text-dark border border-brand"
-                              th:text="${compra.formaDePago != null && compra.formaDePago.tipoPago != null ? #strings.replace(compra.formaDePago.tipoPago.name(), '_', ' ') : 'Transferencia'}">Transferencia</span>
-                    </td>
-                    <td>
-                        <span th:if="${compra.estado != null && #strings.toString(compra.estado) == 'ENTREGADA'}" class="badge bg-success text-white"><i class="bi bi-check2-circle me-1"></i>ENTREGADA</span>
-                        <span th:if="${compra.estado != null && #strings.toString(compra.estado) == 'PAGADA'}" class="badge bg-primary text-white">PAGADA</span>
-                        <span th:if="${compra.estado != null && #strings.toString(compra.estado) == 'SIN_DEFINIR'}" class="badge bg-warning text-dark">PENDIENTE</span>
-                        <span th:if="${compra.estado != null && #strings.toString(compra.estado) == 'ANULADA'}" class="badge bg-danger text-white">ANULADA</span>
-                    </td>
-                    <td class="text-end fw-bold text-brand-bold" th:text="${compra.totalPagado != null ? #numbers.formatCurrency(compra.totalPagado) : '$0.00'}">$0.00</td>
-                    <td class="text-center pe-3">
-                        <!-- Botón para marcar como ENTREGADA y reponer stock (Diagrama de Secuencia) -->
-                        <span th:if="${compra.estado != null && #strings.toString(compra.estado) == 'ENTREGADA'}" class="badge bg-light text-success border border-success me-1">
-                            <i class="bi bi-check2-circle me-1"></i> Entregada
-                        </span>
-                        <form th:if="${compra.estado == null || (#strings.toString(compra.estado) != 'ENTREGADA' && #strings.toString(compra.estado) != 'ANULADA')}"
-                              th:action="@{/admin/compras/{id}/entregar(id=${compra.id})}" method="POST" class="d-inline"
-                              onsubmit="return confirm('¿Confirmas la recepción de mercadería? Esta acción incrementará el stock de los productos incluidos.');">
-                            <button type="submit" class="btn btn-sm btn-success me-1" title="Recibir mercadería e ingresar stock">
-                                <i class="bi bi-box-seam me-1"></i> Entregar
-                            </button>
-                        </form>
-                        <form th:action="@{/admin/purchase-orders/eliminar/{id}(id=${compra.id})}" method="POST" class="d-inline"
-                              onsubmit="return confirm('¿Seguro que deseas anular esta orden de compra a proveedor?');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Dar de baja"><i class="bi bi-trash"></i></button>
-                        </form>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
 
     <footer th:replace="~{admin/fragments/footer :: footer}"></footer>
 </main>
@@ -316,6 +236,7 @@
                 }
                 if (primerCoincidente && term.length >= 2) {
                     selectProveedor.value = primerCoincidente.value;
+                    consultarCostoProveedor();
                 }
             });
         }
@@ -336,28 +257,71 @@
                 }
                 if (primerCoincidente && term.length >= 2) {
                     selectorProducto.value = primerCoincidente.value;
-                    actualizarCostoSeleccionado();
+                    consultarCostoProveedor();
                 }
             });
         }
 
-        function actualizarCostoSeleccionado() {
-            if (selectorProducto.selectedIndex >= 0) {
-                const selectedOption = selectorProducto.options[selectorProducto.selectedIndex];
-                const costoSugerido = parseFloat(selectedOption.getAttribute("data-costo")) || 0;
-                selectorCosto.value = costoSugerido.toFixed(2);
-                displayCosto.value = "$" + costoSugerido.toFixed(2);
+        // Consultar costo unitario de la factura más reciente del proveedor seleccionado para el producto
+        function consultarCostoProveedor() {
+            const provId = selectProveedor ? selectProveedor.value : "";
+            const prodId = selectorProducto ? selectorProducto.value : "";
+
+            if (!provId) {
+                if (prodId) {
+                    displayCosto.value = "Seleccione proveedor";
+                } else {
+                    displayCosto.value = "$0.00";
+                }
+                selectorCosto.value = "0.00";
+                return;
             }
+
+            if (!prodId) {
+                displayCosto.value = "$0.00";
+                selectorCosto.value = "0.00";
+                return;
+            }
+
+            displayCosto.value = "Buscando costo...";
+            fetch(`/admin/compras/costo-unitario?proveedorId=${encodeURIComponent(provId)}&productoId=${encodeURIComponent(prodId)}`)
+                .then(res => res.json())
+                .then(data => {
+                    const costo = (data && data.costo !== undefined && data.costo !== null) ? parseFloat(data.costo) : 0.0;
+                    selectorCosto.value = costo.toFixed(2);
+                    if (costo > 0) {
+                        displayCosto.value = "$" + costo.toFixed(2);
+                    } else {
+                        displayCosto.value = "$0.00 (Sin compras previas)";
+                    }
+                })
+                .catch(err => {
+                    console.error("Error al consultar costo:", err);
+                    selectorCosto.value = "0.00";
+                    displayCosto.value = "$0.00";
+                });
         }
 
-        // Recuperar costo unitario de la base de datos automáticamente al seleccionar producto
-        selectorProducto.addEventListener("change", actualizarCostoSeleccionado);
+        // Recuperar costo unitario al cambiar proveedor o producto
+        if (selectProveedor) {
+            selectProveedor.addEventListener("change", consultarCostoProveedor);
+        }
+        if (selectorProducto) {
+            selectorProducto.addEventListener("change", consultarCostoProveedor);
+        }
 
         // Agregar producto
         btnAgregar.addEventListener("click", function () {
+            const provId = selectProveedor ? selectProveedor.value : "";
             const prodId = selectorProducto.value;
             const cant = parseInt(selectorCantidad.value, 10);
             let costo = parseFloat(selectorCosto.value);
+
+            if (!provId) {
+                alert("Por favor seleccione un proveedor mayorista antes de agregar productos.");
+                if (selectProveedor) selectProveedor.focus();
+                return;
+            }
 
             if (!prodId) {
                 alert("Por favor seleccione un producto del catálogo.");

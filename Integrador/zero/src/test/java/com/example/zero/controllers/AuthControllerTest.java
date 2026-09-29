@@ -3,6 +3,7 @@ package com.example.zero.controllers;
 import com.example.zero.dto.persona.ClienteRegistroDTO;
 import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.enums.RolUsuario;
+import com.example.zero.enums.TipoDocumento;
 import com.example.zero.repositories.NacionalidadRepository;
 import com.example.zero.services.persona.ClienteService;
 import com.example.zero.services.persona.UsuarioService;
