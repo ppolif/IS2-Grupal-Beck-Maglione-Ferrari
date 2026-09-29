@@ -189,13 +189,13 @@
           <div class="position-absolute" style="top: 15px; left: 15px; z-index: 2;">
             <span class="badge badge-danger text-uppercase font-weight-bold px-2 py-1 shadow-sm">OFERTA</span>
           </div>
-          <a th:href="@{/products/{id}(id=${prod.id})}">
+          <a th:href="@{/product/{id}(id=${prod.id})}">
             <img class="img-fluid rounded mb-3" th:src="${prod.imagenUrl}" th:alt="${prod.nombre}"
                  src="/shop/img/product/p1.jpg" onerror="this.src='/shop/img/product/p1.jpg'"
                  style="width: 100%; height: 220px; object-fit: cover;">
           </a>
           <div class="product-details text-center">
-            <a th:href="@{/products/{id}(id=${prod.id})}" class="text-dark d-block">
+            <a th:href="@{/product/{id}(id=${prod.id})}" class="text-dark d-block">
               <h6 class="font-weight-bold text-dark text-truncate" th:text="${prod.nombre}">Producto en Oferta</h6>
             </a>
             <div class="price mb-2">
@@ -210,7 +210,7 @@
                   <p class="hover-text">Al carrito</p>
                 </button>
               </form>
-              <a th:href="@{/products/{id}(id=${prod.id})}" class="social-info" title="Ver Detalle">
+              <a th:href="@{/product/{id}(id=${prod.id})}" class="social-info" title="Ver Detalle">
                 <span class="lnr lnr-move"></span>
                 <p class="hover-text">Detalle</p>
               </a>

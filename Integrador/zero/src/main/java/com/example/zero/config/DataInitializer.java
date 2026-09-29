@@ -100,6 +100,7 @@ public class DataInitializer implements CommandLineRunner {
         // 0. Corrección automática de esquema para MySQL (Factura / Producto / Imagen)
         try {
             if (jdbcTemplate != null) {
+                try { jdbcTemplate.execute("ALTER TABLE factura MODIFY COLUMN cliente_id VARCHAR(20) NULL"); } catch (Exception ignored) {}
                 try { jdbcTemplate.execute("ALTER TABLE factura MODIFY COLUMN cliente_id VARCHAR(36) NULL"); } catch (Exception ignored) {}
                 try { jdbcTemplate.execute("ALTER TABLE factura MODIFY COLUMN proveedor_id VARCHAR(36) NULL"); } catch (Exception ignored) {}
                 try { jdbcTemplate.execute("ALTER TABLE factura MODIFY COLUMN orden_compra_id VARCHAR(36) NULL"); } catch (Exception ignored) {}

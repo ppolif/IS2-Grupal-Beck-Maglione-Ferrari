@@ -101,7 +101,7 @@
               <div class="position-absolute" style="top: 10px; left: 10px; z-index: 2;" th:if="${prod.enOferta}">
                 <span class="badge badge-danger text-uppercase font-weight-bold px-2 py-1 shadow-sm">OFERTA</span>
               </div>
-              <a th:href="@{/products/{id}(id=${prod.id})}">
+              <a th:href="@{/product/{id}(id=${prod.id})}">
                 <div class="product-img-wrap">
                   <img class="img-fluid" th:src="${prod.imagenUrl}" th:alt="${prod.nombre}"
                        src="/shop/img/product/p1.jpg" onerror="this.src='/shop/img/product/p1.jpg'"
@@ -113,7 +113,7 @@
                 </div>
               </a>
               <div class="product-details">
-                <a th:href="@{/products/{id}(id=${prod.id})}" class="text-dark d-block">
+                <a th:href="@{/product/{id}(id=${prod.id})}" class="text-dark d-block">
                   <h6 th:text="${prod.nombre}">Zapatillas Zero Runner</h6>
                 </a>
                 <div class="price">
@@ -128,7 +128,7 @@
                       <p class="hover-text">Al carrito</p>
                     </button>
                   </form>
-                  <a th:href="@{/products/{id}(id=${prod.id})}" class="social-info" title="Ver Detalle">
+                  <a th:href="@{/product/{id}(id=${prod.id})}" class="social-info" title="Ver Detalle">
                     <span class="lnr lnr-move"></span>
                     <p class="hover-text">Detalle</p>
                   </a>

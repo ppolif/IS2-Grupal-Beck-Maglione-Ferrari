@@ -178,24 +178,40 @@ public class VistaController {
     }
 
     // Ficha de producto individual
-    @GetMapping({"/shop/single-product", "/shop/producto", "/shop/product/{id}"})
+    @GetMapping({"/products/{id}", "/product/{id}", "/shop/product/{id}", "/shop/products/{id}", "/shop/single-product", "/shop/producto"})
     public String shopSingleProduct(@PathVariable(value = "id", required = false) String pathId,
                                     @RequestParam(value = "id", required = false) String paramId,
+                                    jakarta.servlet.http.HttpServletResponse response,
                                     Model model) {
         String id = pathId != null ? pathId : paramId;
-        if (id != null && !id.trim().isEmpty()) {
-            try {
-                Producto p = productoService.buscarPorId(id.trim());
-                com.example.zero.dto.producto.ProductoDTO dto = com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService);
-                model.addAttribute("product", dto);
-                model.addAttribute("title", "Detalle del Producto");
-                model.addAttribute("subtitle", p.getNombre());
-                model.addAttribute("categoryName", dto.getCategoryName());
-                model.addAttribute("stock", dto.getStock());
-                model.addAttribute("imageUrl", dto.getImageUrl());
-            } catch (Exception ignored) {
-            }
+        if (id == null || id.trim().isEmpty()) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND);
+            model.addAttribute("errorMessage", "No se especificó un identificador de producto válido.");
+            return "admin/page-404";
         }
+
+        Producto p = null;
+        try {
+            p = productoService.buscarPorId(id.trim());
+        } catch (Exception e1) {
+            try {
+                p = productoService.buscarPorCodigo(id.trim());
+            } catch (Exception ignored) {}
+        }
+
+        if (p == null || p.isEliminado()) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND);
+            model.addAttribute("errorMessage", "El producto solicitado no existe o fue dado de baja del catálogo.");
+            return "admin/page-404";
+        }
+
+        com.example.zero.dto.producto.ProductoDTO dto = com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService);
+        model.addAttribute("product", dto);
+        model.addAttribute("title", "Detalle del Producto");
+        model.addAttribute("subtitle", p.getNombre());
+        model.addAttribute("categoryName", dto.getCategoryName());
+        model.addAttribute("stock", dto.getStock());
+        model.addAttribute("imageUrl", dto.getImageUrl());
         return "shop/single-product";
     }
 
