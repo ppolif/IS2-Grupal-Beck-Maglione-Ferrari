@@ -103,7 +103,7 @@
             </div>
           </td>
           <td class="small fw-semibold text-truncate" style="max-width: 250px;" th:text="${order.productSummary}" th:title="${order.productSummary}">Oversized Hoodie</td>
-          <td class="small fw-bold text-brand-bold" th:text="${#numbers.formatCurrency(order.totalAmount)}">$89.90</td>
+          <td class="small fw-bold text-brand-bold">$<span th:text="${#numbers.formatDecimal(order.totalAmount != null ? order.totalAmount : 0, 1, 'POINT', 2, 'POINT')}">89.90</span></td>
           <td>
             <span class="badge"
                   th:classappend="${order.status == 'PAGADA' || order.status == 'ENTREGADA' || order.status == 'Completado' ? 'bg-success text-white' : (order.status == 'SIN_DEFINIR' || order.status == 'Pendiente' ? 'bg-warning text-dark' : (order.status == 'ANULADA' ? 'bg-danger text-white' : 'bg-secondary text-white'))}"

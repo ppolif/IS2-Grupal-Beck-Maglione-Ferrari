@@ -33,20 +33,29 @@
             </a>
           </li>
           <!-- Si vienen categorías desde el backend -->
-          <li class="main-nav-list" th:if="${categories != null && !#lists.isEmpty(categories)}" th:each="cat : ${categories}">
-            <a th:href="@{/shop/category(categoryId=${cat.id})}"
-               th:classappend="${selectedCategory == cat.id} ? 'font-weight-bold text-brand-dark' : ''">
-              <span class="lnr lnr-arrow-right"></span>
-              <span th:text="${cat.nombre != null ? cat.nombre : cat.name}">Calzado</span>
-            </a>
-          </li>
+          <th:block th:if="${categories != null && !#lists.isEmpty(categories)}" th:each="cat : ${categories}">
+            <!-- Categoría Principal (al clickear se ven todos los productos de esta categoría) -->
+            <li class="main-nav-list">
+              <a th:href="@{/shop/category(categoryId=${cat.id})}"
+                 th:classappend="${selectedCategory == cat.id && selectedSubCategory == null} ? 'font-weight-bold text-brand-dark' : ''">
+                <span class="lnr lnr-arrow-right"></span>
+                <span th:text="${cat.nombre != null ? cat.nombre : cat.name}">Categoría</span>
+              </a>
+            </li>
+            <!-- Subcategorías asociadas -->
+            <li class="main-nav-list child" th:each="sub : ${cat.subCategorias}" th:if="${sub != null && !sub.eliminado}">
+              <a th:href="@{/shop/category(categoryId=${cat.id}, subCategoryId=${sub.id})}"
+                 th:classappend="${selectedSubCategory == sub.id} ? 'font-weight-bold text-brand-dark' : ''">
+                <span class="lnr lnr-chevron-right text-muted mr-1" style="font-size: 10px; display: inline-block;"></span>
+                <span th:text="${sub.nombre}">Subcategoría</span>
+              </a>
+            </li>
+          </th:block>
 
-          <!-- Fallback estático cuando no hay lista del backend -->
-          <li th:if="${categories == null || #lists.isEmpty(categories)}" class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='calzado')}"><span class="lnr lnr-arrow-right"></span>Calzado Deportivo<span class="number">(24)</span></a></li>
-          <li th:if="${categories == null || #lists.isEmpty(categories)}" class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='remeras')}"><span class="lnr lnr-arrow-right"></span>Remeras y Tops<span class="number">(18)</span></a></li>
-          <li th:if="${categories == null || #lists.isEmpty(categories)}" class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='pantalones')}"><span class="lnr lnr-arrow-right"></span>Pantalones y Joggers<span class="number">(15)</span></a></li>
-          <li th:if="${categories == null || #lists.isEmpty(categories)}" class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='abrigos')}"><span class="lnr lnr-arrow-right"></span>Camperas y Buzos<span class="number">(10)</span></a></li>
-          <li th:if="${categories == null || #lists.isEmpty(categories)}" class="main-nav-list"><a href="category.html" th:href="@{/shop/category(category='accesorios')}"><span class="lnr lnr-arrow-right"></span>Accesorios y Bolsos<span class="number">(8)</span></a></li>
+          <!-- Fallback cuando no hay lista del backend -->
+          <li th:if="${categories == null || #lists.isEmpty(categories)}" class="main-nav-list">
+            <a th:href="@{/shop/category}"><span class="lnr lnr-arrow-right"></span>Sin categorías registradas</a>
+          </li>
         </ul>
       </div>
 
@@ -55,9 +64,10 @@
         <div class="common-filter p-3">
           <form action="category.html" th:action="@{/shop/category}" method="GET">
             <input type="hidden" name="categoryId" th:value="${selectedCategory}" th:if="${selectedCategory != null}">
+            <input type="hidden" name="subCategoryId" th:value="${selectedSubCategory}" th:if="${selectedSubCategory != null}">
             <div class="form-group mb-2">
               <label class="small text-muted">Precio Máximo:</label>
-              <input type="number" name="maxPrice" class="form-control form-control-sm" placeholder="Ej: 200" th:value="${param.maxPrice}">
+              <input type="number" name="maxPrice" class="form-control form-control-sm" placeholder="Ej: 200" th:value="${maxPrice != null ? maxPrice : param.maxPrice}">
             </div>
             <button type="submit" class="btn btn-sm btn-dark w-100 mt-2">Aplicar Filtro</button>
             <a href="category.html" th:href="@{/shop/category}" class="btn btn-sm btn-link text-muted w-100 mt-1">Limpiar</a>
@@ -96,42 +106,28 @@
         <div class="row">
 
           <!-- Productos Dinámicos desde Backend -->
-          <div class="col-lg-4 col-md-6" th:if="${products != null && !#lists.isEmpty(products)}" th:each="prod : ${products}">
-            <div class="single-product position-relative">
-              <div class="position-absolute" style="top: 10px; left: 10px; z-index: 2;" th:if="${prod.enOferta}">
+          <div class="col-lg-4 col-md-6 mb-4" th:if="${products != null && !#lists.isEmpty(products)}" th:each="prod : ${products}">
+            <div class="single-product position-relative bg-white p-3 rounded shadow-sm" style="margin-top: 0; margin-bottom: 0;">
+              <div class="position-absolute" style="top: 15px; left: 15px; z-index: 2;" th:if="${prod.enOferta}">
                 <span class="badge badge-danger text-uppercase font-weight-bold px-2 py-1 shadow-sm">OFERTA</span>
               </div>
               <a th:href="@{/product/{id}(id=${prod.id})}">
-                <div class="product-img-wrap">
-                  <img class="img-fluid" th:src="${prod.imagenUrl}" th:alt="${prod.nombre}"
+                <div class="product-img-wrap mb-3 position-relative">
+                  <img class="img-fluid rounded" th:src="${prod.imagenUrl}" th:alt="${prod.nombre}"
                        src="/shop/img/product/p1.jpg" onerror="this.src='/shop/img/product/p1.jpg'"
                        th:classappend="${prod.stock <= 0} ? 'img-no-stock' : ''"
-                       style="width: 100%; height: 260px; object-fit: cover;">
+                       style="width: 100%; height: 220px; object-fit: cover; margin-bottom: 0;">
                   <div th:if="${prod.stock <= 0}" class="overlay-no-stock">
                     <span class="badge-no-stock">Sin Stock</span>
                   </div>
                 </div>
               </a>
-              <div class="product-details">
+              <div class="product-details text-center">
                 <a th:href="@{/product/{id}(id=${prod.id})}" class="text-dark d-block">
-                  <h6 th:text="${prod.nombre}">Zapatillas Zero Runner</h6>
+                  <h6 class="font-weight-bold text-dark text-truncate" th:text="${prod.nombre}">Zapatillas Zero Runner</h6>
                 </a>
-                <div class="price">
-                  <h6 th:classappend="${prod.enOferta} ? 'text-danger font-weight-bold' : ''">$<span th:text="${#numbers.formatDecimal(prod.precioActual != null ? prod.precioActual : 0, 1, 'POINT', 2, 'POINT')}">150.00</span></h6>
-                </div>
-                <div class="prd-bottom">
-                  <form th:if="${prod.stock > 0 and (session.usuariosession == null or session.usuariosession.rol.name() == 'CLIENTE')}" action="cart.html" th:action="@{/shop/cart/add}" method="POST" class="d-inline">
-                    <input type="hidden" name="productId" th:value="${prod.id}">
-                    <input type="hidden" name="quantity" value="1">
-                    <button type="submit" class="social-info border-0 bg-transparent p-0" title="Agregar al Carrito">
-                      <span class="ti-bag"></span>
-                      <p class="hover-text">Al carrito</p>
-                    </button>
-                  </form>
-                  <a th:href="@{/product/{id}(id=${prod.id})}" class="social-info" title="Ver Detalle">
-                    <span class="lnr lnr-move"></span>
-                    <p class="hover-text">Detalle</p>
-                  </a>
+                <div class="price mb-2">
+                  <h6 th:classappend="${prod.enOferta} ? 'text-danger font-weight-bold' : 'text-dark font-weight-bold'">$<span th:text="${#numbers.formatDecimal(prod.precioActual != null ? prod.precioActual : 0, 1, 'POINT', 2, 'POINT')}">150.00</span></h6>
                 </div>
               </div>
             </div>

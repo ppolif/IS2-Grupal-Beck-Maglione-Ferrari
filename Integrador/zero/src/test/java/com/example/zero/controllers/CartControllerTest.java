@@ -6,6 +6,7 @@ import com.example.zero.entidades.persona.Cliente;
 import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.enums.RolUsuario;
 import com.example.zero.services.OrdenCompraService;
+import com.example.zero.services.StockService;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +32,9 @@ class CartControllerTest {
 
     @Mock
     private OrdenCompraService ordenCompraService;
+
+    @Mock
+    private StockService stockService;
 
     @Mock
     private HttpSession session;

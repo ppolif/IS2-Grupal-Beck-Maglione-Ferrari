@@ -28,6 +28,7 @@ public class VistaController {
     private final VentaService ventaService;
     private final AdminVentaController adminVentaController;
     private final CategoriaRepository categoriaRepository;
+    private final com.example.zero.repositories.SubCategoriaRepository subCategoriaRepository;
     private final com.example.zero.services.OrdenCompraService ordenCompraService;
     private final com.example.zero.services.VigenciaPrecioService vigenciaPrecioService;
     private final com.example.zero.services.StockService stockService;
@@ -51,27 +52,47 @@ public class VistaController {
     // Catálogo de Productos / Categorías
     @GetMapping({"/shop/category", "/shop/categoria", "/shop/catalogo"})
     public String shopCategory(@RequestParam(value = "categoryId", required = false) String categoryId,
+                               @RequestParam(value = "subCategoryId", required = false) String subCategoryId,
                                @RequestParam(value = "maxPrice", required = false) Double maxPrice,
                                Model model) {
         List<com.example.zero.dto.producto.ProductoDTO> products = productoService.listarActivos().stream()
                 .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService))
                 .toList();
-        if (categoryId != null && !categoryId.trim().isEmpty()) {
+
+        if (subCategoryId != null && !subCategoryId.trim().isEmpty()) {
+            products = products.stream()
+                    .filter(p -> p.getSubCategoria() != null &&
+                            subCategoryId.trim().equalsIgnoreCase(p.getSubCategoria().getId()))
+                    .toList();
+            model.addAttribute("selectedSubCategory", subCategoryId.trim());
+
+            if (categoryId == null || categoryId.trim().isEmpty()) {
+                subCategoriaRepository.findById(subCategoryId.trim()).ifPresent(sc -> {
+                    if (sc.getCategoria() != null) {
+                        model.addAttribute("selectedCategory", sc.getCategoria().getId());
+                    }
+                });
+            } else {
+                model.addAttribute("selectedCategory", categoryId.trim());
+            }
+        } else if (categoryId != null && !categoryId.trim().isEmpty()) {
             products = products.stream()
                     .filter(p -> p.getSubCategoria() != null && p.getSubCategoria().getCategoria() != null &&
                             categoryId.trim().equalsIgnoreCase(p.getSubCategoria().getCategoria().getId()))
                     .toList();
             model.addAttribute("selectedCategory", categoryId.trim());
         }
+
         if (maxPrice != null && maxPrice > 0) {
             products = products.stream()
                     .filter(p -> p.getPrecioActual() <= maxPrice)
                     .toList();
+            model.addAttribute("maxPrice", maxPrice);
         }
 
         model.addAttribute("products", products);
         model.addAttribute("totalProducts", products.size());
-        model.addAttribute("categories", categoriaRepository.findByEliminadoFalse());
+        model.addAttribute("categories", categoriaRepository.findActiveWithSubCategorias());
         return "shop/category";
     }
 
@@ -83,7 +104,7 @@ public class VistaController {
                 .toList();
         model.addAttribute("products", offers);
         model.addAttribute("totalProducts", offers.size());
-        model.addAttribute("categories", categoriaRepository.findByEliminadoFalse());
+        model.addAttribute("categories", categoriaRepository.findActiveWithSubCategorias());
         model.addAttribute("isOffersPage", true);
         model.addAttribute("title", "Ofertas Especiales");
         return "shop/category";

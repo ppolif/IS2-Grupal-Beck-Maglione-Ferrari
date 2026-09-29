@@ -28,7 +28,7 @@
           <ul class="list list-unstyled mt-3">
             <li class="mb-2"><span>Número de Orden</span> : <strong class="text-brand-dark" th:text="${order != null && order.orderNumber != null} ? ${order.orderNumber} : '#ORD-60235'">#ORD-60235</strong></li>
             <li class="mb-2"><span>Fecha</span> : <span th:text="${order != null && order.createdAt != null} ? ${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')} : '11/09/2026'">11/09/2026</span></li>
-            <li class="mb-2"><span>Total</span> : <strong class="text-brand-bold" th:text="${order != null} ? ${#numbers.formatCurrency(order.totalAmount)} : '$2,210.00'">$2,210.00</strong></li>
+            <li class="mb-2"><span>Total</span> : <strong class="text-brand-bold" th:text="${order != null && order.totalAmount != null} ? ('$' + ${#numbers.formatDecimal(order.totalAmount, 1, 'POINT', 2, 'POINT')}) : '$2,210.00'">$2,210.00</strong></li>
             <li class="mb-2"><span>Método de Pago</span> : <span th:text="${order != null && order.paymentMethod != null} ? ${order.paymentMethod} : 'Tarjeta de Crédito'">Tarjeta de Crédito</span></li>
           </ul>
         </div>
@@ -76,7 +76,7 @@
           <tr th:if="${order != null && !#lists.isEmpty(order.items)}" th:each="line : ${order.items}">
             <td><p class="font-weight-bold mb-0" th:text="${line.productName}">Indumentaria Deportiva</p></td>
             <td class="text-center"><h5 th:text="'x ' + ${line.quantity}">x 01</h5></td>
-            <td class="text-right"><p class="mb-0" th:text="${#numbers.formatCurrency(line.totalPrice)}">$720.00</p></td>
+            <td class="text-right"><p class="mb-0">$<span th:text="${#numbers.formatDecimal(line.totalPrice != null ? line.totalPrice : 0, 1, 'POINT', 2, 'POINT')}">720.00</span></p></td>
           </tr>
 
           <!-- Placeholder fallback si no viene objeto del backend aún -->
@@ -90,12 +90,12 @@
           <tr>
             <td><h4>Subtotal</h4></td>
             <td></td>
-            <td class="text-right"><p class="font-weight-bold mb-0" th:text="${order != null} ? ${#numbers.formatCurrency(order.subtotal)} : '$180.00'">$180.00</p></td>
+            <td class="text-right"><p class="font-weight-bold mb-0" th:text="${order != null && order.subtotal != null} ? ('$' + ${#numbers.formatDecimal(order.subtotal, 1, 'POINT', 2, 'POINT')}) : '$180.00'">$180.00</p></td>
           </tr>
           <tr>
             <td><h3 class="text-brand-dark">Total Abonado</h3></td>
             <td></td>
-            <td class="text-right"><h3 class="text-brand-bold font-weight-bold" th:text="${order != null} ? ${#numbers.formatCurrency(order.totalAmount)} : '$180.00'">$180.00</h3></td>
+            <td class="text-right"><h3 class="text-brand-bold font-weight-bold" th:text="${order != null && order.totalAmount != null} ? ('$' + ${#numbers.formatDecimal(order.totalAmount, 1, 'POINT', 2, 'POINT')}) : '$180.00'">$180.00</h3></td>
           </tr>
           </tbody>
         </table>

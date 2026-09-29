@@ -144,8 +144,7 @@
           <div class="col-sm-6 col-xl-3">
             <div class="metric-card p-3 shadow-sm">
               <span class="text-muted small fw-bold text-uppercase">Total Recaudado</span>
-              <h3 class="fw-bold mb-0 text-brand-dark mt-1"
-                  th:text="${#numbers.formatCurrency(reporteVentas.totalRecaudado)}">$0.00</h3>
+              <h3 class="fw-bold mb-0 text-brand-dark mt-1">$<span th:text="${#numbers.formatDecimal(reporteVentas.totalRecaudado != null ? reporteVentas.totalRecaudado : 0, 1, 'POINT', 2, 'POINT')}">0.00</span></h3>
               <span class="text-muted" style="font-size: 0.75rem;">En el período seleccionado</span>
             </div>
           </div>
@@ -166,8 +165,7 @@
           <div class="col-sm-6 col-xl-3">
             <div class="metric-card p-3 shadow-sm">
               <span class="text-muted small fw-bold text-uppercase">Ticket Promedio</span>
-              <h3 class="fw-bold mb-0 text-brand-dark mt-1"
-                  th:text="${#numbers.formatCurrency(reporteVentas.ticketPromedio)}">$0.00</h3>
+              <h3 class="fw-bold mb-0 text-brand-dark mt-1">$<span th:text="${#numbers.formatDecimal(reporteVentas.ticketPromedio != null ? reporteVentas.ticketPromedio : 0, 1, 'POINT', 2, 'POINT')}">0.00</span></h3>
               <span class="text-muted" style="font-size: 0.75rem;">Promedio por venta</span>
             </div>
           </div>
@@ -215,8 +213,8 @@
                   <span class="badge bg-light text-dark border" th:text="${item.categoriaNombre}">Categoría</span>
                 </td>
                 <td class="text-center fw-bold" th:text="${item.cantidad}">1</td>
-                <td class="text-end small" th:text="${#numbers.formatCurrency(item.precioUnitario)}">$0.00</td>
-                <td class="text-end fw-bold text-brand-dark small" th:text="${#numbers.formatCurrency(item.subtotal)}">$0.00</td>
+                <td class="text-end small">$<span th:text="${#numbers.formatDecimal(item.precioUnitario != null ? item.precioUnitario : 0, 1, 'POINT', 2, 'POINT')}">0.00</span></td>
+                <td class="text-end fw-bold text-brand-dark small">$<span th:text="${#numbers.formatDecimal(item.subtotal != null ? item.subtotal : 0, 1, 'POINT', 2, 'POINT')}">0.00</span></td>
                 <td>
                   <span class="badge bg-secondary bg-opacity-10 text-dark border" th:text="${item.formaPago}">EFECTIVO</span>
                 </td>
@@ -351,7 +349,7 @@
                     </a>
                     <div class="text-muted small mt-1" style="font-size: 0.72rem;">
                       <span th:text="${prod.proveedorNombre}">Proveedor</span>
-                      <span th:if="${prod.menorCosto != null}"> - Costo: <strong th:text="${#numbers.formatCurrency(prod.menorCosto)}">$0.00</strong></span>
+                      <span th:if="${prod.menorCosto != null}"> - Costo: <strong>$<span th:text="${#numbers.formatDecimal(prod.menorCosto, 1, 'POINT', 2, 'POINT')}">0.00</span></strong></span>
                     </div>
                   </div>
                   <div th:unless="${prod.estadoStock == 'MALO'}" class="text-muted small">
@@ -440,8 +438,7 @@
                 </td>
                 <td class="small font-monospace" th:text="${item.proveedorCuit}">20-12345678-9</td>
                 <td class="text-end">
-                  <span th:if="${item.menorPrecioCosto != null}" class="fw-bold text-success"
-                        th:text="${#numbers.formatCurrency(item.menorPrecioCosto)}">$0.00</span>
+                  <span th:if="${item.menorPrecioCosto != null}" class="fw-bold text-success">$<span th:text="${#numbers.formatDecimal(item.menorPrecioCosto, 1, 'POINT', 2, 'POINT')}">0.00</span></span>
                   <span th:unless="${item.menorPrecioCosto != null}" class="badge bg-light text-muted border">Sin compras</span>
                 </td>
                 <td class="small">

@@ -6,6 +6,7 @@ import com.example.zero.entidades.persona.Cliente;
 import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.enums.RolUsuario;
 import com.example.zero.services.OrdenCompraService;
+import com.example.zero.services.StockService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -13,17 +14,19 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Controlador Spring MVC tradicional para la gestión del carrito de compras del cliente.
- * Se rige estrictamente por la arquitectura web tradicional y renderizado Thymeleaf sin endpoints REST ni JavaScript.
+ * Controlador Spring MVC para la gestión del carrito de compras del cliente.
  */
 @Controller
 @RequiredArgsConstructor
 public class CartController {
 
     private final OrdenCompraService ordenCompraService;
+    private final StockService stockService;
 
     /**
      * Muestra la vista principal del carrito de compras del cliente autenticado.
@@ -48,8 +51,17 @@ public class CartController {
             OrdenCompra carrito = ordenCompraService.obtenerOCrearCarrito(cliente);
             List<DetalleCompra> items = ordenCompraService.obtenerItemsActivos(carrito);
 
+            Map<String, Integer> stockPorItem = new HashMap<>();
+            for (DetalleCompra item : items) {
+                if (item.getProducto() != null) {
+                    int stock = (stockService != null) ? stockService.calcularStockActual(item.getProducto().getId()) : 999;
+                    stockPorItem.put(item.getId(), stock);
+                }
+            }
+
             model.addAttribute("cart", carrito);
             model.addAttribute("items", items);
+            model.addAttribute("stockPorItem", stockPorItem);
             model.addAttribute("totalItems", ordenCompraService.contarItems(carrito));
             return "shop/cart";
         } catch (Exception e) {
@@ -128,6 +140,47 @@ public class CartController {
         }
 
         return "redirect:/shop/cart";
+    }
+
+    /**
+     * Endpoint API para actualización dinámica asíncrona de cantidad desde JavaScript.
+     */
+    @PostMapping({"/shop/cart/api/update", "/cart/api/update"})
+    @ResponseBody
+    public Map<String, Object> updateCartItemApi(@RequestParam("itemId") String itemId,
+                                                 @RequestParam("quantity") int quantity,
+                                                 HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        Usuario usuario = (Usuario) session.getAttribute("usuariosession");
+        if (usuario == null || usuario.getRol() != RolUsuario.CLIENTE) {
+            response.put("success", false);
+            response.put("message", "Sesión inválida o no autenticada.");
+            return response;
+        }
+
+        try {
+            Cliente cliente = ordenCompraService.obtenerOAsociarCliente(usuario);
+            session.setAttribute("usuariosession", usuario);
+
+            OrdenCompra carrito = ordenCompraService.actualizarCantidad(cliente, itemId, quantity);
+            List<DetalleCompra> items = ordenCompraService.obtenerItemsActivos(carrito);
+            double itemSubtotal = 0.0;
+            for (DetalleCompra item : items) {
+                if (item.getId() != null && item.getId().equals(itemId)) {
+                    itemSubtotal = item.getSubtotal();
+                    break;
+                }
+            }
+
+            response.put("success", true);
+            response.put("itemSubtotal", itemSubtotal);
+            response.put("cartTotal", carrito.getTotal());
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+        }
+
+        return response;
     }
 
     /**
