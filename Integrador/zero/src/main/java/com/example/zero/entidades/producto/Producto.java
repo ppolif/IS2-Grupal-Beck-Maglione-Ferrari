@@ -70,9 +70,6 @@ public class Producto {
     @JoinColumn(name = "subcategoria_id", nullable = false)
     private SubCategoria subCategoria;
 
-    @jakarta.persistence.Transient
-    private Double precioActual;
-
     public String getImagenUrl() {
         if (imagenes != null && !imagenes.isEmpty()) {
             for (Imagen img : imagenes) {
@@ -82,35 +79,5 @@ public class Producto {
             }
         }
         return "/shop/img/product/p1.jpg";
-    }
-
-    public String getEstadoStock() {
-        if (stock > 50) {
-            return "BIEN";
-        } else if (stock >= 20) {
-            return "REGULAR";
-        } else {
-            return "MALO";
-        }
-    }
-
-    public int getCantidadFaltanteStock() {
-        return Math.max(0, 50 - stock);
-    }
-
-    public String getUrlWhatsAppReposicion() {
-        int faltante = getCantidadFaltanteStock();
-        String mensaje = String.format(
-            "Hola! Desde ZERO Tienda Oficial deseamos hacer un pedido de reposición para el producto: %s (Código: %s). Solicitamos %d unidades para alcanzar el nivel óptimo de 50 unidades (Stock actual: %d).",
-            nombre != null ? nombre : "Producto",
-            codigo != null ? codigo : "",
-            faltante,
-            stock
-        );
-        try {
-            return "https://web.whatsapp.com/send?phone=5492613072339&text=" + java.net.URLEncoder.encode(mensaje, java.nio.charset.StandardCharsets.UTF_8.toString());
-        } catch (Exception e) {
-            return "https://web.whatsapp.com/send?phone=5492613072339";
-        }
     }
 }

@@ -145,7 +145,7 @@ public class AuthController {
             }
         }
 
-        // Acciones dinámicas de recarga en cascada gestionadas por el servidor
+        // Acciones dinámicas de recarga en cascada gestionadas por el servidor (compatibilidad)
         if ("cambiarPais".equals(accionLimpia)) {
             dto.setProvinciaId(null);
             dto.setDepartamentoId(null);

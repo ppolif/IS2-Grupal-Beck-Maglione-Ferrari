@@ -70,4 +70,32 @@ public class Detalle {
     public double getTotalPrice() {
         return subtotal;
     }
+
+    public com.example.zero.entidades.compraProveedor.Proveedor getProveedor() {
+        if (factura instanceof com.example.zero.entidades.compraProveedor.FacturaProveedor fp) {
+            return fp.getProveedor();
+        }
+        return null;
+    }
+
+    public String getProveedorRazonSocial() {
+        if (factura instanceof com.example.zero.entidades.compraProveedor.FacturaProveedor fp && fp.getProveedor() != null) {
+            return fp.getProveedor().getRazonSocial();
+        }
+        return null;
+    }
+
+    public String getProveedorCuit() {
+        if (factura instanceof com.example.zero.entidades.compraProveedor.FacturaProveedor fp && fp.getProveedor() != null) {
+            return fp.getProveedor().getCuit();
+        }
+        return null;
+    }
+
+    public String getCategoryName() {
+        if (producto != null && producto.getSubCategoria() != null && producto.getSubCategoria().getCategoria() != null) {
+            return producto.getSubCategoria().getCategoria().getNombre();
+        }
+        return "General";
+    }
 }

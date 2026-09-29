@@ -97,7 +97,7 @@ class AdminPurchaseOrderControllerTest {
 
         String vista = controller.eliminarCompra("fp-1", redirectAttributes);
 
-        assertEquals("redirect:/admin/registrar-compra?success=deleted", vista);
+        assertEquals("redirect:/admin/orders?success=deleted", vista);
         verify(compraProveedorService).eliminarCompraProveedor("fp-1");
     }
 
@@ -107,7 +107,7 @@ class AdminPurchaseOrderControllerTest {
 
         String vista = controller.marcarComoEntregada("fp-1", redirectAttributes);
 
-        assertEquals("redirect:/admin/registrar-compra", vista);
+        assertEquals("redirect:/admin/orders", vista);
         verify(redirectAttributes).addFlashAttribute("successMessage", "Mercadería recibida y stock actualizado");
         verify(compraProveedorService).marcarComoEntregada("fp-1");
     }
@@ -119,7 +119,17 @@ class AdminPurchaseOrderControllerTest {
 
         String vista = controller.marcarComoEntregada("fp-1", redirectAttributes);
 
-        assertEquals("redirect:/admin/registrar-compra", vista);
+        assertEquals("redirect:/admin/orders", vista);
         verify(redirectAttributes).addFlashAttribute("errorMessage", "La Factura ya fue entregada previamente");
+    }
+
+    @Test
+    void obtenerCostoUnitario_retornaMapaConCosto() {
+        when(compraProveedorService.obtenerUltimoCostoUnitario("prov-1", "prod-1")).thenReturn(35.50);
+
+        java.util.Map<String, Object> resp = controller.obtenerCostoUnitario("prov-1", "prod-1");
+
+        assertEquals(35.50, resp.get("costo"));
+        verify(compraProveedorService).obtenerUltimoCostoUnitario("prov-1", "prod-1");
     }
 }

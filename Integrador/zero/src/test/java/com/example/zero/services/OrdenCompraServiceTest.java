@@ -73,7 +73,6 @@ class OrdenCompraServiceTest {
                 .id("prod-uuid-1")
                 .codigo("PROD-001")
                 .nombre("Zapatilla Running")
-                .precioActual(150.0)
                 .eliminado(false)
                 .build();
 

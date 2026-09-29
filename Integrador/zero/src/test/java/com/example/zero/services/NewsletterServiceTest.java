@@ -51,7 +51,6 @@ class NewsletterServiceTest {
         productoEnOferta = Producto.builder()
                 .id("prod-oferta-1")
                 .nombre("Zapatilla Hyper Speed")
-                .precioActual(120.0)
                 .enOferta(true)
                 .eliminado(false)
                 .descripcion("Calzado en promoción de alto impacto")
@@ -86,13 +85,14 @@ class NewsletterServiceTest {
         int enviados = newsletterService.enviarNewsletterOfertas();
 
         assertEquals(1, enviados);
-        verify(productoService, times(1)).prepararParaVista(List.of(productoEnOferta));
         verify(mailSender, times(1)).send(any(MimeMessage.class));
     }
 
     @Test
     @DisplayName("construirHtmlNewsletter genera el HTML con el nombre y precio del producto")
     void construirHtmlNewsletter_generaContenidoValido() {
+        when(productoService.obtenerPrecioActual("prod-oferta-1")).thenReturn(120.0);
+
         String html = newsletterService.construirHtmlNewsletter(List.of(productoEnOferta));
 
         assertNotNull(html);

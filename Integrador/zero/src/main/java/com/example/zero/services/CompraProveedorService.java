@@ -161,10 +161,15 @@ public class CompraProveedorService {
 
             Producto producto = productoService.buscarPorId(prodId);
             if (costoUnitario <= 0.0) {
-                try {
-                    costoUnitario = productoService.obtenerPrecioActual(prodId);
-                } catch (Exception ignored) {
-                    costoUnitario = 0.0;
+                Double ultimoCosto = obtenerUltimoCostoUnitario(proveedorId, prodId);
+                if (ultimoCosto != null && ultimoCosto > 0.0) {
+                    costoUnitario = ultimoCosto;
+                } else {
+                    try {
+                        costoUnitario = productoService.obtenerPrecioActual(prodId);
+                    } catch (Exception ignored) {
+                        costoUnitario = 0.0;
+                    }
                 }
             }
 
@@ -186,10 +191,11 @@ public class CompraProveedorService {
             if (estado == EstadoFactura.ENTREGADA) {
                 int stockActual = (stockService != null)
                         ? stockService.calcularStockActual(producto.getId())
-                        : producto.getStock();
-                int nuevoBalance = productoService.aumentarStock(stockActual, cantidad);
-                producto.setStock(nuevoBalance);
-                productoRepository.save(producto);
+                        : 0;
+                int nuevoBalance = (stockService != null)
+                        ? stockService.aumentarStock(stockActual, cantidad)
+                        : stockActual + cantidad;
+                // Guardar stock trazable asociado al detalle
             }
         }
 
@@ -201,8 +207,13 @@ public class CompraProveedorService {
             d.setFactura(guardada);
             Detalle detGuardado = detalleRepository.save(d);
 
-            if (estado == EstadoFactura.ENTREGADA) {
-                int balance = d.getProducto().getStock();
+            if (estado == EstadoFactura.ENTREGADA && d.getProducto() != null) {
+                int stockActual = (stockService != null)
+                        ? stockService.calcularStockActual(d.getProducto().getId())
+                        : 0;
+                int balance = (stockService != null)
+                        ? stockService.aumentarStock(stockActual, d.getCantidad())
+                        : stockActual + d.getCantidad();
                 String obs = "Ingreso por orden de compra a proveedor: " + proveedor.getRazonSocial() + " - Factura #" + guardada.getNumeroFactura();
                 if (stockService != null) {
                     stockService.crearStock(detGuardado, balance, obs);
@@ -247,9 +258,11 @@ public class CompraProveedorService {
                     Producto producto = detalle.getProducto();
                     int stockActual = (stockService != null)
                             ? stockService.calcularStockActual(producto.getId())
-                            : producto.getStock();
+                            : 0;
 
-                    int nuevoBalance = productoService.aumentarStock(stockActual, detalle.getCantidad());
+                    int nuevoBalance = (stockService != null)
+                            ? stockService.aumentarStock(stockActual, detalle.getCantidad())
+                            : stockActual + detalle.getCantidad();
 
                     if (stockService != null) {
                         stockService.crearStock(
@@ -268,9 +281,6 @@ public class CompraProveedorService {
                         stock.setEliminado(false);
                         stockRepository.save(stock);
                     }
-
-                    producto.setStock(nuevoBalance);
-                    productoRepository.save(producto);
                 }
             }
         }
@@ -308,5 +318,24 @@ public class CompraProveedorService {
             }
         }
         facturaProveedorRepository.save(factura);
+    }
+
+    /**
+     * Obtiene el costo unitario de compra más reciente para un producto y proveedor dados,
+     * buscando en la factura de compra más reciente de ese proveedor que contenga dicho producto.
+     */
+    @Transactional(readOnly = true)
+    public Double obtenerUltimoCostoUnitario(String proveedorId, String productoId) {
+        if (proveedorId == null || proveedorId.isBlank() || productoId == null || productoId.isBlank()) {
+            return 0.0;
+        }
+        List<Detalle> detalles = detalleRepository.findDetallesByProveedorAndProductoOrderByFechaDesc(
+                proveedorId.trim(), productoId.trim()
+        );
+        if (detalles != null && !detalles.isEmpty()) {
+            Detalle masReciente = detalles.get(0);
+            return masReciente.getUnitPrice();
+        }
+        return 0.0;
     }
 }

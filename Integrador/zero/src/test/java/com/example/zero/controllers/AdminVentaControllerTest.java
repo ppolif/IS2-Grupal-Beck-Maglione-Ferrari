@@ -53,7 +53,6 @@ class AdminVentaControllerTest {
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        lenient().when(ventaService.mapearFacturaAOrderDto(any(Factura.class))).thenCallRealMethod();
     }
 
     @Test
@@ -67,8 +66,6 @@ class AdminVentaControllerTest {
         String vista = controller.showRegistrarVentaForm(model, null);
 
         assertEquals("admin/registrar-venta", vista);
-        assertEquals(3500.0, p1.getPrecioActual());
-        assertEquals(25, p1.getStock());
         verify(model).addAttribute(eq("productos"), anyList());
         verify(model).addAttribute(eq("clientes"), anyList());
         verify(model).addAttribute(eq("formasDePago"), any());
@@ -139,9 +136,8 @@ class AdminVentaControllerTest {
         );
 
         assertEquals("admin/registrar-venta", vista);
-        assertEquals(0, p.getStock());
         verify(model).addAttribute("errorMessage", "Stock insuficiente para: Zapatillas");
-        verify(model).addAttribute("productos", List.of(p));
+        verify(model).addAttribute(eq("productos"), anyList());
     }
 
     @Test
@@ -284,6 +280,48 @@ class AdminVentaControllerTest {
         assertEquals("Zapatillas Nike", detalle.getProductName());
         assertEquals(2, detalle.getQuantity());
         assertEquals(2500.0, detalle.getUnitPrice());
+    }
+
+    @Test
+    void orderDetail_paraFacturaProveedor_agregaProveedorYSucursal() {
+        com.example.zero.entidades.compraProveedor.Proveedor prov = com.example.zero.entidades.compraProveedor.Proveedor.builder()
+                .id("prov-1")
+                .razonSocial("Textil Central S.A.")
+                .cuit("30-11223344-5")
+                .build();
+
+        com.example.zero.entidades.compraProveedor.FacturaProveedor fp = new com.example.zero.entidades.compraProveedor.FacturaProveedor();
+        fp.setId("fp-1");
+        fp.setNumeroFactura(5001L);
+        fp.setProveedor(prov);
+        fp.setTotalPagado(15000.0);
+
+        Detalle detalle = Detalle.builder()
+                .id("d-prov")
+                .factura(fp)
+                .cantidad(10)
+                .subtotal(15000.0)
+                .build();
+        fp.setDetalles(new HashSet<>(List.of(detalle)));
+
+        when(ventaService.buscarFacturaPorIdentificador("fp-1")).thenReturn(fp);
+
+        org.springframework.web.servlet.mvc.support.RedirectAttributes ra = mock(org.springframework.web.servlet.mvc.support.RedirectAttributes.class);
+        String vista = controller.orderDetail("fp-1", model, ra);
+
+        assertEquals("admin/order-detail", vista);
+        verify(model).addAttribute("factura", fp);
+        verify(model).addAttribute("order", fp);
+        verify(model).addAttribute("esCompraProveedor", true);
+        verify(model).addAttribute("facturaProveedor", fp);
+        verify(model).addAttribute("proveedor", prov);
+        verify(model).addAttribute(eq("sucursal"), any());
+
+        assertEquals(true, fp.isCompraProveedor());
+        assertEquals("Textil Central S.A.", fp.getCustomerName());
+        assertEquals("CUIT: 30-11223344-5", fp.getCustomerEmail());
+        assertEquals("Textil Central S.A.", detalle.getProveedorRazonSocial());
+        assertEquals("30-11223344-5", detalle.getProveedorCuit());
     }
 }
 

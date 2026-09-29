@@ -242,12 +242,8 @@ public class VentaService {
                 Producto prod = detalle.getProducto();
                 if (prod != null) {
                     int stockActual = stockService.calcularStockActual(prod.getId());
-                    int nuevoBalance = productoService.disminuirStock(stockActual, detalle.getCantidad());
+                    int nuevoBalance = stockService.disminuirStock(stockActual, detalle.getCantidad());
                     stockService.crearStock(detalle, nuevoBalance, "Egreso por Venta - Factura N° " + facturaGuardada.getNumeroFactura());
-                    prod.setStock(nuevoBalance);
-                    if (productoRepository != null) {
-                        productoRepository.save(prod);
-                    }
                 }
             }
         }
@@ -303,7 +299,13 @@ public class VentaService {
         if (orderNumberOrId == null || orderNumberOrId.trim().isEmpty()) {
             return null;
         }
-        String clean = orderNumberOrId.trim().replace("#ORD-", "").replace("ORD-", "").replace("#", "").trim();
+        String clean = orderNumberOrId.trim()
+                .replace("#ORD-", "")
+                .replace("ORD-", "")
+                .replace("#FAC-", "")
+                .replace("FAC-", "")
+                .replace("#", "")
+                .trim();
         try {
             Long num = Long.parseLong(clean);
             Optional<Factura> facturaOpt = facturaRepository.findByNumeroFacturaAndEliminadoFalse(num);

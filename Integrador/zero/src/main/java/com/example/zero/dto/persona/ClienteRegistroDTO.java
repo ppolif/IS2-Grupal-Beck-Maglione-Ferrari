@@ -51,5 +51,5 @@ public class ClienteRegistroDTO {
     private String provinciaId;
     private String departamentoId;
     private String localidadId;
-}
 
+}

@@ -29,16 +29,20 @@ public class VistaController {
     private final AdminVentaController adminVentaController;
     private final CategoriaRepository categoriaRepository;
     private final com.example.zero.services.OrdenCompraService ordenCompraService;
+    private final com.example.zero.services.VigenciaPrecioService vigenciaPrecioService;
+    private final com.example.zero.services.StockService stockService;
 
     // Inicio / Portada
     @GetMapping({"/", "/shop", "/shop/index"})
     public String shopIndex(Model model) {
-        List<Producto> featured = productoService.listarActivos();
-        productoService.prepararParaVista(featured);
+        List<com.example.zero.dto.producto.ProductoDTO> featured = productoService.listarActivos().stream()
+                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService))
+                .toList();
         model.addAttribute("featuredProducts", featured);
 
-        List<Producto> sale = productoService.listarEnOferta();
-        productoService.prepararParaVista(sale);
+        List<com.example.zero.dto.producto.ProductoDTO> sale = productoService.listarEnOferta().stream()
+                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService))
+                .toList();
         model.addAttribute("saleProducts", sale);
 
         return "shop/index";
@@ -49,8 +53,9 @@ public class VistaController {
     public String shopCategory(@RequestParam(value = "categoryId", required = false) String categoryId,
                                @RequestParam(value = "maxPrice", required = false) Double maxPrice,
                                Model model) {
-        List<Producto> products = productoService.listarActivos();
-        productoService.prepararParaVista(products);
+        List<com.example.zero.dto.producto.ProductoDTO> products = productoService.listarActivos().stream()
+                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService))
+                .toList();
         if (categoryId != null && !categoryId.trim().isEmpty()) {
             products = products.stream()
                     .filter(p -> p.getSubCategoria() != null && p.getSubCategoria().getCategoria() != null &&
@@ -60,7 +65,7 @@ public class VistaController {
         }
         if (maxPrice != null && maxPrice > 0) {
             products = products.stream()
-                    .filter(p -> p.getPrecioActual() != null && p.getPrecioActual() <= maxPrice)
+                    .filter(p -> p.getPrecioActual() <= maxPrice)
                     .toList();
         }
 
@@ -73,8 +78,9 @@ public class VistaController {
     // Catálogo de Ofertas
     @GetMapping({"/offers", "/ofertas", "/shop/offers", "/shop/ofertas"})
     public String shopOffers(Model model) {
-        List<Producto> offers = productoService.listarEnOferta();
-        productoService.prepararParaVista(offers);
+        List<com.example.zero.dto.producto.ProductoDTO> offers = productoService.listarEnOferta().stream()
+                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService))
+                .toList();
         model.addAttribute("products", offers);
         model.addAttribute("totalProducts", offers.size());
         model.addAttribute("categories", categoriaRepository.findByEliminadoFalse());
@@ -180,13 +186,13 @@ public class VistaController {
         if (id != null && !id.trim().isEmpty()) {
             try {
                 Producto p = productoService.buscarPorId(id.trim());
-                productoService.prepararParaVista(p);
-                model.addAttribute("product", p);
+                com.example.zero.dto.producto.ProductoDTO dto = com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService);
+                model.addAttribute("product", dto);
                 model.addAttribute("title", "Detalle del Producto");
                 model.addAttribute("subtitle", p.getNombre());
-                model.addAttribute("categoryName", productoService.obtenerNombreCategoria(p));
-                model.addAttribute("stock", productoService.obtenerStock(p));
-                model.addAttribute("imageUrl", productoService.obtenerImagenUrl(p));
+                model.addAttribute("categoryName", dto.getCategoryName());
+                model.addAttribute("stock", dto.getStock());
+                model.addAttribute("imageUrl", dto.getImageUrl());
             } catch (Exception ignored) {
             }
         }

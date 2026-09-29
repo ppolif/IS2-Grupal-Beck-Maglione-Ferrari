@@ -28,7 +28,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.UuidGenerator;
-
+import com.example.zero.entidades.compraProveedor.FacturaProveedor;
+import com.example.zero.entidades.compraProveedor.Proveedor;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashSet;
@@ -87,7 +88,24 @@ public class Factura {
         return numeroFactura != null ? "#ORD-" + numeroFactura : (id != null ? "#ORD-" + id : "");
     }
 
+    public boolean isCompraProveedor() {
+        return (this instanceof FacturaProveedor);
+    }
+
+    public Proveedor getProveedor() {
+        if (this instanceof FacturaProveedor fp) {
+            return fp.getProveedor();
+        }
+        return null;
+    }
+
     public String getCustomerName() {
+        if (this instanceof FacturaProveedor fp && fp.getProveedor() != null) {
+            String razon = fp.getProveedor().getRazonSocial();
+            if (razon != null && !razon.isBlank()) {
+                return razon.trim();
+            }
+        }
         if (cliente != null) {
             String nom = cliente.getNombre() != null ? cliente.getNombre().trim() : "";
             String ape = cliente.getApellido() != null ? cliente.getApellido().trim() : "";
@@ -100,6 +118,9 @@ public class Factura {
     }
 
     public String getCustomerEmail() {
+        if (this instanceof FacturaProveedor fp && fp.getProveedor() != null) {
+            return "CUIT: " + fp.getProveedor().getCuit();
+        }
         if (cliente != null) {
             if (cliente.getUsuario() != null && cliente.getUsuario().getNombreUsuario() != null && !cliente.getUsuario().getNombreUsuario().isBlank()) {
                 return cliente.getUsuario().getNombreUsuario().trim();
