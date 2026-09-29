@@ -7,6 +7,7 @@ import com.example.zero.repositories.UsuarioRepository;
 import com.example.zero.services.producto.ProductoService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,7 @@ public class NewsletterService {
      *
      * @return Cantidad de correos despachados satisfactoriamente
      */
+    @Transactional 
     public int enviarNewsletterOfertas() {
         List<Producto> ofertas = productoRepository.findByEnOfertaTrueAndEliminadoFalse();
         if (ofertas.isEmpty()) {

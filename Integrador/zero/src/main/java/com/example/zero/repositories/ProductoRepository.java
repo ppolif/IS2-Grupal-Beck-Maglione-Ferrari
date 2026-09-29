@@ -36,7 +36,10 @@ public interface ProductoRepository extends JpaRepository<Producto, String> {
     @Query("SELECT p FROM Producto p WHERE (p.eliminado = false OR p.eliminado IS NULL) ORDER BY p.nombre ASC")
     List<Producto> findByEliminadoFalse();
 
-    @Query("SELECT p FROM Producto p WHERE p.enOferta = true AND (p.eliminado = false OR p.eliminado IS NULL) ORDER BY p.nombre ASC")
+    @Query("SELECT DISTINCT p FROM Producto p " +
+        "LEFT JOIN FETCH p.imagenes " +
+        "WHERE p.enOferta = true AND (p.eliminado = false OR p.eliminado IS NULL) " +
+        "ORDER BY p.nombre ASC")
     List<Producto> findByEnOfertaTrueAndEliminadoFalse();
 
     @Query("SELECT p FROM Producto p WHERE p.subCategoria.id = :subCategoriaId AND (p.eliminado = false OR p.eliminado IS NULL) ORDER BY p.nombre ASC")
