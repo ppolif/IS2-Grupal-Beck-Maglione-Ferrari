@@ -5,6 +5,7 @@ import com.example.zero.entidades.compra.FormaDePago;
 import com.example.zero.entidades.compraProveedor.FacturaProveedor;
 import com.example.zero.entidades.compraProveedor.Proveedor;
 import com.example.zero.entidades.persona.Nacionalidad;
+import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.entidades.producto.Categoria;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.entidades.producto.SubCategoria;
@@ -130,6 +131,15 @@ public class DataInitializer implements CommandLineRunner {
                 usuarioRepository.findByNombreUsuarioAndEliminadoFalse("cliente@zero.com").ifPresent(u -> {
                     if (!u.isActivo()) { u.setActivo(true); usuarioRepository.save(u); }
                 });
+            }
+
+            // Migración automática: Encriptar con BCrypt las contraseñas de cualquier usuario registrado que aún esté en texto plano
+            List<Usuario> usuariosRegistrados = usuarioRepository.findAll();
+            for (Usuario u : usuariosRegistrados) {
+                if (u.getClave() != null && !usuarioService.esBCrypt(u.getClave())) {
+                    usuarioService.modificarUsuario(u.getId(), u.getClave(), null);
+                    System.out.println(">> [DataInitializer] Contraseña migrada a BCrypt para usuario: " + u.getNombreUsuario());
+                }
             }
         } catch (Exception e) {
             System.err.println(">> [DataInitializer] Error en usuarios iniciales: " + e.getMessage());

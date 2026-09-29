@@ -8,7 +8,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +25,9 @@ class UsuarioServiceTest {
 
     @Mock
     private UsuarioRepository usuarioRepository;
+
+    @Spy
+    private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @InjectMocks
     private UsuarioService usuarioService;
@@ -97,7 +103,8 @@ class UsuarioServiceTest {
         assertNotNull(resultado);
         assertEquals("u-123", resultado.getId());
         assertEquals("nuevo@zero.com", resultado.getNombreUsuario());
-        assertEquals("segura123", resultado.getClave());
+        assertTrue(passwordEncoder.matches("segura123", resultado.getClave()));
+        assertNotEquals("segura123", resultado.getClave());
         assertFalse(resultado.isEliminado());
         verify(usuarioRepository, times(1)).save(any(Usuario.class));
     }
@@ -135,7 +142,8 @@ class UsuarioServiceTest {
 
         Usuario actualizado = usuarioService.modificarUsuario("u-1", "nueva123", RolUsuario.JEFE);
 
-        assertEquals("nueva123", actualizado.getClave());
+        assertTrue(passwordEncoder.matches("nueva123", actualizado.getClave()));
+        assertNotEquals("nueva123", actualizado.getClave());
         assertEquals(RolUsuario.JEFE, actualizado.getRol());
         verify(usuarioRepository, times(1)).save(usuario);
     }
@@ -189,6 +197,63 @@ class UsuarioServiceTest {
         List<Usuario> activos = usuarioService.listarActivos();
 
         assertEquals(2, activos.size());
+    }
+
+    @Test
+    void autenticar_conClaveEncriptadaBCrypt_retornaUsuario() {
+        Usuario usuario = Usuario.builder()
+                .id("u-1")
+                .nombreUsuario("admin@zero.com")
+                .clave(passwordEncoder.encode("admin123"))
+                .rol(RolUsuario.ADMINISTRATIVO)
+                .activo(true)
+                .eliminado(false)
+                .build();
+
+        when(usuarioRepository.findByNombreUsuarioAndEliminadoFalse("admin@zero.com"))
+                .thenReturn(Optional.of(usuario));
+
+        Usuario resultado = usuarioService.autenticar("admin@zero.com", "admin123");
+
+        assertNotNull(resultado);
+        assertEquals("admin@zero.com", resultado.getNombreUsuario());
+    }
+
+    @Test
+    void autenticar_conClaveTextoPlano_migraABCryptYRetornaUsuario() {
+        Usuario usuario = Usuario.builder()
+                .id("u-2")
+                .nombreUsuario("legacy@zero.com")
+                .clave("legacy123")
+                .rol(RolUsuario.CLIENTE)
+                .activo(true)
+                .eliminado(false)
+                .build();
+
+        when(usuarioRepository.findByNombreUsuarioAndEliminadoFalse("legacy@zero.com"))
+                .thenReturn(Optional.of(usuario));
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Usuario resultado = usuarioService.autenticar("legacy@zero.com", "legacy123");
+
+        assertNotNull(resultado);
+        assertTrue(passwordEncoder.matches("legacy123", resultado.getClave()));
+        assertTrue(usuarioService.esBCrypt(resultado.getClave()));
+        verify(usuarioRepository, times(1)).save(usuario);
+    }
+
+    @Test
+    void crearUsuario_encriptaClaveConBCrypt() {
+        when(usuarioRepository.findByNombreUsuarioAndEliminadoFalse("encriptado@zero.com"))
+                .thenReturn(Optional.empty());
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Usuario resultado = usuarioService.crearUsuario("encriptado@zero.com", "claveSecreta", RolUsuario.CLIENTE, null);
+
+        assertNotNull(resultado);
+        assertTrue(usuarioService.esBCrypt(resultado.getClave()));
+        assertTrue(passwordEncoder.matches("claveSecreta", resultado.getClave()));
+        assertNotEquals("claveSecreta", resultado.getClave());
     }
 }
 

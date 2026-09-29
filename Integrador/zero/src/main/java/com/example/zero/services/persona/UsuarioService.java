@@ -17,6 +17,8 @@ import java.util.Random;
 import com.example.zero.entidades.Imagen;
 import com.example.zero.enums.TipoImagen;
 import com.example.zero.services.ImagenService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -25,20 +27,29 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final EmailService emailService;
     private final ImagenService imagenService;
+    private final PasswordEncoder passwordEncoder;
 
     public UsuarioService(UsuarioRepository usuarioRepository) {
-        this(usuarioRepository, null, null);
+        this(usuarioRepository, null, null, new BCryptPasswordEncoder());
     }
 
     public UsuarioService(UsuarioRepository usuarioRepository, EmailService emailService) {
-        this(usuarioRepository, emailService, null);
+        this(usuarioRepository, emailService, null, new BCryptPasswordEncoder());
+    }
+
+    public UsuarioService(UsuarioRepository usuarioRepository, EmailService emailService, ImagenService imagenService) {
+        this(usuarioRepository, emailService, imagenService, new BCryptPasswordEncoder());
     }
 
     @Autowired
-    public UsuarioService(UsuarioRepository usuarioRepository, EmailService emailService, ImagenService imagenService) {
+    public UsuarioService(UsuarioRepository usuarioRepository,
+                          EmailService emailService,
+                          ImagenService imagenService,
+                          PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.emailService = emailService;
         this.imagenService = imagenService;
+        this.passwordEncoder = passwordEncoder != null ? passwordEncoder : new BCryptPasswordEncoder();
     }
 
     public void validar(String nombreUsuario, String clave, RolUsuario rol) {
@@ -73,7 +84,7 @@ public class UsuarioService {
 
         Usuario usuario = Usuario.builder()
                 .nombreUsuario(usuarioLimpio)
-                .clave(clave)
+                .clave(passwordEncoder.encode(clave))
                 .rol(rol)
                 .persona(persona)
                 .activo(activo)
@@ -157,7 +168,7 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Usuario autenticar(String nombreUsuario, String clave) {
         if (nombreUsuario == null || nombreUsuario.trim().isEmpty()) {
             throw new IllegalArgumentException("El correo o usuario no puede estar vacío");
@@ -170,7 +181,21 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findByNombreUsuarioAndEliminadoFalse(usuarioLimpio)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado o cuenta inactiva"));
 
-        if (!usuario.getClave().equals(clave)) {
+        boolean coincide = false;
+        String claveAlmacenada = usuario.getClave();
+        if (claveAlmacenada != null) {
+            if (esBCrypt(claveAlmacenada)) {
+                coincide = passwordEncoder.matches(clave, claveAlmacenada);
+            } else {
+                coincide = claveAlmacenada.equals(clave);
+                if (coincide) {
+                    usuario.setClave(passwordEncoder.encode(clave));
+                    usuarioRepository.save(usuario);
+                }
+            }
+        }
+
+        if (!coincide) {
             throw new IllegalArgumentException("Contraseña incorrecta");
         }
 
@@ -181,6 +206,13 @@ public class UsuarioService {
         return usuario;
     }
 
+    public boolean esBCrypt(String hash) {
+        if (hash == null || hash.length() != 60) {
+            return false;
+        }
+        return hash.startsWith("$2a$") || hash.startsWith("$2b$") || hash.startsWith("$2y$");
+    }
+
     @Transactional
     public Usuario modificarUsuario(String id, String nuevaClave, RolUsuario nuevoRol) {
         Usuario usuario = buscarPorId(id);
@@ -189,7 +221,7 @@ public class UsuarioService {
             if (nuevaClave.length() < 4) {
                 throw new IllegalArgumentException("La contraseña debe tener al menos 4 caracteres");
             }
-            usuario.setClave(nuevaClave);
+            usuario.setClave(passwordEncoder.encode(nuevaClave));
         }
 
         if (nuevoRol != null) {
