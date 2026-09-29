@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<!-- Fragmento Head -->
+<head th:replace="~{admin/fragments/head :: head}"></head>
+
+<style>
+  .nav-tabs .nav-link {
+    color: #495057;
+    font-weight: 600;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 0.75rem 1.25rem;
+    transition: all 0.2s ease-in-out;
+  }
+  .nav-tabs .nav-link:hover {
+    color: #000;
+    border-bottom-color: #dee2e6;
+  }
+  .nav-tabs .nav-link.active {
+    color: #000 !important;
+    background: transparent !important;
+    border-bottom: 3px solid #000 !important;
+  }
+  .metric-card {
+    border: 1px solid #e9ecef;
+    border-radius: 1rem;
+    background: #fff;
+    transition: transform 0.15s ease;
+  }
+  .metric-card:hover {
+    transform: translateY(-2px);
+  }
+</style>
+
+<body class="d-flex">
+
+<!-- Fragmento Sidebar -->
+<aside th:replace="~{admin/fragments/sidebar :: sidebar}"></aside>
+
+<!-- Contenido Principal -->
+<main class="main-content-offset p-4 p-md-5 min-vh-100 d-flex flex-column flex-grow-1">
+
+  <!-- Top Navbar Fragment -->
+  <nav th:replace="~{admin/fragments/navbar :: navbar}"></nav>
+
+  <!-- Topbar / Cabecera -->
+  <header class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-2">
+    <div>
+      <h2 class="h3 fw-bold text-brand-dark mb-0">Módulo de Reportes</h2>
+      <span class="text-muted small">Visualiza y analiza el desempeño de ventas, estado de stock y menores costos de proveedores</span>
+    </div>
+
+      <!-- Botón de Descarga Global -->
+      <div class="d-flex align-items-center gap-2">
+        <div class="dropdown">
+          <button class="btn btn-dark btn-sm rounded-3 dropdown-toggle d-flex align-items-center gap-2 shadow-sm px-3 py-2"
+                  type="button" id="dropdownDescarga" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-download"></i> Descargar informe
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="dropdownDescarga">
+            <li>
+              <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="descargarInforme('xlsx')">
+                <i class="bi bi-file-earmark-excel text-success fs-5"></i> Formato Excel (.xlsx)
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="descargarInforme('csv')">
+                <i class="bi bi-filetype-csv text-primary fs-5"></i> Formato CSV (.csv)
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </header>
+
+    <!-- Pestañas (Tab Selector) -->
+    <ul class="nav nav-tabs mb-4" id="reportTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" th:classappend="${activeTab == 'ventas' ? 'active' : ''}"
+                id="ventas-tab" data-bs-toggle="tab" data-bs-target="#ventas-tab-pane"
+                type="button" role="tab" aria-controls="ventas-tab-pane"
+                th:aria-selected="${activeTab == 'ventas'}">
+          <i class="bi bi-cash-stack me-1"></i> Ventas
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" th:classappend="${activeTab == 'productos' ? 'active' : ''}"
+                id="productos-tab" data-bs-toggle="tab" data-bs-target="#productos-tab-pane"
+                type="button" role="tab" aria-controls="productos-tab-pane"
+                th:aria-selected="${activeTab == 'productos'}">
+          <i class="bi bi-boxes me-1"></i> Productos y Stock
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" th:classappend="${activeTab == 'proveedores' ? 'active' : ''}"
+                id="proveedores-tab" data-bs-toggle="tab" data-bs-target="#proveedores-tab-pane"
+                type="button" role="tab" aria-controls="proveedores-tab-pane"
+                th:aria-selected="${activeTab == 'proveedores'}">
+          <i class="bi bi-truck me-1"></i> Proveedores (Menor Costo)
+        </button>
+      </li>
+    </ul>
+
+    <!-- Contenido de las Pestañas -->
+    <div class="tab-content" id="reportTabsContent">
+
+      <!-- ============================================================== -->
+      <!-- TAB 1: REPORTE DE VENTAS                                       -->
+      <!-- ============================================================== -->
+      <div class="tab-pane fade" th:classappend="${activeTab == 'ventas' ? 'show active' : ''}"
+           id="ventas-tab-pane" role="tabpanel" aria-labelledby="ventas-tab" tabindex="0">
+
+        <!-- Barra de Filtros por Fechas -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white p-3">
+          <form method="GET" th:action="@{/admin/reportes}" class="row g-3 align-items-end">
+            <input type="hidden" name="tab" value="ventas">
+
+            <div class="col-sm-6 col-md-3">
+              <label for="fechaDesde" class="form-label small fw-bold text-muted text-uppercase">Fecha Desde</label>
+              <input type="date" class="form-control form-control-sm rounded-3" id="fechaDesde" name="desde"
+                     th:value="${fechaDesde != null ? #temporals.format(fechaDesde, 'yyyy-MM-dd') : ''}">
+            </div>
+
+            <div class="col-sm-6 col-md-3">
+              <label for="fechaHasta" class="form-label small fw-bold text-muted text-uppercase">Fecha Hasta</label>
+              <input type="date" class="form-control form-control-sm rounded-3" id="fechaHasta" name="hasta"
+                     th:value="${fechaHasta != null ? #temporals.format(fechaHasta, 'yyyy-MM-dd') : ''}">
+            </div>
+
+            <div class="col-sm-12 col-md-3 d-flex gap-2">
+              <button type="submit" class="btn btn-dark btn-sm rounded-3 d-flex align-items-center gap-1 px-3">
+                <i class="bi bi-funnel"></i> Filtrar
+              </button>
+              <a th:href="@{/admin/reportes(tab='ventas')}" class="btn btn-outline-secondary btn-sm rounded-3">
+                Limpiar
+              </a>
+            </div>
+          </form>
+        </div>
+
+        <!-- Tarjetas de Métricas de Ventas -->
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-xl-3">
+            <div class="metric-card p-3 shadow-sm">
+              <span class="text-muted small fw-bold text-uppercase">Total Recaudado</span>
+              <h3 class="fw-bold mb-0 text-brand-dark mt-1"
+                  th:text="${#numbers.formatCurrency(reporteVentas.totalRecaudado)}">$0.00</h3>
+              <span class="text-muted" style="font-size: 0.75rem;">En el período seleccionado</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-xl-3">
+            <div class="metric-card p-3 shadow-sm">
+              <span class="text-muted small fw-bold text-uppercase">Total Ventas</span>
+              <h3 class="fw-bold mb-0 text-brand-dark mt-1" th:text="${reporteVentas.cantidadVentas}">0</h3>
+              <span class="text-muted" style="font-size: 0.75rem;">Facturas procesadas</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-xl-3">
+            <div class="metric-card p-3 shadow-sm">
+              <span class="text-muted small fw-bold text-uppercase">Artículos Vendidos</span>
+              <h3 class="fw-bold mb-0 text-brand-dark mt-1" th:text="${reporteVentas.totalArticulosVendidos}">0</h3>
+              <span class="text-muted" style="font-size: 0.75rem;">Unidades totales</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-xl-3">
+            <div class="metric-card p-3 shadow-sm">
+              <span class="text-muted small fw-bold text-uppercase">Ticket Promedio</span>
+              <h3 class="fw-bold mb-0 text-brand-dark mt-1"
+                  th:text="${#numbers.formatCurrency(reporteVentas.ticketPromedio)}">$0.00</h3>
+              <span class="text-muted" style="font-size: 0.75rem;">Promedio por venta</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla de Detalle de Ventas -->
+        <div class="card bg-white border-0 rounded-4 shadow-sm overflow-hidden mb-4">
+          <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+            <span class="small fw-bold text-brand-dark">Detalle de Ventas</span>
+            <span class="badge bg-light text-dark border"
+                  th:text="${#lists.size(reporteVentas.items) + ' registros'}">0 registros</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="bg-brand-dark">
+              <tr>
+                <th class="ps-3 text-uppercase small text-white">N° Compra</th>
+                <th class="text-uppercase small text-white">Fecha</th>
+                <th class="text-uppercase small text-white">Código</th>
+                <th class="text-uppercase small text-white">Producto</th>
+                <th class="text-uppercase small text-white">Categoría</th>
+                <th class="text-center text-uppercase small text-white">Cantidad</th>
+                <th class="text-end text-uppercase small text-white">Precio Unitario</th>
+                <th class="text-end text-uppercase small text-white">Subtotal</th>
+                <th class="text-uppercase small text-white">Forma de Pago</th>
+                <th class="text-uppercase small text-white pe-3">Cliente</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr th:if="${#lists.isEmpty(reporteVentas.items)}">
+                <td colspan="10" class="text-center py-5 text-muted small">
+                  <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                  No se registraron ventas en el rango de fechas seleccionado.
+                </td>
+              </tr>
+              <tr th:each="item : ${reporteVentas.items}">
+                <td class="ps-3 fw-bold text-brand-dark" th:text="${item.numeroOrden}">#ORD-1</td>
+                <td class="small" th:text="${#temporals.format(item.fechaCompra, 'dd/MM/yyyy HH:mm')}">01/03/2026 12:00</td>
+                <td class="small font-monospace" th:text="${item.productoCodigo}">#COD-01</td>
+                <td>
+                  <span class="fw-bold small text-brand-dark" th:text="${item.productoNombre}">Producto</span>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border" th:text="${item.categoriaNombre}">Categoría</span>
+                </td>
+                <td class="text-center fw-bold" th:text="${item.cantidad}">1</td>
+                <td class="text-end small" th:text="${#numbers.formatCurrency(item.precioUnitario)}">$0.00</td>
+                <td class="text-end fw-bold text-brand-dark small" th:text="${#numbers.formatCurrency(item.subtotal)}">$0.00</td>
+                <td>
+                  <span class="badge bg-secondary bg-opacity-10 text-dark border" th:text="${item.formaPago}">EFECTIVO</span>
+                </td>
+                <td class="pe-3 small">
+                  <div class="fw-bold" th:text="${item.clienteNombre}">Cliente</div>
+                  <div class="text-muted" style="font-size: 0.72rem;" th:text="${item.clienteIdentificador}">email@test.com</div>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- TAB 2: REPORTE DE PRODUCTOS (STOCK Y REPOSICIÓN)               -->
+      <!-- ============================================================== -->
+      <div class="tab-pane fade" th:classappend="${activeTab == 'productos' ? 'show active' : ''}"
+           id="productos-tab-pane" role="tabpanel" aria-labelledby="productos-tab" tabindex="0">
+
+        <!-- Métricas de Stock por Sucursal -->
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-xl-3">
+            <div class="metric-card p-3 shadow-sm border-brand">
+              <span class="text-muted small fw-bold text-uppercase"
+                    th:text="${'Stock ' + reporteProductos.sucursalNombre}">Stock Sucursal Central</span>
+              <h3 class="fw-bold mb-0 text-brand-dark mt-1" th:text="${reporteProductos.totalStockUnidades}">0</h3>
+              <span class="text-muted" style="font-size: 0.75rem;">Unidades totales en stock</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-xl-3">
+            <div class="metric-card p-3 shadow-sm border-success">
+              <span class="text-muted small fw-bold text-uppercase">Stock Bien (&gt; 50)</span>
+              <h3 class="fw-bold mb-0 text-success mt-1" th:text="${reporteProductos.stockBienCount}">0</h3>
+              <span class="text-success" style="font-size: 0.75rem;">Nivel óptimo</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-xl-3">
+            <div class="metric-card p-3 shadow-sm border-warning">
+              <span class="text-muted small fw-bold text-uppercase">Stock Regular (20 a 50)</span>
+              <h3 class="fw-bold mb-0 text-warning mt-1" th:text="${reporteProductos.stockRegularCount}">0</h3>
+              <span class="text-warning" style="font-size: 0.75rem;">Monitoreo requerido</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-xl-3">
+            <div class="metric-card p-3 shadow-sm border-danger">
+              <span class="text-muted small fw-bold text-uppercase">Stock Malo (&lt; 20)</span>
+              <h3 class="fw-bold mb-0 text-danger mt-1" th:text="${reporteProductos.stockMaloCount}">0</h3>
+              <span class="text-danger" style="font-size: 0.75rem;">Reposición urgente requerida</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla de Auditoría de Stock -->
+        <div class="card bg-white border-0 rounded-4 shadow-sm overflow-hidden mb-4">
+          <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+            <span class="small fw-bold text-brand-dark">Auditoría de Stock por Sucursal</span>
+            <span class="badge bg-light text-dark border"
+                  th:text="${#lists.size(reporteProductos.productos) + ' productos analizados'}">0 productos</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="bg-brand-dark">
+              <tr>
+                <th class="ps-3 text-uppercase small text-white">Foto</th>
+                <th class="text-uppercase small text-white">Código</th>
+                <th class="text-uppercase small text-white">Producto</th>
+                <th class="text-uppercase small text-white">Categoría</th>
+                <th class="text-uppercase small text-white">Talle</th>
+                <th class="text-uppercase small text-white">Sucursal</th>
+                <th class="text-center text-uppercase small text-white">Stock Actual</th>
+                <th class="text-center text-uppercase small text-white">Estado</th>
+                <th class="text-center text-uppercase small text-white">Faltante p/ 50</th>
+                <th class="text-center text-uppercase small text-white pe-3">Solicitar Stock (Proveedor Más Económico)</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr th:if="${#lists.isEmpty(reporteProductos.productos)}">
+                <td colspan="10" class="text-center py-5 text-muted small">
+                  <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                  No hay productos activos para mostrar en el informe.
+                </td>
+              </tr>
+              <tr th:each="prod : ${reporteProductos.productos}">
+                <td class="ps-3">
+                  <img th:src="${prod.imagenUrl}"
+                       src="/shop/img/product/p1.jpg"
+                       onerror="this.src='/shop/img/product/p1.jpg'"
+                       th:alt="${prod.nombre}"
+                       class="rounded border shadow-sm"
+                       style="width: 40px; height: 40px; object-fit: cover;">
+                </td>
+                <td class="small fw-bold text-brand-dark font-monospace" th:text="${prod.codigo}">#COD-01</td>
+                <td>
+                  <span class="small fw-bold text-brand-dark" th:text="${prod.nombre}">Nombre</span>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border" th:text="${prod.categoria}">Categoría</span>
+                </td>
+                <td class="small" th:text="${prod.talle != null ? prod.talle : 'N/A'}">M</td>
+                <td class="small text-muted" th:text="${prod.sucursal}">Sucursal Central</td>
+                <td class="text-center">
+                  <span class="fw-bold fs-6 text-brand-dark" th:text="${prod.stockActual}">10</span>
+                </td>
+                <td class="text-center">
+                  <span th:if="${prod.estadoStock == 'BIEN'}" class="badge bg-success">
+                    <i class="bi bi-check-circle-fill me-1"></i>Bien (&gt;50)
+                  </span>
+                  <span th:if="${prod.estadoStock == 'REGULAR'}" class="badge bg-warning text-dark">
+                    <i class="bi bi-exclamation-circle-fill me-1"></i>Regular (20-50)
+                  </span>
+                  <span th:if="${prod.estadoStock == 'MALO'}" class="badge bg-danger text-white">
+                    <i class="bi bi-x-circle-fill me-1"></i>Malo (&lt;20)
+                  </span>
+                </td>
+                <td class="text-center fw-bold">
+                  <span th:if="${prod.cantidadFaltante > 0}" class="text-danger" th:text="${prod.cantidadFaltante}">40</span>
+                  <span th:unless="${prod.cantidadFaltante > 0}" class="text-success">0</span>
+                </td>
+                <td class="text-center pe-3">
+                  <!-- Botón WhatsApp para stock MALO (< 20) al proveedor más económico -->
+                  <div th:if="${prod.estadoStock == 'MALO'}">
+                    <a th:if="${prod.urlWhatsAppReposicion != null && !prod.urlWhatsAppReposicion.isEmpty()}"
+                       th:href="${prod.urlWhatsAppReposicion}"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 shadow-sm px-3 py-1"
+                       title="Contactar al proveedor más económico por WhatsApp para solicitar reposición">
+                      <i class="bi bi-whatsapp"></i> Pedir <span th:text="${prod.cantidadFaltante}"></span> u.
+                    </a>
+                    <div class="text-muted small mt-1" style="font-size: 0.72rem;">
+                      <span th:text="${prod.proveedorNombre}">Proveedor</span>
+                      <span th:if="${prod.menorCosto != null}"> - Costo: <strong th:text="${#numbers.formatCurrency(prod.menorCosto)}">$0.00</strong></span>
+                    </div>
+                  </div>
+                  <div th:unless="${prod.estadoStock == 'MALO'}" class="text-muted small">
+                    <i class="bi bi-check-all text-success me-1"></i>Stock suficiente
+                  </div>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- TAB 3: REPORTE DE PROVEEDORES (MENOR PRECIO DE COSTO)          -->
+      <!-- ============================================================== -->
+      <div class="tab-pane fade" th:classappend="${activeTab == 'proveedores' ? 'show active' : ''}"
+           id="proveedores-tab-pane" role="tabpanel" aria-labelledby="proveedores-tab" tabindex="0">
+
+        <!-- Métricas de Proveedores (Sin tarjeta de histórico por instrucción de usuario) -->
+        <div class="row g-3 mb-4">
+          <div class="col-sm-6 col-md-4">
+            <div class="metric-card p-3 shadow-sm">
+              <span class="text-muted small fw-bold text-uppercase">Productos en Catálogo</span>
+              <h3 class="fw-bold mb-0 text-brand-dark mt-1" th:text="${reporteProveedores.totalProductos}">0</h3>
+              <span class="text-muted" style="font-size: 0.75rem;">Productos totales analizados</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-4">
+            <div class="metric-card p-3 shadow-sm border-brand">
+              <span class="text-muted small fw-bold text-uppercase">Proveedor Más Conveniente</span>
+              <h4 class="fw-bold mb-0 text-brand-dark mt-1 text-truncate"
+                  th:text="${reporteProveedores.proveedorMasConveniente}">N/A</h4>
+              <span class="text-muted" style="font-size: 0.75rem;">Con más productos al menor costo</span>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-4">
+            <div class="metric-card p-3 shadow-sm">
+              <span class="text-muted small fw-bold text-uppercase">Productos con Proveedor Líder</span>
+              <h3 class="fw-bold mb-0 text-brand-dark mt-1"
+                  th:text="${reporteProveedores.productosConMejorPrecioProveedor}">0</h3>
+              <span class="text-muted" style="font-size: 0.75rem;">Artículos al mejor precio con él</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla de Menores Precios de Costo por Proveedor (Sin columna Categoría) -->
+        <div class="card bg-white border-0 rounded-4 shadow-sm overflow-hidden mb-4">
+          <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+            <span class="small fw-bold text-brand-dark">Precio de Costo Más Económico por Producto</span>
+            <span class="badge bg-light text-dark border"
+                  th:text="${#lists.size(reporteProveedores.items) + ' productos cotizados'}">0 productos</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="bg-brand-dark">
+              <tr>
+                <th class="ps-3 text-uppercase small text-white">Código</th>
+                <th class="text-uppercase small text-white">Producto</th>
+                <th class="text-uppercase small text-white">Proveedor Más Económico</th>
+                <th class="text-uppercase small text-white">CUIT</th>
+                <th class="text-end text-uppercase small text-white">Menor Costo Registrado</th>
+                <th class="text-uppercase small text-white">Factura Referencia</th>
+                <th class="text-uppercase small text-white">Fecha Compra</th>
+                <th class="text-center text-uppercase small text-white pe-3">Contacto Directo</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr th:if="${#lists.isEmpty(reporteProveedores.items)}">
+                <td colspan="8" class="text-center py-5 text-muted small">
+                  <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                  No se encontraron productos registrados en el sistema.
+                </td>
+              </tr>
+              <tr th:each="item : ${reporteProveedores.items}">
+                <td class="ps-3 small fw-bold text-brand-dark font-monospace" th:text="${item.productoCodigo}">#COD-01</td>
+                <td>
+                  <div class="fw-bold small text-brand-dark" th:text="${item.productoNombre}">Producto</div>
+                  <div class="text-muted text-truncate" style="font-size: 0.72rem; max-width: 250px;"
+                       th:text="${item.productoDescripcion}">Descripción</div>
+                </td>
+                <td>
+                  <span class="fw-bold small text-brand-dark" th:text="${item.proveedorRazonSocial}">Proveedor SA</span>
+                </td>
+                <td class="small font-monospace" th:text="${item.proveedorCuit}">20-12345678-9</td>
+                <td class="text-end">
+                  <span th:if="${item.menorPrecioCosto != null}" class="fw-bold text-success"
+                        th:text="${#numbers.formatCurrency(item.menorPrecioCosto)}">$0.00</span>
+                  <span th:unless="${item.menorPrecioCosto != null}" class="badge bg-light text-muted border">Sin compras</span>
+                </td>
+                <td class="small">
+                  <span th:if="${item.numeroFacturaReferencia != null}" class="badge bg-secondary bg-opacity-10 text-dark border"
+                        th:text="${'#ORD-' + item.numeroFacturaReferencia}">#ORD-1</span>
+                  <span th:unless="${item.numeroFacturaReferencia != null}" class="text-muted small">N/A</span>
+                </td>
+                <td class="small"
+                    th:text="${item.fechaFacturaReferencia != null ? #temporals.format(item.fechaFacturaReferencia, 'dd/MM/yyyy') : 'N/A'}">01/01/2026</td>
+                <td class="text-center pe-3">
+                  <a th:if="${item.urlWhatsAppContacto != null && !item.urlWhatsAppContacto.isEmpty()}"
+                     th:href="${item.urlWhatsAppContacto}"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1 shadow-sm px-2 py-1"
+                     title="Consultar compra o stock al proveedor más barato">
+                    <i class="bi bi-whatsapp"></i> Contactar
+                  </a>
+                  <span th:unless="${item.urlWhatsAppContacto != null && !item.urlWhatsAppContacto.isEmpty()}" class="text-muted small">
+                    N/A
+                  </span>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Footer Fragment -->
+    <footer th:replace="~{admin/fragments/footer :: footer}"></footer>
+
+  </main>
+
+  <!-- Scripts Fragments -->
+  <th:block th:replace="~{admin/fragments/scripts :: scripts}"></th:block>
+
+  <!-- Script para la descarga de informes según la pestaña activa -->
+  <script>
+    function getActiveTabName() {
+      const activeTabButton = document.querySelector('#reportTabs .nav-link.active');
+      if (!activeTabButton) return 'ventas';
+      const id = activeTabButton.getAttribute('id');
+      if (id.includes('productos')) return 'productos';
+      if (id.includes('proveedores')) return 'proveedores';
+      return 'ventas';
+    }
+
+    function descargarInforme(formato) {
+      const tab = getActiveTabName();
+      const urlParams = new URLSearchParams(window.location.search);
+      const desde = urlParams.get('desde') || '';
+      const hasta = urlParams.get('hasta') || '';
+
+      let url = `/admin/reportes/exportar?tipo=${tab}&formato=${formato}`;
+      if (desde) url += `&desde=${desde}`;
+      if (hasta) url += `&hasta=${hasta}`;
+
+      window.location.href = url;
+    }
+  </script>
+
+</body>
+</html>
