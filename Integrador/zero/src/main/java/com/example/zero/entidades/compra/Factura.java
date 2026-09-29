@@ -126,83 +126,101 @@ public class Factura {
     }
 
     public String getCustomerEmail() {
-        if (getInstanciaReal() instanceof FacturaProveedor fp && fp.getProveedor() != null) {
-            return "CUIT: " + fp.getProveedor().getCuit();
-        }
-        if (cliente != null) {
-            if (cliente.getUsuario() != null && cliente.getUsuario().getNombreUsuario() != null && !cliente.getUsuario().getNombreUsuario().isBlank()) {
-                return cliente.getUsuario().getNombreUsuario().trim();
+        try {
+            if (getInstanciaReal() instanceof FacturaProveedor fp && fp.getProveedor() != null) {
+                return "CUIT: " + fp.getProveedor().getCuit();
             }
-            if (cliente.getContactos() != null) {
-                for (Contacto c : cliente.getContactos()) {
-                    if (c instanceof ContactoCorreoElectronico ce && !ce.isEliminado() && ce.getEmail() != null && !ce.getEmail().isBlank()) {
-                        return ce.getEmail().trim();
+            if (cliente != null) {
+                if (cliente.getUsuario() != null && cliente.getUsuario().getNombreUsuario() != null && !cliente.getUsuario().getNombreUsuario().isBlank()) {
+                    return cliente.getUsuario().getNombreUsuario().trim();
+                }
+                if (cliente.getContactos() != null) {
+                    for (Contacto c : cliente.getContactos()) {
+                        if (c instanceof ContactoCorreoElectronico ce && !ce.isEliminado() && ce.getEmail() != null && !ce.getEmail().isBlank()) {
+                            return ce.getEmail().trim();
+                        }
                     }
                 }
+                if (cliente.getNumeroDocumento() != null && !cliente.getNumeroDocumento().isBlank()) {
+                    return "DNI: " + cliente.getNumeroDocumento().trim();
+                }
             }
-            if (cliente.getNumeroDocumento() != null && !cliente.getNumeroDocumento().isBlank()) {
-                return "DNI: " + cliente.getNumeroDocumento().trim();
-            }
+        } catch (Exception ignored) {
         }
         return "N/A";
     }
 
     public String getCustomerAvatar() {
-        if (cliente != null && cliente.getUsuario() != null) {
-            String foto = cliente.getUsuario().getFoto();
-            if (foto != null && !foto.isBlank()) {
-                return foto.trim();
+        try {
+            if (cliente != null && cliente.getUsuario() != null) {
+                String foto = cliente.getUsuario().getFoto();
+                if (foto != null && !foto.isBlank()) {
+                    return foto.trim();
+                }
             }
+        } catch (Exception ignored) {
         }
         return null;
     }
 
     public String getCustomerPhone() {
-        if (cliente != null && cliente.getContactos() != null) {
-            for (Contacto c : cliente.getContactos()) {
-                if (c instanceof ContactoTelefonico ct && !ct.isEliminado() && ct.getTelefono() != null && !ct.getTelefono().isBlank()) {
-                    return ct.getTelefono().trim();
+        try {
+            if (cliente != null && cliente.getContactos() != null) {
+                for (Contacto c : cliente.getContactos()) {
+                    if (c instanceof ContactoTelefonico ct && !ct.isEliminado() && ct.getTelefono() != null && !ct.getTelefono().isBlank()) {
+                        return ct.getTelefono().trim();
+                    }
                 }
             }
+        } catch (Exception ignored) {
         }
         return null;
     }
 
     public String getShippingAddress() {
-        if (cliente != null && cliente.getDireccion() != null) {
-            for (Direccion dir : cliente.getDireccion()) {
-                if (!dir.isEliminado() && dir.getCalle() != null && !dir.getCalle().isBlank()) {
-                    String calle = dir.getCalle().trim();
-                    String num = dir.getNumeracion() != null ? dir.getNumeracion().trim() : "";
-                    String res = (calle + " " + num).trim();
-                    if (dir.getLocalidad() != null && dir.getLocalidad().getNombre() != null) {
-                        res += ", " + dir.getLocalidad().getNombre().trim();
+        try {
+            if (cliente != null && cliente.getDireccion() != null) {
+                for (Direccion dir : cliente.getDireccion()) {
+                    if (!dir.isEliminado() && dir.getCalle() != null && !dir.getCalle().isBlank()) {
+                        String calle = dir.getCalle().trim();
+                        String num = dir.getNumeracion() != null ? dir.getNumeracion().trim() : "";
+                        String res = (calle + " " + num).trim();
+                        if (dir.getLocalidad() != null && dir.getLocalidad().getNombre() != null) {
+                            res += ", " + dir.getLocalidad().getNombre().trim();
+                        }
+                        return res;
                     }
-                    return res;
                 }
             }
+        } catch (Exception ignored) {
         }
         return null;
     }
 
     public String getShippingCity() {
-        if (cliente != null && cliente.getDireccion() != null) {
-            for (Direccion dir : cliente.getDireccion()) {
-                if (!dir.isEliminado() && dir.getLocalidad() != null && dir.getLocalidad().getNombre() != null) {
-                    return dir.getLocalidad().getNombre().trim();
+        try {
+            if (cliente != null && cliente.getDireccion() != null) {
+                for (Direccion dir : cliente.getDireccion()) {
+                    if (!dir.isEliminado() && dir.getLocalidad() != null && dir.getLocalidad().getNombre() != null) {
+                        return dir.getLocalidad().getNombre().trim();
+                    }
                 }
             }
+        } catch (Exception ignored) {
         }
         return null;
     }
 
     public String getShippingZip() {
-        if (cliente != null && cliente.getDireccion() != null) {
-            for (Direccion dir : cliente.getDireccion()) {
-                if (!dir.isEliminado() && dir.getLocalidad() != null && dir.getLocalidad().getCodigoPostal() != null) {
-                    return dir.getLocalidad().getCodigoPostal().trim();
+        try {
+            if (cliente != null && cliente.getDireccion() != null) {
+                for (Direccion dir : cliente.getDireccion()) {
+                    if (!dir.isEliminado() && dir.getLocalidad() != null && dir.getLocalidad().getCodigoPostal() != null) {
+                        return dir.getLocalidad().getCodigoPostal().trim();
+                    }
                 }
             }
+        } catch (Exception ignored) {
         }
         return null;
     }
