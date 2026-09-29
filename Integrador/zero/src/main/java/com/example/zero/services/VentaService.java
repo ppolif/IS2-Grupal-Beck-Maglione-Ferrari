@@ -302,6 +302,18 @@ public class VentaService {
     }
 
     @Transactional(readOnly = true)
+    public List<Factura> listarComprasCliente(Cliente cliente) {
+        if (cliente == null) {
+            return Collections.emptyList();
+        }
+        List<Factura> compras = facturaRepository.findByClienteOrderByFechaFacturaDesc(cliente);
+        for (Factura f : compras) {
+            enriquecerFactura(f);
+        }
+        return compras;
+    }
+
+    @Transactional(readOnly = true)
     public Factura buscarPorId(String id) {
         if (id == null || id.trim().isEmpty()) {
             throw new IllegalArgumentException("El ID de la factura no puede ser nulo o vacío");

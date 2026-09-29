@@ -409,5 +409,31 @@ class VentaServiceTest {
         assertEquals(1001L, resultado.getNumeroFactura());
         verify(emailService, times(1)).enviarComprobanteCompra(any(Factura.class), eq("titancito@test.com"));
     }
+
+    @Test
+    void listarComprasCliente_conClienteValido_retornaFacturasOrdenadas() {
+        Cliente cliente = Cliente.builder().numeroDocumento("12345678").nombre("Lionel").build();
+        Factura f1 = Factura.builder().id("fac-1").numeroFactura(101L).cliente(cliente).build();
+        Factura f2 = Factura.builder().id("fac-2").numeroFactura(102L).cliente(cliente).build();
+
+        when(facturaRepository.findByClienteOrderByFechaFacturaDesc(cliente))
+                .thenReturn(List.of(f2, f1));
+
+        List<Factura> resultado = ventaService.listarComprasCliente(cliente);
+
+        assertEquals(2, resultado.size());
+        assertEquals(102L, resultado.get(0).getNumeroFactura());
+        assertEquals(101L, resultado.get(1).getNumeroFactura());
+        verify(facturaRepository, times(1)).findByClienteOrderByFechaFacturaDesc(cliente);
+    }
+
+    @Test
+    void listarComprasCliente_conClienteNulo_retornaListaVacia() {
+        List<Factura> resultado = ventaService.listarComprasCliente(null);
+
+        assertNotNull(resultado);
+        assertTrue(resultado.isEmpty());
+        verify(facturaRepository, never()).findByClienteOrderByFechaFacturaDesc(any());
+    }
 }
 

@@ -57,6 +57,9 @@
                 <li class="nav-item">
                   <a class="nav-link font-weight-bold" th:href="@{/profile}"><span class="ti-id-badge mr-1"></span> Mi Perfil</a>
                 </li>
+                <li class="nav-item" th:if="${session.usuariosession.rol.name() == 'CLIENTE'}">
+                  <a class="nav-link font-weight-bold" th:href="@{/historial}"><span class="ti-time mr-1"></span> Historial</a>
+                </li>
                 <li class="nav-item" th:if="${session.usuariosession.rol.name() == 'ADMINISTRATIVO' or session.usuariosession.rol.name() == 'JEFE'}">
                   <a class="nav-link text-primary font-weight-bold" th:href="@{/admin}"><span class="ti-layout-grid2 mr-1"></span> Panel Admin</a>
                 </li>
