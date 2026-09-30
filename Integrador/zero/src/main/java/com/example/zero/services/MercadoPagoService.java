@@ -4,6 +4,7 @@ import com.example.zero.entidades.compra.Factura;
 import com.example.zero.entidades.compraCliente.DetalleCompra;
 import com.example.zero.entidades.compraCliente.OrdenCompra;
 import com.example.zero.entidades.persona.Cliente;
+import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.enums.EstadoOrdenCompra;
 import com.example.zero.repositories.FacturaRepository;
 import com.example.zero.repositories.OrdenCompraRepository;
@@ -12,6 +13,7 @@ import com.mercadopago.client.preference.*;
 import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
 import com.mercadopago.resources.preference.Preference;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +44,7 @@ public class MercadoPagoService {
     private final VentaService ventaService;
     private final FacturaRepository facturaRepository;
     private final StockService stockService;
+    private final HttpSession session;
 
     /**
      * Inicializa la configuración de Mercado Pago con el token del proyecto.
@@ -122,8 +125,8 @@ public class MercadoPagoService {
 
         String payerName = (cliente != null && cliente.getNombre() != null) ? cliente.getNombre() : "Cliente";
         String payerSurname = (cliente != null && cliente.getApellido() != null) ? cliente.getApellido() : "Zero";
-        String payerEmail = (cliente != null && cliente.getUsuario() != null && cliente.getUsuario().getNombreUsuario() != null)
-                ? cliente.getUsuario().getNombreUsuario()
+        String payerEmail = (carrito != null && carrito.getEmailUsuario() != null && !carrito.getEmailUsuario().isBlank())
+                ? carrito.getEmailUsuario().trim()
                 : "cliente@zero.com";
 
         PreferencePayerRequest payer = PreferencePayerRequest.builder()
@@ -234,8 +237,9 @@ public class MercadoPagoService {
                 ? clienteOrden.getNombre() : "Cliente";
         String apellido = (clienteOrden.getApellido() != null && !clienteOrden.getApellido().isBlank())
                 ? clienteOrden.getApellido() : "Zero";
-        String email = (clienteOrden.getUsuario() != null && clienteOrden.getUsuario().getNombreUsuario() != null && clienteOrden.getUsuario().getNombreUsuario().contains("@"))
-                ? clienteOrden.getUsuario().getNombreUsuario().trim() : "";
+        String email = (orden.getEmailUsuario() != null && !orden.getEmailUsuario().isBlank())
+                ? orden.getEmailUsuario().trim()
+                : "";
         if (email.isBlank() && clienteOrden.getContactos() != null) {
             for (var c : clienteOrden.getContactos()) {
                 if (c instanceof com.example.zero.entidades.empresa.ContactoCorreoElectronico ce && !ce.isEliminado() && ce.getEmail() != null && ce.getEmail().contains("@")) {

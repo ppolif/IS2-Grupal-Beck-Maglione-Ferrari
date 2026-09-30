@@ -5,8 +5,11 @@ import com.example.zero.entidades.Imagen;
 import com.example.zero.entidades.compra.Detalle;
 import com.example.zero.entidades.compra.Factura;
 import com.example.zero.entidades.compra.FormaDePago;
+import com.example.zero.entidades.empresa.ContactoCorreoElectronico;
+import com.example.zero.entidades.empresa.ContactoTelefonico;
 import com.example.zero.entidades.persona.Cliente;
 import com.example.zero.entidades.persona.Nacionalidad;
+import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.enums.EstadoFactura;
 import com.example.zero.enums.TipoDePago;
@@ -15,6 +18,7 @@ import com.example.zero.repositories.*;
 import com.example.zero.services.persona.ClienteService;
 import com.example.zero.services.producto.ProductoService;
 import com.example.zero.services.mail.EmailService;
+import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -50,6 +54,7 @@ public class VentaService {
     private final EmailService emailService;
     private final OrdenCompraRepository ordenCompraRepository;
     private final ContactoService contactoService;
+    private final HttpSession session;
 
     public VentaService(FacturaRepository facturaRepository,
                         DetalleRepository detalleRepository,
@@ -58,9 +63,10 @@ public class VentaService {
                         ClienteService clienteService,
                         NacionalidadRepository nacionalidadRepository,
                         ProductoService productoService,
-                        UsuarioRepository usuarioRepository) {
+                        UsuarioRepository usuarioRepository,
+                        HttpSession session) {
         this(facturaRepository, detalleRepository, formaDePagoRepository, clienteRepository, clienteService,
-                nacionalidadRepository, productoService, null, null, usuarioRepository, null, null, null);
+                nacionalidadRepository, productoService, null, null, usuarioRepository, null, null, null, session);
     }
 
     public VentaService(FacturaRepository facturaRepository,
@@ -72,9 +78,10 @@ public class VentaService {
                         ProductoService productoService,
                         ProductoRepository productoRepository,
                         StockService stockService,
-                        UsuarioRepository usuarioRepository) {
+                        UsuarioRepository usuarioRepository,
+                        HttpSession session) {
         this(facturaRepository, detalleRepository, formaDePagoRepository, clienteRepository, clienteService,
-                nacionalidadRepository, productoService, productoRepository, stockService, usuarioRepository, null, null, null);
+                nacionalidadRepository, productoService, productoRepository, stockService, usuarioRepository, null, null, null, session);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -90,7 +97,8 @@ public class VentaService {
                         UsuarioRepository usuarioRepository,
                         @org.springframework.beans.factory.annotation.Autowired(required = false) EmailService emailService,
                         @org.springframework.beans.factory.annotation.Autowired(required = false) OrdenCompraRepository ordenCompraRepository,
-                        @org.springframework.beans.factory.annotation.Autowired(required = false) ContactoService contactoService) {
+                        @org.springframework.beans.factory.annotation.Autowired(required = false) ContactoService contactoService,
+                        HttpSession session) {
         this.facturaRepository = facturaRepository;
         this.detalleRepository = detalleRepository;
         this.formaDePagoRepository = formaDePagoRepository;
@@ -104,6 +112,7 @@ public class VentaService {
         this.emailService = emailService;
         this.ordenCompraRepository = ordenCompraRepository;
         this.contactoService = contactoService;
+        this.session = session;
     }
 
     public void validarVenta(String clienteDni, String clienteNombre, String clienteApellido,
@@ -184,20 +193,18 @@ public class VentaService {
         if (clienteApellido != null && !clienteApellido.trim().isEmpty()) {
             cliente.setApellido(clienteApellido.trim());
         }
-        // Asociar usuario al cliente si aún no está vinculado
-        if (cliente.getUsuario() == null && usuarioRepository != null) {
-            if (clienteEmail != null && !clienteEmail.trim().isEmpty()) {
-                usuarioRepository.findByNombreUsuarioAndEliminadoFalse(clienteEmail.trim().toLowerCase())
-                        .ifPresent(u -> {
-                            cliente.setUsuario(u);
-                            u.setPersona(cliente);
-                            usuarioRepository.save(u);
-                        });
-            }
-            if (cliente.getUsuario() == null) {
-                usuarioRepository.findByPersonaDocumentoAndEliminadoFalse(dniLimpio)
-                        .ifPresent(cliente::setUsuario);
-            }
+
+        // Asociar la Persona al Usuario actual (Usuario -> Persona)
+        Usuario usuarioSession = (session != null) ? (Usuario) session.getAttribute("usuariosession") : null;
+        if (usuarioSession != null && usuarioRepository != null) {
+            usuarioSession.setPersona(cliente);
+            usuarioRepository.save(usuarioSession);
+        } else if (clienteEmail != null && !clienteEmail.trim().isEmpty() && usuarioRepository != null) {
+            usuarioRepository.findByNombreUsuarioAndEliminadoFalse(clienteEmail.trim().toLowerCase())
+                    .ifPresent(u -> {
+                        u.setPersona(cliente);
+                        usuarioRepository.save(u);
+                    });
         }
         clienteRepository.save(cliente);
 
@@ -226,11 +233,12 @@ public class VentaService {
                 .map(f -> f.getNumeroFactura() + 1)
                 .orElse(1001L);
 
-        // 4. Instanciar OrdenCompra y FacturaCliente
+        // 4. Instanciar OrdenCompra con el email del comprador
         OrdenCompra orden = OrdenCompra.builder()
                 .identificadorCompra("ORD-" + numeroFactura)
                 .fecha(new Date())
                 .cliente(cliente)
+                .emailUsuario(clienteEmail != null && !clienteEmail.isBlank() ? clienteEmail.trim().toLowerCase() : null)
                 .total(0.0)
                 .estadoOrdenCompra(EstadoOrdenCompra.PENDIENTE_ENVIO)
                 .eliminado(false)
@@ -305,8 +313,11 @@ public class VentaService {
                     ? clienteEmail.trim()
                     : (contactoService != null ? contactoService.obtenerEmailPrincipal(cliente).orElse(null) : null);
 
-            if (emailDestino == null && cliente.getUsuario() != null && cliente.getUsuario().getNombreUsuario() != null && cliente.getUsuario().getNombreUsuario().contains("@")) {
-                emailDestino = cliente.getUsuario().getNombreUsuario().trim();
+            if (emailDestino == null && session != null) {
+                //usuarioSession = (Usuario) session.getAttribute("usuariosession");
+                if (usuarioSession != null && usuarioSession.getNombreUsuario() != null && usuarioSession.getNombreUsuario().contains("@")) {
+                    emailDestino = usuarioSession.getNombreUsuario().trim();
+                }
             }
 
             String orderNumStr = facturaGuardada.getNumeroFactura() != null ? "#ORD-" + facturaGuardada.getNumeroFactura() : "#ORD-" + facturaGuardada.getId();
@@ -331,7 +342,7 @@ public class VentaService {
     public List<Factura> listarVentas() {
         List<Factura> facturas = facturaRepository.findByEliminadoFalseOrderByFechaFacturaDesc();
         for (Factura f : facturas) {
-            enriquecerFactura(f);
+            //enriquecerFactura(f);
         }
         return facturas;
     }
@@ -343,7 +354,7 @@ public class VentaService {
         }
         List<Factura> compras = facturaRepository.findByClienteOrderByFechaFacturaDesc(cliente);
         for (Factura f : compras) {
-            enriquecerFactura(f);
+            //enriquecerFactura(f);
         }
         return compras;
     }
@@ -355,7 +366,7 @@ public class VentaService {
         }
         Factura f = facturaRepository.findActive(id)
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró la factura activa con ID: " + id));
-        enriquecerFactura(f);
+        //enriquecerFactura(f);
         return f;
     }
 
@@ -366,7 +377,7 @@ public class VentaService {
         }
         Factura f = facturaRepository.findByNumeroFacturaAndEliminadoFalse(numeroFactura)
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró la factura número: " + numeroFactura));
-        enriquecerFactura(f);
+        //enriquecerFactura(f);
         return f;
     }
 
@@ -399,7 +410,7 @@ public class VentaService {
             Optional<Factura> facturaOpt = facturaRepository.findByNumeroFacturaAndEliminadoFalse(num);
             if (facturaOpt.isPresent()) {
                 Factura f = facturaOpt.get();
-                enriquecerFactura(f);
+                //enriquecerFactura(f);
                 return f;
             }
         } catch (NumberFormatException ignored) {
@@ -411,34 +422,36 @@ public class VentaService {
             facturaById = facturaRepository.findActive(orderNumberOrId.trim());
         }
         Factura f = facturaById.orElse(null);
-        enriquecerFactura(f);
+        //enriquecerFactura(f);
         return f;
     }
 
-    public void enriquecerFactura(Factura f) {
-        if (f == null) return;
-        Cliente c = null;
-        if (f instanceof FacturaCliente fc && fc.getOrdenCompra() != null) {
-            c = fc.getOrdenCompra().getCliente();
-        }
-        if (c == null) return;
-
-        if (c.getUsuario() == null && usuarioRepository != null) {
-            if (c.getNumeroDocumento() != null) {
-                usuarioRepository.findByPersonaDocumentoAndEliminadoFalse(c.getNumeroDocumento())
-                        .ifPresent(c::setUsuario);
-            }
-        }
-        if (c.getUsuario() == null && c.getContactos() != null && usuarioRepository != null) {
-            for (var cont : c.getContactos()) {
-                if (cont instanceof com.example.zero.entidades.empresa.ContactoCorreoElectronico ce && ce.getEmail() != null) {
-                    usuarioRepository.findByNombreUsuarioAndEliminadoFalse(ce.getEmail().trim().toLowerCase())
-                            .ifPresent(c::setUsuario);
-                    if (c.getUsuario() != null) break;
-                }
-            }
-        }
-    }
+//    public void enriquecerFactura(Factura f) {
+//        if (f == null) return;
+//
+//        Cliente cliente = obtenerClienteDeFactura(f);
+//        if (cliente == null) return;
+//
+//        // 2. Verificar si el cliente ya tiene un email o teléfono cargado en sus contactos
+//        boolean tieneEmail = cliente.getContactos().stream()
+//                .anyMatch(c -> c instanceof ContactoCorreoElectronico ce && ce.getEmail() != null && !ce.getEmail().isBlank());
+//
+//        boolean tieneTelefono = cliente.getContactos().stream()
+//                .anyMatch(c -> c instanceof ContactoTelefonico ct && ct.getTelefono() != null && !ct.getTelefono().isBlank());
+//
+//        // 3. Si no tiene email en sus contactos, pero hay un usuario en sesión, enriquecemos con el email de la sesión
+//        if (!tieneEmail && session != null) {
+//            Usuario usuarioSession = (Usuario) session.getAttribute("usuariosession");
+//            if (usuarioSession != null && usuarioSession.getNombreUsuario() != null && usuarioSession.getNombreUsuario().contains("@")) {
+//                ContactoCorreoElectronico contactoEmail = ContactoCorreoElectronico.builder()
+//                        .email(usuarioSession.getNombreUsuario().trim())
+//                        .observacion("Asociado desde sesión activa")
+//                        .eliminado(false)
+//                        .build();
+//                cliente.getContactos().add(contactoEmail);
+//            }
+//        }
+//    }
 
     public Cliente obtenerClienteDeFactura(Factura f) {
         if (f instanceof FacturaCliente fc && fc.getOrdenCompra() != null) {
@@ -466,18 +479,9 @@ public class VentaService {
         if (f instanceof FacturaProveedor fp && fp.getProveedor() != null) {
             return "CUIT: " + fp.getProveedor().getCuit();
         }
-        if (f instanceof FacturaCliente fc && fc.getOrdenCompra() != null && fc.getOrdenCompra().getCliente() != null) {
-            Cliente c = fc.getOrdenCompra().getCliente();
-            if (contactoService != null) {
-                Optional<String> email = contactoService.obtenerEmailPrincipal(c);
-                if (email.isPresent()) return email.get();
-            }
-            if (c.getUsuario() != null && c.getUsuario().getNombreUsuario() != null && c.getUsuario().getNombreUsuario().contains("@")) {
-                return c.getUsuario().getNombreUsuario().trim();
-            }
-            if (c.getNumeroDocumento() != null && !c.getNumeroDocumento().isBlank()) {
-                return "DNI: " + c.getNumeroDocumento().trim();
-            }
+        if (f instanceof FacturaCliente fc && fc.getOrdenCompra() != null) {
+            String email = fc.getOrdenCompra().getEmailUsuario();
+            return (email != null && !email.isBlank()) ? email.trim() : "N/A";
         }
         return "N/A";
     }

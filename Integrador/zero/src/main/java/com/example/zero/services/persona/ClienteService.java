@@ -273,7 +273,7 @@ public class ClienteService {
                     usuario = usuarioRepository.save(usuario);
                 }
             }
-            cliente.setUsuario(usuario);
+
             clienteRepository.save(cliente);
 
             try {
@@ -330,10 +330,10 @@ public class ClienteService {
     }
 
     @Transactional
-    public Cliente asociarClienteUsuario(String numeroDocumento, Usuario usuario) {
+    public Usuario asociarClienteUsuario(String numeroDocumento, Usuario usuario) {
         Cliente cliente = buscarPorDocumento(numeroDocumento);
-        cliente.setUsuario(usuario);
-        return clienteRepository.save(cliente);
+        usuario.setPersona(cliente);
+        return usuarioRepository.save(usuario);
     }
 
     @Transactional(readOnly = true)

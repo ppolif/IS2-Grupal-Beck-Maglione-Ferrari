@@ -49,6 +49,10 @@ public class OrdenCompra {
     @JoinColumn(name = "dni_cliente")
     private Cliente cliente;
 
+    ///cambio en el uml, orden de compra guarda el mail del cliente para poder
+    /// identificar siempre cual usuario de una persona realizo la compra
+    private String emailUsuario;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dni_empleado")
     private Empleado empleado;

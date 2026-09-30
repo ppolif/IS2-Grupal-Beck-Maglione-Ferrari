@@ -33,7 +33,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, String> {
     Optional<Usuario> findByNombreUsuario(String nombreUsuario);
 
     @Query("SELECT u FROM Usuario u WHERE u.persona.numeroDocumento = :doc AND u.eliminado = false")
-    Optional<Usuario> findByPersonaDocumentoAndEliminadoFalse(@Param("doc") String doc);
+    List<Usuario> findByPersonaDocumentoAndEliminadoFalse(@Param("doc") String doc);
 
     List<Usuario> findByEliminadoFalse();
 }

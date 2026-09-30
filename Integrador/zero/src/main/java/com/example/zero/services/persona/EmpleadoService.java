@@ -6,6 +6,7 @@ import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.enums.TipoDocumento;
 import com.example.zero.enums.TipoEmpleado;
 import com.example.zero.repositories.EmpleadoRepository;
+import com.example.zero.repositories.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,10 +17,13 @@ import java.util.Optional;
 @Service
 public class EmpleadoService {
 
+    private final UsuarioRepository usuarioRepository;
     private final EmpleadoRepository empleadoRepository;
 
-    public EmpleadoService(EmpleadoRepository empleadoRepository) {
+    public EmpleadoService(EmpleadoRepository empleadoRepository,
+                           UsuarioRepository usuarioRepository) {
         this.empleadoRepository = empleadoRepository;
+        this.usuarioRepository = usuarioRepository;
     }
 
     public void validar(String numeroDocumento, String nombre, String apellido) {
@@ -105,10 +109,10 @@ public class EmpleadoService {
     }
 
     @Transactional
-    public Empleado asociarEmpleadoUsuario(String numeroDocumento, Usuario usuario) {
+    public Usuario asociarEmpleadoUsuario(String numeroDocumento, Usuario usuario) {
         Empleado empleado = buscarPorDocumento(numeroDocumento);
-        empleado.setUsuario(usuario);
-        return empleadoRepository.save(empleado);
+        usuario.setPersona(empleado);
+        return usuarioRepository.save(usuario);
     }
 
     @Transactional(readOnly = true)
