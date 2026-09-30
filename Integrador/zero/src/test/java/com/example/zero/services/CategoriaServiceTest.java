@@ -3,6 +3,7 @@ package com.example.zero.services;
 import com.example.zero.entidades.producto.Categoria;
 import com.example.zero.entidades.producto.SubCategoria;
 import com.example.zero.repositories.CategoriaRepository;
+import com.example.zero.repositories.SubCategoriaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,6 +24,9 @@ class CategoriaServiceTest {
 
     @Mock
     private CategoriaRepository categoriaRepository;
+
+    @Mock
+    private SubCategoriaRepository subCategoriaRepository;
 
     @InjectMocks
     private CategoriaService categoriaService;
@@ -116,8 +120,9 @@ class CategoriaServiceTest {
         Set<SubCategoria> subs = new HashSet<>();
         subs.add(sub1);
 
-        Categoria categoria = Categoria.builder().id("cat-1").nombre("Hombres").eliminado(false).subCategorias(subs).build();
+        Categoria categoria = Categoria.builder().id("cat-1").nombre("Hombres").eliminado(false).build();
         when(categoriaRepository.findActive("cat-1")).thenReturn(Optional.of(categoria));
+        when(subCategoriaRepository.findByCategoriaIdAndEliminadoFalse("cat-1")).thenReturn(List.of(sub1));
 
         // Act
         categoriaService.eliminarCategoria("cat-1");

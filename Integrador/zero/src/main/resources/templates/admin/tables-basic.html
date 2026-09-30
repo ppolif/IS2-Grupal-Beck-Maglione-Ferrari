@@ -93,7 +93,7 @@
                 <i class="bi bi-building"></i>
               </div>
               <img th:unless="${@ventaService.esCompraProveedor(order)}"
-                   th:src="@{${@ventaService.obtenerFotoComprobante(order)}}"
+                   th:src="@{${imagenesPorOrder != null && imagenesPorOrder.containsKey(order.id) ? imagenesPorOrder.get(order.id) : (ventaService != null ? ventaService.obtenerFotoComprobante(order) : '/admin/assets/images/avatar.png')}}"
                    onerror="this.src='/admin/assets/images/avatar.png'"
                    alt="Avatar" class="rounded-circle border" width="36" height="36" style="object-fit: cover;">
               <div>

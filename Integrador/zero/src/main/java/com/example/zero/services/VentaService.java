@@ -448,18 +448,28 @@ public class VentaService {
     }
 
     public String obtenerFotoComprobante(Factura f) {
-        if (f instanceof FacturaCliente fc && fc.getOrdenCompra() != null && fc.getOrdenCompra().getCliente() != null) {
-            Cliente c = fc.getOrdenCompra().getCliente();
-            if (c.getUsuario() != null && c.getUsuario().getFoto() != null && !c.getUsuario().getFoto().isBlank()) {
-                return c.getUsuario().getFoto().trim();
-            }
-            if (c.getImagen() != null && !c.getImagen().isEmpty()) {
-                for (com.example.zero.entidades.Imagen img : c.getImagen()) {
-                    if (img != null && !img.isEliminado() && img.getId() != null) {
-                        return "/imagen/" + img.getId();
+        if (f == null) {
+            return "/admin/assets/images/avatar.png";
+        }
+        try {
+            Cliente c = obtenerClienteDeFactura(f);
+            if (c != null) {
+                if (clienteService != null) {
+                    return clienteService.obtenerFotoPerfilCliente(c);
+                }
+                if (c.getUsuario() != null && c.getUsuario().getFoto() != null && !c.getUsuario().getFoto().isBlank()) {
+                    return c.getUsuario().getFoto().trim();
+                }
+                if (c.getImagen() != null && !c.getImagen().isEmpty()) {
+                    for (com.example.zero.entidades.Imagen img : c.getImagen()) {
+                        if (img != null && !img.isEliminado() && img.getId() != null) {
+                            return "/imagen/" + img.getId();
+                        }
                     }
                 }
             }
+        } catch (Exception e) {
+            logger.warn("Error resolviendo foto de comprobante para factura {}: {}", f.getId(), e.getMessage());
         }
         return "/admin/assets/images/avatar.png";
     }
