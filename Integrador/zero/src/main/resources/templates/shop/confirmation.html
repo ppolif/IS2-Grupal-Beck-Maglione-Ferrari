@@ -74,9 +74,15 @@
           <tbody>
           <!-- Iteración de productos de la orden si existen -->
           <tr th:if="${order != null && !#lists.isEmpty(order.items)}" th:each="line : ${order.items}">
+<<<<<<< HEAD
             <td><p class="font-weight-bold mb-0" th:text="${line.productName}">Indumentaria Deportiva</p></td>
             <td class="text-center"><h5 th:text="'x ' + ${line.quantity}">x 01</h5></td>
             <td class="text-right"><p class="mb-0">$<span th:text="${#numbers.formatDecimal(line.totalPrice != null ? line.totalPrice : 0, 1, 'POINT', 2, 'POINT')}">720.00</span></p></td>
+=======
+            <td><p class="font-weight-bold mb-0" th:text="${line.producto != null ? line.producto.nombre : 'Producto'}">Indumentaria Deportiva</p></td>
+            <td class="text-center"><h5 th:text="'x ' + ${line.cantidad}">x 01</h5></td>
+            <td class="text-right"><p class="mb-0" th:text="${#numbers.formatCurrency(line.subtotal)}">$720.00</p></td>
+>>>>>>> augusto
           </tr>
 
           <!-- Placeholder fallback si no viene objeto del backend aún -->

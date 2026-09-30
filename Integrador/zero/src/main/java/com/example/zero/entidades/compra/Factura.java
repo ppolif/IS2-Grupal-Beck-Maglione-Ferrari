@@ -273,15 +273,5 @@ public class Factura {
         return sb.length() > 0 ? sb.toString() : "Venta General";
     }
 
-    public String getCategoryName() {
-        if (detalles != null) {
-            for (Detalle d : detalles) {
-                if (!d.isEliminado() && d.getProducto() != null && d.getProducto().getSubCategoria() != null
-                        && d.getProducto().getSubCategoria().getCategoria() != null) {
-                    return d.getProducto().getSubCategoria().getCategoria().getNombre();
-                }
-            }
-        }
-        return "General";
-    }
+
 }

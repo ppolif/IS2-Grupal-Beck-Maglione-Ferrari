@@ -54,48 +54,4 @@ public class Detalle {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
-
-    public String getProductName() {
-        return producto != null && producto.getNombre() != null ? producto.getNombre() : "Producto";
-    }
-
-    public int getQuantity() {
-        return cantidad;
-    }
-
-    public double getUnitPrice() {
-        return cantidad > 0 ? Math.round((subtotal / cantidad) * 100.0) / 100.0 : 0.0;
-    }
-
-    public double getTotalPrice() {
-        return subtotal;
-    }
-
-    public com.example.zero.entidades.compraProveedor.Proveedor getProveedor() {
-        if (factura instanceof com.example.zero.entidades.compraProveedor.FacturaProveedor fp) {
-            return fp.getProveedor();
-        }
-        return null;
-    }
-
-    public String getProveedorRazonSocial() {
-        if (factura instanceof com.example.zero.entidades.compraProveedor.FacturaProveedor fp && fp.getProveedor() != null) {
-            return fp.getProveedor().getRazonSocial();
-        }
-        return null;
-    }
-
-    public String getProveedorCuit() {
-        if (factura instanceof com.example.zero.entidades.compraProveedor.FacturaProveedor fp && fp.getProveedor() != null) {
-            return fp.getProveedor().getCuit();
-        }
-        return null;
-    }
-
-    public String getCategoryName() {
-        if (producto != null && producto.getSubCategoria() != null && producto.getSubCategoria().getCategoria() != null) {
-            return producto.getSubCategoria().getCategoria().getNombre();
-        }
-        return "General";
-    }
 }

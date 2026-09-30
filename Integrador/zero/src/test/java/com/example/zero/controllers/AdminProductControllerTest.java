@@ -189,4 +189,25 @@ class AdminProductControllerTest {
         assertEquals("redirect:/admin/products?success=deleted", vista);
         verify(productoService).eliminarProducto("p1");
     }
+
+    @Test
+    void aplicarAumentoInflacion_exitoso_redirigeConMensajeFlash() {
+        when(productoService.aplicarAumentoGeneralPorInflacion(8.5)).thenReturn(15);
+
+        String vista = controller.aplicarAumentoInflacion(8.5, redirectAttributes);
+
+        assertEquals("redirect:/admin/products", vista);
+        verify(redirectAttributes).addFlashAttribute(eq("successMessage"), contains("15"));
+    }
+
+    @Test
+    void aplicarAumentoInflacion_error_redirigeConMensajeErrorFlash() {
+        when(productoService.aplicarAumentoGeneralPorInflacion(-5.0))
+                .thenThrow(new IllegalArgumentException("El porcentaje de aumento debe ser mayor a cero"));
+
+        String vista = controller.aplicarAumentoInflacion(-5.0, redirectAttributes);
+
+        assertEquals("redirect:/admin/products", vista);
+        verify(redirectAttributes).addFlashAttribute(eq("errorMessage"), contains("mayor a cero"));
+    }
 }

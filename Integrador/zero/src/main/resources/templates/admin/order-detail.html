@@ -141,7 +141,7 @@
               </li>
               <li class="mb-2 d-flex justify-content-between">
                 <span class="text-dark fw-semibold">Dirección:</span>
-                <span class="text-end" th:text="${sucursal != null ? sucursal.direccionCompleta : 'Av. Corrientes 1234, CABA'}">Av. Corrientes 1234, CABA</span>
+                <span class="text-end" th:text="${sucursalDireccion != null ? sucursalDireccion : (sucursal != null and sucursal.direccion != null and !#lists.isEmpty(sucursal.direccion) ? sucursal.direccion[0].calle + ' ' + sucursal.direccion[0].numero : 'Av. Corrientes 1234, CABA')}">Av. Corrientes 1234, CABA</span>
               </li>
               <li class="d-flex justify-content-between">
                 <span class="text-dark fw-semibold">Medio de Pago Empleado:</span>
@@ -239,16 +239,22 @@
           <tr th:if="${factura.detalles != null and !#lists.isEmpty(factura.detalles)}" th:each="it, stat : ${factura.detalles}">
             <td class="ps-3 text-muted small" th:text="${stat.count}">1</td>
             <td>
-              <div class="fw-semibold text-brand-dark" th:text="${it.producto != null ? it.producto.nombre : it.productName}">Zapatillas Zero Runner</div>
+              <div class="fw-semibold text-brand-dark" th:text="${it.producto != null ? it.producto.nombre : 'Producto'}">Zapatillas Zero Runner</div>
               <small class="text-muted font-monospace" th:if="${it.producto != null and it.producto.id != null}" th:text="'ID: ' + ${it.producto.id}">ID: prod-01</small>
             </td>
             <td>
-              <span class="badge bg-light text-dark border" th:text="${it.categoryName}">Calzado</span>
+              <span class="badge bg-light text-dark border"
+                    th:text="${it.producto != null and it.producto.subCategoria != null and it.producto.subCategoria.categoria != null ? it.producto.subCategoria.categoria.nombre : (it.producto != null and it.producto.subCategoria != null ? it.producto.subCategoria.nombre : 'General')}">Calzado</span>
             </td>
             <td class="text-center fw-bold" th:classappend="${esCompraProveedor ? 'text-success font-monospace' : ''}"
                 th:text="${esCompraProveedor ? '+' + it.cantidad : it.cantidad}">1</td>
+<<<<<<< HEAD
             <td class="text-end font-monospace">$<span th:text="${#numbers.formatDecimal(it.unitPrice != null ? it.unitPrice : 0, 1, 'POINT', 2, 'POINT')}">150.00</span></td>
             <td class="text-end pe-3 fw-bold text-brand-dark font-monospace">$<span th:text="${#numbers.formatDecimal(it.subtotal != null ? it.subtotal : 0, 1, 'POINT', 2, 'POINT')}">150.00</span></td>
+=======
+            <td class="text-end font-monospace" th:text="${#numbers.formatCurrency(it.cantidad > 0 ? (it.subtotal / it.cantidad) : 0.0)}">$150.00</td>
+            <td class="text-end pe-3 fw-bold text-brand-dark font-monospace" th:text="${#numbers.formatCurrency(it.subtotal)}">$150.00</td>
+>>>>>>> augusto
           </tr>
 
           <!-- Fallback si la orden solo tiene resumen sin lista detallada -->
@@ -256,12 +262,17 @@
             <td class="ps-3 text-muted small">1</td>
             <td>
               <div class="fw-semibold text-brand-dark" th:text="${order != null ? order.productSummary : 'Artículos Varios'}">Oversized Hoodie</div>
-              <small class="text-muted" th:text="${order != null ? order.categoryName : 'General'}">Ropa deportiva</small>
+              <small class="text-muted">General</small>
             </td>
             <td><span class="badge bg-light text-dark border">General</span></td>
             <td class="text-center">1</td>
+<<<<<<< HEAD
             <td class="text-end font-monospace">$<span th:text="${#numbers.formatDecimal((order != null && order.totalAmount != null) ? order.totalAmount : (factura.totalPagado != null ? factura.totalPagado : 0), 1, 'POINT', 2, 'POINT')}">89.90</span></td>
             <td class="text-end pe-3 fw-bold font-monospace">$<span th:text="${#numbers.formatDecimal((order != null && order.totalAmount != null) ? order.totalAmount : (factura.totalPagado != null ? factura.totalPagado : 0), 1, 'POINT', 2, 'POINT')}">89.90</span></td>
+=======
+            <td class="text-end font-monospace" th:text="${#numbers.formatCurrency(factura != null ? factura.totalPagado : (order != null ? order.totalAmount : 0.0))}">$89.90</td>
+            <td class="text-end pe-3 fw-bold font-monospace" th:text="${#numbers.formatCurrency(factura != null ? factura.totalPagado : (order != null ? order.totalAmount : 0.0))}">$89.90</td>
+>>>>>>> augusto
           </tr>
           </tbody>
         </table>

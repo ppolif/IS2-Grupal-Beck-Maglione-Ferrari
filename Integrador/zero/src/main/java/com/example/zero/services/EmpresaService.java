@@ -34,4 +34,18 @@ public class EmpresaService {
     public List<Empresa> listarSucursales() {
         return empresaRepository.findByEliminadoFalse();
     }
+
+    public String obtenerDireccionCompleta(Empresa empresa) {
+        if (empresa == null || empresa.getDireccion() == null || empresa.getDireccion().isEmpty()) {
+            return "Av. Corrientes 1234, CABA";
+        }
+        com.example.zero.entidades.zona.Direccion dir = empresa.getDireccion().get(0);
+        String calle = dir.getCalle() != null ? dir.getCalle() : "";
+        String num = dir.getNumeracion() != null ? dir.getNumeracion() : "";
+        String base = (calle + " " + num).trim();
+        if (dir.getLocalidad() != null && dir.getLocalidad().getNombre() != null) {
+            base += ", " + dir.getLocalidad().getNombre();
+        }
+        return base.isEmpty() ? "Av. Corrientes 1234, CABA" : base;
+    }
 }

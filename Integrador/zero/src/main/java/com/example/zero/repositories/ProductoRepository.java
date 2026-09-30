@@ -1,6 +1,8 @@
 package com.example.zero.repositories;
 
 import com.example.zero.entidades.producto.Producto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -35,6 +37,10 @@ public interface ProductoRepository extends JpaRepository<Producto, String> {
 
     @Query("SELECT p FROM Producto p WHERE (p.eliminado = false OR p.eliminado IS NULL) ORDER BY p.nombre ASC")
     List<Producto> findByEliminadoFalse();
+
+    @Query(value = "SELECT p FROM Producto p WHERE (p.eliminado = false OR p.eliminado IS NULL) ORDER BY p.id ASC",
+           countQuery = "SELECT count(p) FROM Producto p WHERE (p.eliminado = false OR p.eliminado IS NULL)")
+    Page<Producto> findByEliminadoFalse(Pageable pageable);
 
     @Query("SELECT DISTINCT p FROM Producto p " +
         "LEFT JOIN FETCH p.imagenes " +
