@@ -20,6 +20,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.zero.entidades.compraCliente.FacturaCliente;
+import com.example.zero.entidades.compraCliente.OrdenCompra;
+import com.example.zero.entidades.compraProveedor.FacturaProveedor;
+import com.example.zero.enums.EstadoOrdenCompra;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -43,6 +48,8 @@ public class VentaService {
     private final StockService stockService;
     private final UsuarioRepository usuarioRepository;
     private final EmailService emailService;
+    private final OrdenCompraRepository ordenCompraRepository;
+    private final ContactoService contactoService;
 
     public VentaService(FacturaRepository facturaRepository,
                         DetalleRepository detalleRepository,
@@ -53,7 +60,7 @@ public class VentaService {
                         ProductoService productoService,
                         UsuarioRepository usuarioRepository) {
         this(facturaRepository, detalleRepository, formaDePagoRepository, clienteRepository, clienteService,
-                nacionalidadRepository, productoService, null, null, usuarioRepository, null);
+                nacionalidadRepository, productoService, null, null, usuarioRepository, null, null, null);
     }
 
     public VentaService(FacturaRepository facturaRepository,
@@ -67,7 +74,7 @@ public class VentaService {
                         StockService stockService,
                         UsuarioRepository usuarioRepository) {
         this(facturaRepository, detalleRepository, formaDePagoRepository, clienteRepository, clienteService,
-                nacionalidadRepository, productoService, productoRepository, stockService, usuarioRepository, null);
+                nacionalidadRepository, productoService, productoRepository, stockService, usuarioRepository, null, null, null);
     }
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -81,7 +88,9 @@ public class VentaService {
                         ProductoRepository productoRepository,
                         StockService stockService,
                         UsuarioRepository usuarioRepository,
-                        EmailService emailService) {
+                        @org.springframework.beans.factory.annotation.Autowired(required = false) EmailService emailService,
+                        @org.springframework.beans.factory.annotation.Autowired(required = false) OrdenCompraRepository ordenCompraRepository,
+                        @org.springframework.beans.factory.annotation.Autowired(required = false) ContactoService contactoService) {
         this.facturaRepository = facturaRepository;
         this.detalleRepository = detalleRepository;
         this.formaDePagoRepository = formaDePagoRepository;
@@ -93,6 +102,8 @@ public class VentaService {
         this.stockService = stockService;
         this.usuarioRepository = usuarioRepository;
         this.emailService = emailService;
+        this.ordenCompraRepository = ordenCompraRepository;
+        this.contactoService = contactoService;
     }
 
     public void validarVenta(String clienteDni, String clienteNombre, String clienteApellido,
@@ -215,13 +226,25 @@ public class VentaService {
                 .map(f -> f.getNumeroFactura() + 1)
                 .orElse(1001L);
 
-        // 4. Instanciar Factura
-        Factura factura = Factura.builder()
+        // 4. Instanciar OrdenCompra y FacturaCliente
+        OrdenCompra orden = OrdenCompra.builder()
+                .identificadorCompra("ORD-" + numeroFactura)
+                .fecha(new Date())
+                .cliente(cliente)
+                .total(0.0)
+                .estadoOrdenCompra(EstadoOrdenCompra.PENDIENTE_ENVIO)
+                .eliminado(false)
+                .build();
+        if (ordenCompraRepository != null) {
+            orden = ordenCompraRepository.save(orden);
+        }
+
+        FacturaCliente factura = FacturaCliente.builder()
                 .numeroFactura(numeroFactura)
                 .fechaFactura(LocalDateTime.now())
                 .estado(EstadoFactura.PAGADA)
-                .cliente(cliente)
                 .formaDePago(formaDePago)
+                .ordenCompra(orden)
                 .totalPagado(0.0)
                 .eliminado(false)
                 .detalles(new HashSet<>())
@@ -255,6 +278,12 @@ public class VentaService {
         }
 
         factura.setTotalPagado(Math.round(total * 100.0) / 100.0);
+        if (orden != null) {
+            orden.setTotal(factura.getTotalPagado());
+            if (ordenCompraRepository != null) {
+                ordenCompraRepository.save(orden);
+            }
+        }
 
         Factura facturaGuardada = facturaRepository.save(factura);
 
@@ -274,18 +303,24 @@ public class VentaService {
         if (emailService != null) {
             String emailDestino = (clienteEmail != null && !clienteEmail.trim().isEmpty() && clienteEmail.contains("@"))
                     ? clienteEmail.trim()
-                    : facturaGuardada.getCustomerEmail();
+                    : (contactoService != null ? contactoService.obtenerEmailPrincipal(cliente).orElse(null) : null);
+
+            if (emailDestino == null && cliente.getUsuario() != null && cliente.getUsuario().getNombreUsuario() != null && cliente.getUsuario().getNombreUsuario().contains("@")) {
+                emailDestino = cliente.getUsuario().getNombreUsuario().trim();
+            }
+
+            String orderNumStr = facturaGuardada.getNumeroFactura() != null ? "#ORD-" + facturaGuardada.getNumeroFactura() : "#ORD-" + facturaGuardada.getId();
 
             if (emailDestino != null && !emailDestino.trim().isEmpty() && emailDestino.contains("@")) {
                 try {
                     emailService.enviarComprobanteCompra(facturaGuardada, emailDestino.trim());
                 } catch (Exception e) {
                     logger.error("No se pudo enviar el correo de confirmación de compra para factura {}: {}",
-                            facturaGuardada.getOrderNumber(), e.getMessage());
+                            orderNumStr, e.getMessage());
                 }
             } else {
                 logger.info("No se encontró una dirección de correo válida para notificar la compra de la factura {}",
-                        facturaGuardada.getOrderNumber());
+                        orderNumStr);
             }
         }
 
@@ -381,8 +416,13 @@ public class VentaService {
     }
 
     public void enriquecerFactura(Factura f) {
-        if (f == null || f.getCliente() == null) return;
-        Cliente c = f.getCliente();
+        if (f == null) return;
+        Cliente c = null;
+        if (f instanceof FacturaCliente fc && fc.getOrdenCompra() != null) {
+            c = fc.getOrdenCompra().getCliente();
+        }
+        if (c == null) return;
+
         if (c.getUsuario() == null && usuarioRepository != null) {
             if (c.getNumeroDocumento() != null) {
                 usuarioRepository.findByPersonaDocumentoAndEliminadoFalse(c.getNumeroDocumento())
@@ -398,5 +438,65 @@ public class VentaService {
                 }
             }
         }
+    }
+
+    public Cliente obtenerClienteDeFactura(Factura f) {
+        if (f instanceof FacturaCliente fc && fc.getOrdenCompra() != null) {
+            return fc.getOrdenCompra().getCliente();
+        }
+        return null;
+    }
+
+    public String obtenerNombreComprobante(Factura f) {
+        if (f instanceof FacturaProveedor fp && fp.getProveedor() != null) {
+            String razon = fp.getProveedor().getRazonSocial();
+            return (razon != null && !razon.isBlank()) ? razon.trim() : "Proveedor";
+        }
+        if (f instanceof FacturaCliente fc && fc.getOrdenCompra() != null && fc.getOrdenCompra().getCliente() != null) {
+            Cliente c = fc.getOrdenCompra().getCliente();
+            String nom = c.getNombre() != null ? c.getNombre().trim() : "";
+            String ape = c.getApellido() != null ? c.getApellido().trim() : "";
+            String completo = (nom + " " + ape).trim();
+            return !completo.isEmpty() ? completo : "Cliente Final";
+        }
+        return "Cliente Final";
+    }
+
+    public String obtenerEmailComprobante(Factura f) {
+        if (f instanceof FacturaProveedor fp && fp.getProveedor() != null) {
+            return "CUIT: " + fp.getProveedor().getCuit();
+        }
+        if (f instanceof FacturaCliente fc && fc.getOrdenCompra() != null && fc.getOrdenCompra().getCliente() != null) {
+            Cliente c = fc.getOrdenCompra().getCliente();
+            if (contactoService != null) {
+                Optional<String> email = contactoService.obtenerEmailPrincipal(c);
+                if (email.isPresent()) return email.get();
+            }
+            if (c.getUsuario() != null && c.getUsuario().getNombreUsuario() != null && c.getUsuario().getNombreUsuario().contains("@")) {
+                return c.getUsuario().getNombreUsuario().trim();
+            }
+            if (c.getNumeroDocumento() != null && !c.getNumeroDocumento().isBlank()) {
+                return "DNI: " + c.getNumeroDocumento().trim();
+            }
+        }
+        return "N/A";
+    }
+
+    public String obtenerResumenProductos(Factura f) {
+        if (f == null || f.getDetalles() == null || f.getDetalles().isEmpty()) {
+            return "Venta General";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Detalle d : f.getDetalles()) {
+            if (!d.isEliminado() && d.getProducto() != null) {
+                if (sb.length() > 0) sb.append(", ");
+                sb.append(d.getProducto().getNombre()).append(" (x").append(d.getCantidad()).append(")");
+            }
+        }
+        return sb.length() > 0 ? sb.toString() : "Venta General";
+    }
+
+    public boolean esCompraProveedor(Factura f) {
+        return f instanceof FacturaProveedor;
     }
 }

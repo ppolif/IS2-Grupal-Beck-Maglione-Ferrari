@@ -178,7 +178,7 @@ public class AdminPurchaseOrderController {
                     precio = productoService.obtenerPrecioActual(p.getId());
                 } catch (Exception ignored) {
                 }
-                prodDtos.add(com.example.zero.dto.producto.ProductoDTO.de(p, precio, 0, null));
+                prodDtos.add(com.example.zero.dto.producto.ProductoDTO.de(p, precio,0,null, productoService));
             }
         }
         List<FacturaProveedor> compras;

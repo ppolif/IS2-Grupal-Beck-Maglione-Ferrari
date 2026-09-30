@@ -1,6 +1,7 @@
 package com.example.zero.controllers;
 
 import com.example.zero.entidades.compra.Factura;
+import com.example.zero.entidades.persona.Cliente;
 import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.enums.RolUsuario;
@@ -32,17 +33,18 @@ public class VistaController {
     private final com.example.zero.services.OrdenCompraService ordenCompraService;
     private final com.example.zero.services.VigenciaPrecioService vigenciaPrecioService;
     private final com.example.zero.services.StockService stockService;
+    private final com.example.zero.services.ContactoService contactoService;
 
     // Inicio / Portada
     @GetMapping({"/", "/shop", "/shop/index"})
     public String shopIndex(Model model) {
         List<com.example.zero.dto.producto.ProductoDTO> featured = productoService.listarActivos().stream()
-                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService))
+                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService, productoService))
                 .toList();
         model.addAttribute("featuredProducts", featured);
 
         List<com.example.zero.dto.producto.ProductoDTO> sale = productoService.listarEnOferta().stream()
-                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService))
+                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService, productoService))
                 .toList();
         model.addAttribute("saleProducts", sale);
 
@@ -56,7 +58,7 @@ public class VistaController {
                                @RequestParam(value = "maxPrice", required = false) Double maxPrice,
                                Model model) {
         List<com.example.zero.dto.producto.ProductoDTO> products = productoService.listarActivos().stream()
-                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService))
+                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService, productoService))
                 .toList();
 
         if (subCategoryId != null && !subCategoryId.trim().isEmpty()) {
@@ -100,7 +102,7 @@ public class VistaController {
     @GetMapping({"/offers", "/ofertas", "/shop/offers", "/shop/ofertas"})
     public String shopOffers(Model model) {
         List<com.example.zero.dto.producto.ProductoDTO> offers = productoService.listarEnOferta().stream()
-                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService))
+                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService, productoService))
                 .toList();
         model.addAttribute("products", offers);
         model.addAttribute("totalProducts", offers.size());
@@ -136,13 +138,8 @@ public class VistaController {
             model.addAttribute("items", items);
 
             String telefono = "";
-            if (cliente.getContactos() != null) {
-                telefono = cliente.getContactos().stream()
-                        .filter(c -> c instanceof com.example.zero.entidades.empresa.ContactoTelefonico)
-                        .map(c -> ((com.example.zero.entidades.empresa.ContactoTelefonico) c).getTelefono())
-                        .filter(t -> t != null && !t.isBlank())
-                        .findFirst()
-                        .orElse("");
+            if (contactoService != null) {
+                telefono = contactoService.obtenerTelefonoPrincipal(cliente).orElse("");
             }
             model.addAttribute("customerPhone", telefono);
 
@@ -191,6 +188,42 @@ public class VistaController {
                 if (factura != null) {
                     model.addAttribute("factura", factura);
                     model.addAttribute("order", factura);
+
+                    Cliente cliente = ventaService.obtenerClienteDeFactura(factura);
+                    String customerName = ventaService.obtenerNombreComprobante(factura);
+                    String customerEmail = ventaService.obtenerEmailComprobante(factura);
+                    String customerPhone = "";
+                    String shippingAddress = "";
+                    String shippingCity = "";
+                    String shippingZip = "";
+
+                    if (cliente != null) {
+                        if (contactoService != null) {
+                            customerPhone = contactoService.obtenerTelefonoPrincipal(cliente).orElse("");
+                        }
+                        if (cliente.getDireccion() != null && !cliente.getDireccion().isEmpty()) {
+                            for (var dir : cliente.getDireccion()) {
+                                if (dir != null && !dir.isEliminado() && dir.getCalle() != null && !dir.getCalle().isBlank()) {
+                                    String calle = dir.getCalle().trim();
+                                    String num = dir.getNumeracion() != null ? dir.getNumeracion().trim() : "";
+                                    shippingAddress = (calle + " " + num).trim();
+                                    if (dir.getLocalidad() != null) {
+                                        shippingCity = dir.getLocalidad().getNombre() != null ? dir.getLocalidad().getNombre().trim() : "";
+                                        shippingZip = dir.getLocalidad().getCodigoPostal() != null ? dir.getLocalidad().getCodigoPostal().trim() : "";
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    model.addAttribute("cliente", cliente);
+                    model.addAttribute("customerName", customerName);
+                    model.addAttribute("customerEmail", customerEmail);
+                    model.addAttribute("customerPhone", customerPhone);
+                    model.addAttribute("shippingAddress", shippingAddress);
+                    model.addAttribute("shippingCity", shippingCity);
+                    model.addAttribute("shippingZip", shippingZip);
                 }
             } catch (Exception ignored) {
             }
@@ -226,7 +259,7 @@ public class VistaController {
             return "admin/page-404";
         }
 
-        com.example.zero.dto.producto.ProductoDTO dto = com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService);
+        com.example.zero.dto.producto.ProductoDTO dto = com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService, productoService);
         model.addAttribute("product", dto);
         model.addAttribute("title", "Detalle del Producto");
         model.addAttribute("subtitle", p.getNombre());

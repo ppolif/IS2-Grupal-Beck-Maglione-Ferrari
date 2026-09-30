@@ -4,6 +4,7 @@ import com.example.zero.entidades.producto.Producto;
 import com.example.zero.entidades.producto.SubCategoria;
 import com.example.zero.services.StockService;
 import com.example.zero.services.VigenciaPrecioService;
+import com.example.zero.services.producto.ProductoService;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,6 +17,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class ProductoDTO {
+
+    private ProductoService productoService;
 
     private String id;
     private String codigo;
@@ -62,7 +65,7 @@ public class ProductoDTO {
         return "Indumentaria";
     }
 
-    public static ProductoDTO de(Producto p, double precioActual, int stock, StockService stockService) {
+    public static ProductoDTO de(Producto p, double precioActual, int stock, StockService stockService, ProductoService ps) {
         if (p == null) return null;
 
         String estadoStock = stockService != null ? stockService.getEstadoStock(stock) : (stock > 50 ? "BIEN" : (stock >= 20 ? "REGULAR" : "MALO"));
@@ -79,16 +82,17 @@ public class ProductoDTO {
                 .talle(p.getTalle())
                 .enOferta(p.isEnOferta())
                 .subCategoria(p.getSubCategoria())
-                .imagenUrl(p.getImagenUrl())
+                .imagenUrl(ps.obtenerImagenUrl(p))
                 .precioActual(precioActual)
                 .stock(stock)
+
                 .estadoStock(estadoStock)
                 .cantidadFaltanteStock(faltante)
                 .urlWhatsAppReposicion(urlWhatsApp)
                 .build();
     }
 
-    public static ProductoDTO de(Producto p, VigenciaPrecioService vigenciaService, StockService stockService) {
+    public static ProductoDTO de(Producto p, VigenciaPrecioService vigenciaService, StockService stockService, ProductoService ps) {
         if (p == null) return null;
 
         double precio = 0.0;
@@ -107,6 +111,6 @@ public class ProductoDTO {
             }
         }
 
-        return de(p, precio, stock, stockService);
+        return de(p, precio, stock, stockService, ps);
     }
 }

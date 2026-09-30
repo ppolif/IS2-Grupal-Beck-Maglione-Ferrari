@@ -55,7 +55,5 @@ public class SubCategoria {
     @Builder.Default
     private Set<Producto> productos = new HashSet<>();
 
-    public String getName() {
-        return nombre;
-    }
+
 }

@@ -69,7 +69,7 @@ public class AdminProductController {
             }
 
             int stock = (stockService != null) ? stockService.calcularStockActual(p.getId()) : 0;
-            ProductoDTO dto = ProductoDTO.de(p, precio, stock, stockService);
+            ProductoDTO dto = ProductoDTO.de(p, precio, stock, stockService, productoService);
             dtos.add(dto);
 
             totalStockUnidades += stock;

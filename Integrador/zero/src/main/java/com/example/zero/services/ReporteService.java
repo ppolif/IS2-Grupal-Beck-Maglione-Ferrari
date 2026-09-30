@@ -75,10 +75,20 @@ public class ReporteService {
         for (Factura f : facturas) {
             if (f == null || f.getDetalles() == null) continue;
 
-            String clienteNombre = f.getCustomerName();
-            String clienteId = f.getCustomerEmail();
-            String formaPago = f.getPaymentMethod();
-            String ordenNum = f.getOrderNumber();
+            String clienteNombre = "Consumidor Final";
+            String clienteId = "N/A";
+            if (f instanceof com.example.zero.entidades.compraCliente.FacturaCliente fc && fc.getOrdenCompra() != null && fc.getOrdenCompra().getCliente() != null) {
+                var c = fc.getOrdenCompra().getCliente();
+                clienteNombre = ((c.getNombre() != null ? c.getNombre() : "") + " " + (c.getApellido() != null ? c.getApellido() : "")).trim();
+                clienteId = c.getNumeroDocumento() != null ? c.getNumeroDocumento() : "N/A";
+            } else if (f instanceof com.example.zero.entidades.compraProveedor.FacturaProveedor fp && fp.getProveedor() != null) {
+                clienteNombre = fp.getProveedor().getRazonSocial() != null ? fp.getProveedor().getRazonSocial() : "Proveedor";
+                clienteId = fp.getProveedor().getCuit() != null ? fp.getProveedor().getCuit() : "N/A";
+            }
+            String formaPago = (f.getFormaDePago() != null && f.getFormaDePago().getTipoPago() != null)
+                    ? f.getFormaDePago().getTipoPago().name().replace('_', ' ')
+                    : "N/A";
+            String ordenNum = f.getNumeroFactura() != null ? "#ORD-" + f.getNumeroFactura() : (f.getId() != null ? f.getId() : "#ORD-S/N");
             LocalDateTime fecha = f.getFechaFactura();
 
             for (Detalle d : f.getDetalles()) {
@@ -211,7 +221,7 @@ public class ReporteService {
                     .productoId(p.getId())
                     .codigo(p.getCodigo())
                     .nombre(p.getNombre())
-                    .imagenUrl(p.getImagenUrl())
+                    .imagenUrl(productoService.obtenerImagenUrl(p))
                     .talle(p.getTalle())
                     .categoria(catNombre)
                     .sucursal(sucursalNombre)

@@ -1,12 +1,17 @@
 package com.example.zero.entidades.zona;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
-import java.util.List;
 
-@Data
 @Entity
+@Table(name = "pais")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@ToString
 public class Pais {
     @Id
     @UuidGenerator
@@ -14,5 +19,4 @@ public class Pais {
     private String id;
     private String nombre;
     private boolean eliminado;
-
 }

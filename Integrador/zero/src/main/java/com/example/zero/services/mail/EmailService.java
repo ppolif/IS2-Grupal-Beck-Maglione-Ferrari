@@ -107,15 +107,16 @@ public class EmailService {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
+            String numOrden = factura.getNumeroFactura() != null ? "#ORD-" + factura.getNumeroFactura() : (factura.getId() != null ? factura.getId() : "");
             helper.setFrom(remitente != null && !remitente.isEmpty() ? remitente : "zeroshopclothes@gmail.com");
             helper.setTo(destinatario.trim());
-            helper.setSubject("ZERO - Confirmación de tu compra " + (factura.getOrderNumber() != null ? factura.getOrderNumber() : ""));
+            helper.setSubject("ZERO - Confirmación de tu compra " + numOrden);
 
             String contenidoHtml = construirHtmlComprobante(factura);
             helper.setText(contenidoHtml, true);
 
             mailSender.send(mimeMessage);
-            logger.info("Comprobante de compra enviado exitosamente a {} para la orden {}", destinatario, factura.getOrderNumber());
+            logger.info("Comprobante de compra enviado exitosamente a {} para la orden {}", destinatario, numOrden);
 
         } catch (MessagingException | MailException e) {
             logger.error("Fallo al enviar comprobante de compra a {}: {}", destinatario, e.getMessage(), e);
@@ -135,24 +136,49 @@ public class EmailService {
             return "";
         }
 
-        String orderNumber = factura.getOrderNumber() != null ? factura.getOrderNumber() : "#ORD-S/N";
-        String customerName = factura.getCustomerName() != null ? factura.getCustomerName() : "Cliente Estimado/a";
-        String paymentMethod = factura.getPaymentMethod() != null ? factura.getPaymentMethod() : "Medio de Pago Electrónico";
-        String status = factura.getStatus() != null ? factura.getStatus() : "PAGADA";
-        
+        String orderNumber = factura.getNumeroFactura() != null ? "#ORD-" + factura.getNumeroFactura() : (factura.getId() != null ? "#ORD-" + factura.getId() : "#ORD-S/N");
+        String paymentMethod = (factura.getFormaDePago() != null && factura.getFormaDePago().getTipoPago() != null)
+                ? factura.getFormaDePago().getTipoPago().name().replace('_', ' ')
+                : "Medio de Pago Electrónico";
+        String status = factura.getEstado() != null ? factura.getEstado().name() : "PAGADA";
+
+        String customerName = "Cliente Estimado/a";
+        String shippingAddress = "";
+        String shippingCity = "";
+        String shippingZip = "";
+
+        if (factura instanceof com.example.zero.entidades.compraCliente.FacturaCliente fc) {
+            if (fc.getOrdenCompra() != null && fc.getOrdenCompra().getCliente() != null) {
+                var c = fc.getOrdenCompra().getCliente();
+                if (c.getNombre() != null || c.getApellido() != null) {
+                    customerName = ((c.getNombre() != null ? c.getNombre() : "") + " " + (c.getApellido() != null ? c.getApellido() : "")).trim();
+                }
+                if (c.getDireccion() != null && !c.getDireccion().isEmpty()) {
+                    for (var dir : c.getDireccion()) {
+                        if (dir != null && !dir.isEliminado() && dir.getCalle() != null && !dir.getCalle().isBlank()) {
+                            shippingAddress = (dir.getCalle().trim() + " " + (dir.getNumeracion() != null ? dir.getNumeracion().trim() : "")).trim();
+                            if (dir.getLocalidad() != null) {
+                                shippingCity = dir.getLocalidad().getNombre() != null ? dir.getLocalidad().getNombre().trim() : "";
+                                shippingZip = dir.getLocalidad().getCodigoPostal() != null ? dir.getLocalidad().getCodigoPostal().trim() : "";
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+
         java.time.LocalDateTime fechaHora = factura.getFechaFactura() != null ? factura.getFechaFactura() : java.time.LocalDateTime.now();
         String fechaStr = fechaHora.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
 
-        String shippingAddress = factura.getShippingAddress();
-        String shippingCity = factura.getShippingCity();
-        String shippingZip = factura.getShippingZip();
         StringBuilder addressBuilder = new StringBuilder();
-        if (shippingAddress != null && !shippingAddress.isBlank()) {
+        if (!shippingAddress.isBlank()) {
             addressBuilder.append(shippingAddress.trim());
-            if (shippingCity != null && !shippingCity.isBlank()) {
+            if (!shippingCity.isBlank()) {
                 addressBuilder.append(", ").append(shippingCity.trim());
             }
-            if (shippingZip != null && !shippingZip.isBlank()) {
+            if (!shippingZip.isBlank()) {
                 addressBuilder.append(" (CP: ").append(shippingZip.trim()).append(")");
             }
         }
@@ -189,8 +215,16 @@ public class EmailService {
             """);
         }
 
-        String subtotalStr = String.format(java.util.Locale.US, "$%.2f", factura.getSubtotal());
-        String totalStr = String.format(java.util.Locale.US, "$%.2f", factura.getTotalAmount());
+        double subtotalVal = 0.0;
+        if (factura.getDetalles() != null && !factura.getDetalles().isEmpty()) {
+            subtotalVal = factura.getDetalles().stream().mapToDouble(com.example.zero.entidades.compra.Detalle::getSubtotal).sum();
+        } else {
+            subtotalVal = factura.getTotalPagado();
+        }
+        double totalAmountVal = factura.getTotalPagado();
+
+        String subtotalStr = String.format(java.util.Locale.US, "$%.2f", subtotalVal);
+        String totalStr = String.format(java.util.Locale.US, "$%.2f", totalAmountVal);
 
         String bloqueDireccion = "";
         if (!direccionEnvio.isBlank()) {

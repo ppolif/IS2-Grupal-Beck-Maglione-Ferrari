@@ -47,7 +47,7 @@
             <td>
               <div class="media">
                 <div class="d-flex mr-3">
-                  <img th:src="${item.producto != null ? item.producto.imagenUrl : '/shop/img/cart.jpg'}"
+                  <img th:src="${item.producto != null && item.producto.imagenes != null && !item.producto.imagenes.isEmpty() ? '/imagen/' + item.producto.imagenes[0].id : '/shop/img/cart.jpg'}"
                        src="/shop/img/cart.jpg"
                        onerror="this.src='/shop/img/cart.jpg'"
                        th:alt="${item.producto != null ? item.producto.nombre : 'Producto'}"

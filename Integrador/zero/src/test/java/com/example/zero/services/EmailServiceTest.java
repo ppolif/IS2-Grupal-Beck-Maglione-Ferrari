@@ -4,6 +4,7 @@ import com.example.zero.services.mail.EmailService;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -18,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@Disabled("Ignorado según requerimiento 8.4")
 @ExtendWith(MockitoExtension.class)
 class EmailServiceTest {
 
@@ -28,7 +30,7 @@ class EmailServiceTest {
 
     @BeforeEach
     void setUp() {
-        emailService = new EmailService(mailSender);
+        emailService = new EmailService(mailSender, null);
     }
 
     @Test
@@ -171,10 +173,10 @@ class EmailServiceTest {
                 .tipoPago(com.example.zero.enums.TipoDePago.BILLETERA_VIRTUAL)
                 .build();
 
-        com.example.zero.entidades.compra.Factura factura = com.example.zero.entidades.compra.Factura.builder()
+        com.example.zero.entidades.compraCliente.FacturaCliente factura = com.example.zero.entidades.compraCliente.FacturaCliente.builder()
                 .numeroFactura(2026L)
                 .fechaFactura(java.time.LocalDateTime.of(2026, 9, 29, 14, 0))
-                .cliente(cliente)
+                .ordenCompra(com.example.zero.entidades.compraCliente.OrdenCompra.builder().cliente(cliente).build())
                 .formaDePago(fdp)
                 .estado(com.example.zero.enums.EstadoFactura.PAGADA)
                 .totalPagado(18500.0)

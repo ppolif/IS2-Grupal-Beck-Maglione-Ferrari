@@ -182,8 +182,10 @@ public class MercadoPagoService {
             if (cliente != null && cliente.getNumeroDocumento() != null) {
                 List<Factura> facturas = facturaRepository.findByEliminadoFalseOrderByFechaFacturaDesc();
                 for (Factura f : facturas) {
-                    if (f.getCliente() != null && cliente.getNumeroDocumento().equals(f.getCliente().getNumeroDocumento())) {
-                        return f;
+                    if (f instanceof com.example.zero.entidades.compraCliente.FacturaCliente fc && fc.getOrdenCompra() != null && fc.getOrdenCompra().getCliente() != null) {
+                        if (cliente.getNumeroDocumento().equals(fc.getOrdenCompra().getCliente().getNumeroDocumento())) {
+                            return f;
+                        }
                     }
                 }
             }
@@ -195,8 +197,10 @@ public class MercadoPagoService {
             List<Factura> facturas = facturaRepository.findByEliminadoFalseOrderByFechaFacturaDesc();
             if (orden.getCliente() != null && orden.getCliente().getNumeroDocumento() != null) {
                 for (Factura f : facturas) {
-                    if (f.getCliente() != null && orden.getCliente().getNumeroDocumento().equals(f.getCliente().getNumeroDocumento())) {
-                        return f;
+                    if (f instanceof com.example.zero.entidades.compraCliente.FacturaCliente fc && fc.getOrdenCompra() != null && fc.getOrdenCompra().getCliente() != null) {
+                        if (orden.getCliente().getNumeroDocumento().equals(fc.getOrdenCompra().getCliente().getNumeroDocumento())) {
+                            return f;
+                        }
                     }
                 }
             }

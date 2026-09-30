@@ -1,13 +1,20 @@
 package com.example.zero.entidades.empresa;
 
 import com.example.zero.enums.TipoTelefono;
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-@Data
-@EqualsAndHashCode(callSuper = true)
 @Entity
+@Table(name = "contacto_telefonico")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
 public class ContactoTelefonico extends Contacto {
     private String telefono;
 

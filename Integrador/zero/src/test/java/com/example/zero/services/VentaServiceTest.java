@@ -3,6 +3,8 @@ package com.example.zero.services;
 import com.example.zero.entidades.compra.Detalle;
 import com.example.zero.entidades.compra.Factura;
 import com.example.zero.entidades.compra.FormaDePago;
+import com.example.zero.entidades.compraCliente.FacturaCliente;
+import com.example.zero.entidades.compraCliente.OrdenCompra;
 import com.example.zero.entidades.persona.Cliente;
 import com.example.zero.entidades.persona.Nacionalidad;
 import com.example.zero.entidades.producto.Producto;
@@ -161,7 +163,8 @@ class VentaServiceTest {
         assertEquals(1051L, resultado.getNumeroFactura());
         assertEquals(5000.0, resultado.getTotalPagado());
         assertEquals(EstadoFactura.PAGADA, resultado.getEstado());
-        assertEquals(clienteExistente, resultado.getCliente());
+        assertTrue(resultado instanceof FacturaCliente);
+        assertEquals(clienteExistente, ((FacturaCliente) resultado).getOrdenCompra().getCliente());
         assertEquals(formaExistente, resultado.getFormaDePago());
         assertEquals(1, resultado.getDetalles().size());
 
@@ -413,8 +416,9 @@ class VentaServiceTest {
     @Test
     void listarComprasCliente_conClienteValido_retornaFacturasOrdenadas() {
         Cliente cliente = Cliente.builder().numeroDocumento("12345678").nombre("Lionel").build();
-        Factura f1 = Factura.builder().id("fac-1").numeroFactura(101L).cliente(cliente).build();
-        Factura f2 = Factura.builder().id("fac-2").numeroFactura(102L).cliente(cliente).build();
+        OrdenCompra orden = OrdenCompra.builder().cliente(cliente).build();
+        Factura f1 = FacturaCliente.builder().id("fac-1").numeroFactura(101L).ordenCompra(orden).build();
+        Factura f2 = FacturaCliente.builder().id("fac-2").numeroFactura(102L).ordenCompra(orden).build();
 
         when(facturaRepository.findByClienteOrderByFechaFacturaDesc(cliente))
                 .thenReturn(List.of(f2, f1));

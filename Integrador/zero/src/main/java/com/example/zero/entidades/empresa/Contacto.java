@@ -2,12 +2,18 @@ package com.example.zero.entidades.empresa;
 
 import com.example.zero.enums.TipoContacto;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.UuidGenerator;
 
-@Data
 @Entity
+@Table(name = "contacto")
 @Inheritance(strategy = InheritanceType.JOINED)
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
 public abstract class Contacto {
     @Id
     @UuidGenerator

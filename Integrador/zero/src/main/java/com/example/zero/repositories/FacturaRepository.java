@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.example.zero.entidades.compraCliente.FacturaCliente;
 import com.example.zero.entidades.persona.Cliente;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -43,11 +44,10 @@ public interface FacturaRepository extends JpaRepository<Factura, String> {
            "ORDER BY f.fechaFactura DESC")
     List<Factura> findVentasEntreFechas(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
-    @Query("SELECT f FROM Factura f " +
-           "WHERE f.cliente = :cliente " +
-           "AND (f.eliminado = false OR f.eliminado IS NULL) " +
-           "AND TYPE(f) != FacturaProveedor " +
-           "ORDER BY f.fechaFactura DESC")
+    @Query("SELECT fc FROM FacturaCliente fc " +
+           "WHERE fc.ordenCompra.cliente = :cliente " +
+           "AND (fc.eliminado = false OR fc.eliminado IS NULL) " +
+           "ORDER BY fc.fechaFactura DESC")
     List<Factura> findByClienteOrderByFechaFacturaDesc(@Param("cliente") Cliente cliente);
 }
 

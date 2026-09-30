@@ -78,43 +78,42 @@
 
         <!-- Filas dinámicas -->
         <tr th:each="order : ${orders}">
-          <td class="ps-3 fw-bold text-brand-dark" th:text="${order.numeroFactura != null ? '#FAC-' + order.numeroFactura : order.orderNumber}">#FAC-1001</td>
+          <td class="ps-3 fw-bold text-brand-dark" th:text="${order.numeroFactura != null ? '#FAC-' + order.numeroFactura : '#FAC-' + order.id}">#FAC-1001</td>
           <td>
-            <span th:if="${order.isCompraProveedor()}" class="badge bg-info bg-opacity-10 text-primary border border-info border-opacity-25 px-2 py-1">
+            <span th:if="${@ventaService.esCompraProveedor(order)}" class="badge bg-info bg-opacity-10 text-primary border border-info border-opacity-25 px-2 py-1">
               <i class="bi bi-truck me-1"></i>Compra Proveedor
             </span>
-            <span th:unless="${order.isCompraProveedor()}" class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">
+            <span th:unless="${@ventaService.esCompraProveedor(order)}" class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">
               <i class="bi bi-cart-check me-1"></i>Venta Cliente
             </span>
           </td>
           <td>
             <div class="d-flex align-items-center gap-2">
-              <div th:if="${order.isCompraProveedor()}" class="rounded-circle bg-light border d-flex align-items-center justify-content-center text-primary" style="width: 36px; height: 36px; min-width: 36px;">
+              <div th:if="${@ventaService.esCompraProveedor(order)}" class="rounded-circle bg-light border d-flex align-items-center justify-content-center text-primary" style="width: 36px; height: 36px; min-width: 36px;">
                 <i class="bi bi-building"></i>
               </div>
-              <img th:unless="${order.isCompraProveedor()}"
-                   th:src="${order.customerAvatar != null && !order.customerAvatar.isBlank()} ? ${order.customerAvatar} : @{/admin/assets/images/avatar.png}"
-                   alt="Avatar" class="rounded-circle border" width="36" height="36" style="object-fit: cover;"
-                   onerror="this.src='/admin/assets/images/avatar.png'">
+              <img th:unless="${@ventaService.esCompraProveedor(order)}"
+                   th:src="@{/admin/assets/images/avatar.png}"
+                   alt="Avatar" class="rounded-circle border" width="36" height="36" style="object-fit: cover;">
               <div>
-                <div class="small fw-bold text-brand-dark" th:text="${order.customerName}">Eleanor Pena</div>
-                <div class="text-muted" style="font-size: 0.75rem;" th:text="${order.customerEmail}">eleanor@example.com</div>
+                <div class="small fw-bold text-brand-dark" th:text="${@ventaService.obtenerNombreComprobante(order)}">Eleanor Pena</div>
+                <div class="text-muted" style="font-size: 0.75rem;" th:text="${@ventaService.obtenerEmailComprobante(order)}">eleanor@example.com</div>
               </div>
             </div>
           </td>
-          <td class="small fw-semibold text-truncate" style="max-width: 250px;" th:text="${order.productSummary}" th:title="${order.productSummary}">Oversized Hoodie</td>
-          <td class="small fw-bold text-brand-bold">$<span th:text="${#numbers.formatDecimal(order.totalAmount != null ? order.totalAmount : 0, 1, 'POINT', 2, 'POINT')}">89.90</span></td>
+          <td class="small fw-semibold text-truncate" style="max-width: 250px;" th:text="${@ventaService.obtenerResumenProductos(order)}" th:title="${@ventaService.obtenerResumenProductos(order)}">Oversized Hoodie</td>
+          <td class="small fw-bold text-brand-bold">$<span th:text="${#numbers.formatDecimal(order.totalPagado != null ? order.totalPagado : 0, 1, 'POINT', 2, 'POINT')}">89.90</span></td>
           <td>
             <span class="badge"
-                  th:classappend="${order.status == 'PAGADA' || order.status == 'ENTREGADA' || order.status == 'Completado' ? 'bg-success text-white' : (order.status == 'SIN_DEFINIR' || order.status == 'Pendiente' ? 'bg-warning text-dark' : (order.status == 'ANULADA' ? 'bg-danger text-white' : 'bg-secondary text-white'))}"
-                  th:text="${order.status}">PAGADA</span>
+                  th:classappend="${order.estado != null and (order.estado.name() == 'PAGADA' or order.estado.name() == 'ENTREGADA') ? 'bg-success text-white' : (order.estado != null and order.estado.name() == 'ANULADA' ? 'bg-danger text-white' : 'bg-warning text-dark')}"
+                  th:text="${order.estado != null ? order.estado.name() : 'PAGADA'}">PAGADA</span>
           </td>
           <td class="text-center pe-3">
             <div class="btn-group btn-group-sm">
               <a th:href="@{/admin/orders/{id}(id=${order.id})}" class="btn btn-outline-dark" title="Ver Factura / Comprobante">
                 <i class="bi bi-eye"></i>
               </a>
-              <form th:if="${order.isCompraProveedor() and (#strings.toString(order.estado) != 'ENTREGADA' and #strings.toString(order.estado) != 'ANULADA' and order.status != 'ENTREGADA' and order.status != 'ANULADA')}"
+              <form th:if="${@ventaService.esCompraProveedor(order) and (#strings.toString(order.estado) != 'ENTREGADA' and #strings.toString(order.estado) != 'ANULADA')}"
                     th:action="@{/admin/compras/{id}/entregar(id=${order.id})}" method="POST" class="d-inline"
                     onsubmit="return confirm('¿Confirmas la recepción de mercadería? Esta acción incrementará el stock de los productos incluidos.');">
                 <button type="submit" class="btn btn-outline-success" title="Marcar como entregada e ingresar stock">

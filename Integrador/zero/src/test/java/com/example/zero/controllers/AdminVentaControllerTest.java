@@ -3,6 +3,9 @@ package com.example.zero.controllers;
 import com.example.zero.entidades.compra.Detalle;
 import com.example.zero.entidades.compra.Factura;
 import com.example.zero.entidades.compra.FormaDePago;
+import com.example.zero.entidades.compraCliente.FacturaCliente;
+import com.example.zero.entidades.compraCliente.OrdenCompra;
+import com.example.zero.entidades.compraProveedor.FacturaProveedor;
 import com.example.zero.entidades.persona.Cliente;
 import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.entidades.producto.Categoria;
@@ -27,6 +30,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -160,12 +164,16 @@ class AdminVentaControllerTest {
     @Test
     void listOrders_conKeyword_filtraPorNombreOComprobante() {
         Cliente c1 = Cliente.builder().nombre("Carlos").apellido("Tevez").build();
-        Factura f1 = Factura.builder().id("f1").numeroFactura(1001L).cliente(c1).build();
+        OrdenCompra o1 = OrdenCompra.builder().cliente(c1).build();
+        Factura f1 = FacturaCliente.builder().id("f1").numeroFactura(1001L).ordenCompra(o1).build();
 
         Cliente c2 = Cliente.builder().nombre("Lionel").apellido("Messi").build();
-        Factura f2 = Factura.builder().id("f2").numeroFactura(1002L).cliente(c2).build();
+        OrdenCompra o2 = OrdenCompra.builder().cliente(c2).build();
+        Factura f2 = FacturaCliente.builder().id("f2").numeroFactura(1002L).ordenCompra(o2).build();
 
         when(ventaService.listarVentas()).thenReturn(List.of(f1, f2));
+        when(ventaService.obtenerNombreComprobante(f1)).thenReturn("Carlos Tevez");
+        when(ventaService.obtenerNombreComprobante(f2)).thenReturn("Lionel Messi");
 
         String vista = controller.listOrders(model, "Lionel", null, null);
 
@@ -258,24 +266,23 @@ class AdminVentaControllerTest {
                 .tipoPago(TipoDePago.TARJETA_CREDITO)
                 .build();
 
-        Factura factura = Factura.builder()
+        OrdenCompra orden = OrdenCompra.builder().cliente(cliente).build();
+
+        FacturaCliente factura = FacturaCliente.builder()
                 .id("fac-123")
                 .numeroFactura(1055L)
                 .fechaFactura(LocalDateTime.of(2026, 9, 21, 10, 0))
                 .totalPagado(5000.0)
-                .cliente(cliente)
+                .ordenCompra(orden)
                 .formaDePago(forma)
                 .detalles(new HashSet<>(List.of(detalle)))
                 .build();
 
-        assertEquals("#ORD-1055", factura.getOrderNumber());
         assertEquals(1055L, factura.getNumeroFactura());
-        assertEquals("Carlos Perez", factura.getCustomerName());
-        assertEquals("carlos@example.com", factura.getCustomerEmail());
-        assertEquals("https://ejemplo.com/avatar.jpg", factura.getCustomerAvatar());
-        assertEquals("TARJETA CREDITO", factura.getPaymentMethod());
-        assertEquals(5000.0, factura.getTotalAmount());
-        assertEquals(1, factura.getItems().size());
+        assertEquals("Carlos", factura.getOrdenCompra().getCliente().getNombre());
+        assertEquals(TipoDePago.TARJETA_CREDITO, factura.getFormaDePago().getTipoPago());
+        assertEquals(5000.0, factura.getTotalPagado());
+        assertEquals(1, factura.getDetalles().size());
         assertEquals("Zapatillas Nike", detalle.getProducto().getNombre());
         assertEquals(2, detalle.getCantidad());
         assertEquals(2500.0, Math.round((detalle.getSubtotal() / detalle.getCantidad()) * 100.0) / 100.0);
@@ -316,9 +323,7 @@ class AdminVentaControllerTest {
         verify(model).addAttribute("proveedor", prov);
         verify(model).addAttribute(eq("sucursal"), any());
 
-        assertEquals(true, fp.isCompraProveedor());
-        assertEquals("Textil Central S.A.", fp.getCustomerName());
-        assertEquals("CUIT: 30-11223344-5", fp.getCustomerEmail());
+        assertTrue(fp instanceof FacturaProveedor);
         assertEquals("Textil Central S.A.", fp.getProveedor().getRazonSocial());
         assertEquals("30-11223344-5", fp.getProveedor().getCuit());
     }

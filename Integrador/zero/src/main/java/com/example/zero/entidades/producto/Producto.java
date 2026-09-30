@@ -70,14 +70,5 @@ public class Producto {
     @JoinColumn(name = "subcategoria_id", nullable = false)
     private SubCategoria subCategoria;
 
-    public String getImagenUrl() {
-        if (imagenes != null && !imagenes.isEmpty()) {
-            for (Imagen img : imagenes) {
-                if (img != null && !img.isEliminado() && img.getId() != null) {
-                    return "/imagen/" + img.getId();
-                }
-            }
-        }
-        return "/shop/img/product/p1.jpg";
-    }
+
 }

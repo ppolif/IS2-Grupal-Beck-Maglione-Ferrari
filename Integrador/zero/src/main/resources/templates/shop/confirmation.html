@@ -26,10 +26,10 @@
         <div class="details_item shadow-sm p-4 rounded bg-light h-100">
           <h4>Detalles de la Orden</h4>
           <ul class="list list-unstyled mt-3">
-            <li class="mb-2"><span>Número de Orden</span> : <strong class="text-brand-dark" th:text="${order != null && order.orderNumber != null} ? ${order.orderNumber} : '#ORD-60235'">#ORD-60235</strong></li>
-            <li class="mb-2"><span>Fecha</span> : <span th:text="${order != null && order.createdAt != null} ? ${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')} : '11/09/2026'">11/09/2026</span></li>
-            <li class="mb-2"><span>Total</span> : <strong class="text-brand-bold" th:text="${order != null && order.totalAmount != null} ? ('$' + ${#numbers.formatDecimal(order.totalAmount, 1, 'POINT', 2, 'POINT')}) : '$2,210.00'">$2,210.00</strong></li>
-            <li class="mb-2"><span>Método de Pago</span> : <span th:text="${order != null && order.paymentMethod != null} ? ${order.paymentMethod} : 'Tarjeta de Crédito'">Tarjeta de Crédito</span></li>
+            <li class="mb-2"><span>Número de Orden</span> : <strong class="text-brand-dark" th:text="${order != null && order.numeroFactura != null} ? ('#ORD-' + order.numeroFactura) : '#ORD-60235'">#ORD-60235</strong></li>
+            <li class="mb-2"><span>Fecha</span> : <span th:text="${order != null && order.fechaFactura != null} ? ${#temporals.format(order.fechaFactura, 'dd/MM/yyyy HH:mm')} : '11/09/2026'">11/09/2026</span></li>
+            <li class="mb-2"><span>Total</span> : <strong class="text-brand-bold" th:text="${order != null && order.totalPagado != null} ? ('$' + ${#numbers.formatDecimal(order.totalPagado, 1, 'POINT', 2, 'POINT')}) : '$2,210.00'">$2,210.00</strong></li>
+            <li class="mb-2"><span>Método de Pago</span> : <span th:text="${order != null && order.formaDePago != null && order.formaDePago.tipoPago != null} ? ${order.formaDePago.tipoPago} : 'Tarjeta de Crédito'">Tarjeta de Crédito</span></li>
           </ul>
         </div>
       </div>
@@ -39,9 +39,9 @@
         <div class="details_item shadow-sm p-4 rounded bg-light h-100">
           <h4>Datos del Cliente</h4>
           <ul class="list list-unstyled mt-3">
-            <li class="mb-2"><span>Cliente</span> : <strong th:text="${order != null && order.customerName != null} ? ${order.customerName} : 'Juan Pérez'">Juan Pérez</strong></li>
-            <li class="mb-2"><span>Email</span> : <span th:text="${order != null && order.customerEmail != null} ? ${order.customerEmail} : 'juan.perez@email.com'">juan.perez@email.com</span></li>
-            <li class="mb-2"><span>Teléfono</span> : <span th:text="${order != null && order.customerPhone != null} ? ${order.customerPhone} : '+54 11 1234-5678'">+54 11 1234-5678</span></li>
+            <li class="mb-2"><span>Cliente</span> : <strong th:text="${customerName != null && !customerName.isBlank()} ? ${customerName} : 'Juan Pérez'">Juan Pérez</strong></li>
+            <li class="mb-2"><span>Email</span> : <span th:text="${customerEmail != null && !customerEmail.isBlank()} ? ${customerEmail} : 'juan.perez@email.com'">juan.perez@email.com</span></li>
+            <li class="mb-2"><span>Teléfono</span> : <span th:text="${customerPhone != null && !customerPhone.isBlank()} ? ${customerPhone} : '+54 11 1234-5678'">+54 11 1234-5678</span></li>
           </ul>
         </div>
       </div>
@@ -51,9 +51,9 @@
         <div class="details_item shadow-sm p-4 rounded bg-light h-100">
           <h4>Dirección de Entrega</h4>
           <ul class="list list-unstyled mt-3">
-            <li class="mb-2"><span>Dirección</span> : <span th:text="${order != null && order.shippingAddress != null} ? ${order.shippingAddress} : 'Av. Corrientes 1234'">Av. Corrientes 1234</span></li>
-            <li class="mb-2"><span>Ciudad</span> : <span th:text="${order != null && order.shippingCity != null} ? ${order.shippingCity} : 'Buenos Aires'">Buenos Aires</span></li>
-            <li class="mb-2"><span>Código Postal</span> : <span th:text="${order != null && order.shippingZip != null} ? ${order.shippingZip} : 'C1043'">C1043</span></li>
+            <li class="mb-2"><span>Dirección</span> : <span th:text="${shippingAddress != null && !shippingAddress.isBlank()} ? ${shippingAddress} : 'Av. Corrientes 1234'">Av. Corrientes 1234</span></li>
+            <li class="mb-2"><span>Ciudad</span> : <span th:text="${shippingCity != null && !shippingCity.isBlank()} ? ${shippingCity} : 'Buenos Aires'">Buenos Aires</span></li>
+            <li class="mb-2"><span>Código Postal</span> : <span th:text="${shippingZip != null && !shippingZip.isBlank()} ? ${shippingZip} : 'C1043'">C1043</span></li>
           </ul>
         </div>
       </div>
@@ -73,20 +73,14 @@
           </thead>
           <tbody>
           <!-- Iteración de productos de la orden si existen -->
-          <tr th:if="${order != null && !#lists.isEmpty(order.items)}" th:each="line : ${order.items}">
-<<<<<<< HEAD
-            <td><p class="font-weight-bold mb-0" th:text="${line.productName}">Indumentaria Deportiva</p></td>
-            <td class="text-center"><h5 th:text="'x ' + ${line.quantity}">x 01</h5></td>
-            <td class="text-right"><p class="mb-0">$<span th:text="${#numbers.formatDecimal(line.totalPrice != null ? line.totalPrice : 0, 1, 'POINT', 2, 'POINT')}">720.00</span></p></td>
-=======
+          <tr th:if="${(factura != null and !#lists.isEmpty(factura.detalles)) or (order != null and order.detalles != null and !#lists.isEmpty(order.detalles))}" th:each="line : ${factura != null ? factura.detalles : order.detalles}">
             <td><p class="font-weight-bold mb-0" th:text="${line.producto != null ? line.producto.nombre : 'Producto'}">Indumentaria Deportiva</p></td>
             <td class="text-center"><h5 th:text="'x ' + ${line.cantidad}">x 01</h5></td>
-            <td class="text-right"><p class="mb-0" th:text="${#numbers.formatCurrency(line.subtotal)}">$720.00</p></td>
->>>>>>> augusto
+            <td class="text-right"><p class="mb-0">$<span th:text="${#numbers.formatDecimal(line.subtotal != null ? line.subtotal : 0, 1, 'POINT', 2, 'POINT')}">720.00</span></p></td>
           </tr>
 
           <!-- Placeholder fallback si no viene objeto del backend aún -->
-          <tr th:if="${order == null || #lists.isEmpty(order.items)}">
+          <tr th:if="${(factura == null or #lists.isEmpty(factura.detalles)) and (order == null or order.detalles == null or #lists.isEmpty(order.detalles))}">
             <td><p class="font-weight-bold mb-0">Zapatillas Zero Nitro Running</p></td>
             <td class="text-center"><h5>x 02</h5></td>
             <td class="text-right"><p class="mb-0">$180.00</p></td>
@@ -96,12 +90,12 @@
           <tr>
             <td><h4>Subtotal</h4></td>
             <td></td>
-            <td class="text-right"><p class="font-weight-bold mb-0" th:text="${order != null && order.subtotal != null} ? ('$' + ${#numbers.formatDecimal(order.subtotal, 1, 'POINT', 2, 'POINT')}) : '$180.00'">$180.00</p></td>
+            <td class="text-right"><p class="font-weight-bold mb-0" th:text="${(factura != null && factura.totalPagado != null) ? ('$' + #numbers.formatDecimal(factura.totalPagado, 1, 'POINT', 2, 'POINT')) : ((order != null && order.totalPagado != null) ? ('$' + #numbers.formatDecimal(order.totalPagado, 1, 'POINT', 2, 'POINT')) : '$180.00')}">$180.00</p></td>
           </tr>
           <tr>
             <td><h3 class="text-brand-dark">Total Abonado</h3></td>
             <td></td>
-            <td class="text-right"><h3 class="text-brand-bold font-weight-bold" th:text="${order != null && order.totalAmount != null} ? ('$' + ${#numbers.formatDecimal(order.totalAmount, 1, 'POINT', 2, 'POINT')}) : '$180.00'">$180.00</h3></td>
+            <td class="text-right"><h3 class="text-brand-bold font-weight-bold" th:text="${(factura != null && factura.totalPagado != null) ? ('$' + #numbers.formatDecimal(factura.totalPagado, 1, 'POINT', 2, 'POINT')) : ((order != null && order.totalPagado != null) ? ('$' + #numbers.formatDecimal(order.totalPagado, 1, 'POINT', 2, 'POINT')) : '$180.00')}">$180.00</h3></td>
           </tr>
           </tbody>
         </table>

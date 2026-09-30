@@ -1,12 +1,17 @@
 package com.example.zero.entidades.zona;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
-import java.util.List;
 
-@Data
 @Entity
+@Table(name = "departamento")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@ToString(exclude = "provincia")
 public class Departamento {
     @Id
     @UuidGenerator
@@ -15,8 +20,7 @@ public class Departamento {
     private String nombre;
     private boolean eliminado;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "provincia_id")
     private Provincia provincia;
-
 }

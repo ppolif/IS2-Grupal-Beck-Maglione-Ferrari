@@ -10,6 +10,7 @@ import com.example.zero.services.persona.ClienteService;
 import com.example.zero.services.StockService;
 import com.example.zero.entidades.compraProveedor.FacturaProveedor;
 import com.example.zero.entidades.empresa.Empresa;
+import com.example.zero.entidades.persona.Cliente;
 import com.example.zero.enums.TipoEmpresa;
 import com.example.zero.services.EmpresaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,12 +33,13 @@ public class AdminVentaController {
     private final ClienteService clienteService;
     private final StockService stockService;
     private final EmpresaService empresaService;
+    private final com.example.zero.services.ContactoService contactoService;
 
     public AdminVentaController(VentaService ventaService,
                                 ProductoService productoService,
                                 ClienteService clienteService,
                                 StockService stockService) {
-        this(ventaService, productoService, clienteService, stockService, null);
+        this(ventaService, productoService, clienteService, stockService, null, null);
     }
 
     @Autowired
@@ -45,12 +47,14 @@ public class AdminVentaController {
                                 ProductoService productoService,
                                 ClienteService clienteService,
                                 StockService stockService,
-                                @Autowired(required = false) EmpresaService empresaService) {
+                                @Autowired(required = false) EmpresaService empresaService,
+                                @Autowired(required = false) com.example.zero.services.ContactoService contactoService) {
         this.ventaService = ventaService;
         this.productoService = productoService;
         this.clienteService = clienteService;
         this.stockService = stockService;
         this.empresaService = empresaService;
+        this.contactoService = contactoService;
     }
 
     /**
@@ -68,7 +72,7 @@ public class AdminVentaController {
             } catch (Exception ignored) {
             }
             int stock = (stockService != null) ? stockService.calcularStockActual(p.getId()) : 0;
-            dtos.add(com.example.zero.dto.producto.ProductoDTO.de(p, precio, stock, stockService));
+            dtos.add(com.example.zero.dto.producto.ProductoDTO.de(p, precio, stock, stockService, productoService));
         }
 
         model.addAttribute("productos", dtos);
@@ -114,7 +118,7 @@ public class AdminVentaController {
                 } catch (Exception ignored) {
                 }
                 int stock = (stockService != null) ? stockService.calcularStockActual(p.getId()) : 0;
-                dtos.add(com.example.zero.dto.producto.ProductoDTO.de(p, precio, stock, stockService));
+                dtos.add(com.example.zero.dto.producto.ProductoDTO.de(p, precio, stock, stockService, productoService));
             }
             model.addAttribute("productos", dtos);
             model.addAttribute("clientes", clienteService.listarActivos());
@@ -138,9 +142,13 @@ public class AdminVentaController {
             if (f == null) continue;
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = keyword.trim().toLowerCase();
-                boolean matchName = f.getCustomerName() != null && f.getCustomerName().toLowerCase().contains(kw);
-                boolean matchOrder = f.getOrderNumber() != null && f.getOrderNumber().toLowerCase().contains(kw);
-                boolean matchEmail = f.getCustomerEmail() != null && f.getCustomerEmail().toLowerCase().contains(kw);
+                String nombreComp = ventaService.obtenerNombreComprobante(f);
+                String emailComp = ventaService.obtenerEmailComprobante(f);
+                String numFacturaStr = f.getNumeroFactura() != null ? "#ORD-" + f.getNumeroFactura() : f.getId();
+
+                boolean matchName = nombreComp != null && nombreComp.toLowerCase().contains(kw);
+                boolean matchOrder = numFacturaStr != null && numFacturaStr.toLowerCase().contains(kw);
+                boolean matchEmail = emailComp != null && emailComp.toLowerCase().contains(kw);
                 if (matchName || matchOrder || matchEmail) {
                     orders.add(f);
                 }
@@ -194,6 +202,39 @@ public class AdminVentaController {
         model.addAttribute("factura", factura);
         model.addAttribute("order", factura);
         model.addAttribute("esCompraProveedor", esCompraProveedor);
+
+        String customerName = ventaService.obtenerNombreComprobante(factura);
+        String customerEmail = ventaService.obtenerEmailComprobante(factura);
+        String productSummary = ventaService.obtenerResumenProductos(factura);
+        Cliente cliente = ventaService.obtenerClienteDeFactura(factura);
+
+        String customerPhone = "";
+        String shippingAddress = "";
+        if (cliente != null) {
+            if (contactoService != null) {
+                customerPhone = contactoService.obtenerTelefonoPrincipal(cliente).orElse("");
+            }
+            if (cliente.getDireccion() != null) {
+                for (var dir : cliente.getDireccion()) {
+                    if (dir != null && !dir.isEliminado() && dir.getCalle() != null && !dir.getCalle().isBlank()) {
+                        String calle = dir.getCalle().trim();
+                        String num = dir.getNumeracion() != null ? dir.getNumeracion().trim() : "";
+                        shippingAddress = (calle + " " + num).trim();
+                        if (dir.getLocalidad() != null && dir.getLocalidad().getNombre() != null) {
+                            shippingAddress += ", " + dir.getLocalidad().getNombre().trim();
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        model.addAttribute("cliente", cliente);
+        model.addAttribute("customerName", customerName);
+        model.addAttribute("customerEmail", customerEmail);
+        model.addAttribute("customerPhone", customerPhone);
+        model.addAttribute("shippingAddress", shippingAddress);
+        model.addAttribute("productSummary", productSummary);
 
         if (esCompraProveedor) {
             FacturaProveedor fp = (FacturaProveedor) factura;

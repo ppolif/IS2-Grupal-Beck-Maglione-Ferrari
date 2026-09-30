@@ -68,16 +68,16 @@
             <!-- Cabecera de la Orden -->
             <div class="card-header bg-dark text-white p-3 d-flex flex-wrap justify-content-between align-items-center">
               <div class="d-flex align-items-center flex-wrap gap-2">
-                <span class="badge badge-warning text-dark font-weight-bold mr-2" style="font-size: 13px;" th:text="${compra.orderNumber}">#ORD-0000</span>
+                <span class="badge badge-warning text-dark font-weight-bold mr-2" style="font-size: 13px;" th:text="${compra.numeroFactura != null ? '#ORD-' + compra.numeroFactura : compra.id}">#ORD-0000</span>
                 <span class="text-white-50 small mr-3">
                   <i class="fa fa-calendar mr-1"></i>
                   <span th:text="${compra.fechaFactura != null ? #temporals.format(compra.fechaFactura, 'dd/MM/yyyy HH:mm') + ' hs' : 'Fecha no registrada'}">01/01/2026 12:00 hs</span>
                 </span>
-                <span class="badge badge-success px-2 py-1 font-weight-bold" th:text="${compra.status}">PAGADA</span>
+                <span class="badge badge-success px-2 py-1 font-weight-bold" th:text="${compra.estado}">PAGADA</span>
               </div>
               <div class="mt-2 mt-sm-0">
                 <span class="small text-white-50 mr-2">Medio de Pago:</span>
-                <span class="font-weight-bold text-white small" th:text="${compra.paymentMethod}">Billetera Virtual</span>
+                <span class="font-weight-bold text-white small" th:text="${compra.formaDePago != null && compra.formaDePago.tipoPago != null ? compra.formaDePago.tipoPago : 'Efectivo'}">Billetera Virtual</span>
               </div>
             </div>
 
@@ -94,15 +94,15 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr th:each="item : ${compra.items}">
+                    <tr th:each="item : ${compra.detalles}">
                       <td class="pl-4 font-weight-bold text-dark align-middle">
-                        <span th:text="${item.productName}">Remera Deportiva</span>
+                        <span th:text="${item.producto != null ? item.producto.nombre : 'Producto'}">Remera Deportiva</span>
                       </td>
-                      <td class="text-center align-middle font-weight-bold text-muted" th:text="'x ' + ${item.quantity}">x 1</td>
-                      <td class="text-right align-middle text-muted" th:text="${#numbers.formatCurrency(item.unitPrice)}">$0.00</td>
-                      <td class="text-right align-middle font-weight-bold text-dark pr-4" th:text="${#numbers.formatCurrency(item.totalPrice)}">$0.00</td>
+                      <td class="text-center align-middle font-weight-bold text-muted" th:text="'x ' + ${item.cantidad}">x 1</td>
+                      <td class="text-right align-middle text-muted" th:text="${item.cantidad > 0 ? #numbers.formatCurrency(item.subtotal / item.cantidad) : '$0.00'}">$0.00</td>
+                      <td class="text-right align-middle font-weight-bold text-dark pr-4" th:text="${#numbers.formatCurrency(item.subtotal)}">$0.00</td>
                     </tr>
-                    <tr th:if="${compra.items == null || #lists.isEmpty(compra.items)}">
+                    <tr th:if="${compra.detalles == null || #lists.isEmpty(compra.detalles)}">
                       <td colspan="4" class="text-center text-muted py-3">Sin desglose de productos registrado</td>
                     </tr>
                   </tbody>
@@ -114,10 +114,10 @@
             <div class="card-footer bg-white border-top p-3 d-flex flex-wrap justify-content-between align-items-center">
               <div>
                 <span class="text-muted small">Total del Pedido: </span>
-                <h4 class="d-inline font-weight-bold text-dark mb-0 ml-1" th:text="${#numbers.formatCurrency(compra.totalAmount)}">$0.00</h4>
+                <h4 class="d-inline font-weight-bold text-dark mb-0 ml-1" th:text="${#numbers.formatCurrency(compra.totalPagado)}">$0.00</h4>
               </div>
               <div class="mt-2 mt-sm-0">
-                <a th:href="@{/shop/confirmation(orderNumber=${compra.orderNumber})}" class="btn btn-outline-dark btn-sm font-weight-bold px-3 py-2 mr-2">
+                <a th:href="@{/shop/confirmation(orderNumber=${compra.numeroFactura != null ? compra.numeroFactura : compra.id})}" class="btn btn-outline-dark btn-sm font-weight-bold px-3 py-2 mr-2">
                   <i class="fa fa-file-text-o mr-1"></i> Ver Comprobante
                 </a>
               </div>
