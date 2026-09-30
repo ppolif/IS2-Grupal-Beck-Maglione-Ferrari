@@ -4,7 +4,9 @@ import com.example.zero.entidades.persona.Cliente;
 import com.example.zero.entidades.persona.Nacionalidad;
 import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.enums.TipoDocumento;
+import com.example.zero.entidades.Imagen;
 import com.example.zero.repositories.ClienteRepository;
+import com.example.zero.repositories.UsuarioRepository;
 import com.example.zero.services.persona.ClienteService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +28,9 @@ class ClienteServiceTest {
 
     @Mock
     private ClienteRepository clienteRepository;
+
+    @Mock
+    private UsuarioRepository usuarioRepository;
 
     @InjectMocks
     private ClienteService clienteService;
@@ -104,13 +110,47 @@ class ClienteServiceTest {
         Cliente cliente = Cliente.builder().numeroDocumento("12345678").build();
         Usuario usuario = Usuario.builder().id("u-1").nombreUsuario("juan@zero.com").build();
         when(clienteRepository.findByNumeroDocumentoAndEliminadoFalse("12345678")).thenReturn(Optional.of(cliente));
-        when(clienteRepository.save(any(Cliente.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Usuario actualizado = clienteService.asociarClienteUsuario("12345678", usuario);
 
         // Se valida que el Usuario guarde la Persona a la que pertenece
         assertEquals(cliente, usuario.getPersona());
-        verify(clienteRepository, times(1)).save(cliente);
+        verify(usuarioRepository, times(1)).save(usuario);
+    }
+
+    @Test
+    void obtenerFotoPerfilCliente_conUsuarioAsociadoConFoto_retornaFotoUsuario() {
+        Cliente cliente = Cliente.builder().numeroDocumento("12345678").build();
+        Usuario usuario = Usuario.builder().id("u-1").foto("https://ejemplo.com/mifoto.jpg").build();
+        when(usuarioRepository.findByPersonaDocumentoAndEliminadoFalse("12345678")).thenReturn(List.of(usuario));
+
+        String foto = clienteService.obtenerFotoPerfilCliente(cliente);
+
+        assertEquals("https://ejemplo.com/mifoto.jpg", foto);
+    }
+
+    @Test
+    void obtenerFotoPerfilCliente_sinUsuarioPeroConImagen_retornaRutaImagen() {
+        Imagen img = Imagen.builder().id("img-99").eliminado(false).build();
+        Cliente cliente = Cliente.builder().numeroDocumento("12345678").imagen(List.of(img)).build();
+        when(usuarioRepository.findByPersonaDocumentoAndEliminadoFalse("12345678")).thenReturn(Collections.emptyList());
+
+        String foto = clienteService.obtenerFotoPerfilCliente(cliente);
+
+        assertEquals("/imagen/img-99", foto);
+    }
+
+    @Test
+    void obtenerFotoPerfilCliente_sinDatos_retornaAvatarPorDefecto() {
+        String fotoNull = clienteService.obtenerFotoPerfilCliente(null);
+        assertEquals("/admin/assets/images/avatar.png", fotoNull);
+
+        Cliente cliente = Cliente.builder().numeroDocumento("12345678").build();
+        when(usuarioRepository.findByPersonaDocumentoAndEliminadoFalse("12345678")).thenReturn(Collections.emptyList());
+
+        String fotoDefecto = clienteService.obtenerFotoPerfilCliente(cliente);
+        assertEquals("/admin/assets/images/avatar.png", fotoDefecto);
     }
 }
 

@@ -90,8 +90,8 @@ class MercadoPagoServiceTest {
                 .numeroDocumento("40123456")
                 .nombre("Martin")
                 .apellido("Palermo")
-                .usuario(usuario)
                 .build();
+        usuario.setPersona(cliente);
 
         Producto producto = Producto.builder().id("prod-10").nombre("Botines Zero").build();
         DetalleCompra item = DetalleCompra.builder()
@@ -107,6 +107,7 @@ class MercadoPagoServiceTest {
                 .id("oc-1")
                 .identificadorCompra("CART-1234")
                 .cliente(cliente)
+                .emailUsuario("cliente@test.com")
                 .estadoOrdenCompra(EstadoOrdenCompra.PENDIENTE_COMPLETAR)
                 .detalles(new ArrayList<>(List.of(item)))
                 .build();

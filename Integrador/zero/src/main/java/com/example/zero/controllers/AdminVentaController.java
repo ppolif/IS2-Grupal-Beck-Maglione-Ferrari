@@ -20,7 +20,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controlador para la gestión y registro de ventas y órdenes en el panel de administración.
@@ -157,9 +159,28 @@ public class AdminVentaController {
             }
         }
 
+        Map<String, String> imagenesPorOrder = new HashMap<>();
+        for (Factura f : orders) {
+            if (f != null && f.getId() != null) {
+                String imgUrl = "/admin/assets/images/avatar.png";
+                if (ventaService != null) {
+                    try {
+                        String foto = ventaService.obtenerFotoComprobante(f);
+                        if (foto != null && !foto.isBlank()) {
+                            imgUrl = foto;
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+                imagenesPorOrder.put(f.getId(), imgUrl);
+            }
+        }
+
         model.addAttribute("orders", orders);
         model.addAttribute("facturas", orders);
         model.addAttribute("keyword", keyword);
+        model.addAttribute("imagenesPorOrder", imagenesPorOrder);
+        model.addAttribute("ventaService", ventaService);
 
         if ("created".equals(success)) {
             model.addAttribute("successMessage", "Venta registrada exitosamente con su orden de compra.");
@@ -229,12 +250,31 @@ public class AdminVentaController {
             }
         }
 
+        String clienteFotoUrl = "/admin/assets/images/avatar.png";
+        if (ventaService != null) {
+            try {
+                String foto = ventaService.obtenerFotoComprobante(factura);
+                if (foto != null && !foto.isBlank()) {
+                    clienteFotoUrl = foto;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        Map<String, String> imagenesPorOrder = new HashMap<>();
+        if (factura.getId() != null) {
+            imagenesPorOrder.put(factura.getId(), clienteFotoUrl);
+        }
+
         model.addAttribute("cliente", cliente);
         model.addAttribute("customerName", customerName);
         model.addAttribute("customerEmail", customerEmail);
         model.addAttribute("customerPhone", customerPhone);
         model.addAttribute("shippingAddress", shippingAddress);
         model.addAttribute("productSummary", productSummary);
+        model.addAttribute("clienteFotoUrl", clienteFotoUrl);
+        model.addAttribute("imagenesPorOrder", imagenesPorOrder);
+        model.addAttribute("ventaService", ventaService);
 
         if (esCompraProveedor) {
             FacturaProveedor fp = (FacturaProveedor) factura;
