@@ -106,9 +106,10 @@ class ClienteServiceTest {
         when(clienteRepository.findByNumeroDocumentoAndEliminadoFalse("12345678")).thenReturn(Optional.of(cliente));
         when(clienteRepository.save(any(Cliente.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Cliente actualizado = clienteService.asociarClienteUsuario("12345678", usuario);
+        Usuario actualizado = clienteService.asociarClienteUsuario("12345678", usuario);
 
-        assertEquals(usuario, actualizado.getUsuario());
+        // Se valida que el Usuario guarde la Persona a la que pertenece
+        assertEquals(cliente, usuario.getPersona());
         verify(clienteRepository, times(1)).save(cliente);
     }
 }

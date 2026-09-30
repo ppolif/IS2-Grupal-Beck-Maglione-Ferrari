@@ -11,6 +11,7 @@ import com.example.zero.enums.RolUsuario;
 import com.example.zero.enums.TipoDocumento;
 import com.example.zero.repositories.*;
 import com.example.zero.services.producto.ProductoService;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,7 @@ public class OrdenCompraService {
     private final NacionalidadRepository nacionalidadRepository;
     private final UsuarioRepository usuarioRepository;
     private final StockService stockService;
+    private final HttpSession session;
 
     /**
      * Recalcula y asigna el total acumulado de una orden de compra sumando los subtotales
@@ -194,12 +196,17 @@ public class OrdenCompraService {
             return carrito;
         }
 
+        ///ahora hay que asociar mail asi que lo sacamos de la sesion
+        Usuario usuarioSession = (session != null) ? (Usuario) session.getAttribute("usuariosession") : null;
+        String emailUser = (usuarioSession != null) ? usuarioSession.getNombreUsuario() : null;
+
         OrdenCompra nuevoCarrito = OrdenCompra.builder()
                 .identificadorCompra("CART-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                 .fecha(new Date())
                 .total(0.0)
                 .estadoOrdenCompra(EstadoOrdenCompra.PENDIENTE_COMPLETAR)
                 .cliente(cliente)
+                .emailUsuario(emailUser)
                 .eliminado(false)
                 .detalles(new ArrayList<>())
                 .build();

@@ -37,7 +37,7 @@ import java.util.Set;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
-@ToString(exclude = "usuario")
+//@ToString(exclude = "usuario")
 public abstract class Persona {
 
 //    @Id
@@ -68,8 +68,8 @@ public abstract class Persona {
 
     // Relación 1 a 1 con Usuario
     // Usuario es el lado dueño de la FK (usuario.persona_id), ver clase Usuario.
-    @OneToOne(mappedBy = "persona", fetch = FetchType.LAZY)
-    private Usuario usuario;
+//    @OneToOne(mappedBy = "persona", fetch = FetchType.LAZY)
+//    private Usuario usuario;
 
      //una persona puede tener muchas fotos por borrado logico
      @OneToMany(fetch = FetchType.LAZY)

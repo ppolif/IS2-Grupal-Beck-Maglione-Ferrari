@@ -98,9 +98,10 @@ class EmpleadoServiceTest {
         when(empleadoRepository.findByNumeroDocumentoAndEliminadoFalse("20345678")).thenReturn(Optional.of(empleado));
         when(empleadoRepository.save(any(Empleado.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Empleado actualizado = empleadoService.asociarEmpleadoUsuario("20345678", usuario);
+        Usuario actualizado = empleadoService.asociarEmpleadoUsuario("20345678", usuario);
 
-        assertEquals(usuario, actualizado.getUsuario());
+        // Se valida que el Usuario guarde la Persona a la que pertenece
+        assertEquals(empleado, usuario.getPersona());
         verify(empleadoRepository, times(1)).save(empleado);
     }
 }
