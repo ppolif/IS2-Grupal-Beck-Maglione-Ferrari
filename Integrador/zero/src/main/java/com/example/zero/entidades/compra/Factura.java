@@ -1,5 +1,13 @@
 package com.example.zero.entidades.compra;
 
+
+
+import com.example.zero.entidades.empresa.Contacto;
+import com.example.zero.entidades.empresa.ContactoCorreoElectronico;
+import com.example.zero.entidades.empresa.ContactoTelefonico;
+import com.example.zero.entidades.persona.Cliente;
+import com.example.zero.entidades.persona.Empleado;
+import com.example.zero.entidades.zona.Direccion;
 import com.example.zero.enums.EstadoFactura;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -8,28 +16,28 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Inheritance;
-import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.UuidGenerator;
-
+import com.example.zero.entidades.compraProveedor.FacturaProveedor;
+import com.example.zero.entidades.compraProveedor.Proveedor;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Entidad Factura (anémica y limpia).
- * No contiene cliente, ni métodos derivados, ni formateo, ni lógica de negocio.
+ * Entidad Factura
  */
 @Entity
 @Table(name = "factura")
@@ -38,7 +46,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@ToString(exclude = {"formaDePago", "detalles"})
+@ToString(exclude = {"cliente", "formaDePago", "detalles"})
 public class Factura {
 
     @Id
@@ -49,6 +57,7 @@ public class Factura {
     @Column(name = "numero_factura", nullable = false, unique = true)
     private Long numeroFactura;
 
+    // El diagrama usa "Date"; se moderniza a LocalDateTime para JPA/Java actual.
     @Column(name = "fecha_factura", nullable = false)
     private LocalDateTime fechaFactura;
 
@@ -64,10 +73,16 @@ public class Factura {
     private boolean eliminado = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cliente_id")
+    private Cliente cliente;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "forma_de_pago_id", nullable = false)
     private FormaDePago formaDePago;
 
+    // Composición: los Detalles no existen sin su Factura.
     @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private Set<Detalle> detalles = new HashSet<>();
+
 }

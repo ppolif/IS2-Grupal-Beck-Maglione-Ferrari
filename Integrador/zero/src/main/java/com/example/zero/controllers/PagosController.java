@@ -84,40 +84,6 @@ public class PagosController {
         }
     }
 
-    /**
-     * Endpoint REST para consultar la URL de la pasarela si se requiere vía llamada asíncrona.
-     */
-    @GetMapping(value = "/api/mercadoPago/url")
-    @ResponseBody
-    public Map<String, String> obtenerUrlMercadoPago(HttpSession session, HttpServletRequest request) {
-        Map<String, String> response = new HashMap<>();
-        Usuario usuario = (Usuario) session.getAttribute("usuariosession");
-        if (usuario == null || usuario.getRol() != RolUsuario.CLIENTE) {
-            response.put("error", "Usuario no autorizado");
-            return response;
-        }
-
-        try {
-            Cliente cliente = ordenCompraService.obtenerOAsociarCliente(usuario);
-            OrdenCompra carrito = ordenCompraService.obtenerOCrearCarrito(cliente);
-
-            String scheme = request.getHeader("X-Forwarded-Proto") != null
-                    ? request.getHeader("X-Forwarded-Proto")
-                    : request.getScheme();
-            String host = request.getHeader("X-Forwarded-Host") != null
-                    ? request.getHeader("X-Forwarded-Host")
-                    : (request.getServerName() + ((request.getServerPort() == 80 || request.getServerPort() == 443) ? "" : ":" + request.getServerPort()));
-            String contextPath = request.getContextPath() != null ? request.getContextPath() : "";
-            String baseUrl = scheme + "://" + host + contextPath;
-
-            String initPoint = mercadoPagoService.crearPreferenciaParaCarrito(carrito, cliente, baseUrl);
-            response.put("url", initPoint);
-            return response;
-        } catch (Exception e) {
-            response.put("error", e.getMessage());
-            return response;
-        }
-    }
 
     /**
      * Retorno exitoso de Mercado Pago tras un pago aprobado.

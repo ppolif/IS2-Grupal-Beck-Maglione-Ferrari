@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+  <!-- Fragmento del Bloque de Costo Unitario para Registro de Compra -->
+  <th:block th:fragment="bloqueCosto">
+    <input type="text" id="displayCosto" class="form-control border-brand bg-light fw-bold"
+           th:value="${costo > 0 ? '$' + #numbers.formatDecimal(costo, 1, 'POINT', 2, 'POINT') : '$0.00 (Sin compras previas)'}"
+           readonly disabled />
+    <input type="hidden" id="selectorCosto" th:value="${#numbers.formatDecimal(costo, 1, 'POINT', 2, 'POINT')}" />
+  </th:block>
+
+</body>
+</html>

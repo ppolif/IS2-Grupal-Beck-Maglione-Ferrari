@@ -131,8 +131,10 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small fw-semibold text-brand-dark">Costo Unit. (Proveedor)</label>
-                            <input type="text" id="displayCosto" class="form-control border-brand bg-light fw-bold" placeholder="$0.00" readonly disabled />
-                            <input type="hidden" id="selectorCosto" value="0.00" />
+                            <div id="contenedorCosto">
+                                <input type="text" id="displayCosto" class="form-control border-brand bg-light fw-bold" placeholder="$0.00" readonly disabled />
+                                <input type="hidden" id="selectorCosto" value="0.00" />
+                            </div>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label small fw-semibold text-brand-dark">Cantidad <span class="text-danger">*</span></label>
@@ -262,43 +264,41 @@
             });
         }
 
-        // Consultar costo unitario de la factura más reciente del proveedor seleccionado para el producto
+        // Consultar costo unitario de la factura más reciente del proveedor seleccionado para el producto (Spring MVC fragment)
         function consultarCostoProveedor() {
             const provId = selectProveedor ? selectProveedor.value : "";
             const prodId = selectorProducto ? selectorProducto.value : "";
+            const contenedor = document.getElementById("contenedorCosto");
 
             if (!provId) {
-                if (prodId) {
-                    displayCosto.value = "Seleccione proveedor";
-                } else {
-                    displayCosto.value = "$0.00";
+                if (contenedor) {
+                    contenedor.innerHTML = `<input type="text" id="displayCosto" class="form-control border-brand bg-light fw-bold" value="${prodId ? 'Seleccione proveedor' : '$0.00'}" readonly disabled /><input type="hidden" id="selectorCosto" value="0.00" />`;
                 }
-                selectorCosto.value = "0.00";
                 return;
             }
 
             if (!prodId) {
-                displayCosto.value = "$0.00";
-                selectorCosto.value = "0.00";
+                if (contenedor) {
+                    contenedor.innerHTML = '<input type="text" id="displayCosto" class="form-control border-brand bg-light fw-bold" value="$0.00" readonly disabled /><input type="hidden" id="selectorCosto" value="0.00" />';
+                }
                 return;
             }
 
-            displayCosto.value = "Buscando costo...";
+            const displayActual = document.getElementById("displayCosto");
+            if (displayActual) displayActual.value = "Buscando costo...";
+
             fetch(`/admin/compras/costo-unitario?proveedorId=${encodeURIComponent(provId)}&productoId=${encodeURIComponent(prodId)}`)
-                .then(res => res.json())
-                .then(data => {
-                    const costo = (data && data.costo !== undefined && data.costo !== null) ? parseFloat(data.costo) : 0.0;
-                    selectorCosto.value = costo.toFixed(2);
-                    if (costo > 0) {
-                        displayCosto.value = "$" + costo.toFixed(2);
-                    } else {
-                        displayCosto.value = "$0.00 (Sin compras previas)";
+                .then(res => res.text())
+                .then(html => {
+                    if (contenedor) {
+                        contenedor.innerHTML = html;
                     }
                 })
                 .catch(err => {
                     console.error("Error al consultar costo:", err);
-                    selectorCosto.value = "0.00";
-                    displayCosto.value = "$0.00";
+                    if (contenedor) {
+                        contenedor.innerHTML = '<input type="text" id="displayCosto" class="form-control border-brand bg-light fw-bold" value="$0.00" readonly disabled /><input type="hidden" id="selectorCosto" value="0.00" />';
+                    }
                 });
         }
 
@@ -315,7 +315,8 @@
             const provId = selectProveedor ? selectProveedor.value : "";
             const prodId = selectorProducto.value;
             const cant = parseInt(selectorCantidad.value, 10);
-            let costo = parseFloat(selectorCosto.value);
+            const inputCosto = document.getElementById("selectorCosto");
+            let costo = inputCosto ? parseFloat(inputCosto.value) : 0.0;
 
             if (!provId) {
                 alert("Por favor seleccione un proveedor mayorista antes de agregar productos.");

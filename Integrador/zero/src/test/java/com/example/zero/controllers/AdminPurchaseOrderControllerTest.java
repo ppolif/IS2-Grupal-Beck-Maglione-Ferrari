@@ -124,12 +124,13 @@ class AdminPurchaseOrderControllerTest {
     }
 
     @Test
-    void obtenerCostoUnitario_retornaMapaConCosto() {
+    void obtenerCostoUnitario_retornaFragmentoYAgregaCostoAlModelo() {
         when(compraProveedorService.obtenerUltimoCostoUnitario("prov-1", "prod-1")).thenReturn(35.50);
 
-        java.util.Map<String, Object> resp = controller.obtenerCostoUnitario("prov-1", "prod-1");
+        String vista = controller.obtenerCostoUnitario("prov-1", "prod-1", model);
 
-        assertEquals(35.50, resp.get("costo"));
+        assertEquals("admin/fragments/costo-unitario :: bloqueCosto", vista);
+        verify(model).addAttribute("costo", 35.50);
         verify(compraProveedorService).obtenerUltimoCostoUnitario("prov-1", "prod-1");
     }
 }
