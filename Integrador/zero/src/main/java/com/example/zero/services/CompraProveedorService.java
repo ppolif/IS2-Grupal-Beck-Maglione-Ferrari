@@ -334,8 +334,20 @@ public class CompraProveedorService {
         );
         if (detalles != null && !detalles.isEmpty()) {
             Detalle masReciente = detalles.get(0);
-            return masReciente.getUnitPrice();
+
+            return calcularCostoUnitario(masReciente);
         }
         return 0.0;
+    }
+
+    /**
+            * Calcula el costo o precio unitario a partir de un Detalle.
+     * Al ser una regla de negocio y cálculo financiero, corresponde a la capa de Servicio.
+            */
+    public double calcularCostoUnitario(Detalle detalle) {
+        if (detalle == null || detalle.getCantidad() <= 0) {
+            return 0.0;
+        }
+        return Math.round((detalle.getSubtotal() / detalle.getCantidad()) * 100.0) / 100.0;
     }
 }

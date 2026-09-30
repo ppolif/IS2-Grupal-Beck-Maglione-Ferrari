@@ -208,6 +208,8 @@ public class AdminVentaController {
                 sucursal.setTipoSucursal(TipoEmpresa.SEDE_CENTRAL);
             }
             model.addAttribute("sucursal", sucursal);
+            String dirCompleta = (empresaService != null) ? empresaService.obtenerDireccionCompleta(sucursal) : "Av. Corrientes 1234, CABA";
+            model.addAttribute("sucursalDireccion", dirCompleta);
         }
 
         return "admin/order-detail";

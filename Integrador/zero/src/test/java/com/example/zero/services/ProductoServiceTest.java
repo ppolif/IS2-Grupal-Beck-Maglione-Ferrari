@@ -49,6 +49,11 @@ class ProductoServiceTest {
     @InjectMocks
     private ProductoService productoService;
 
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        productoService.setEntityManager(entityManager);
+    }
+
     @Test
     void crearProducto_conDatosValidos_creaProductoYVigenciaInicial() {
         // Arrange

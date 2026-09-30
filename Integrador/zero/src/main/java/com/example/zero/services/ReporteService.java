@@ -85,9 +85,11 @@ public class ReporteService {
                 if (d == null || d.isEliminado() || d.getProducto() == null) continue;
 
                 Producto p = d.getProducto();
-                String catNombre = d.getCategoryName();
+                String catNombre = (p.getSubCategoria() != null && p.getSubCategoria().getCategoria() != null)
+                        ? p.getSubCategoria().getCategoria().getNombre()
+                        : "General";
                 int cantidad = d.getCantidad();
-                double unitPrice = d.getUnitPrice();
+                double unitPrice = cantidad > 0 ? Math.round((d.getSubtotal() / cantidad) * 100.0) / 100.0 : 0.0;
                 double subtotal = d.getSubtotal();
 
                 totalRecaudado += subtotal;
@@ -178,9 +180,9 @@ public class ReporteService {
 
             if (detallesMenorCosto != null && !detallesMenorCosto.isEmpty()) {
                 Detalle mejorDetalle = detallesMenorCosto.get(0);
-                menorCosto = mejorDetalle.getUnitPrice();
-                Proveedor prov = mejorDetalle.getProveedor();
-                if (prov == null && mejorDetalle.getFactura() != null) {
+                menorCosto = mejorDetalle.getCantidad() > 0 ? Math.round((mejorDetalle.getSubtotal() / mejorDetalle.getCantidad()) * 100.0) / 100.0 : 0.0;
+                Proveedor prov = null;
+                if (mejorDetalle.getFactura() != null) {
                     try {
                         Object unp = org.hibernate.Hibernate.unproxy(mejorDetalle.getFactura());
                         if (unp instanceof com.example.zero.entidades.compraProveedor.FacturaProveedor fp) {
@@ -259,9 +261,9 @@ public class ReporteService {
 
             if (detalles != null && !detalles.isEmpty()) {
                 Detalle d = detalles.get(0);
-                menorCosto = d.getUnitPrice();
-                Proveedor prov = d.getProveedor();
-                if (prov == null && d.getFactura() != null) {
+                menorCosto = d.getCantidad() > 0 ? Math.round((d.getSubtotal() / d.getCantidad()) * 100.0) / 100.0 : 0.0;
+                Proveedor prov = null;
+                if (d.getFactura() != null) {
                     try {
                         Object unp = org.hibernate.Hibernate.unproxy(d.getFactura());
                         if (unp instanceof com.example.zero.entidades.compraProveedor.FacturaProveedor fp) {
