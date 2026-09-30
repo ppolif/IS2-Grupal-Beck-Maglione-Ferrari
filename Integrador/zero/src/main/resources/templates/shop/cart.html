@@ -62,18 +62,22 @@
               <h5>$<span th:id="'price-' + ${item.id}" th:text="${#numbers.formatDecimal(item.precioUnitario != null ? item.precioUnitario : 0, 1, 'POINT', 2, 'POINT')}">360.00</span></h5>
             </td>
             <td>
-              <!-- Control de Cantidad Dinámico con JavaScript -->
-              <input type="number"
-                     name="quantity"
-                     min="1"
-                     th:max="${stockPorItem != null && stockPorItem.containsKey(item.id) ? stockPorItem.get(item.id) : 999}"
-                     th:value="${item.cantidad}"
-                     th:data-item-id="${item.id}"
-                     th:data-price="${item.precioUnitario != null ? item.precioUnitario : 0}"
-                     th:data-stock="${stockPorItem != null && stockPorItem.containsKey(item.id) ? stockPorItem.get(item.id) : 999}"
-                     th:data-product-name="${item.producto != null ? item.producto.nombre : 'Producto'}"
-                     class="form-control form-control-sm text-center cart-qty-input"
-                     style="width: 75px; font-weight: bold; border: 1px solid #ced4da; border-radius: 4px;">
+              <!-- Actualización de Cantidad mediante Formulario MVC estándar -->
+              <form th:action="@{/shop/cart/update}" method="POST" class="d-inline-flex align-items-center m-0">
+                <input type="hidden" name="itemId" th:value="${item.id}">
+                <input type="number"
+                       name="quantity"
+                       min="1"
+                       th:max="${stockPorItem != null && stockPorItem.containsKey(item.id) ? stockPorItem.get(item.id) : 999}"
+                       th:value="${item.cantidad}"
+                       th:data-item-id="${item.id}"
+                       th:data-price="${item.precioUnitario != null ? item.precioUnitario : 0}"
+                       th:data-stock="${stockPorItem != null && stockPorItem.containsKey(item.id) ? stockPorItem.get(item.id) : 999}"
+                       th:data-product-name="${item.producto != null ? item.producto.nombre : 'Producto'}"
+                       class="form-control form-control-sm text-center cart-qty-input"
+                       style="width: 75px; font-weight: bold; border: 1px solid #ced4da; border-radius: 4px;"
+                       onchange="this.form.submit()">
+              </form>
             </td>
             <td>
               <h5>$<span class="item-subtotal-display" th:id="'subtotal-' + ${item.id}" th:text="${#numbers.formatDecimal(item.subtotal != null ? item.subtotal : 0, 1, 'POINT', 2, 'POINT')}">720.00</span></h5>
@@ -147,7 +151,7 @@
               <button type="button" class="btn btn-secondary px-4 mr-2" data-dismiss="modal">
                 <i class="fa fa-times mr-1"></i> Cancelar
               </button>
-              <form th:action="@{/api/mercadoPago}" method="POST" class="d-inline m-0">
+              <form th:action="@{/checkout/mercadopago}" method="POST" class="d-inline m-0">
                 <button type="submit" class="btn btn-primary px-4 font-weight-bold" id="btnConfirmarPago">
                   <i class="fa fa-check mr-1"></i> Confirmar
                 </button>

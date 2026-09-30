@@ -124,8 +124,8 @@ public class DataInitializer implements CommandLineRunner {
                 try { jdbcTemplate.execute("ALTER TABLE factura MODIFY COLUMN orden_compra_id VARCHAR(36) NULL"); } catch (Exception ignored) {}
 
                 // Eliminar restricción obsoleta de CHECK en tabla imagen creada cuando TipoImagen solo contenía PERSONA
-                try { jdbcTemplate.execute("ALTER TABLE imagen DROP CHECK imagen_chk_1"); } catch (Exception ignored) {}
-                try { jdbcTemplate.execute("ALTER TABLE imagen DROP CONSTRAINT imagen_chk_1"); } catch (Exception ignored) {}
+//                try { jdbcTemplate.execute("ALTER TABLE imagen DROP CHECK imagen_chk_1"); } catch (Exception ignored) {}
+//                try { jdbcTemplate.execute("ALTER TABLE imagen DROP CONSTRAINT imagen_chk_1"); } catch (Exception ignored) {}
             }
         } catch (Exception ignored) {
         }

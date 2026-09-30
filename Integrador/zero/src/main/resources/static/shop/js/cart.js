@@ -82,60 +82,13 @@ document.addEventListener('DOMContentLoaded', function () {
         // Recálculo visual inmediato de subtotales y total general
         recalculateTotalsLocally();
 
-        // Enviar al backend vía AJAX con debounce de 250ms
-        if (pendingRequests[itemId]) {
-            clearTimeout(pendingRequests[itemId]);
+        // Enviar al backend vía formulario Spring MVC si se activa por cambio
+        if (input.form) {
+            input.form.submit();
         }
-
-        pendingRequests[itemId] = setTimeout(function () {
-            const formData = new URLSearchParams();
-            formData.append('itemId', itemId);
-            formData.append('quantity', val);
-
-            fetch('/shop/cart/api/update', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-                },
-                body: formData.toString()
-            })
-            .then(function (res) { return res.json(); })
-            .then(function (data) {
-                if (data.success) {
-                    const subtotalEl = document.getElementById('subtotal-' + itemId);
-                    if (subtotalEl && data.itemSubtotal !== undefined) {
-                        subtotalEl.textContent = formatMoney(data.itemSubtotal);
-                    }
-                    if (cartTotalDisplay && data.cartTotal !== undefined) {
-                        cartTotalDisplay.textContent = formatMoney(data.cartTotal);
-                    }
-                    if (modalCartTotalDisplay && data.cartTotal !== undefined) {
-                        modalCartTotalDisplay.textContent = formatMoney(data.cartTotal);
-                    }
-                } else {
-                    showAlert(data.message || 'No se dispone de suficiente stock para la cantidad solicitada.', 'danger');
-                    // Extraer límite si viene en la respuesta del backend (ej: "Stock disponible: 15")
-                    const match = data.message ? data.message.match(/Stock disponible:\s*(\d+)/i) : null;
-                    if (match && match[1]) {
-                        const actualStock = parseInt(match[1], 10);
-                        input.dataset.stock = actualStock;
-                        if (actualStock > 0) {
-                            input.value = actualStock;
-                            recalculateTotalsLocally();
-                        }
-                    }
-                }
-            })
-            .catch(function (err) {
-                console.error('Error al actualizar el carrito:', err);
-            });
-        }, 250);
     }
 
     qtyInputs.forEach(function (input) {
-        input.addEventListener('input', function () {
-            updateQuantity(this);
-        });
         input.addEventListener('change', function () {
             updateQuantity(this);
         });
