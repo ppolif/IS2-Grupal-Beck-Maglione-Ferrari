@@ -37,6 +37,9 @@ class CartControllerTest {
     private StockService stockService;
 
     @Mock
+    private com.example.zero.services.producto.ProductoService productoService;
+
+    @Mock
     private HttpSession session;
 
     @Mock

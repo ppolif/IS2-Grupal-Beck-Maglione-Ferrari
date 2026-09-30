@@ -336,6 +336,38 @@ public class ClienteService {
         return clienteRepository.save(cliente);
     }
 
+    public String obtenerFotoPerfilCliente(Cliente c) {
+        if (c == null) {
+            return "/admin/assets/images/avatar.png";
+        }
+        try {
+            if (c.getUsuario() != null && c.getUsuario().getFoto() != null && !c.getUsuario().getFoto().isBlank()) {
+                return c.getUsuario().getFoto().trim();
+            }
+        } catch (Exception ignored) {
+        }
+        if (c.getNumeroDocumento() != null && usuarioRepository != null) {
+            try {
+                Optional<Usuario> uOpt = usuarioRepository.findByPersonaDocumentoAndEliminadoFalse(c.getNumeroDocumento().trim());
+                if (uOpt.isPresent() && uOpt.get().getFoto() != null && !uOpt.get().getFoto().isBlank()) {
+                    return uOpt.get().getFoto().trim();
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        try {
+            if (c.getImagen() != null && !c.getImagen().isEmpty()) {
+                for (Imagen img : c.getImagen()) {
+                    if (img != null && !img.isEliminado() && img.getId() != null) {
+                        return "/imagen/" + img.getId();
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return "/admin/assets/images/avatar.png";
+    }
+
     @Transactional(readOnly = true)
     public List<Cliente> listarActivos() {
         return clienteRepository.findByEliminadoFalse();

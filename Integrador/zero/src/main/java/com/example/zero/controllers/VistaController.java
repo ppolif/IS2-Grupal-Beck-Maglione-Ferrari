@@ -5,7 +5,6 @@ import com.example.zero.entidades.persona.Cliente;
 import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.enums.RolUsuario;
-import com.example.zero.repositories.CategoriaRepository;
 import com.example.zero.services.CategoriaService;
 import com.example.zero.services.VentaService;
 import com.example.zero.services.producto.ProductoService;
@@ -28,7 +27,6 @@ public class VistaController {
     private final CategoriaService categoriaService;
     private final VentaService ventaService;
     private final AdminVentaController adminVentaController;
-    private final CategoriaRepository categoriaRepository;
     private final com.example.zero.repositories.SubCategoriaRepository subCategoriaRepository;
     private final com.example.zero.services.OrdenCompraService ordenCompraService;
     private final com.example.zero.services.VigenciaPrecioService vigenciaPrecioService;
@@ -94,7 +92,7 @@ public class VistaController {
 
         model.addAttribute("products", products);
         model.addAttribute("totalProducts", products.size());
-        model.addAttribute("categories", categoriaRepository.findActiveWithSubCategorias());
+        model.addAttribute("categories", categoriaService.listarConSubcategorias());
         return "shop/category";
     }
 
@@ -106,7 +104,7 @@ public class VistaController {
                 .toList();
         model.addAttribute("products", offers);
         model.addAttribute("totalProducts", offers.size());
-        model.addAttribute("categories", categoriaRepository.findActiveWithSubCategorias());
+        model.addAttribute("categories", categoriaService.listarConSubcategorias());
         model.addAttribute("isOffersPage", true);
         model.addAttribute("title", "Ofertas Especiales");
         return "shop/category";

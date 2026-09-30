@@ -447,6 +447,23 @@ public class VentaService {
         return null;
     }
 
+    public String obtenerFotoComprobante(Factura f) {
+        if (f instanceof FacturaCliente fc && fc.getOrdenCompra() != null && fc.getOrdenCompra().getCliente() != null) {
+            Cliente c = fc.getOrdenCompra().getCliente();
+            if (c.getUsuario() != null && c.getUsuario().getFoto() != null && !c.getUsuario().getFoto().isBlank()) {
+                return c.getUsuario().getFoto().trim();
+            }
+            if (c.getImagen() != null && !c.getImagen().isEmpty()) {
+                for (com.example.zero.entidades.Imagen img : c.getImagen()) {
+                    if (img != null && !img.isEliminado() && img.getId() != null) {
+                        return "/imagen/" + img.getId();
+                    }
+                }
+            }
+        }
+        return "/admin/assets/images/avatar.png";
+    }
+
     public String obtenerNombreComprobante(Factura f) {
         if (f instanceof FacturaProveedor fp && fp.getProveedor() != null) {
             String razon = fp.getProveedor().getRazonSocial();

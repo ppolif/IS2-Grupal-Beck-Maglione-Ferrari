@@ -61,8 +61,10 @@ public class ProfileController {
             Usuario actualizado;
             if (archivoFoto != null && !archivoFoto.isEmpty()) {
                 actualizado = usuarioService.actualizarPerfil(usuarioSession.getId(), email, archivoFoto);
+            } else if (foto != null && !foto.trim().isEmpty()) {
+                actualizado = usuarioService.actualizarPerfil(usuarioSession.getId(), email, foto.trim());
             } else {
-                actualizado = usuarioService.actualizarPerfil(usuarioSession.getId(), email, foto);
+                actualizado = usuarioService.actualizarPerfil(usuarioSession.getId(), email, (String) null);
             }
             session.setAttribute("usuariosession", actualizado);
             redirectAttributes.addFlashAttribute("successMessage", "Perfil actualizado con éxito.");

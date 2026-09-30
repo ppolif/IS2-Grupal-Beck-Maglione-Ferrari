@@ -258,7 +258,7 @@ public class UsuarioService {
             }
         }
 
-        if (nuevaFoto != null) {
+        if (nuevaFoto != null && !nuevaFoto.trim().isEmpty()) {
             usuario.setFoto(nuevaFoto.trim());
         }
 

@@ -61,13 +61,13 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="bg-brand-dark">
         <tr>
-          <th class="ps-3 text-uppercase small text-white">Nº Factura / ID</th>
-          <th class="text-uppercase small text-white">Tipo</th>
-          <th class="text-uppercase small text-white">Cliente / Proveedor</th>
-          <th class="text-uppercase small text-white">Resumen Productos</th>
-          <th class="text-uppercase small text-white">Monto Total</th>
-          <th class="text-uppercase small text-white">Estado</th>
-          <th class="text-center text-uppercase small text-white pe-3">Acciones</th>
+          <th class="ps-3 text-uppercase small text-secondary">Nº Factura / ID</th>
+          <th class="text-uppercase small text-secondary">Tipo</th>
+          <th class="text-uppercase small text-secondary">Cliente / Proveedor</th>
+          <th class="text-uppercase small text-secondary">Resumen Productos</th>
+          <th class="text-uppercase small text-secondary">Monto Total</th>
+          <th class="text-uppercase small text-secondary">Estado</th>
+          <th class="text-center text-uppercase small text-secondary pe-3">Acciones</th>
         </tr>
         </thead>
         <tbody>
@@ -93,7 +93,8 @@
                 <i class="bi bi-building"></i>
               </div>
               <img th:unless="${@ventaService.esCompraProveedor(order)}"
-                   th:src="@{/admin/assets/images/avatar.png}"
+                   th:src="@{${@ventaService.obtenerFotoComprobante(order)}}"
+                   onerror="this.src='/admin/assets/images/avatar.png'"
                    alt="Avatar" class="rounded-circle border" width="36" height="36" style="object-fit: cover;">
               <div>
                 <div class="small fw-bold text-brand-dark" th:text="${@ventaService.obtenerNombreComprobante(order)}">Eleanor Pena</div>

@@ -6,7 +6,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,12 +16,9 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.UuidGenerator;
 
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * Entidad SubCategoria
- * * SubCategoria -- 1 Categoria, 1 SubCategoria -- * Producto.
+ * * SubCategoria -- 1 Categoria.
  */
 @Entity
 @Table(name = "subcategoria")
@@ -32,7 +28,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(of = "id")
-@ToString(exclude = {"categoria", "productos"})
+@ToString(exclude = "categoria")
 public class SubCategoria {
 
     @Id
@@ -50,10 +46,6 @@ public class SubCategoria {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
-
-    @OneToMany(mappedBy = "subCategoria", fetch = FetchType.LAZY)
-    @Builder.Default
-    private Set<Producto> productos = new HashSet<>();
 
 
 }
