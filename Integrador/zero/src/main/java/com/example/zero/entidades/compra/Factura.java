@@ -27,6 +27,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.UuidGenerator;
 import com.example.zero.entidades.compraProveedor.FacturaProveedor;
 import com.example.zero.entidades.compraProveedor.Proveedor;
@@ -44,7 +45,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @ToString(exclude = {"cliente", "formaDePago", "detalles"})
 public class Factura {
 

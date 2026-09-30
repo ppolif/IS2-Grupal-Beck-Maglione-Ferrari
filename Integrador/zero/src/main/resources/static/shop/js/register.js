@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (radioCelular) radioCelular.addEventListener('change', actualizarTipoContacto);
   actualizarTipoContacto();
 
-  // 2. Selección Geográfica en Cascada (fetch /zonas/...)
+  // 2. Selección Geográfica en Cascada (HTML fragments desde Spring MVC /zonas/...)
   const paisSelect = document.getElementById('paisId');
   const provinciaSelect = document.getElementById('provinciaId');
   const departamentoSelect = document.getElementById('departamentoId');
@@ -53,15 +53,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!paisId) return;
 
       fetch('/zonas/provincias?paisId=' + encodeURIComponent(paisId))
-        .then(res => res.json())
-        .then(data => {
-          provinciaSelect.innerHTML = '<option value="">-- Seleccionar Provincia --</option>';
-          data.forEach(item => {
-            const opt = document.createElement('option');
-            opt.value = item.id;
-            opt.textContent = item.nombre;
-            provinciaSelect.appendChild(opt);
-          });
+        .then(res => res.text())
+        .then(html => {
+          provinciaSelect.innerHTML = html;
           provinciaSelect.disabled = false;
         })
         .catch(err => console.error('Error al cargar provincias:', err));
@@ -77,15 +71,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!provinciaId) return;
 
       fetch('/zonas/departamentos?provinciaId=' + encodeURIComponent(provinciaId))
-        .then(res => res.json())
-        .then(data => {
-          departamentoSelect.innerHTML = '<option value="">-- Seleccionar Departamento --</option>';
-          data.forEach(item => {
-            const opt = document.createElement('option');
-            opt.value = item.id;
-            opt.textContent = item.nombre;
-            departamentoSelect.appendChild(opt);
-          });
+        .then(res => res.text())
+        .then(html => {
+          departamentoSelect.innerHTML = html;
           departamentoSelect.disabled = false;
         })
         .catch(err => console.error('Error al cargar departamentos:', err));
@@ -100,15 +88,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!departamentoId) return;
 
       fetch('/zonas/localidades?departamentoId=' + encodeURIComponent(departamentoId))
-        .then(res => res.json())
-        .then(data => {
-          localidadSelect.innerHTML = '<option value="">-- Seleccionar Localidad --</option>';
-          data.forEach(item => {
-            const opt = document.createElement('option');
-            opt.value = item.id;
-            opt.textContent = item.nombre + (item.codigoPostal ? ' (CP: ' + item.codigoPostal + ')' : '');
-            localidadSelect.appendChild(opt);
-          });
+        .then(res => res.text())
+        .then(html => {
+          localidadSelect.innerHTML = html;
           localidadSelect.disabled = false;
         })
         .catch(err => console.error('Error al cargar localidades:', err));
