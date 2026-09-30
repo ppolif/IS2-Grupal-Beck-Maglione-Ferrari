@@ -265,8 +265,8 @@ class AdminVentaControllerTest {
                 .numeroDocumento("12345678")
                 .nombre("Carlos")
                 .apellido("Perez")
-                .usuario(user)
                 .build();
+        user.setPersona(cliente);
 
         FormaDePago forma = FormaDePago.builder()
                 .tipoPago(TipoDePago.TARJETA_CREDITO)

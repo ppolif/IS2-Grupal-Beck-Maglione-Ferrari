@@ -340,17 +340,15 @@ public class ClienteService {
         if (c == null) {
             return "/admin/assets/images/avatar.png";
         }
-        try {
-            if (c.getUsuario() != null && c.getUsuario().getFoto() != null && !c.getUsuario().getFoto().isBlank()) {
-                return c.getUsuario().getFoto().trim();
-            }
-        } catch (Exception ignored) {
-        }
         if (c.getNumeroDocumento() != null && usuarioRepository != null) {
             try {
-                Optional<Usuario> uOpt = usuarioRepository.findByPersonaDocumentoAndEliminadoFalse(c.getNumeroDocumento().trim());
-                if (uOpt.isPresent() && uOpt.get().getFoto() != null && !uOpt.get().getFoto().isBlank()) {
-                    return uOpt.get().getFoto().trim();
+                List<Usuario> usuarios = usuarioRepository.findByPersonaDocumentoAndEliminadoFalse(c.getNumeroDocumento().trim());
+                if (usuarios != null) {
+                    for (Usuario u : usuarios) {
+                        if (u != null && u.getFoto() != null && !u.getFoto().isBlank()) {
+                            return u.getFoto().trim();
+                        }
+                    }
                 }
             } catch (Exception ignored) {
             }

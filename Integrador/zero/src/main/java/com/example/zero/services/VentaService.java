@@ -465,13 +465,35 @@ public class VentaService {
             return "/admin/assets/images/avatar.png";
         }
         try {
+            // 1. Si es FacturaCliente, intentar primero resolver foto por el emailUsuario de la OrdenCompra
+            if (f instanceof FacturaCliente fc && fc.getOrdenCompra() != null) {
+                String email = fc.getOrdenCompra().getEmailUsuario();
+                if (email != null && !email.isBlank() && usuarioRepository != null) {
+                    Optional<Usuario> uOpt = usuarioRepository.findByNombreUsuarioAndEliminadoFalse(email.trim().toLowerCase());
+                    if (uOpt.isPresent() && uOpt.get().getFoto() != null && !uOpt.get().getFoto().isBlank()) {
+                        return uOpt.get().getFoto().trim();
+                    }
+                }
+            }
+
+            // 2. Si no, buscar por el Cliente de la factura
             Cliente c = obtenerClienteDeFactura(f);
             if (c != null) {
                 if (clienteService != null) {
-                    return clienteService.obtenerFotoPerfilCliente(c);
+                    String foto = clienteService.obtenerFotoPerfilCliente(c);
+                    if (foto != null && !foto.isBlank() && !foto.equals("/admin/assets/images/avatar.png")) {
+                        return foto;
+                    }
                 }
-                if (c.getUsuario() != null && c.getUsuario().getFoto() != null && !c.getUsuario().getFoto().isBlank()) {
-                    return c.getUsuario().getFoto().trim();
+                if (c.getNumeroDocumento() != null && usuarioRepository != null) {
+                    List<Usuario> usuarios = usuarioRepository.findByPersonaDocumentoAndEliminadoFalse(c.getNumeroDocumento().trim());
+                    if (usuarios != null) {
+                        for (Usuario u : usuarios) {
+                            if (u != null && u.getFoto() != null && !u.getFoto().isBlank()) {
+                                return u.getFoto().trim();
+                            }
+                        }
+                    }
                 }
                 if (c.getImagen() != null && !c.getImagen().isEmpty()) {
                     for (com.example.zero.entidades.Imagen img : c.getImagen()) {
