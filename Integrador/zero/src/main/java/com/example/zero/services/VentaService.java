@@ -460,6 +460,33 @@ public class VentaService {
         return null;
     }
 
+    public String obtenerFotoComprobante(Factura f) {
+        if (f == null) {
+            return "/admin/assets/images/avatar.png";
+        }
+        try {
+            Cliente c = obtenerClienteDeFactura(f);
+            if (c != null) {
+                if (clienteService != null) {
+                    return clienteService.obtenerFotoPerfilCliente(c);
+                }
+                if (c.getUsuario() != null && c.getUsuario().getFoto() != null && !c.getUsuario().getFoto().isBlank()) {
+                    return c.getUsuario().getFoto().trim();
+                }
+                if (c.getImagen() != null && !c.getImagen().isEmpty()) {
+                    for (com.example.zero.entidades.Imagen img : c.getImagen()) {
+                        if (img != null && !img.isEliminado() && img.getId() != null) {
+                            return "/imagen/" + img.getId();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Error resolviendo foto de comprobante para factura {}: {}", f.getId(), e.getMessage());
+        }
+        return "/admin/assets/images/avatar.png";
+    }
+
     public String obtenerNombreComprobante(Factura f) {
         if (f instanceof FacturaProveedor fp && fp.getProveedor() != null) {
             String razon = fp.getProveedor().getRazonSocial();

@@ -38,6 +38,7 @@ public class AdminProfileController {
         }
 
         Usuario usuarioActualizado = usuarioRepository.findById(usuarioSession.getId()).orElse(usuarioSession);
+        session.setAttribute("usuariosession", usuarioActualizado);
         model.addAttribute("usuario", usuarioActualizado);
 
         if (usuarioActualizado.getPersona() instanceof Empleado empleado) {
@@ -66,8 +67,10 @@ public class AdminProfileController {
             Usuario actualizado;
             if (archivoFoto != null && !archivoFoto.isEmpty()) {
                 actualizado = usuarioService.actualizarPerfil(usuarioSession.getId(), email, archivoFoto);
+            } else if (foto != null && !foto.trim().isEmpty()) {
+                actualizado = usuarioService.actualizarPerfil(usuarioSession.getId(), email, foto.trim());
             } else {
-                actualizado = usuarioService.actualizarPerfil(usuarioSession.getId(), email, foto);
+                actualizado = usuarioService.actualizarPerfil(usuarioSession.getId(), email, (String) null);
             }
             session.setAttribute("usuariosession", actualizado);
             redirectAttributes.addFlashAttribute("successMessage", "Perfil de administrador actualizado con éxito.");

@@ -1,21 +1,29 @@
 package com.example.zero.services;
 
+import com.example.zero.dto.producto.CategoriaDTO;
 import com.example.zero.entidades.producto.Categoria;
 import com.example.zero.entidades.producto.SubCategoria;
 import com.example.zero.repositories.CategoriaRepository;
+import com.example.zero.repositories.SubCategoriaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CategoriaService {
 
     private final CategoriaRepository categoriaRepository;
+    private final SubCategoriaRepository subCategoriaRepository;
 
-    public CategoriaService(CategoriaRepository categoriaRepository) {
+    public CategoriaService(CategoriaRepository categoriaRepository, SubCategoriaRepository subCategoriaRepository) {
         this.categoriaRepository = categoriaRepository;
+        this.subCategoriaRepository = subCategoriaRepository;
     }
 
     public void validar(String nombre) {
@@ -66,13 +74,34 @@ public class CategoriaService {
         Categoria categoria = buscarPorId(id);
         categoria.setEliminado(true);
 
-        if (categoria.getSubCategorias() != null) {
-            for (SubCategoria subCategoria : categoria.getSubCategorias()) {
+        List<SubCategoria> subCategorias = subCategoriaRepository.findByCategoriaIdAndEliminadoFalse(id);
+        if (subCategorias != null && !subCategorias.isEmpty()) {
+            for (SubCategoria subCategoria : subCategorias) {
                 subCategoria.setEliminado(true);
             }
+            subCategoriaRepository.saveAll(subCategorias);
         }
 
         categoriaRepository.save(categoria);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CategoriaDTO> listarConSubcategorias() {
+        List<Categoria> categorias = categoriaRepository.findByEliminadoFalse();
+        List<SubCategoria> todasSub = subCategoriaRepository.findByEliminadoFalse();
+
+        Map<String, List<SubCategoria>> subsPorCat = todasSub.stream()
+                .filter(s -> s.getCategoria() != null && s.getCategoria().getId() != null)
+                .collect(Collectors.groupingBy(s -> s.getCategoria().getId()));
+
+        return categorias.stream()
+                .sorted(Comparator.comparing(Categoria::getNombre, String.CASE_INSENSITIVE_ORDER))
+                .map(c -> CategoriaDTO.builder()
+                        .id(c.getId())
+                        .nombre(c.getNombre())
+                        .subCategorias(subsPorCat.getOrDefault(c.getId(), Collections.emptyList()))
+                        .build())
+                .toList();
     }
 
     @Transactional(readOnly = true)

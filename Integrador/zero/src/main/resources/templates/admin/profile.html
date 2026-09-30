@@ -46,11 +46,11 @@
     <div class="card-header bg-brand-dark text-white p-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
       <div class="d-flex align-items-center gap-3">
         <img id="adminHeaderAvatar"
-             th:src="${usuario != null && usuario.foto != null && !usuario.foto.isBlank()} ? ${usuario.foto} : @{/admin/assets/images/avatar.png}"
+             th:src="@{${usuario != null && usuario.foto != null && !usuario.foto.isBlank() ? usuario.foto : '/admin/assets/images/avatar.png'}}"
              alt="Avatar" class="rounded-circle border border-warning" width="56" height="56" style="object-fit: cover;"
              onerror="this.src='/admin/assets/images/avatar.png'">
         <div>
-          <h5 class="fw-bold mb-0 text-white"
+          <h5 class="fw-bold mb-0 text-secondary"
               th:text="${empleado != null ? (empleado.nombre + ' ' + empleado.apellido) : usuario.nombreUsuario}">
             Administrador ZERO
           </h5>
@@ -70,7 +70,7 @@
           <div class="col-lg-4 text-center border-end-lg pe-lg-4">
             <div class="mb-3">
               <img id="adminAvatarPreview"
-                   th:src="${usuario != null && usuario.foto != null && !usuario.foto.isBlank()} ? ${usuario.foto} : @{/admin/assets/images/avatar.png}"
+                   th:src="@{${usuario != null && usuario.foto != null && !usuario.foto.isBlank() ? usuario.foto : '/admin/assets/images/avatar.png'}}"
                    alt="Avatar Preview" class="rounded-circle shadow-sm border p-1" width="130" height="130" style="object-fit: cover;"
                    onerror="this.src='/admin/assets/images/avatar.png'">
             </div>
@@ -88,8 +88,8 @@
 
             <div class="text-start">
               <label for="adminFotoInput" class="form-label small fw-bold text-muted">O enlace web de imagen:</label>
-              <input type="url" name="foto" id="adminFotoInput" class="form-control form-control-sm border-brand"
-                     placeholder="https://ejemplo.com/mifoto.jpg"
+              <input type="text" name="foto" id="adminFotoInput" class="form-control form-control-sm border-brand"
+                     placeholder="https://ejemplo.com/mifoto.jpg o /imagen/..."
                      th:value="${usuario != null ? usuario.foto : ''}"
                      oninput="document.getElementById('adminAvatarPreview').src = this.value || '/admin/assets/images/avatar.png'">
             </div>

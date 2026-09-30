@@ -7,6 +7,7 @@ import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.enums.RolUsuario;
 import com.example.zero.services.OrdenCompraService;
 import com.example.zero.services.StockService;
+import com.example.zero.services.producto.ProductoService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -27,6 +28,7 @@ public class CartController {
 
     private final OrdenCompraService ordenCompraService;
     private final StockService stockService;
+    private final ProductoService productoService;
 
     /**
      * Muestra la vista principal del carrito de compras del cliente autenticado.
@@ -52,16 +54,21 @@ public class CartController {
             List<DetalleCompra> items = ordenCompraService.obtenerItemsActivos(carrito);
 
             Map<String, Integer> stockPorItem = new HashMap<>();
+            Map<String, String> imagenesPorItem = new HashMap<>();
             for (DetalleCompra item : items) {
                 if (item.getProducto() != null) {
                     int stock = (stockService != null) ? stockService.calcularStockActual(item.getProducto().getId()) : 999;
                     stockPorItem.put(item.getId(), stock);
+                    String imgUrl = (productoService != null) ? productoService.obtenerImagenUrl(item.getProducto()) : "/shop/img/cart.jpg";
+                    imagenesPorItem.put(item.getId(), imgUrl);
                 }
             }
 
             model.addAttribute("cart", carrito);
             model.addAttribute("items", items);
             model.addAttribute("stockPorItem", stockPorItem);
+            model.addAttribute("imagenesPorItem", imagenesPorItem);
+            model.addAttribute("productoService", productoService);
             model.addAttribute("totalItems", ordenCompraService.contarItems(carrito));
             return "shop/cart";
         } catch (Exception e) {

@@ -2,9 +2,7 @@ package com.example.zero.entidades.producto;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,12 +13,8 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.UuidGenerator;
 
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * Entidad Categoria
- * 1 Categoria -- * SubCategoria.
  */
 @Entity
 @Table(name = "categoria")
@@ -30,7 +24,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(of = "id")
-@ToString(exclude = "subCategorias")
+@ToString
 public class Categoria {
 
     @Id
@@ -44,8 +38,4 @@ public class Categoria {
     @Column(nullable = false)
     @Builder.Default
     private boolean eliminado = false;
-
-    @OneToMany(mappedBy = "categoria", fetch = FetchType.LAZY)
-    @Builder.Default
-    private Set<SubCategoria> subCategorias = new HashSet<>();
 }

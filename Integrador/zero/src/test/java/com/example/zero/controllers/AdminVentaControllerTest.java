@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -159,6 +160,8 @@ class AdminVentaControllerTest {
         assertEquals("admin/tables-basic", vista);
         verify(model).addAttribute(eq("orders"), anyList());
         verify(model).addAttribute("keyword", null);
+        verify(model).addAttribute(eq("imagenesPorOrder"), any(Map.class));
+        verify(model).addAttribute("ventaService", ventaService);
     }
 
     @Test
@@ -228,6 +231,9 @@ class AdminVentaControllerTest {
         assertEquals("admin/order-detail", vista);
         verify(model).addAttribute("factura", factura);
         verify(model).addAttribute("order", factura);
+        verify(model).addAttribute(eq("clienteFotoUrl"), anyString());
+        verify(model).addAttribute(eq("imagenesPorOrder"), any(Map.class));
+        verify(model).addAttribute("ventaService", ventaService);
     }
 
     @Test

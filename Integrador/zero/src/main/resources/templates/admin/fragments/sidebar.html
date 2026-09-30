@@ -56,7 +56,7 @@
 
   <!-- Perfil Card Footer -->
   <a th:href="@{/admin/profile}" class="sidebar-profile d-flex align-items-center gap-2 p-2 bg-white rounded-3 border mt-auto text-decoration-none">
-    <img th:src="${session.usuariosession != null && session.usuariosession.foto != null && !session.usuariosession.foto.isBlank()} ? ${session.usuariosession.foto} : @{/admin/assets/images/avatar.png}"
+    <img th:src="@{${session.usuariosession != null && session.usuariosession.foto != null && !session.usuariosession.foto.isBlank() ? session.usuariosession.foto : '/admin/assets/images/avatar.png'}}"
          alt="Avatar" class="rounded-circle object-fit-cover" width="38" height="38"
          onerror="this.src='/admin/assets/images/avatar.png'">
     <div class="overflow-hidden">
