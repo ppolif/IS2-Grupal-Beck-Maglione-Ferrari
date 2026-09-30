@@ -1,5 +1,6 @@
 package com.example.zero.services.mail;
 
+import com.example.zero.services.CompraProveedorService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
@@ -17,11 +18,14 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
+    private final CompraProveedorService compraProveedorService;
+
     @Value("${spring.mail.username}")
     private String remitente;
 
-    public EmailService(JavaMailSender mailSender) {
+    public EmailService(JavaMailSender mailSender, CompraProveedorService compraProveedorService) {
         this.mailSender = mailSender;
+        this.compraProveedorService = compraProveedorService;
     }
 
     /**     
@@ -158,10 +162,12 @@ public class EmailService {
         if (factura.getDetalles() != null && !factura.getDetalles().isEmpty()) {
             for (com.example.zero.entidades.compra.Detalle detalle : factura.getDetalles()) {
                 if (detalle != null && !detalle.isEliminado()) {
-                    String nombreProd = detalle.getProductName() != null ? detalle.getProductName() : "Producto Deportivo";
-                    int cantidad = detalle.getQuantity();
-                    double precioUnitario = detalle.getUnitPrice();
-                    double subtotalItem = detalle.getTotalPrice();
+                    String nombreProd = (detalle.getProducto() != null && detalle.getProducto().getNombre() != null)
+                            ? detalle.getProducto().getNombre()
+                            : "Producto Deportivo";
+                    int cantidad = detalle.getCantidad();
+                    double precioUnitario = compraProveedorService.calcularCostoUnitario(detalle);
+                    double subtotalItem = detalle.getSubtotal();
 
                     filasProductos.append(String.format(java.util.Locale.US, """
                         <tr style="border-bottom: 1px solid #eeeeee;">

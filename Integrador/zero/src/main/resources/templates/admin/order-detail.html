@@ -248,13 +248,8 @@
             </td>
             <td class="text-center fw-bold" th:classappend="${esCompraProveedor ? 'text-success font-monospace' : ''}"
                 th:text="${esCompraProveedor ? '+' + it.cantidad : it.cantidad}">1</td>
-<<<<<<< HEAD
-            <td class="text-end font-monospace">$<span th:text="${#numbers.formatDecimal(it.unitPrice != null ? it.unitPrice : 0, 1, 'POINT', 2, 'POINT')}">150.00</span></td>
-            <td class="text-end pe-3 fw-bold text-brand-dark font-monospace">$<span th:text="${#numbers.formatDecimal(it.subtotal != null ? it.subtotal : 0, 1, 'POINT', 2, 'POINT')}">150.00</span></td>
-=======
             <td class="text-end font-monospace" th:text="${#numbers.formatCurrency(it.cantidad > 0 ? (it.subtotal / it.cantidad) : 0.0)}">$150.00</td>
             <td class="text-end pe-3 fw-bold text-brand-dark font-monospace" th:text="${#numbers.formatCurrency(it.subtotal)}">$150.00</td>
->>>>>>> augusto
           </tr>
 
           <!-- Fallback si la orden solo tiene resumen sin lista detallada -->
