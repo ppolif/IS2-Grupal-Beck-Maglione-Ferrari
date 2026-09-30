@@ -37,7 +37,7 @@ public class EmpresaService {
 
     public String obtenerDireccionCompleta(Empresa empresa) {
         if (empresa == null || empresa.getDireccion() == null || empresa.getDireccion().isEmpty()) {
-            return "Av. Corrientes 1234, CABA";
+            return "-";
         }
         com.example.zero.entidades.zona.Direccion dir = empresa.getDireccion().get(0);
         String calle = dir.getCalle() != null ? dir.getCalle() : "";
@@ -46,6 +46,6 @@ public class EmpresaService {
         if (dir.getLocalidad() != null && dir.getLocalidad().getNombre() != null) {
             base += ", " + dir.getLocalidad().getNombre();
         }
-        return base.isEmpty() ? "Av. Corrientes 1234, CABA" : base;
+        return base.isEmpty() ? "-" : base;
     }
 }

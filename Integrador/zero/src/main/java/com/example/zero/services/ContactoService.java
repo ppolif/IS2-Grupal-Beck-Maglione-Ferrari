@@ -23,10 +23,7 @@ public class ContactoService {
     public ContactoService(ContactoRepository contactoRepository) {
         this.contactoRepository = contactoRepository;
     }
-
-    /**
-     * Obtiene el correo electrónico principal de una Persona mediante ContactoCorreoElectronico.
-     */
+    
     public Optional<String> obtenerEmailPrincipal(Persona persona) {
         if (persona == null || persona.getContactos() == null) {
             return Optional.empty();
@@ -34,9 +31,6 @@ public class ContactoService {
         return buscarEmailEnContactos(persona.getContactos());
     }
 
-    /**
-     * Obtiene el teléfono principal de una Persona mediante ContactoTelefonico.
-     */
     public Optional<String> obtenerTelefonoPrincipal(Persona persona) {
         if (persona == null || persona.getContactos() == null) {
             return Optional.empty();
@@ -44,19 +38,6 @@ public class ContactoService {
         return buscarTelefonoEnContactos(persona.getContactos());
     }
 
-    /**
-     * Obtiene el correo electrónico de un Proveedor mediante ContactoCorreoElectronico.
-     */
-    public Optional<String> obtenerEmailProveedor(Proveedor proveedor) {
-        if (proveedor == null || proveedor.getContactos() == null) {
-            return Optional.empty();
-        }
-        return buscarEmailEnContactos(proveedor.getContactos());
-    }
-
-    /**
-     * Obtiene el teléfono de un Proveedor mediante ContactoTelefonico.
-     */
     public Optional<String> obtenerTelefonoProveedor(Proveedor proveedor) {
         if (proveedor == null || proveedor.getContactos() == null) {
             return Optional.empty();
