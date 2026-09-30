@@ -142,46 +142,6 @@ public class CartController {
         return "redirect:/shop/cart";
     }
 
-    /**
-     * Endpoint API para actualización dinámica asíncrona de cantidad desde JavaScript.
-     */
-    @PostMapping({"/shop/cart/api/update", "/cart/api/update"})
-    @ResponseBody
-    public Map<String, Object> updateCartItemApi(@RequestParam("itemId") String itemId,
-                                                 @RequestParam("quantity") int quantity,
-                                                 HttpSession session) {
-        Map<String, Object> response = new HashMap<>();
-        Usuario usuario = (Usuario) session.getAttribute("usuariosession");
-        if (usuario == null || usuario.getRol() != RolUsuario.CLIENTE) {
-            response.put("success", false);
-            response.put("message", "Sesión inválida o no autenticada.");
-            return response;
-        }
-
-        try {
-            Cliente cliente = ordenCompraService.obtenerOAsociarCliente(usuario);
-            session.setAttribute("usuariosession", usuario);
-
-            OrdenCompra carrito = ordenCompraService.actualizarCantidad(cliente, itemId, quantity);
-            List<DetalleCompra> items = ordenCompraService.obtenerItemsActivos(carrito);
-            double itemSubtotal = 0.0;
-            for (DetalleCompra item : items) {
-                if (item.getId() != null && item.getId().equals(itemId)) {
-                    itemSubtotal = item.getSubtotal();
-                    break;
-                }
-            }
-
-            response.put("success", true);
-            response.put("itemSubtotal", itemSubtotal);
-            response.put("cartTotal", carrito.getTotal());
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-        }
-
-        return response;
-    }
 
     /**
      * Elimina un ítem específico del carrito de compras.

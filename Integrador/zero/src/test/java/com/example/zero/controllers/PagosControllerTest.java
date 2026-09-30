@@ -150,28 +150,6 @@ class PagosControllerTest {
         verify(redirectAttributes).addFlashAttribute(eq("successMessage"), anyString());
     }
 
-    @Test
-    @DisplayName("obtenerUrlMercadoPago retorna JSON con URL de checkout")
-    void obtenerUrlMercadoPago_usuarioValido_retornaMapaConUrl() throws Exception {
-        when(session.getAttribute("usuariosession")).thenReturn(usuarioCliente);
-        when(ordenCompraService.obtenerOAsociarCliente(usuarioCliente)).thenReturn(clienteMock);
-        when(ordenCompraService.obtenerOCrearCarrito(clienteMock)).thenReturn(carritoMock);
-
-        when(request.getHeader("X-Forwarded-Proto")).thenReturn(null);
-        when(request.getHeader("X-Forwarded-Host")).thenReturn(null);
-        when(request.getScheme()).thenReturn("http");
-        when(request.getServerName()).thenReturn("localhost");
-        when(request.getServerPort()).thenReturn(8080);
-        when(request.getContextPath()).thenReturn("");
-
-        when(mercadoPagoService.crearPreferenciaParaCarrito(any(), any(), anyString()))
-                .thenReturn("https://mercadopago.com/init");
-
-        Map<String, String> res = pagosController.obtenerUrlMercadoPago(session, request);
-
-        assertNotNull(res);
-        assertEquals("https://mercadopago.com/init", res.get("url"));
-    }
 
     @Test
     @DisplayName("mercadoPago con stock insuficiente redirige al carrito con mensaje de error")

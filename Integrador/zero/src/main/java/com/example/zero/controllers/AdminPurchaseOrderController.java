@@ -116,15 +116,23 @@ public class AdminPurchaseOrderController {
     }
 
     /**
-     * Endpoint AJAX para consultar el costo unitario más reciente de un producto provisto por un proveedor específico.
+     * Fragmento Thymeleaf para consultar y renderizar el costo unitario más reciente
+     * de un producto provisto por un proveedor específico (Spring MVC sin REST).
      */
     @GetMapping("/admin/compras/costo-unitario")
-    @ResponseBody
-    public java.util.Map<String, Object> obtenerCostoUnitario(
-            @RequestParam("proveedorId") String proveedorId,
-            @RequestParam("productoId") String productoId) {
-        Double costo = compraProveedorService.obtenerUltimoCostoUnitario(proveedorId, productoId);
-        return java.util.Map.of("costo", costo != null ? costo : 0.0);
+    public String obtenerCostoUnitario(
+            @RequestParam(value = "proveedorId", required = false) String proveedorId,
+            @RequestParam(value = "productoId", required = false) String productoId,
+            Model model) {
+        Double costo = 0.0;
+        if (proveedorId != null && !proveedorId.isBlank() && productoId != null && !productoId.isBlank()) {
+            Double ultimoCosto = compraProveedorService.obtenerUltimoCostoUnitario(proveedorId.trim(), productoId.trim());
+            if (ultimoCosto != null) {
+                costo = ultimoCosto;
+            }
+        }
+        model.addAttribute("costo", costo);
+        return "admin/fragments/costo-unitario :: bloqueCosto";
     }
 
     /**
