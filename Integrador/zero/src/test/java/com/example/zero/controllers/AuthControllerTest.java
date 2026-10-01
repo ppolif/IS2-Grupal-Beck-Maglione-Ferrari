@@ -128,13 +128,13 @@ class AuthControllerTest {
 
         assertEquals("admin/page-register", vista);
         verify(model, times(1)).addAttribute("errorMessage", "Las contraseñas no coinciden");
-        verify(usuarioService, never()).crearUsuario(any(), any(), any(), any());
+        verify(usuarioService, never()).crearUsuario(any(), any(), any(), any(), anyBoolean());
     }
 
     @Test
     void processAdminRegister_exitoso_creaUsuarioYRedirigeAdmin() {
         Usuario nuevo = Usuario.builder().nombreUsuario("nuevo@zero.com").rol(RolUsuario.ADMINISTRATIVO).build();
-        when(usuarioService.crearUsuario(eq("nuevo@zero.com"), eq("pass123"), eq(RolUsuario.ADMINISTRATIVO), isNull()))
+        when(usuarioService.crearUsuario(eq("nuevo@zero.com"), eq("pass123"), eq(RolUsuario.ADMINISTRATIVO), isNull(), eq(true)))
                 .thenReturn(nuevo);
 
         String vista = authController.processAdminRegister("Nuevo Admin", "nuevo@zero.com", "pass123", "pass123", request, session, model);

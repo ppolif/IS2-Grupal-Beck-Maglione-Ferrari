@@ -16,11 +16,11 @@ import java.util.Optional;
 public class VigenciaPrecioService {
 
     private final VigenciaPrecioRepository vigenciaPrecioRepository;
-    private final ProductoService productoService;
+    private final ProductoRepository productoRepository;
 
-    public VigenciaPrecioService(VigenciaPrecioRepository vigenciaPrecioRepository, ProductoService productoService) {
+    public VigenciaPrecioService(VigenciaPrecioRepository vigenciaPrecioRepository, ProductoRepository productoRepository) {
         this.vigenciaPrecioRepository = vigenciaPrecioRepository;
-        this.productoService = productoService;
+        this.productoRepository = productoRepository;
     }
 
     public void validar(double precio, LocalDate fechaDesde) {
@@ -39,7 +39,12 @@ public class VigenciaPrecioService {
         }
         validar(precio, fechaDesde);
 
-        Producto producto = productoService.buscarPorId(productoId);
+        Optional<Producto> buscarProd = productoRepository.findById(productoId);
+        if (!buscarProd.isPresent()) {
+
+            throw new IllegalArgumentException("Producto no encontrado");
+        }
+        Producto producto = buscarProd.get();
         // Cerrar vigencia actual si existe
         Optional<VigenciaPrecio> vigenciaActual = vigenciaPrecioRepository.findPrecioActualByProductoId(productoId);
         if (vigenciaActual.isPresent()) {

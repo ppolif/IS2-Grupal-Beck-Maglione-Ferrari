@@ -99,7 +99,7 @@ public class AuthController {
         }
 
         try {
-            Usuario nuevoUsuario = usuarioService.crearUsuario(email, password, RolUsuario.ADMINISTRATIVO, null);
+            Usuario nuevoUsuario = usuarioService.crearUsuario(email, password, RolUsuario.ADMINISTRATIVO, null, true);
             session.setAttribute("usuariosession", nuevoUsuario);
             return "redirect:/admin/registrar-venta";
         } catch (IllegalArgumentException e) {

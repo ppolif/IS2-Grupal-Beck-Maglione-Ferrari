@@ -64,6 +64,7 @@ public class ClienteService {
         }
     }
 
+    ////este solo se llama cuando un admin registra una venta
     @Transactional
     public Cliente crearCliente(String numeroDocumento, String nombre, String apellido,
                                 LocalDate fechaNacimiento, TipoDocumento tipoDocumento,
@@ -101,7 +102,9 @@ public class ClienteService {
             throw new IllegalArgumentException("Los datos de registro no pueden ser nulos");
         }
 
-        // 1. Validar Credenciales
+
+
+        // validar credenciales
         usuarioService.validar(dto.getEmail(), dto.getPassword(), RolUsuario.CLIENTE);
         if (dto.getConfirmPassword() == null || !dto.getPassword().equals(dto.getConfirmPassword())) {
             throw new IllegalArgumentException("Las contraseñas no coinciden");
@@ -112,7 +115,7 @@ public class ClienteService {
             throw new IllegalArgumentException("Ya existe un usuario activo con el correo: " + emailLimpio);
         }
 
-        // 2. Validar datos personales
+        // validar datos personales
         validar(dto.getNumeroDocumento(), dto.getNombre(), dto.getApellido(), dto.getTipoDocumento());
         if (dto.getFechaNacimiento() == null) {
             throw new IllegalArgumentException("Debe ingresar su fecha de nacimiento");
@@ -121,13 +124,13 @@ public class ClienteService {
             throw new IllegalArgumentException("La fecha de nacimiento no puede ser posterior a la actual");
         }
 
-        // 3. Validar Nacionalidad a través de NacionalidadService
+        // validar Nacionalidad
         if (dto.getNacionalidadId() == null || dto.getNacionalidadId().trim().isEmpty()) {
             throw new IllegalArgumentException("Debe seleccionar una nacionalidad");
         }
         Nacionalidad nacionalidad = nacionalidadService.buscarPorId(dto.getNacionalidadId().trim());
 
-        // 4. Crear y asociar Domicilio a través de ZonaService
+        // crear direccion
         Direccion direccion = zonaService.crearDireccion(
                 dto.getCalle(),
                 dto.getNumeracion(),
@@ -138,7 +141,7 @@ public class ClienteService {
                 dto.getLocalidadId()
         );
 
-        // 5. Crear Contacto a través de ContactoService
+        // crear Contacto
         String tipoContacto = dto.getTipoContacto();
         Contacto contacto;
         if ("CELULAR".equalsIgnoreCase(tipoContacto)) {
@@ -159,7 +162,7 @@ public class ClienteService {
             );
         }
 
-        // 6. Gestionar Foto de Perfil
+        // foto de perfil
         List<Imagen> imagenes = new ArrayList<>();
         String fotoUrl = null;
         Imagen img = null;
@@ -171,12 +174,10 @@ public class ClienteService {
         }
         if (img != null) {
             imagenes.add(img);
-            if (img.getId() != null) {
-                fotoUrl = "/imagen/" + img.getId();
-            }
+            fotoUrl = "/imagen/" + img.getId();
         }
 
-        // 7. Obtener Cliente existente o Crear uno nuevo
+        // obtener o crear cliente
         String docLimpio = dto.getNumeroDocumento().trim();
         Optional<Cliente> clienteExistente = clienteRepository.findByNumeroDocumentoAndEliminadoFalse(docLimpio);
 
@@ -192,8 +193,8 @@ public class ClienteService {
 
             cliente = Cliente.builder()
                     .numeroDocumento(docLimpio)
-                    .nombre(dto.getNombre().trim())
-                    .apellido(dto.getApellido().trim())
+                    .nombre(dto.getNombre())
+                    .apellido(dto.getApellido())
                     .fechaNacimiento(dto.getFechaNacimiento())
                     .tipoDocumento(dto.getTipoDocumento() != null ? dto.getTipoDocumento() : TipoDocumento.DNI)
                     .nacionalidad(nacionalidad)

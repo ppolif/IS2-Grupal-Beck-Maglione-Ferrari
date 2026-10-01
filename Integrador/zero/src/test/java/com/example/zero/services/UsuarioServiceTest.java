@@ -98,7 +98,7 @@ class UsuarioServiceTest {
             return u;
         });
 
-        Usuario resultado = usuarioService.crearUsuario("nuevo@zero.com", "segura123", RolUsuario.CLIENTE, null);
+        Usuario resultado = usuarioService.crearUsuario("nuevo@zero.com", "segura123", RolUsuario.CLIENTE, null, true);
 
         assertNotNull(resultado);
         assertEquals("u-123", resultado.getId());
@@ -116,7 +116,7 @@ class UsuarioServiceTest {
                 .thenReturn(Optional.of(existente));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> usuarioService.crearUsuario("existente@zero.com", "clave123", RolUsuario.CLIENTE, null));
+                () -> usuarioService.crearUsuario("existente@zero.com", "clave123", RolUsuario.CLIENTE, null, true));
 
         assertTrue(ex.getMessage().contains("Ya existe un usuario activo"));
         verify(usuarioRepository, never()).save(any());
@@ -125,13 +125,13 @@ class UsuarioServiceTest {
     @Test
     void crearUsuario_conClaveCorta_lanzaIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class,
-                () -> usuarioService.crearUsuario("test@zero.com", "123", RolUsuario.CLIENTE, null));
+                () -> usuarioService.crearUsuario("test@zero.com", "123", RolUsuario.CLIENTE, null, true));
     }
 
     @Test
     void crearUsuario_conRolNulo_lanzaIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class,
-                () -> usuarioService.crearUsuario("test@zero.com", "clave123", null, null));
+                () -> usuarioService.crearUsuario("test@zero.com", "clave123", null, null, true));
     }
 
     @Test
@@ -248,7 +248,7 @@ class UsuarioServiceTest {
                 .thenReturn(Optional.empty());
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Usuario resultado = usuarioService.crearUsuario("encriptado@zero.com", "claveSecreta", RolUsuario.CLIENTE, null);
+        Usuario resultado = usuarioService.crearUsuario("encriptado@zero.com", "claveSecreta", RolUsuario.CLIENTE, null, true);
 
         assertNotNull(resultado);
         assertTrue(usuarioService.esBCrypt(resultado.getClave()));
