@@ -36,6 +36,6 @@ import java.util.Set;
 public class Cliente extends Persona {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "nacionalidad_id"t)
+    @JoinColumn(name = "nacionalidad_id")
     private Nacionalidad nacionalidad;
 }
