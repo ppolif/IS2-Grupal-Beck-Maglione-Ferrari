@@ -35,7 +35,7 @@ import java.util.Set;
 @ToString(callSuper = true, exclude = "nacionalidad")
 public class Cliente extends Persona {
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "nacionalidad_id", nullable = false)
     private Nacionalidad nacionalidad;
 }
