@@ -29,16 +29,8 @@ public class UsuarioService {
     private final ImagenService imagenService;
     private final PasswordEncoder passwordEncoder;
 
-    public UsuarioService(UsuarioRepository usuarioRepository) {
-        this(usuarioRepository, null, null, new BCryptPasswordEncoder());
-    }
-
     public UsuarioService(UsuarioRepository usuarioRepository, EmailService emailService) {
         this(usuarioRepository, emailService, null, new BCryptPasswordEncoder());
-    }
-
-    public UsuarioService(UsuarioRepository usuarioRepository, EmailService emailService, ImagenService imagenService) {
-        this(usuarioRepository, emailService, imagenService, new BCryptPasswordEncoder());
     }
 
     @Autowired
@@ -54,7 +46,7 @@ public class UsuarioService {
 
     public void validar(String nombreUsuario, String clave, RolUsuario rol) {
         if (nombreUsuario == null || nombreUsuario.trim().isEmpty()) {
-            throw new IllegalArgumentException("El nombre de usuario o correo no puede estar vacío");
+            throw new IllegalArgumentException("El correo no puede estar vacío");
         }
         if (clave == null || clave.trim().isEmpty()) {
             throw new IllegalArgumentException("La contraseña no puede estar vacía");
@@ -237,9 +229,7 @@ public class UsuarioService {
 
         if (nuevoEmail != null && !nuevoEmail.trim().isEmpty()) {
             String emailLimpio = nuevoEmail.trim().toLowerCase();
-            if (!emailLimpio.contains("@")) {
-                throw new IllegalArgumentException("El formato del correo electrónico es inválido");
-            }
+
             if (!emailLimpio.equalsIgnoreCase(usuario.getNombreUsuario())) {
                 usuarioRepository.findByNombreUsuarioAndEliminadoFalse(emailLimpio).ifPresent(existente -> {
                     if (!existente.getId().equals(usuario.getId())) {
@@ -268,7 +258,7 @@ public class UsuarioService {
     @Transactional
     public Usuario actualizarPerfil(String id, String nuevoEmail, MultipartFile archivoFoto) {
         String nuevaFotoUrl = null;
-        if (archivoFoto != null && !archivoFoto.isEmpty() && imagenService != null) {
+        if (archivoFoto != null && !archivoFoto.isEmpty()) {
             Imagen img = imagenService.guardarImagen(archivoFoto, TipoImagen.PERSONA);
             if (img != null && img.getId() != null) {
                 nuevaFotoUrl = "/imagen/" + img.getId();
@@ -300,6 +290,48 @@ public class UsuarioService {
         }
         return usuarioRepository.findByNombreUsuarioAndEliminadoFalse(nombreUsuario.trim().toLowerCase())
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró el usuario activo: " + nombreUsuario));
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existePorNombreUsuario(String nombreUsuario) {
+        if (nombreUsuario == null || nombreUsuario.trim().isEmpty()) {
+            return false;
+        }
+        return usuarioRepository.findByNombreUsuarioAndEliminadoFalse(nombreUsuario.trim().toLowerCase()).isPresent();
+    }
+
+    @Transactional
+    public Usuario asociarPersona(Usuario usuario, Persona persona) {
+        if (usuario == null) {
+            throw new IllegalArgumentException("El usuario no puede ser nulo");
+        }
+        usuario.setPersona(persona);
+        return usuarioRepository.save(usuario);
+    }
+
+    @Transactional
+    public Usuario actualizarFoto(Usuario usuario, String fotoUrl) {
+        if (usuario == null) {
+            throw new IllegalArgumentException("El usuario no puede ser nulo");
+        }
+        usuario.setFoto(fotoUrl);
+        return usuarioRepository.save(usuario);
+    }
+
+    @Transactional(readOnly = true)
+    public String obtenerFotoPerfilPorDocumento(String numeroDocumento) {
+        if (numeroDocumento == null || numeroDocumento.trim().isEmpty()) {
+            return null;
+        }
+        List<Usuario> usuarios = usuarioRepository.findByPersonaDocumentoAndEliminadoFalse(numeroDocumento.trim());
+        if (usuarios != null) {
+            for (Usuario u : usuarios) {
+                if (u != null && u.getFoto() != null && !u.getFoto().isBlank()) {
+                    return u.getFoto().trim();
+                }
+            }
+        }
+        return null;
     }
 
     @Transactional(readOnly = true)

@@ -114,64 +114,71 @@ public class OrdenCompraService {
         }
 
         // Reasociar usuario a la sesión de persistencia actual
-        Usuario uPersistente = null;
-        if (usuario.getId() != null) {
-            uPersistente = usuarioRepository.findById(usuario.getId()).orElse(null);
-        }
-        if (uPersistente == null && usuario.getNombreUsuario() != null) {
-            uPersistente = usuarioRepository.findByNombreUsuarioAndEliminadoFalse(usuario.getNombreUsuario()).orElse(null);
-        }
-        if (uPersistente == null) {
-            uPersistente = usuario;
-        }
+//        Usuario uPersistente = null;
+//        if (usuario.getId() != null) {
+//            uPersistente = usuarioRepository.findById(usuario.getId()).orElse(null);
+//        }
+//        if (uPersistente == null && usuario.getNombreUsuario() != null) {
+//            uPersistente = usuarioRepository.findByNombreUsuarioAndEliminadoFalse(usuario.getNombreUsuario()).orElse(null);
+//        }
+//        if (uPersistente == null) {
+//            uPersistente = usuario;
+//        }
+//
+//        // 1. Si el usuario ya tiene asociada una Persona (Cliente)
+//        if (uPersistente.getPersona() != null) {
+//            if (uPersistente.getPersona() instanceof Cliente) {
+//                return (Cliente) uPersistente.getPersona();
+//            }
+//            String doc = uPersistente.getPersona().getNumeroDocumento();
+//            if (doc != null) {
+//                Optional<Cliente> clienteOpt = clienteRepository.findByNumeroDocumentoAndEliminadoFalse(doc);
+//                if (clienteOpt.isPresent()) {
+//                    return clienteOpt.get();
+//                }
+//            }
+//        }
+//
+//        // 2. Si es un usuario cliente sin persona asociada previa (ej. usuario semilla):
+//        String doc = "CLI-" + (uPersistente.getId() != null
+//                ? uPersistente.getId().replace("-", "").substring(0, Math.min(10, uPersistente.getId().replace("-", "").length()))
+//                : UUID.randomUUID().toString().substring(0, 8));
+//
+//        Optional<Cliente> existente = clienteRepository.findByNumeroDocumentoAndEliminadoFalse(doc);
+//        if (existente.isPresent()) {
+//            Cliente cliente = existente.get();
+//            uPersistente.setPersona(cliente);
+//            usuarioRepository.save(uPersistente);
+//            return cliente;
+//        }
+//
+//        Nacionalidad nacionalidad = nacionalidadRepository.findByEliminadoFalse().stream().findFirst().orElseGet(() -> {
+//            Nacionalidad nac = Nacionalidad.builder().id("nac-01").nombre("Argentina").eliminado(false).build();
+//            return nacionalidadRepository.save(nac);
+//        });
+//
+//        String nombreUsuario = uPersistente.getNombreUsuario() != null ? uPersistente.getNombreUsuario() : "Cliente";
+//        Cliente nuevoCliente = Cliente.builder()
+//                .numeroDocumento(doc)
+//                .nombre(nombreUsuario.contains("@") ? nombreUsuario.substring(0, nombreUsuario.indexOf("@")) : nombreUsuario)
+//                .apellido("Cliente")
+//                .fechaNacimiento(LocalDate.of(2000, 1, 1))
+//                .tipoDocumento(TipoDocumento.DNI)
+//                .nacionalidad(nacionalidad)
+//                .eliminado(false)
+//                .build();
+//
+//        nuevoCliente = clienteRepository.save(nuevoCliente);
+//        uPersistente.setPersona(nuevoCliente);
+//        usuarioRepository.save(uPersistente);
+//        return nuevoCliente;
 
-        // 1. Si el usuario ya tiene asociada una Persona (Cliente)
-        if (uPersistente.getPersona() != null) {
-            if (uPersistente.getPersona() instanceof Cliente) {
-                return (Cliente) uPersistente.getPersona();
-            }
-            String doc = uPersistente.getPersona().getNumeroDocumento();
-            if (doc != null) {
-                Optional<Cliente> clienteOpt = clienteRepository.findByNumeroDocumentoAndEliminadoFalse(doc);
-                if (clienteOpt.isPresent()) {
-                    return clienteOpt.get();
-                }
-            }
-        }
-
-        // 2. Si es un usuario cliente sin persona asociada previa (ej. usuario semilla):
-        String doc = "CLI-" + (uPersistente.getId() != null
-                ? uPersistente.getId().replace("-", "").substring(0, Math.min(10, uPersistente.getId().replace("-", "").length()))
-                : UUID.randomUUID().toString().substring(0, 8));
-
-        Optional<Cliente> existente = clienteRepository.findByNumeroDocumentoAndEliminadoFalse(doc);
-        if (existente.isPresent()) {
-            Cliente cliente = existente.get();
-            uPersistente.setPersona(cliente);
-            usuarioRepository.save(uPersistente);
+        Usuario uPersistente = usuarioRepository.findById(usuario.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        if (uPersistente.getPersona() instanceof Cliente cliente) {
             return cliente;
         }
-
-        Nacionalidad nacionalidad = nacionalidadRepository.findByEliminadoFalse().stream().findFirst().orElseGet(() -> {
-            Nacionalidad nac = Nacionalidad.builder().id("nac-01").nombre("Argentina").eliminado(false).build();
-            return nacionalidadRepository.save(nac);
-        });
-
-        String nombreUsuario = uPersistente.getNombreUsuario() != null ? uPersistente.getNombreUsuario() : "Cliente";
-        Cliente nuevoCliente = Cliente.builder()
-                .numeroDocumento(doc)
-                .nombre(nombreUsuario.contains("@") ? nombreUsuario.substring(0, nombreUsuario.indexOf("@")) : nombreUsuario)
-                .apellido("Cliente")
-                .fechaNacimiento(LocalDate.of(2000, 1, 1))
-                .tipoDocumento(TipoDocumento.DNI)
-                .nacionalidad(nacionalidad)
-                .eliminado(false)
-                .build();
-
-        nuevoCliente = clienteRepository.save(nuevoCliente);
-        uPersistente.setPersona(nuevoCliente);
-        usuarioRepository.save(uPersistente);
-        return nuevoCliente;
+        throw new IllegalStateException("El usuario actual no tiene un perfil de cliente asociado para operar con el carrito.");
     }
 
     /**

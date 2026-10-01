@@ -4,14 +4,8 @@ import com.example.zero.dto.zona.DepartamentoDTO;
 import com.example.zero.dto.zona.LocalidadDTO;
 import com.example.zero.dto.zona.PaisDTO;
 import com.example.zero.dto.zona.ProvinciaDTO;
-import com.example.zero.entidades.zona.Departamento;
-import com.example.zero.entidades.zona.Localidad;
-import com.example.zero.entidades.zona.Pais;
-import com.example.zero.entidades.zona.Provincia;
-import com.example.zero.repositories.DepartamentoRepository;
-import com.example.zero.repositories.LocalidadRepository;
-import com.example.zero.repositories.PaisRepository;
-import com.example.zero.repositories.ProvinciaRepository;
+import com.example.zero.entidades.zona.*;
+import com.example.zero.repositories.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,15 +19,47 @@ public class ZonaService {
     private final ProvinciaRepository provinciaRepository;
     private final DepartamentoRepository departamentoRepository;
     private final LocalidadRepository localidadRepository;
+    private final DireccionRepository direccionRepository;
 
     public ZonaService(PaisRepository paisRepository,
                        ProvinciaRepository provinciaRepository,
                        DepartamentoRepository departamentoRepository,
-                       LocalidadRepository localidadRepository) {
+                       LocalidadRepository localidadRepository,
+                       DireccionRepository direccionRepository) {
         this.paisRepository = paisRepository;
         this.provinciaRepository = provinciaRepository;
         this.departamentoRepository = departamentoRepository;
         this.localidadRepository = localidadRepository;
+        this.direccionRepository = direccionRepository;
+    }
+
+    @Transactional
+    public Direccion crearDireccion(String calle, String numeracion, String barrio,
+                                    String manzanaPiso, String casaDepartamento,
+                                    String referencia, String localidadId) {
+
+        if (localidadId == null || localidadId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Debe seleccionar una localidad para el domicilio");
+        }
+        if (calle == null || calle.trim().isEmpty()) {
+            throw new IllegalArgumentException("La calle de la dirección no puede estar vacía");
+        }
+        if (numeracion == null || numeracion.trim().isEmpty()) {
+            throw new IllegalArgumentException("La numeración de la dirección no puede estar vacía");
+        }
+
+        Localidad localidad = buscarLocalidadPorId(localidadId.trim());
+        Direccion direccion = Direccion.builder()
+                .calle(calle.trim())
+                .numeracion(numeracion.trim())
+                .barrio(barrio != null && !barrio.isBlank() ? barrio.trim() : null)
+                .manzanaPiso(manzanaPiso != null && !manzanaPiso.isBlank() ? manzanaPiso.trim() : null)
+                .casaDepartamento(casaDepartamento != null && !casaDepartamento.isBlank() ? casaDepartamento.trim() : null)
+                .referencia(referencia != null && !referencia.isBlank() ? referencia.trim() : null)
+                .localidad(localidad)
+                .eliminado(false)
+                .build();
+        return direccionRepository.save(direccion);
     }
 
     @Transactional(readOnly = true)

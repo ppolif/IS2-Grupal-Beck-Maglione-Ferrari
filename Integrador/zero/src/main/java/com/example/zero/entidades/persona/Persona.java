@@ -55,7 +55,7 @@ public abstract class Persona {
     @Column(nullable = false, length = 100)
     private String apellido;
 
-    @Column(name = "fecha_nacimiento", nullable = false)
+    @Column(name = "fecha_nacimiento")
     private LocalDate fechaNacimiento;
 
     @Enumerated(EnumType.STRING)
@@ -66,12 +66,8 @@ public abstract class Persona {
     @lombok.Builder.Default
     private boolean eliminado = false;
 
-    // Relación 1 a 1 con Usuario
-    // Usuario es el lado dueño de la FK (usuario.persona_id), ver clase Usuario.
-//    @OneToOne(mappedBy = "persona", fetch = FetchType.LAZY)
-//    private Usuario usuario;
 
-     //una persona puede tener muchas fotos por borrado logico
+     // una persona puede tener muchas fotos por borrado logico
      @OneToMany(fetch = FetchType.LAZY)
      @JoinColumn(name = "persona_documento")
      private List<Imagen> imagen;
@@ -81,7 +77,7 @@ public abstract class Persona {
     @JoinColumn(name = "persona_documento")
     private List<Direccion> direccion;
 
-    // Persona 1..* Contacto (una persona puede tener varios medios de contacto).
+    // persona muchos contactos.
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "persona_documento")
     private List<Contacto> contactos;
