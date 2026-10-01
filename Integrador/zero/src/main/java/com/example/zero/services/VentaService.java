@@ -39,7 +39,7 @@ import java.util.*;
 @Service
 public class VentaService {
 
-    private static final Logger logger = LoggerFactory.getLogger(VentaService.class);
+    private static final Logger logger = LoggerFactory.getLogger(VentaService.class); //clase para visualizar los errores mas facil por consola
 
     private final FacturaRepository facturaRepository;
     private final DetalleRepository detalleRepository;
@@ -56,33 +56,33 @@ public class VentaService {
     private final ContactoService contactoService;
     private final HttpSession session;
 
-    public VentaService(FacturaRepository facturaRepository,
-                        DetalleRepository detalleRepository,
-                        FormaDePagoRepository formaDePagoRepository,
-                        ClienteRepository clienteRepository,
-                        ClienteService clienteService,
-                        NacionalidadRepository nacionalidadRepository,
-                        ProductoService productoService,
-                        UsuarioRepository usuarioRepository,
-                        HttpSession session) {
-        this(facturaRepository, detalleRepository, formaDePagoRepository, clienteRepository, clienteService,
-                nacionalidadRepository, productoService, null, null, usuarioRepository, null, null, null, session);
-    }
-
-    public VentaService(FacturaRepository facturaRepository,
-                        DetalleRepository detalleRepository,
-                        FormaDePagoRepository formaDePagoRepository,
-                        ClienteRepository clienteRepository,
-                        ClienteService clienteService,
-                        NacionalidadRepository nacionalidadRepository,
-                        ProductoService productoService,
-                        ProductoRepository productoRepository,
-                        StockService stockService,
-                        UsuarioRepository usuarioRepository,
-                        HttpSession session) {
-        this(facturaRepository, detalleRepository, formaDePagoRepository, clienteRepository, clienteService,
-                nacionalidadRepository, productoService, productoRepository, stockService, usuarioRepository, null, null, null, session);
-    }
+//    public VentaService(FacturaRepository facturaRepository,
+//                        DetalleRepository detalleRepository,
+//                        FormaDePagoRepository formaDePagoRepository,
+//                        ClienteRepository clienteRepository,
+//                        ClienteService clienteService,
+//                        NacionalidadRepository nacionalidadRepository,
+//                        ProductoService productoService,
+//                        UsuarioRepository usuarioRepository,
+//                        HttpSession session) {
+//        this(facturaRepository, detalleRepository, formaDePagoRepository, clienteRepository, clienteService,
+//                nacionalidadRepository, productoService, null, null, usuarioRepository, null, null, null, session);
+//    }
+//
+//    public VentaService(FacturaRepository facturaRepository,
+//                        DetalleRepository detalleRepository,
+//                        FormaDePagoRepository formaDePagoRepository,
+//                        ClienteRepository clienteRepository,
+//                        ClienteService clienteService,
+//                        NacionalidadRepository nacionalidadRepository,
+//                        ProductoService productoService,
+//                        ProductoRepository productoRepository,
+//                        StockService stockService,
+//                        UsuarioRepository usuarioRepository,
+//                        HttpSession session) {
+//        this(facturaRepository, detalleRepository, formaDePagoRepository, clienteRepository, clienteService,
+//                nacionalidadRepository, productoService, productoRepository, stockService, usuarioRepository, null, null, null, session);
+//    }
 
     @org.springframework.beans.factory.annotation.Autowired
     public VentaService(FacturaRepository facturaRepository,
@@ -141,7 +141,7 @@ public class VentaService {
 
         // Fase 1: Verificación de Stock Actual previo a la venta
         if (stockService != null) {
-            Map<String, Integer> cantidadesPorProducto = new LinkedHashMap<>();
+            Map<String, Integer> cantidadesPorProducto = new LinkedHashMap<>(); //mapea la cantidad de cada producto con su id para evitar peticiones maliciosas y falsos chequeos de stock
             for (int i = 0; i < productoIds.size(); i++) {
                 String pId = productoIds.get(i);
                 int c = cantidades.get(i);
@@ -149,13 +149,13 @@ public class VentaService {
             }
 
             for (Map.Entry<String, Integer> entry : cantidadesPorProducto.entrySet()) {
-                String prodId = entry.getKey();
-                int cantidadSolicitada = entry.getValue();
-                Producto producto = productoService.buscarPorId(prodId);
-                int stockActual = stockService.calcularStockActual(prodId);
+                String prodId = entry.getKey(); //agarramos el id del producto
+                int cantidadSolicitada = entry.getValue();//agarramos la cantidad total calculada en el primer for
+                Producto producto = productoService.buscarPorId(prodId); //buscamos el producto
+                int stockActual = stockService.calcularStockActual(prodId);//buscamos el sotck
 
                 if (stockActual < cantidadSolicitada) {
-                    throw new IllegalArgumentException("Stock insuficiente para: " + producto.getNombre());
+                    throw new IllegalArgumentException("Stock insuficiente para: " + producto.getNombre()); //si no hay stock lanza error
                 }
             }
         }
@@ -172,60 +172,58 @@ public class VentaService {
         // 1. Obtener o crear Cliente
         Cliente cliente = clienteRepository.findByNumeroDocumentoAndEliminadoFalse(dniLimpio)
                 .orElseGet(() -> {
-                    Nacionalidad nac = nacionalidadRepository.findByNombreAndEliminadoFalse("Argentina")
-                            .orElseGet(() -> nacionalidadRepository.save(
-                                    Nacionalidad.builder().nombre("Argentina").eliminado(false).build()
-                            ));
                     return clienteService.crearCliente(
                             dniLimpio,
                             clienteNombre.trim(),
                             clienteApellido.trim(),
-                            LocalDate.of(2000, 1, 1),
+                            null,
                             TipoDocumento.DNI,
-                            nac
+                            null
                     );
                 });
 
-        // Actualizar nombre o apellido si vino modificado
-        if (clienteNombre != null && !clienteNombre.trim().isEmpty()) {
-            cliente.setNombre(clienteNombre.trim());
-        }
-        if (clienteApellido != null && !clienteApellido.trim().isEmpty()) {
-            cliente.setApellido(clienteApellido.trim());
-        }
+//        // Actualizar nombre o apellido si vino modificado
+//        if (clienteNombre != null && !clienteNombre.trim().isEmpty()) {
+//            cliente.setNombre(clienteNombre.trim());
+//        }
+//        if (clienteApellido != null && !clienteApellido.trim().isEmpty()) {
+//            cliente.setApellido(clienteApellido.trim());
+//        }
 
         // Asociar la Persona al Usuario actual (Usuario -> Persona)
         Usuario usuarioSession = (session != null) ? (Usuario) session.getAttribute("usuariosession") : null;
         if (usuarioSession != null && usuarioRepository != null) {
-            usuarioSession.setPersona(cliente);
-            usuarioRepository.save(usuarioSession);
-        } else if (clienteEmail != null && !clienteEmail.trim().isEmpty() && usuarioRepository != null) {
-            usuarioRepository.findByNombreUsuarioAndEliminadoFalse(clienteEmail.trim().toLowerCase())
-                    .ifPresent(u -> {
-                        u.setPersona(cliente);
-                        usuarioRepository.save(u);
-                    });
+            clienteService.asociarClienteUsuario(cliente.getNumeroDocumento(), usuarioSession);
+//        } else if (clienteEmail != null && !clienteEmail.trim().isEmpty() && usuarioRepository != null) {
+//            usuarioRepository.findByNombreUsuarioAndEliminadoFalse(clienteEmail.trim().toLowerCase())
+//                    .ifPresent(u -> {
+//                        u.setPersona(cliente);
+//                        usuarioRepository.save(u);
+//                    });
         }
+        
         clienteRepository.save(cliente);
 
-        // 2. Resolver Forma de Pago
-        TipoDePago tipoPago;
-        try {
-            tipoPago = (formaDePagoStr != null && !formaDePagoStr.trim().isEmpty())
-                    ? TipoDePago.valueOf(formaDePagoStr.trim().toUpperCase())
-                    : TipoDePago.EFECTIVO;
-        } catch (IllegalArgumentException e) {
-            tipoPago = TipoDePago.EFECTIVO;
+        // 2. Resolver Forma de Pago de manera estricta
+        if (formaDePagoStr == null || formaDePagoStr.trim().isEmpty()) {
+            throw new IllegalArgumentException("Debe especificar una forma de pago.");
         }
 
-        final TipoDePago finalTipoPago = tipoPago;
-        FormaDePago formaDePago = formaDePagoRepository.findByTipoPagoAndEliminadoFalse(finalTipoPago)
-                .orElseGet(() -> formaDePagoRepository.save(
-                        FormaDePago.builder()
-                                .tipoPago(finalTipoPago)
-                                .observacion("Registrado automáticamente en venta")
-                                .eliminado(false)
-                                .build()
+        TipoDePago tipoPago;
+        try {
+            // 1. Matcheo estricto con el ENUM
+            tipoPago = TipoDePago.valueOf(formaDePagoStr.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            // Si el texto no coincide con ningún valor del ENUM, la venta se cae aquí mismo
+            throw new IllegalArgumentException("La forma de pago ingresada ('" + formaDePagoStr + "') no es válida.");
+        }
+
+        // 2. Búsqueda estricta en la base de datos
+        // Como FacturaCliente exige la entidad FormaDePago, estamos obligados a buscarla.
+        // Usamos orElseThrow para que falle si el administrador no configuró este pago en la BD,
+        FormaDePago formaDePago = formaDePagoRepository.findByTipoPagoAndEliminadoFalse(tipoPago)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "El método de pago '" + tipoPago + "'no está habilitado en la base de datos."
                 ));
 
         // 3. Generar número correlativo de factura
@@ -239,7 +237,7 @@ public class VentaService {
                 .fecha(new Date())
                 .cliente(cliente)
                 .emailUsuario(clienteEmail != null && !clienteEmail.isBlank() ? clienteEmail.trim().toLowerCase() : null)
-                .total(0.0)
+                .total(0.0) //se inicializa el total en 0
                 .estadoOrdenCompra(EstadoOrdenCompra.PENDIENTE_ENVIO)
                 .eliminado(false)
                 .build();
@@ -287,7 +285,7 @@ public class VentaService {
 
         factura.setTotalPagado(Math.round(total * 100.0) / 100.0);
         if (orden != null) {
-            orden.setTotal(factura.getTotalPagado());
+            orden.setTotal(factura.getTotalPagado()); //aca se le asigna el valor total de la compra
             if (ordenCompraRepository != null) {
                 ordenCompraRepository.save(orden);
             }
@@ -341,9 +339,7 @@ public class VentaService {
     @Transactional(readOnly = true)
     public List<Factura> listarVentas() {
         List<Factura> facturas = facturaRepository.findByEliminadoFalseOrderByFechaFacturaDesc();
-        for (Factura f : facturas) {
-            //enriquecerFactura(f);
-        }
+
         return facturas;
     }
 
@@ -353,9 +349,6 @@ public class VentaService {
             return Collections.emptyList();
         }
         List<Factura> compras = facturaRepository.findByClienteOrderByFechaFacturaDesc(cliente);
-        for (Factura f : compras) {
-            //enriquecerFactura(f);
-        }
         return compras;
     }
 
@@ -366,7 +359,6 @@ public class VentaService {
         }
         Factura f = facturaRepository.findActive(id)
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró la factura activa con ID: " + id));
-        //enriquecerFactura(f);
         return f;
     }
 
@@ -377,7 +369,6 @@ public class VentaService {
         }
         Factura f = facturaRepository.findByNumeroFacturaAndEliminadoFalse(numeroFactura)
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró la factura número: " + numeroFactura));
-        //enriquecerFactura(f);
         return f;
     }
 
@@ -410,7 +401,6 @@ public class VentaService {
             Optional<Factura> facturaOpt = facturaRepository.findByNumeroFacturaAndEliminadoFalse(num);
             if (facturaOpt.isPresent()) {
                 Factura f = facturaOpt.get();
-                //enriquecerFactura(f);
                 return f;
             }
         } catch (NumberFormatException ignored) {
@@ -422,36 +412,8 @@ public class VentaService {
             facturaById = facturaRepository.findActive(orderNumberOrId.trim());
         }
         Factura f = facturaById.orElse(null);
-        //enriquecerFactura(f);
         return f;
     }
-
-//    public void enriquecerFactura(Factura f) {
-//        if (f == null) return;
-//
-//        Cliente cliente = obtenerClienteDeFactura(f);
-//        if (cliente == null) return;
-//
-//        // 2. Verificar si el cliente ya tiene un email o teléfono cargado en sus contactos
-//        boolean tieneEmail = cliente.getContactos().stream()
-//                .anyMatch(c -> c instanceof ContactoCorreoElectronico ce && ce.getEmail() != null && !ce.getEmail().isBlank());
-//
-//        boolean tieneTelefono = cliente.getContactos().stream()
-//                .anyMatch(c -> c instanceof ContactoTelefonico ct && ct.getTelefono() != null && !ct.getTelefono().isBlank());
-//
-//        // 3. Si no tiene email en sus contactos, pero hay un usuario en sesión, enriquecemos con el email de la sesión
-//        if (!tieneEmail && session != null) {
-//            Usuario usuarioSession = (Usuario) session.getAttribute("usuariosession");
-//            if (usuarioSession != null && usuarioSession.getNombreUsuario() != null && usuarioSession.getNombreUsuario().contains("@")) {
-//                ContactoCorreoElectronico contactoEmail = ContactoCorreoElectronico.builder()
-//                        .email(usuarioSession.getNombreUsuario().trim())
-//                        .observacion("Asociado desde sesión activa")
-//                        .eliminado(false)
-//                        .build();
-//                cliente.getContactos().add(contactoEmail);
-//            }
-//        }
-//    }
 
     public Cliente obtenerClienteDeFactura(Factura f) {
         if (f instanceof FacturaCliente fc && fc.getOrdenCompra() != null) {
