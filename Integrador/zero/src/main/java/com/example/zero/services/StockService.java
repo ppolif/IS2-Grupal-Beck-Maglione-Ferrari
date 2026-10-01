@@ -52,22 +52,11 @@ public class StockService {
      * @return Optional con la entidad Stock
      */
     @Transactional(readOnly = true)
-    public Optional<Stock> buscarStockActual(String productoId) {
+    public Optional<Stock> buscarStock(String productoId) {
         if (productoId == null || productoId.trim().isEmpty()) {
             return Optional.empty();
         }
         return stockRepository.findUltimoStockPorProducto(productoId.trim());
-    }
-
-    /**
-     * Busca un registro de stock por ID.
-     */
-    @Transactional(readOnly = true)
-    public Optional<Stock> buscarStock(String id) {
-        if (id == null || id.trim().isEmpty()) {
-            return Optional.empty();
-        }
-        return stockRepository.findActive(id.trim());
     }
 
     /**

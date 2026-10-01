@@ -34,6 +34,8 @@ public class ProveedorService {
         validar(razonSocial, cuit);
 
         String cuitLimpio = cuit.trim();
+
+        // Verificamos si existe el proveedor en la bbdd
         Optional<Proveedor> existente = proveedorRepository.findByCuitAndEliminadoFalse(cuitLimpio);
         if (existente.isPresent()) {
             throw new IllegalArgumentException("Ya existe un proveedor activo con el CUIT: " + cuitLimpio);

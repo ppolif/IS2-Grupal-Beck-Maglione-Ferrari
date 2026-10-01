@@ -35,6 +35,7 @@ public interface FacturaRepository extends JpaRepository<Factura, String> {
 
     List<Factura> findByEliminadoFalseOrderByFechaFacturaDesc();
 
+    // Se trae la ultima factura (Top, ya que estan ordenadas de forma descendente)
     Optional<Factura> findTopByOrderByNumeroFacturaDesc();
 
     @Query("SELECT f FROM Factura f " +

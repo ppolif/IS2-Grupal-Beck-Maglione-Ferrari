@@ -31,7 +31,7 @@ public class Usuario {
     @Column(name = "nombre_usuario", nullable = false, unique = true, length = 50)
     private String nombreUsuario;
 
-    // ENCRIPTAR CLAVE CON BCrypt de SPRING SECURITY
+    // encriptar clave BCrypt
     @Column(name = "clave", nullable = false, length = 255)
     private String clave;
 
@@ -56,9 +56,8 @@ public class Usuario {
     @Column(name = "foto", length = 500)
     private String foto;
 
-    // Lado dueño de la relación 1 a 1 con Persona (en la práctica, una Persona
-    // concreta de tipo Cliente o Empleado).
-    @ManyToOne(fetch = FetchType.LAZY)
+    // lado dueño de la relación 1 a 1 con Persona
+    @ManyToOne
     @JoinColumn(name = "persona_id")
     private Persona persona;
 }
