@@ -172,13 +172,16 @@ public class VentaService {
         // 1. Obtener o crear Cliente
         Cliente cliente = clienteRepository.findByNumeroDocumentoAndEliminadoFalse(dniLimpio)
                 .orElseGet(() -> {
+                    Nacionalidad nac = (nacionalidadRepository != null)
+                            ? nacionalidadRepository.findByEliminadoFalse().stream().findFirst().orElse(null)
+                            : null;
                     return clienteService.crearCliente(
                             dniLimpio,
                             clienteNombre.trim(),
                             clienteApellido.trim(),
-                            null,
+                            java.time.LocalDate.of(2000, 1, 1),
                             TipoDocumento.DNI,
-                            null
+                            nac
                     );
                 });
 
