@@ -30,9 +30,8 @@ public class CartController {
     private final StockService stockService;
     private final ProductoService productoService;
 
-    /**
-     * Muestra la vista principal del carrito de compras del cliente autenticado.
-     */
+    ///vista principal del carrito :p
+    ///redirectAttributes es una interfaz derivada de Model para paasr datos de un controldador a otro cuando hacemos redireccion
     @GetMapping({"/shop/cart", "/cart"})
     public String showCart(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
         Usuario usuario = (Usuario) session.getAttribute("usuariosession");
@@ -77,10 +76,7 @@ public class CartController {
         }
     }
 
-    /**
-     * Agrega un producto al carrito de compras persistente.
-     * Mantiene al usuario en la página de origen vía Referer y envía feedback vía Flash Attribute.
-     */
+
     @PostMapping({"/shop/cart/add", "/cart/add"})
     public String addToCart(@RequestParam("productId") String productId,
                             @RequestParam(value = "quantity", defaultValue = "1") int quantity,
@@ -117,9 +113,7 @@ public class CartController {
         return "redirect:/shop/category";
     }
 
-    /**
-     * Actualiza la cantidad de un ítem en el carrito.
-     */
+    ///actualiza cantidad de un item en el carrito
     @PostMapping({"/shop/cart/update", "/cart/update"})
     public String updateCartItem(@RequestParam("itemId") String itemId,
                                  @RequestParam("quantity") int quantity,
@@ -150,9 +144,7 @@ public class CartController {
     }
 
 
-    /**
-     * Elimina un ítem específico del carrito de compras.
-     */
+    ///elimina un ítem específico del carrito
     @PostMapping({"/shop/cart/remove", "/cart/remove"})
     public String removeCartItem(@RequestParam("itemId") String itemId,
                                  HttpSession session,
@@ -181,9 +173,7 @@ public class CartController {
         return "redirect:/shop/cart";
     }
 
-    /**
-     * Vacía todos los ítems del carrito de compras activo.
-     */
+    ///
     @PostMapping({"/shop/cart/clear", "/cart/clear"})
     public String clearCart(HttpSession session, RedirectAttributes redirectAttributes) {
         Usuario usuario = (Usuario) session.getAttribute("usuariosession");
@@ -210,24 +200,4 @@ public class CartController {
         return "redirect:/shop/cart";
     }
 
-    /**
-     * Aplica un cupón de descuento en el carrito.
-     */
-    @PostMapping({"/shop/cart/coupon", "/cart/coupon"})
-    public String applyCoupon(@RequestParam(value = "couponCode", required = false) String couponCode,
-                              HttpSession session,
-                              RedirectAttributes redirectAttributes) {
-        Usuario usuario = (Usuario) session.getAttribute("usuariosession");
-        if (usuario != null && usuario.getRol() != RolUsuario.CLIENTE) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden operar sobre el carrito.");
-            return "redirect:/admin";
-        }
-
-        if (couponCode == null || couponCode.trim().isEmpty()) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Ingresa un código de cupón válido.");
-        } else {
-            redirectAttributes.addFlashAttribute("successMessage", "Cupón '" + couponCode.trim() + "' aplicado exitosamente.");
-        }
-        return "redirect:/shop/cart";
-    }
 }

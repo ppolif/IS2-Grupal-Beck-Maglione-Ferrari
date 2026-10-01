@@ -19,12 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.*;
 
-/**
- * Servicio para la gestión del carrito de compras y órdenes de compra del cliente.
- * Representa la orden de compra en estado PENDIENTE_COMPLETAR como el carrito persistente del cliente.
- * Opera directamente sobre las entidades del dominio sin utilizar DTOs intermedios.
- * Toda la lógica de negocio (cálculo de totales, filtrado de ítems activos) reside en este servicio.
- */
+
 @Service
 @RequiredArgsConstructor
 public class OrdenCompraService {
@@ -39,10 +34,7 @@ public class OrdenCompraService {
     private final StockService stockService;
     private final HttpSession session;
 
-    /**
-     * Recalcula y asigna el total acumulado de una orden de compra sumando los subtotales
-     * de los detalles activos (no eliminados).
-     */
+    ///recalcula y asigna el total acumulado de una orden de compra sumando los subtotales
     public void recalcularTotal(OrdenCompra ordenCompra) {
         if (ordenCompra == null) return;
         if (ordenCompra.getDetalles() == null) {
@@ -56,17 +48,13 @@ public class OrdenCompraService {
         ordenCompra.setTotal(Math.round(sum * 100.0) / 100.0);
     }
 
-    /**
-     * Recalcula y asigna el subtotal de un detalle de compra (cantidad * precio unitario).
-     */
+    ///
     public void recalcularSubtotal(DetalleCompra detalle) {
         if (detalle == null) return;
         detalle.setSubtotal(Math.round((detalle.getCantidad() * detalle.getPrecioUnitario()) * 100.0) / 100.0);
     }
 
-    /**
-     * Retorna la lista de ítems (detalles de compra) activos (no eliminados) de una orden.
-     */
+
     public List<DetalleCompra> obtenerItemsActivos(OrdenCompra ordenCompra) {
         if (ordenCompra == null || ordenCompra.getDetalles() == null) {
             return Collections.emptyList();
@@ -76,9 +64,7 @@ public class OrdenCompraService {
                 .toList();
     }
 
-    /**
-     * Cuenta la cantidad total de unidades contenidas en la orden de compra especificada.
-     */
+    ///cuenta la cantidad total de unidades contenidas en la orden de compra
     public int contarItems(OrdenCompra ordenCompra) {
         if (ordenCompra == null || ordenCompra.getDetalles() == null) {
             return 0;
@@ -89,21 +75,8 @@ public class OrdenCompraService {
                 .sum();
     }
 
-    /**
-     * Cuenta la cantidad de unidades totales presentes en el carrito activo del cliente.
-     */
-    @Transactional(readOnly = true)
-    public int contarItems(Cliente cliente) {
-        if (cliente == null) return 0;
-        OrdenCompra carrito = obtenerOCrearCarrito(cliente);
-        return contarItems(carrito);
-    }
 
-    /**
-     * Obtiene o asocia el Cliente correspondiente a un Usuario autenticado.
-     * Reasocia el usuario a la sesión activa de JPA para evitar LazyInitializationException
-     * al consultar la relación ManyToOne con Persona/Cliente.
-     */
+
     @Transactional
     public Cliente obtenerOAsociarCliente(Usuario usuario) {
         if (usuario == null) {
@@ -113,66 +86,6 @@ public class OrdenCompraService {
             throw new IllegalArgumentException("Solo los usuarios con rol CLIENTE pueden poseer o gestionar un carrito de compras.");
         }
 
-        // Reasociar usuario a la sesión de persistencia actual
-//        Usuario uPersistente = null;
-//        if (usuario.getId() != null) {
-//            uPersistente = usuarioRepository.findById(usuario.getId()).orElse(null);
-//        }
-//        if (uPersistente == null && usuario.getNombreUsuario() != null) {
-//            uPersistente = usuarioRepository.findByNombreUsuarioAndEliminadoFalse(usuario.getNombreUsuario()).orElse(null);
-//        }
-//        if (uPersistente == null) {
-//            uPersistente = usuario;
-//        }
-//
-//        // 1. Si el usuario ya tiene asociada una Persona (Cliente)
-//        if (uPersistente.getPersona() != null) {
-//            if (uPersistente.getPersona() instanceof Cliente) {
-//                return (Cliente) uPersistente.getPersona();
-//            }
-//            String doc = uPersistente.getPersona().getNumeroDocumento();
-//            if (doc != null) {
-//                Optional<Cliente> clienteOpt = clienteRepository.findByNumeroDocumentoAndEliminadoFalse(doc);
-//                if (clienteOpt.isPresent()) {
-//                    return clienteOpt.get();
-//                }
-//            }
-//        }
-//
-//        // 2. Si es un usuario cliente sin persona asociada previa (ej. usuario semilla):
-//        String doc = "CLI-" + (uPersistente.getId() != null
-//                ? uPersistente.getId().replace("-", "").substring(0, Math.min(10, uPersistente.getId().replace("-", "").length()))
-//                : UUID.randomUUID().toString().substring(0, 8));
-//
-//        Optional<Cliente> existente = clienteRepository.findByNumeroDocumentoAndEliminadoFalse(doc);
-//        if (existente.isPresent()) {
-//            Cliente cliente = existente.get();
-//            uPersistente.setPersona(cliente);
-//            usuarioRepository.save(uPersistente);
-//            return cliente;
-//        }
-//
-//        Nacionalidad nacionalidad = nacionalidadRepository.findByEliminadoFalse().stream().findFirst().orElseGet(() -> {
-//            Nacionalidad nac = Nacionalidad.builder().id("nac-01").nombre("Argentina").eliminado(false).build();
-//            return nacionalidadRepository.save(nac);
-//        });
-//
-//        String nombreUsuario = uPersistente.getNombreUsuario() != null ? uPersistente.getNombreUsuario() : "Cliente";
-//        Cliente nuevoCliente = Cliente.builder()
-//                .numeroDocumento(doc)
-//                .nombre(nombreUsuario.contains("@") ? nombreUsuario.substring(0, nombreUsuario.indexOf("@")) : nombreUsuario)
-//                .apellido("Cliente")
-//                .fechaNacimiento(LocalDate.of(2000, 1, 1))
-//                .tipoDocumento(TipoDocumento.DNI)
-//                .nacionalidad(nacionalidad)
-//                .eliminado(false)
-//                .build();
-//
-//        nuevoCliente = clienteRepository.save(nuevoCliente);
-//        uPersistente.setPersona(nuevoCliente);
-//        usuarioRepository.save(uPersistente);
-//        return nuevoCliente;
-
         Usuario uPersistente = usuarioRepository.findById(usuario.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
         if (uPersistente.getPersona() instanceof Cliente cliente) {
@@ -181,10 +94,7 @@ public class OrdenCompraService {
         throw new IllegalStateException("El usuario actual no tiene un perfil de cliente asociado para operar con el carrito.");
     }
 
-    /**
-     * Obtiene el carrito activo (OrdenCompra en PENDIENTE_COMPLETAR) del cliente,
-     * o crea uno nuevo si aún no existe.
-     */
+    ///obtiene el carrito activo o crear
     @Transactional
     public OrdenCompra obtenerOCrearCarrito(Cliente cliente) {
         if (cliente == null) {
@@ -221,9 +131,7 @@ public class OrdenCompraService {
         return ordenCompraRepository.save(nuevoCarrito);
     }
 
-    /**
-     * Agrega un producto al carrito persistente. Si ya existe, incrementa la cantidad.
-     */
+
     @Transactional
     public OrdenCompra agregarProducto(Cliente cliente, String productoId, int cantidad) {
         if (cliente == null) {
@@ -302,9 +210,7 @@ public class OrdenCompraService {
         return ordenCompraRepository.save(carrito);
     }
 
-    /**
-     * Actualiza la cantidad de un ítem en el carrito persistente.
-     */
+
     @Transactional
     public OrdenCompra actualizarCantidad(Cliente cliente, String detalleId, int nuevaCantidad) {
         if (cliente == null) {
@@ -339,9 +245,7 @@ public class OrdenCompraService {
         return ordenCompraRepository.save(carrito);
     }
 
-    /**
-     * Elimina un ítem del carrito (borrado lógico).
-     */
+
     @Transactional
     public OrdenCompra eliminarProducto(Cliente cliente, String detalleId) {
         if (cliente == null) {
@@ -365,9 +269,7 @@ public class OrdenCompraService {
         return ordenCompraRepository.save(carrito);
     }
 
-    /**
-     * Vacía todos los ítems del carrito activo.
-     */
+
     @Transactional
     public OrdenCompra vaciarCarrito(Cliente cliente) {
         if (cliente == null) {
