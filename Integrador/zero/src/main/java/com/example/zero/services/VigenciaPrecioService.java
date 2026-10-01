@@ -4,6 +4,7 @@ import com.example.zero.entidades.producto.Producto;
 import com.example.zero.entidades.producto.VigenciaPrecio;
 import com.example.zero.repositories.ProductoRepository;
 import com.example.zero.repositories.VigenciaPrecioRepository;
+import com.example.zero.services.producto.ProductoService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,11 +16,11 @@ import java.util.Optional;
 public class VigenciaPrecioService {
 
     private final VigenciaPrecioRepository vigenciaPrecioRepository;
-    private final ProductoRepository productoRepository;
+    private final ProductoService productoService;
 
-    public VigenciaPrecioService(VigenciaPrecioRepository vigenciaPrecioRepository, ProductoRepository productoRepository) {
+    public VigenciaPrecioService(VigenciaPrecioRepository vigenciaPrecioRepository, ProductoService productoService) {
         this.vigenciaPrecioRepository = vigenciaPrecioRepository;
-        this.productoRepository = productoRepository;
+        this.productoService = productoService;
     }
 
     public void validar(double precio, LocalDate fechaDesde) {
@@ -38,9 +39,7 @@ public class VigenciaPrecioService {
         }
         validar(precio, fechaDesde);
 
-        Producto producto = productoRepository.findActive(productoId)
-                .orElseThrow(() -> new IllegalArgumentException("No se encontró el producto activo con ID: " + productoId));
-
+        Producto producto = productoService.buscarPorId(productoId);
         // Cerrar vigencia actual si existe
         Optional<VigenciaPrecio> vigenciaActual = vigenciaPrecioRepository.findPrecioActualByProductoId(productoId);
         if (vigenciaActual.isPresent()) {
