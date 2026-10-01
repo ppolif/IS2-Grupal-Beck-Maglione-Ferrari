@@ -329,10 +329,10 @@ public class DataInitializer implements CommandLineRunner {
         try {
             ejecutarEnTransaccion(() -> {
                 if (nacionalidadRepository != null && nacionalidadRepository.count() == 0) {
-                    Nacionalidad nacArg = Nacionalidad.builder().id("nac-01").nombre("Argentina").eliminado(false).build();
-                    Nacionalidad nacBra = Nacionalidad.builder().id("nac-02").nombre("Brasileña").eliminado(false).build();
-                    Nacionalidad nacUry = Nacionalidad.builder().id("nac-03").nombre("Uruguaya").eliminado(false).build();
-                    Nacionalidad nacChl = Nacionalidad.builder().id("nac-04").nombre("Chilena").eliminado(false).build();
+                    Nacionalidad nacArg = Nacionalidad.builder().nombre("Argentina").eliminado(false).build();
+                    Nacionalidad nacBra = Nacionalidad.builder().nombre("Brasileña").eliminado(false).build();
+                    Nacionalidad nacUry = Nacionalidad.builder().nombre("Uruguaya").eliminado(false).build();
+                    Nacionalidad nacChl = Nacionalidad.builder().nombre("Chilena").eliminado(false).build();
                     nacionalidadRepository.save(nacArg);
                     nacionalidadRepository.save(nacBra);
                     nacionalidadRepository.save(nacUry);
@@ -348,41 +348,41 @@ public class DataInitializer implements CommandLineRunner {
         try {
             ejecutarEnTransaccion(() -> {
                 if (paisRepository != null && paisRepository.count() == 0) {
-                    Pais arg = new Pais(); arg.setId("pais-arg"); arg.setNombre("Argentina"); arg.setEliminado(false);
-                    Pais bra = new Pais(); bra.setId("pais-bra"); bra.setNombre("Brasil"); bra.setEliminado(false);
-                    Pais ury = new Pais(); ury.setId("pais-ury"); ury.setNombre("Uruguay"); ury.setEliminado(false);
-                    paisRepository.save(arg);
-                    paisRepository.save(bra);
-                    paisRepository.save(ury);
+                    Pais arg = new Pais(); arg.setNombre("Argentina"); arg.setEliminado(false);
+                    Pais bra = new Pais(); bra.setNombre("Brasil"); bra.setEliminado(false);
+                    Pais ury = new Pais(); ury.setNombre("Uruguay"); ury.setEliminado(false);
+                    arg = paisRepository.save(arg);
+                    bra = paisRepository.save(bra);
+                    ury = paisRepository.save(ury);
 
                     // Provincias
-                    Provincia cba = new Provincia(); cba.setId("prov-arg-cba"); cba.setNombre("Córdoba"); cba.setPais(arg); cba.setEliminado(false);
-                    Provincia bue = new Provincia(); bue.setId("prov-arg-bue"); bue.setNombre("Buenos Aires"); bue.setPais(arg); bue.setEliminado(false);
-                    Provincia sfe = new Provincia(); sfe.setId("prov-arg-sfe"); sfe.setNombre("Santa Fe"); sfe.setPais(arg); sfe.setEliminado(false);
-                    provinciaRepository.save(cba);
-                    provinciaRepository.save(bue);
-                    provinciaRepository.save(sfe);
+                    Provincia cba = new Provincia(); cba.setNombre("Córdoba"); cba.setPais(arg); cba.setEliminado(false);
+                    Provincia bue = new Provincia(); bue.setNombre("Buenos Aires"); bue.setPais(arg); bue.setEliminado(false);
+                    Provincia sfe = new Provincia(); sfe.setNombre("Santa Fe"); sfe.setPais(arg); sfe.setEliminado(false);
+                    cba = provinciaRepository.save(cba);
+                    bue = provinciaRepository.save(bue);
+                    sfe = provinciaRepository.save(sfe);
 
                     // Departamentos Córdoba
-                    Departamento depCap = new Departamento(); depCap.setId("dep-cba-cap"); depCap.setNombre("Capital"); depCap.setProvincia(cba); depCap.setEliminado(false);
-                    Departamento depCol = new Departamento(); depCol.setId("dep-cba-col"); depCol.setNombre("Colón"); depCol.setProvincia(cba); depCol.setEliminado(false);
-                    Departamento depPun = new Departamento(); depPun.setId("dep-cba-pun"); depPun.setNombre("Punilla"); depPun.setProvincia(cba); depPun.setEliminado(false);
-                    departamentoRepository.save(depCap);
-                    departamentoRepository.save(depCol);
-                    departamentoRepository.save(depPun);
+                    Departamento depCap = new Departamento(); depCap.setNombre("Capital"); depCap.setProvincia(cba); depCap.setEliminado(false);
+                    Departamento depCol = new Departamento(); depCol.setNombre("Colón"); depCol.setProvincia(cba); depCol.setEliminado(false);
+                    Departamento depPun = new Departamento(); depPun.setNombre("Punilla"); depPun.setProvincia(cba); depPun.setEliminado(false);
+                    depCap = departamentoRepository.save(depCap);
+                    depCol = departamentoRepository.save(depCol);
+                    depPun = departamentoRepository.save(depPun);
 
                     // Departamentos Buenos Aires
-                    Departamento depLp = new Departamento(); depLp.setId("dep-bue-lp"); depLp.setNombre("La Plata"); depLp.setProvincia(bue); depLp.setEliminado(false);
-                    Departamento depGp = new Departamento(); depGp.setId("dep-bue-gp"); depGp.setNombre("General Pueyrredón"); depGp.setProvincia(bue); depGp.setEliminado(false);
-                    departamentoRepository.save(depLp);
-                    departamentoRepository.save(depGp);
+                    Departamento depLp = new Departamento(); depLp.setNombre("La Plata"); depLp.setProvincia(bue); depLp.setEliminado(false);
+                    Departamento depGp = new Departamento(); depGp.setNombre("General Pueyrredón"); depGp.setProvincia(bue); depGp.setEliminado(false);
+                    depLp = departamentoRepository.save(depLp);
+                    depGp = departamentoRepository.save(depGp);
 
                     // Localidades
-                    Localidad locCba = new Localidad(); locCba.setId("loc-cba-cba"); locCba.setNombre("Córdoba Ciudad"); locCba.setCodigoPostal("5000"); locCba.setDepartamento(depCap); locCba.setEliminado(false);
-                    Localidad locVa = new Localidad(); locVa.setId("loc-cba-va"); locVa.setNombre("Villa Allende"); locVa.setCodigoPostal("5105"); locVa.setDepartamento(depCol); locVa.setEliminado(false);
-                    Localidad locVcp = new Localidad(); locVcp.setId("loc-cba-vcp"); locVcp.setNombre("Villa Carlos Paz"); locVcp.setCodigoPostal("5152"); locVcp.setDepartamento(depPun); locVcp.setEliminado(false);
-                    Localidad locLp = new Localidad(); locLp.setId("loc-bue-lp"); locLp.setNombre("La Plata"); locLp.setCodigoPostal("1900"); locLp.setDepartamento(depLp); locLp.setEliminado(false);
-                    Localidad locMdp = new Localidad(); locMdp.setId("loc-bue-mdp"); locMdp.setNombre("Mar del Plata"); locMdp.setCodigoPostal("7600"); locMdp.setDepartamento(depGp); locMdp.setEliminado(false);
+                    Localidad locCba = new Localidad(); locCba.setNombre("Córdoba Ciudad"); locCba.setCodigoPostal("5000"); locCba.setDepartamento(depCap); locCba.setEliminado(false);
+                    Localidad locVa = new Localidad(); locVa.setNombre("Villa Allende"); locVa.setCodigoPostal("5105"); locVa.setDepartamento(depCol); locVa.setEliminado(false);
+                    Localidad locVcp = new Localidad(); locVcp.setNombre("Villa Carlos Paz"); locVcp.setCodigoPostal("5152"); locVcp.setDepartamento(depPun); locVcp.setEliminado(false);
+                    Localidad locLp = new Localidad(); locLp.setNombre("La Plata"); locLp.setCodigoPostal("1900"); locLp.setDepartamento(depLp); locLp.setEliminado(false);
+                    Localidad locMdp = new Localidad(); locMdp.setNombre("Mar del Plata"); locMdp.setCodigoPostal("7600"); locMdp.setDepartamento(depGp); locMdp.setEliminado(false);
                     localidadRepository.save(locCba);
                     localidadRepository.save(locVa);
                     localidadRepository.save(locVcp);
@@ -437,14 +437,19 @@ public class DataInitializer implements CommandLineRunner {
                                 return lista.size() > 2 ? lista.get(2) : null;
                             });
 
+                    for (TipoDePago tdp : TipoDePago.values()) {
+                        formaDePagoRepository.findByTipoPagoAndEliminadoFalse(tdp)
+                                .orElseGet(() -> formaDePagoRepository.save(
+                                        FormaDePago.builder()
+                                                .tipoPago(tdp)
+                                                .observacion("Forma de pago " + tdp.name())
+                                                .eliminado(false)
+                                                .build()
+                                ));
+                    }
+
                     FormaDePago fdpTransferencia = formaDePagoRepository.findByTipoPagoAndEliminadoFalse(TipoDePago.TRANSFERENCIA)
-                            .orElseGet(() -> formaDePagoRepository.save(
-                                    FormaDePago.builder()
-                                            .tipoPago(TipoDePago.TRANSFERENCIA)
-                                            .observacion("Transferencia Bancaria")
-                                            .eliminado(false)
-                                            .build()
-                            ));
+                            .orElse(null);
 
                     LocalDateTime ahora = LocalDateTime.now();
 
@@ -486,7 +491,7 @@ public class DataInitializer implements CommandLineRunner {
                             FacturaProveedor fp2 = new FacturaProveedor();
                             fp2.setNumeroFactura(6002L);
                             fp2.setProveedor(provTextil);
-                            fp2.setFechaFactura(ahora.plusHours(1));
+                            fp2.setFechaFactura(ahora.minusDays(10));
                             fp2.setEstado(EstadoFactura.ENTREGADA);
                             fp2.setFormaDePago(fdpTransferencia);
                             fp2.setTotalPagado(2270.0);
@@ -518,7 +523,7 @@ public class DataInitializer implements CommandLineRunner {
                             FacturaProveedor fp3 = new FacturaProveedor();
                             fp3.setNumeroFactura(6003L);
                             fp3.setProveedor(provCalzados);
-                            fp3.setFechaFactura(ahora.plusHours(2));
+                            fp3.setFechaFactura(ahora.minusDays(5));
                             fp3.setEstado(EstadoFactura.ENTREGADA);
                             fp3.setFormaDePago(fdpTransferencia);
                             fp3.setTotalPagado(2735.0);

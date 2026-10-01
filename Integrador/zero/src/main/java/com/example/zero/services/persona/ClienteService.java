@@ -78,11 +78,12 @@ public class ClienteService {
             throw new IllegalArgumentException("Ya existe un cliente activo con el documento: " + docLimpio);
         }
 
+        LocalDate fecha = (fechaNacimiento != null) ? fechaNacimiento : LocalDate.of(2000, 1, 1);
         Cliente cliente = Cliente.builder()
                 .numeroDocumento(docLimpio)
                 .nombre(nombre.trim())
                 .apellido(apellido.trim())
-                .fechaNacimiento(fechaNacimiento)
+                .fechaNacimiento(fecha)
                 .tipoDocumento(tipoDocumento)
                 .nacionalidad(nacionalidad)
                 .eliminado(false)
