@@ -16,9 +16,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
-/**
- * Controlador Spring MVC para la consulta del historial de compras de los clientes autenticados.
- */
+///controlador para el historial de compraas en el perfil de un usuario
 @Controller
 @RequiredArgsConstructor
 public class HistorialController {
@@ -26,9 +24,7 @@ public class HistorialController {
     private final VentaService ventaService;
     private final OrdenCompraService ordenCompraService;
 
-    /**
-     * Muestra el historial de compras del cliente en sesión.
-     */
+    ///mostrar el historial
     @GetMapping({"/historial", "/shop/historial"})
     public String verHistorial(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
         Usuario usuario = (Usuario) session.getAttribute("usuariosession");
@@ -65,9 +61,7 @@ public class HistorialController {
         }
     }
 
-    /**
-     * Redirige al comprobante y detalle de una compra específica.
-     */
+    ///Redirige al comprobante y detalle de una compra específica.
     @GetMapping({"/historial/{orderNumber}", "/shop/historial/{orderNumber}"})
     public String verDetalleCompra(@PathVariable("orderNumber") String orderNumber) {
         return "redirect:/shop/confirmation?orderNumber=" + orderNumber;

@@ -10,7 +10,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/admin/newsletter")
 @RequiredArgsConstructor
-public class AdminNewsletterController {
+public class NewsletterController {
 
     private final NewsletterService newsletterService;
 

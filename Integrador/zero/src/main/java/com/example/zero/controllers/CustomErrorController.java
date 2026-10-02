@@ -9,10 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-/**
- * Controlador global de errores para Spring Boot que intercepta rutas no encontradas
- * y renderiza la plantilla amigable page-404.html.
- */
+
 @Controller
 public class CustomErrorController implements ErrorController {
 

@@ -8,9 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * Controlador administrativo para la gestión de Proveedores (ABM).
- */
+//para el abm de proveedor
 @Controller
 @RequestMapping("/admin/providers")
 public class AdminProviderController {
@@ -21,9 +19,7 @@ public class AdminProviderController {
         this.proveedorService = proveedorService;
     }
 
-    /**
-     * Listado de proveedores activos.
-     */
+
     @GetMapping
     public String listProviders(Model model,
                                 @RequestParam(name = "success", required = false) String success,

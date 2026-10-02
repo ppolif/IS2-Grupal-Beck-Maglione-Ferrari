@@ -23,10 +23,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Servicio encargado de la integración con la pasarela de pagos de Mercado Pago,
- * creación de preferencias de pago y procesamiento de órdenes confirmadas.
- */
+
 @Service
 @RequiredArgsConstructor
 public class MercadoPagoService {
@@ -36,6 +33,7 @@ public class MercadoPagoService {
     @org.springframework.beans.factory.annotation.Value("${mercadopago.access-token:" + DEFAULT_ACCESS_TOKEN + "}")
     private String accessToken = DEFAULT_ACCESS_TOKEN;
 
+    ///se inyecta el dominio que te da ngrok
     @org.springframework.beans.factory.annotation.Value("${mercadopago.base-url:}")
     private String configuredBaseUrl;
 
@@ -46,15 +44,13 @@ public class MercadoPagoService {
     private final StockService stockService;
     private final HttpSession session;
 
-    /**
-     * Inicializa la configuración de Mercado Pago con el token del proyecto.
-     */
+
     public void inicializarConfiguracion() {
         MercadoPagoConfig.setAccessToken(accessToken != null && !accessToken.isBlank() ? accessToken.trim() : DEFAULT_ACCESS_TOKEN);
     }
 
-    /**
-     * Crea una preferencia de pago en Mercado Pago para los productos activos del carrito.
+    /*
+     * crea una preferencia de pago en Mercado Pago para los productos activos del carrito.
      *
      * @param carrito orden de compra activa del cliente (en estado PENDIENTE_COMPLETAR)
      * @param cliente cliente autenticado
@@ -71,7 +67,7 @@ public class MercadoPagoService {
             throw new IllegalStateException("El carrito de compras no contiene productos para abonar.");
         }
 
-        // Validación preventiva de stock antes de generar preferencia de pago
+        // validación de stock antes de generar preferencia de pago
         if (stockService != null) {
             for (DetalleCompra item : items) {
                 if (item.getProducto() != null) {
@@ -83,6 +79,8 @@ public class MercadoPagoService {
             }
         }
 
+        ///este tipo te lo da el SDK de mercado pago
+        ///agrega a la preferencia cada uno de los items del carrito
         List<PreferenceItemRequest> mpItems = new ArrayList<>();
         for (DetalleCompra item : items) {
             String title = (item.getProducto() != null && item.getProducto().getNombre() != null)
@@ -106,6 +104,7 @@ public class MercadoPagoService {
             mpItems.add(itemRequest);
         }
 
+        ///
         String effectiveBaseUrl = (configuredBaseUrl != null && !configuredBaseUrl.isBlank())
                 ? configuredBaseUrl.trim()
                 : (baseUrl != null ? baseUrl.trim() : "http://localhost:8080");
@@ -141,10 +140,6 @@ public class MercadoPagoService {
                 .backUrls(backUrls)
                 .externalReference(carrito.getId());
 
-        // Mercado Pago solo permite auto_return si la URL de éxito no apunta a localhost o 127.0.0.1
-        if (!effectiveBaseUrl.contains("localhost") && !effectiveBaseUrl.contains("127.0.0.1")) {
-            requestBuilder.autoReturn("approved");
-        }
 
         PreferenceClient client = new PreferenceClient();
         Preference preference = client.create(requestBuilder.build());
@@ -195,7 +190,7 @@ public class MercadoPagoService {
             throw new IllegalStateException("No se encontró la orden de compra activa asociada al pago.");
         }
 
-        // Si la orden ya fue completada previamente, no duplicar la factura
+        // si la orden ya fue completada, no duplicar la factura
         if (orden.getEstadoOrdenCompra() != EstadoOrdenCompra.PENDIENTE_COMPLETAR) {
             List<Factura> facturas = facturaRepository.findByEliminadoFalseOrderByFechaFacturaDesc();
             if (orden.getCliente() != null && orden.getCliente().getNumeroDocumento() != null) {
@@ -249,10 +244,10 @@ public class MercadoPagoService {
             }
         }
 
-        // Registra venta con medio de pago BILLETERA_VIRTUAL (Mercado Pago)
+        // registra venta con medio de pago BILLETERA_VIRTUAL
         Factura factura = ventaService.registrarVenta(dni, nombre, apellido, email, "BILLETERA_VIRTUAL", prodIds, cantidades);
 
-        // Actualizar estado de la orden de compra a PENDIENTE_ENVIO (orden pagada y lista para despacho)
+        // actualizar estado de la orden de compra a PENDIENTE_ENVIO
         orden.setEstadoOrdenCompra(EstadoOrdenCompra.PENDIENTE_ENVIO);
         ordenCompraRepository.save(orden);
 

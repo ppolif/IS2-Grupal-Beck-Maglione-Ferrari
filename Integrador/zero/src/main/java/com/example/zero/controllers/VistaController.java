@@ -267,12 +267,6 @@ public class VistaController {
         return "shop/single-product";
     }
 
-    // Panel Admin redirige directamente a Registrar Venta
-    @GetMapping({"/admin", "/admin/", "/admin/index", "/admin/index.html", "/admin/dashboard"})
-    public String adminIndex() {
-        return "redirect:/admin/registrar-venta";
-    }
-
     // Pantalla 404
     @GetMapping({"/admin/404", "/admin/page-404"})
     public String admin404() {

@@ -208,7 +208,7 @@ public class ClienteService {
             cliente = clienteRepository.save(cliente);
         }
 
-        // 8. Crear Usuario con Rol CLIENTE (inactivo hasta verificar correo)
+        // crear Usuario con rol cliente (inactivo hasta verificar correo)
         Usuario usuario = usuarioService.crearUsuario(emailLimpio, dto.getPassword(), RolUsuario.CLIENTE, cliente, false);
         if (fotoUrl != null) {
             usuario = usuarioService.actualizarFoto(usuario, fotoUrl);

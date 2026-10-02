@@ -36,6 +36,6 @@ import java.util.Set;
 public class Cliente extends Persona {
 
     @ManyToOne
-    @JoinColumn(name = "nacionalidad_id", nullable = false)
+    @JoinColumn(name = "nacionalidad_id")
     private Nacionalidad nacionalidad;
 }

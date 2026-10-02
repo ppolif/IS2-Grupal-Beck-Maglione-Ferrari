@@ -19,11 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Controlador para la integración del flujo de pagos con Mercado Pago.
- * Maneja la creación de la preferencia desde el carrito, la redirección hacia la pasarela
- * y el retorno exitoso de la transacción.
- */
+///controlador para la integración del flujo de pagos con mercado pago.
+///maneja la creación de la preferencia desde el carrito, la redirección hacia la pasarela
+///y el retorno de la transacción.
 @Controller
 @RequiredArgsConstructor
 public class PagosController {
@@ -62,7 +60,7 @@ public class PagosController {
                 return "redirect:/shop/cart";
             }
 
-            // Construir URL base dinámica respetando proxies / tunnels (ngrok) si existen
+            // construir URL base dinámica respetando proxies / tunnels (ngrok) si existen
             String scheme = request.getHeader("X-Forwarded-Proto") != null
                     ? request.getHeader("X-Forwarded-Proto")
                     : request.getScheme();
@@ -85,10 +83,8 @@ public class PagosController {
     }
 
 
-    /**
-     * Retorno exitoso de Mercado Pago tras un pago aprobado.
-     * Registra la venta y redirige a la página de confirmación con los detalles del pedido.
-     */
+    ///retorno exitoso de mercado pago
+    ///registra la venta y redirige a la página de confirmación con los detalles del pedido.
     @GetMapping({"/checkout/success", "/api/mercadoPago/success", "/shop/checkout/success"})
     public String pagoExitoso(@RequestParam(name = "payment_id", required = false) String paymentId,
                               @RequestParam(name = "status", required = false) String status,

@@ -81,11 +81,5 @@ public class AdminProfileController {
         return "redirect:/admin/profile";
     }
 
-    public String actualizarPerfilAdmin(HttpSession session,
-                                        String email,
-                                        String foto,
-                                        RedirectAttributes redirectAttributes) {
-        return actualizarPerfilAdmin(session, email, null, foto, redirectAttributes);
-    }
 }
 

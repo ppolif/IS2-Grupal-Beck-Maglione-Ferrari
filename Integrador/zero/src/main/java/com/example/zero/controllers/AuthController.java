@@ -75,38 +75,6 @@ public class AuthController {
         }
     }
 
-    // Registro administrativo básico preexistente
-    @GetMapping("/admin/register")
-    public String showAdminRegisterPage(HttpSession session) {
-        Usuario usuarioLogueado = (Usuario) session.getAttribute("usuariosession");
-        if (usuarioLogueado != null) {
-            return "redirect:/admin/registrar-venta";
-        }
-        return "admin/page-register";
-    }
-
-    @PostMapping("/admin/register")
-    public String processAdminRegister(@RequestParam("nombre") String nombre,
-                                       @RequestParam("email") String email,
-                                       @RequestParam("password") String password,
-                                       @RequestParam("confirmPassword") String confirmPassword,
-                                       HttpServletRequest request,
-                                       HttpSession session,
-                                       Model model) {
-        if (!password.equals(confirmPassword)) {
-            model.addAttribute("errorMessage", "Las contraseñas no coinciden");
-            return "admin/page-register";
-        }
-
-        try {
-            Usuario nuevoUsuario = usuarioService.crearUsuario(email, password, RolUsuario.ADMINISTRATIVO, null, true);
-            session.setAttribute("usuariosession", nuevoUsuario);
-            return "redirect:/admin/registrar-venta";
-        } catch (IllegalArgumentException e) {
-            model.addAttribute("errorMessage", e.getMessage());
-            return "admin/page-register";
-        }
-    }
 
     // Registro público completo para clientes (gestión dinámica 100% Thymeleaf + Java)
     @GetMapping("/register")
@@ -132,7 +100,7 @@ public class AuthController {
                                   @RequestParam(value = "fotoPerfil", required = false) MultipartFile fotoPerfil,
                                   HttpSession session,
                                   Model model) {
-        // Normalizar accion en caso de valores duplicados o concatenados por comas (ej: ",registrar" o "registrar,registrar")
+
         String accionLimpia = accion;
         if (accionLimpia != null && accionLimpia.contains(",")) {
             for (String parte : accionLimpia.split(",")) {

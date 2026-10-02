@@ -56,34 +56,6 @@ public class VentaService {
     private final ContactoService contactoService;
     private final HttpSession session;
 
-//    public VentaService(FacturaRepository facturaRepository,
-//                        DetalleRepository detalleRepository,
-//                        FormaDePagoRepository formaDePagoRepository,
-//                        ClienteRepository clienteRepository,
-//                        ClienteService clienteService,
-//                        NacionalidadRepository nacionalidadRepository,
-//                        ProductoService productoService,
-//                        UsuarioRepository usuarioRepository,
-//                        HttpSession session) {
-//        this(facturaRepository, detalleRepository, formaDePagoRepository, clienteRepository, clienteService,
-//                nacionalidadRepository, productoService, null, null, usuarioRepository, null, null, null, session);
-//    }
-//
-//    public VentaService(FacturaRepository facturaRepository,
-//                        DetalleRepository detalleRepository,
-//                        FormaDePagoRepository formaDePagoRepository,
-//                        ClienteRepository clienteRepository,
-//                        ClienteService clienteService,
-//                        NacionalidadRepository nacionalidadRepository,
-//                        ProductoService productoService,
-//                        ProductoRepository productoRepository,
-//                        StockService stockService,
-//                        UsuarioRepository usuarioRepository,
-//                        HttpSession session) {
-//        this(facturaRepository, detalleRepository, formaDePagoRepository, clienteRepository, clienteService,
-//                nacionalidadRepository, productoService, productoRepository, stockService, usuarioRepository, null, null, null, session);
-//    }
-
     @org.springframework.beans.factory.annotation.Autowired
     public VentaService(FacturaRepository facturaRepository,
                         DetalleRepository detalleRepository,
@@ -115,7 +87,7 @@ public class VentaService {
         this.session = session;
     }
 
-    public void validarVenta(String clienteDni, String clienteNombre, String clienteApellido,
+    public void validarVenta(String clienteDni, String clienteNombre, String clienteApellido, String clienteEmail,
                              List<String> productoIds, List<Integer> cantidades) {
         if (clienteDni == null || clienteDni.trim().isEmpty()) {
             throw new IllegalArgumentException("El DNI del cliente no puede estar vacío");
@@ -125,6 +97,9 @@ public class VentaService {
         }
         if (clienteApellido == null || clienteApellido.trim().isEmpty()) {
             throw new IllegalArgumentException("El apellido del cliente no puede estar vacío");
+        }
+        if (clienteEmail == null || clienteEmail.isEmpty()) {
+            throw new IllegalArgumentException("El correo del cliente no puede estar vacío");
         }
         if (productoIds == null || productoIds.isEmpty()) {
             throw new IllegalArgumentException("Debe agregar al menos un producto a la venta");
@@ -139,7 +114,7 @@ public class VentaService {
             }
         }
 
-        // Fase 1: Verificación de Stock Actual previo a la venta
+
         if (stockService != null) {
             Map<String, Integer> cantidadesPorProducto = new LinkedHashMap<>(); //mapea la cantidad de cada producto con su id para evitar peticiones maliciosas y falsos chequeos de stock
             for (int i = 0; i < productoIds.size(); i++) {
@@ -165,76 +140,56 @@ public class VentaService {
     public Factura registrarVenta(String clienteDni, String clienteNombre, String clienteApellido,
                                   String clienteEmail, String formaDePagoStr,
                                   List<String> productoIds, List<Integer> cantidades) {
-        validarVenta(clienteDni, clienteNombre, clienteApellido, productoIds, cantidades);
+        validarVenta(clienteDni, clienteNombre, clienteApellido, clienteEmail, productoIds, cantidades);
 
         String dniLimpio = clienteDni.trim();
 
-        // 1. Obtener o crear Cliente
+        // obtener o crear cliente
         Cliente cliente = clienteRepository.findByNumeroDocumentoAndEliminadoFalse(dniLimpio)
                 .orElseGet(() -> {
-                    Nacionalidad nac = (nacionalidadRepository != null)
-                            ? nacionalidadRepository.findByEliminadoFalse().stream().findFirst().orElse(null)
-                            : null;
+                    //se esta registrando una venta de un cliente que compra por primera vez
+
                     return clienteService.crearCliente(
                             dniLimpio,
-                            clienteNombre.trim(),
-                            clienteApellido.trim(),
-                            java.time.LocalDate.of(2000, 1, 1),
+                            clienteNombre,
+                            clienteApellido,
+                            null,
                             TipoDocumento.DNI,
-                            nac
+                            null
                     );
                 });
 
-//        // Actualizar nombre o apellido si vino modificado
-//        if (clienteNombre != null && !clienteNombre.trim().isEmpty()) {
-//            cliente.setNombre(clienteNombre.trim());
-//        }
-//        if (clienteApellido != null && !clienteApellido.trim().isEmpty()) {
-//            cliente.setApellido(clienteApellido.trim());
-//        }
-
-        // Asociar la Persona al Usuario actual (Usuario -> Persona)
-        Usuario usuarioSession = (session != null) ? (Usuario) session.getAttribute("usuariosession") : null;
-        if (usuarioSession != null && usuarioRepository != null) {
-            clienteService.asociarClienteUsuario(cliente.getNumeroDocumento(), usuarioSession);
-//        } else if (clienteEmail != null && !clienteEmail.trim().isEmpty() && usuarioRepository != null) {
-//            usuarioRepository.findByNombreUsuarioAndEliminadoFalse(clienteEmail.trim().toLowerCase())
-//                    .ifPresent(u -> {
-//                        u.setPersona(cliente);
-//                        usuarioRepository.save(u);
-//                    });
+        // asociar el cliente con un usuario
+        Optional<Usuario> usuarioCliente = usuarioRepository.findByNombreUsuarioAndEliminadoFalse(clienteEmail);
+        if (usuarioCliente.isPresent()) {
+            clienteService.asociarClienteUsuario(cliente.getNumeroDocumento(), usuarioCliente.get());
         }
         
         clienteRepository.save(cliente);
 
-        // 2. Resolver Forma de Pago de manera estricta
         if (formaDePagoStr == null || formaDePagoStr.trim().isEmpty()) {
             throw new IllegalArgumentException("Debe especificar una forma de pago.");
         }
 
         TipoDePago tipoPago;
         try {
-            // 1. Matcheo estricto con el ENUM
+            //verificacion del tipo de pago
             tipoPago = TipoDePago.valueOf(formaDePagoStr.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            // Si el texto no coincide con ningún valor del ENUM, la venta se cae aquí mismo
             throw new IllegalArgumentException("La forma de pago ingresada ('" + formaDePagoStr + "') no es válida.");
         }
 
-        // 2. Búsqueda estricta en la base de datos
-        // Como FacturaCliente exige la entidad FormaDePago, estamos obligados a buscarla.
-        // Usamos orElseThrow para que falle si el administrador no configuró este pago en la BD,
         FormaDePago formaDePago = formaDePagoRepository.findByTipoPagoAndEliminadoFalse(tipoPago)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "El método de pago '" + tipoPago + "'no está habilitado en la base de datos."
                 ));
 
-        // 3. Generar número correlativo de factura
+        // genera numero de factura
         Long numeroFactura = facturaRepository.findTopByOrderByNumeroFacturaDesc()
                 .map(f -> f.getNumeroFactura() + 1)
                 .orElse(1001L);
 
-        // 4. Instanciar OrdenCompra con el email del comprador
+        // instanciar OrdenCompra con el email del comprador
         OrdenCompra orden = OrdenCompra.builder()
                 .identificadorCompra("ORD-" + numeroFactura)
                 .fecha(new Date())
@@ -259,7 +214,7 @@ public class VentaService {
                 .detalles(new HashSet<>())
                 .build();
 
-        // 5. Procesar cada detalle de producto
+        // detalles
         double total = 0.0;
         for (int i = 0; i < productoIds.size(); i++) {
             String prodId = productoIds.get(i);
@@ -272,6 +227,7 @@ public class VentaService {
             } catch (Exception ignored) {
             }
 
+            //redondeo a dos decimales
             double subtotal = Math.round(precioUnitario * cantidad * 100.0) / 100.0;
             total += subtotal;
 
@@ -296,8 +252,8 @@ public class VentaService {
 
         Factura facturaGuardada = facturaRepository.save(factura);
 
-        // Fase 2: Descuento de stock y creación de registro trazable en Stock
-        if (stockService != null && facturaGuardada.getDetalles() != null) {
+        // cambio en el stock!!
+        if (facturaGuardada.getDetalles() != null) {
             for (Detalle detalle : facturaGuardada.getDetalles()) {
                 Producto prod = detalle.getProducto();
                 if (prod != null) {
@@ -308,33 +264,37 @@ public class VentaService {
             }
         }
 
-        // Fase 3: Despacho de comprobante y detalle de compra por correo electrónico
-        if (emailService != null) {
-            String emailDestino = (clienteEmail != null && !clienteEmail.trim().isEmpty() && clienteEmail.contains("@"))
-                    ? clienteEmail.trim()
-                    : (contactoService != null ? contactoService.obtenerEmailPrincipal(cliente).orElse(null) : null);
+        // comprobante al correo electronico
+//        String emailDestino = (clienteEmail != null && !clienteEmail.trim().isEmpty())
+//                ? clienteEmail.trim()
+//                : (contactoService.obtenerEmailPrincipal(cliente).orElse(null));
+//
+//        if (emailDestino == null && session != null) {
+//            //usuarioSession = (Usuario) session.getAttribute("usuariosession");
+//            if (usuarioSession != null && usuarioSession.getNombreUsuario() != null) {
+//                emailDestino = usuarioSession.getNombreUsuario();
+//            }
+//        }
 
-            if (emailDestino == null && session != null) {
-                //usuarioSession = (Usuario) session.getAttribute("usuariosession");
-                if (usuarioSession != null && usuarioSession.getNombreUsuario() != null && usuarioSession.getNombreUsuario().contains("@")) {
-                    emailDestino = usuarioSession.getNombreUsuario().trim();
-                }
-            }
+        String orderNumStr = facturaGuardada.getNumeroFactura() != null ? "#ORD-" + facturaGuardada.getNumeroFactura() : "#ORD-" + facturaGuardada.getId();
 
-            String orderNumStr = facturaGuardada.getNumeroFactura() != null ? "#ORD-" + facturaGuardada.getNumeroFactura() : "#ORD-" + facturaGuardada.getId();
-
-            if (emailDestino != null && !emailDestino.trim().isEmpty() && emailDestino.contains("@")) {
-                try {
-                    emailService.enviarComprobanteCompra(facturaGuardada, emailDestino.trim());
-                } catch (Exception e) {
-                    logger.error("No se pudo enviar el correo de confirmación de compra para factura {}: {}",
-                            orderNumStr, e.getMessage());
-                }
-            } else {
-                logger.info("No se encontró una dirección de correo válida para notificar la compra de la factura {}",
-                        orderNumStr);
-            }
+        try {
+            emailService.enviarComprobanteCompra(facturaGuardada, clienteEmail);
+        } catch (Exception e) {
+            logger.error("No se pudo enviar el correo de confirmación de compra para factura {}: {}",
+                    orderNumStr, e.getMessage());
         }
+//        if (emailDestino != null && !emailDestino.trim().isEmpty()) {
+//            try {
+//                emailService.enviarComprobanteCompra(facturaGuardada, emailDestino.trim());
+//            } catch (Exception e) {
+//                logger.error("No se pudo enviar el correo de confirmación de compra para factura {}: {}",
+//                        orderNumStr, e.getMessage());
+//            }
+//        } else {
+//            logger.info("No se encontró una dirección de correo válida para notificar la compra de la factura {}",
+//                    orderNumStr);
+//        }
 
         return facturaGuardada;
     }
@@ -430,7 +390,7 @@ public class VentaService {
             return "/admin/assets/images/avatar.png";
         }
         try {
-            // 1. Si es FacturaCliente, intentar primero resolver foto por el emailUsuario de la OrdenCompra
+            // si es factura cliente intentar primero resolver foto por el emailUsuario de la OrdenCompra
             if (f instanceof FacturaCliente fc && fc.getOrdenCompra() != null) {
                 String email = fc.getOrdenCompra().getEmailUsuario();
                 if (email != null && !email.isBlank() && usuarioRepository != null) {
@@ -441,7 +401,7 @@ public class VentaService {
                 }
             }
 
-            // 2. Si no, buscar por el Cliente de la factura
+            // sino buscar por el Cliente de la factura
             Cliente c = obtenerClienteDeFactura(f);
             if (c != null) {
                 if (clienteService != null) {

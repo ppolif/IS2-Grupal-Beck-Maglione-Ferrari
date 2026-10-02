@@ -17,10 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Controlador administrativo para la vista y exportación de reportes de ventas, productos y proveedores.
- * Basado estrictamente en DTOs.
- */
+//controlador de reportes
 @Controller
 public class AdminReportController {
 
@@ -32,9 +29,7 @@ public class AdminReportController {
         this.reporteExportService = reporteExportService;
     }
 
-    /**
-     * Muestra la vista principal de Reportes con selector de pestañas (Tabs).
-     */
+
     @GetMapping("/admin/reportes")
     public String showReports(Model model,
                               @RequestParam(name = "tab", defaultValue = "ventas") String tab,
@@ -62,9 +57,7 @@ public class AdminReportController {
         return "admin/reports";
     }
 
-    /**
-     * Descarga de informe en formato .xlsx o .csv según el tipo de reporte solicitado.
-     */
+    ///descarga de informe en formato .xlsx o .csv
     @GetMapping("/admin/reportes/exportar")
     public ResponseEntity<byte[]> exportarInforme(
             @RequestParam(name = "tipo", defaultValue = "ventas") String tipo,
