@@ -182,6 +182,7 @@ public class OrdenCompraService {
                     List<Producto> activos = productoRepository.findByEliminadoFalse();
                     if (!activos.isEmpty()) {
                         try {
+                            //findByEliminadoFalse ordena por el codigo del prod de forma ascendente
                             int index = Integer.parseInt(productoId.trim()) - 1;
                             if (index >= 0 && index < activos.size()) {
                                 return activos.get(index);
