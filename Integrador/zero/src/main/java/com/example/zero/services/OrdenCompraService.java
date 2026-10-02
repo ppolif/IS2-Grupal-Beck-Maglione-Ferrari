@@ -34,6 +34,47 @@ public class OrdenCompraService {
     private final StockService stockService;
     private final HttpSession session;
 
+
+    public void validar(String id, String email, Cliente cliente, EstadoOrdenCompra estadoOrdenCompra) {
+        if (cliente == null) {
+            throw new IllegalArgumentException("La orden de compra debe tener un cliente asociado.");
+        }
+        if (estadoOrdenCompra == null) {
+            throw new IllegalArgumentException("El estado de la orden de compra no puede ser nulo.");
+        }
+        if (id == null || id.isEmpty()) {
+            throw new IllegalArgumentException("El id de la orden de compra no puede ser nulo.");
+        }
+        if (email == null || email.isEmpty()) {
+            throw new IllegalArgumentException("El email del usuario no puede ser nulo.");
+        }
+    }
+
+
+    @Transactional
+    public OrdenCompra crearOrdenCompra(String identificadorCompra,
+                                        Date fecha,
+                                        Cliente cliente,
+                                        String emailUsuario,
+                                        EstadoOrdenCompra estadoOrdenCompra) {
+        validar(identificadorCompra, emailUsuario, cliente, estadoOrdenCompra);
+
+        Date fechaOrden = (fecha != null) ? fecha : new Date();
+
+        OrdenCompra orden = OrdenCompra.builder()
+                .identificadorCompra(identificadorCompra)
+                .fecha(fechaOrden)
+                .total(0.0)
+                .estadoOrdenCompra(estadoOrdenCompra)
+                .cliente(cliente)
+                .emailUsuario(emailUsuario)
+                .eliminado(false)
+                .detalles(new ArrayList<>())
+                .build();
+
+        return ordenCompraRepository.save(orden);
+    }
+
     ///recalcula y asigna el total acumulado de una orden de compra sumando los subtotales
     public void recalcularTotal(OrdenCompra ordenCompra) {
         if (ordenCompra == null) return;
@@ -117,18 +158,9 @@ public class OrdenCompraService {
         Usuario usuarioSession = (session != null) ? (Usuario) session.getAttribute("usuariosession") : null;
         String emailUser = (usuarioSession != null) ? usuarioSession.getNombreUsuario() : null;
 
-        OrdenCompra nuevoCarrito = OrdenCompra.builder()
-                .identificadorCompra("CART-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
-                .fecha(new Date())
-                .total(0.0)
-                .estadoOrdenCompra(EstadoOrdenCompra.PENDIENTE_COMPLETAR)
-                .cliente(cliente)
-                .emailUsuario(emailUser)
-                .eliminado(false)
-                .detalles(new ArrayList<>())
-                .build();
 
-        return ordenCompraRepository.save(nuevoCarrito);
+        String cartId = "CART-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        return crearOrdenCompra(cartId, new Date(), cliente, emailUser, EstadoOrdenCompra.PENDIENTE_COMPLETAR);
     }
 
 

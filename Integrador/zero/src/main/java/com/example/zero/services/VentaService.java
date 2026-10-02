@@ -21,6 +21,7 @@ import com.example.zero.services.mail.EmailService;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,53 +43,41 @@ public class VentaService {
     private static final Logger logger = LoggerFactory.getLogger(VentaService.class); //clase para visualizar los errores mas facil por consola
 
     private final FacturaRepository facturaRepository;
-    private final DetalleRepository detalleRepository;
     private final FormaDePagoRepository formaDePagoRepository;
     private final ClienteRepository clienteRepository;
     private final ClienteService clienteService;
-    private final NacionalidadRepository nacionalidadRepository;
     private final ProductoService productoService;
-    private final ProductoRepository productoRepository;
     private final StockService stockService;
     private final UsuarioRepository usuarioRepository;
     private final EmailService emailService;
     private final OrdenCompraRepository ordenCompraRepository;
-    private final ContactoService contactoService;
-    private final HttpSession session;
+    private final OrdenCompraService ordenCompraService;
 
-    @org.springframework.beans.factory.annotation.Autowired
+    @Autowired
     public VentaService(FacturaRepository facturaRepository,
-                        DetalleRepository detalleRepository,
                         FormaDePagoRepository formaDePagoRepository,
                         ClienteRepository clienteRepository,
                         ClienteService clienteService,
-                        NacionalidadRepository nacionalidadRepository,
                         ProductoService productoService,
-                        ProductoRepository productoRepository,
                         StockService stockService,
                         UsuarioRepository usuarioRepository,
-                        @org.springframework.beans.factory.annotation.Autowired(required = false) EmailService emailService,
-                        @org.springframework.beans.factory.annotation.Autowired(required = false) OrdenCompraRepository ordenCompraRepository,
-                        @org.springframework.beans.factory.annotation.Autowired(required = false) ContactoService contactoService,
-                        HttpSession session) {
+                        EmailService emailService,
+                        OrdenCompraRepository ordenCompraRepository,
+                        OrdenCompraService ordenCompraService) {
         this.facturaRepository = facturaRepository;
-        this.detalleRepository = detalleRepository;
         this.formaDePagoRepository = formaDePagoRepository;
         this.clienteRepository = clienteRepository;
         this.clienteService = clienteService;
-        this.nacionalidadRepository = nacionalidadRepository;
         this.productoService = productoService;
-        this.productoRepository = productoRepository;
         this.stockService = stockService;
         this.usuarioRepository = usuarioRepository;
         this.emailService = emailService;
         this.ordenCompraRepository = ordenCompraRepository;
-        this.contactoService = contactoService;
-        this.session = session;
+        this.ordenCompraService = ordenCompraService;
     }
 
     public void validarVenta(String clienteDni, String clienteNombre, String clienteApellido, String clienteEmail,
-                             List<String> productoIds, List<Integer> cantidades) {
+                             List<String> productoIds, String formaDePagoStr, List<Integer> cantidades) {
         if (clienteDni == null || clienteDni.trim().isEmpty()) {
             throw new IllegalArgumentException("El DNI del cliente no puede estar vacío");
         }
@@ -103,6 +92,9 @@ public class VentaService {
         }
         if (productoIds == null || productoIds.isEmpty()) {
             throw new IllegalArgumentException("Debe agregar al menos un producto a la venta");
+        }
+        if (formaDePagoStr == null || formaDePagoStr.trim().isEmpty()) {
+            throw new IllegalArgumentException("Debe especificar una forma de pago.");
         }
         if (cantidades == null || cantidades.size() != productoIds.size()) {
             throw new IllegalArgumentException("La cantidad de productos e ítems no coincide");
@@ -140,7 +132,7 @@ public class VentaService {
     public Factura registrarVenta(String clienteDni, String clienteNombre, String clienteApellido,
                                   String clienteEmail, String formaDePagoStr,
                                   List<String> productoIds, List<Integer> cantidades) {
-        validarVenta(clienteDni, clienteNombre, clienteApellido, clienteEmail, productoIds, cantidades);
+        validarVenta(clienteDni, clienteNombre, clienteApellido, clienteEmail, productoIds, formaDePagoStr, cantidades);
 
         String dniLimpio = clienteDni.trim();
 
@@ -159,7 +151,7 @@ public class VentaService {
                     );
                 });
 
-        // asociar el cliente con un usuario
+        // asociar el cliente con un usuario, si es que existe
         Optional<Usuario> usuarioCliente = usuarioRepository.findByNombreUsuarioAndEliminadoFalse(clienteEmail);
         if (usuarioCliente.isPresent()) {
             clienteService.asociarClienteUsuario(cliente.getNumeroDocumento(), usuarioCliente.get());
@@ -167,13 +159,10 @@ public class VentaService {
         
         clienteRepository.save(cliente);
 
-        if (formaDePagoStr == null || formaDePagoStr.trim().isEmpty()) {
-            throw new IllegalArgumentException("Debe especificar una forma de pago.");
-        }
 
         TipoDePago tipoPago;
         try {
-            //verificacion del tipo de pago
+            //verificacion del tipo de pago, por ejemplo si alguien cambia los parametros de la url esto chequea
             tipoPago = TipoDePago.valueOf(formaDePagoStr.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("La forma de pago ingresada ('" + formaDePagoStr + "') no es válida.");
@@ -190,18 +179,14 @@ public class VentaService {
                 .orElse(1001L);
 
         // instanciar OrdenCompra con el email del comprador
-        OrdenCompra orden = OrdenCompra.builder()
-                .identificadorCompra("ORD-" + numeroFactura)
-                .fecha(new Date())
-                .cliente(cliente)
-                .emailUsuario(clienteEmail != null && !clienteEmail.isBlank() ? clienteEmail.trim().toLowerCase() : null)
-                .total(0.0) //se inicializa el total en 0
-                .estadoOrdenCompra(EstadoOrdenCompra.PENDIENTE_ENVIO)
-                .eliminado(false)
-                .build();
-        if (ordenCompraRepository != null) {
-            orden = ordenCompraRepository.save(orden);
-        }
+        String ordenId = "ORD-" + numeroFactura;
+        OrdenCompra orden = ordenCompraService.crearOrdenCompra(
+                ordenId,
+                new Date(),
+                cliente,
+                clienteEmail,
+                EstadoOrdenCompra.PENDIENTE_ENVIO
+        );
 
         FacturaCliente factura = FacturaCliente.builder()
                 .numeroFactura(numeroFactura)
@@ -264,18 +249,7 @@ public class VentaService {
             }
         }
 
-        // comprobante al correo electronico
-//        String emailDestino = (clienteEmail != null && !clienteEmail.trim().isEmpty())
-//                ? clienteEmail.trim()
-//                : (contactoService.obtenerEmailPrincipal(cliente).orElse(null));
-//
-//        if (emailDestino == null && session != null) {
-//            //usuarioSession = (Usuario) session.getAttribute("usuariosession");
-//            if (usuarioSession != null && usuarioSession.getNombreUsuario() != null) {
-//                emailDestino = usuarioSession.getNombreUsuario();
-//            }
-//        }
-
+        //envio de comprobante
         String orderNumStr = facturaGuardada.getNumeroFactura() != null ? "#ORD-" + facturaGuardada.getNumeroFactura() : "#ORD-" + facturaGuardada.getId();
 
         try {
@@ -284,17 +258,6 @@ public class VentaService {
             logger.error("No se pudo enviar el correo de confirmación de compra para factura {}: {}",
                     orderNumStr, e.getMessage());
         }
-//        if (emailDestino != null && !emailDestino.trim().isEmpty()) {
-//            try {
-//                emailService.enviarComprobanteCompra(facturaGuardada, emailDestino.trim());
-//            } catch (Exception e) {
-//                logger.error("No se pudo enviar el correo de confirmación de compra para factura {}: {}",
-//                        orderNumStr, e.getMessage());
-//            }
-//        } else {
-//            logger.info("No se encontró una dirección de correo válida para notificar la compra de la factura {}",
-//                    orderNumStr);
-//        }
 
         return facturaGuardada;
     }
