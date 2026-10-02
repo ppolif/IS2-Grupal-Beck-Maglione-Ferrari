@@ -491,7 +491,7 @@ public class DataInitializer implements CommandLineRunner {
                             FacturaProveedor fp2 = new FacturaProveedor();
                             fp2.setNumeroFactura(6002L);
                             fp2.setProveedor(provTextil);
-                            fp2.setFechaFactura(ahora.minusDays(10));
+                            fp2.setFechaFactura(ahora.minusDays(5));
                             fp2.setEstado(EstadoFactura.ENTREGADA);
                             fp2.setFormaDePago(fdpTransferencia);
                             fp2.setTotalPagado(2270.0);
@@ -523,7 +523,7 @@ public class DataInitializer implements CommandLineRunner {
                             FacturaProveedor fp3 = new FacturaProveedor();
                             fp3.setNumeroFactura(6003L);
                             fp3.setProveedor(provCalzados);
-                            fp3.setFechaFactura(ahora.minusDays(5));
+                            fp3.setFechaFactura(ahora.minusDays(10));
                             fp3.setEstado(EstadoFactura.ENTREGADA);
                             fp3.setFormaDePago(fdpTransferencia);
                             fp3.setTotalPagado(2735.0);
