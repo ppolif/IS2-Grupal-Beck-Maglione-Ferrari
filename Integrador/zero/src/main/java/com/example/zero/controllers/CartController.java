@@ -19,9 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Controlador Spring MVC para la gestión del carrito de compras del cliente.
- */
+
 @Controller
 @RequiredArgsConstructor
 public class CartController {

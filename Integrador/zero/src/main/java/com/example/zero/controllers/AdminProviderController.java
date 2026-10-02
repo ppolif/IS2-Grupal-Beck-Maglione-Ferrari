@@ -42,9 +42,7 @@ public class AdminProviderController {
         return "admin/providers";
     }
 
-    /**
-     * Formulario para registrar un nuevo proveedor.
-     */
+    ///form de registro
     @GetMapping("/nuevo")
     public String showCreateForm(Model model) {
         model.addAttribute("proveedor", new Proveedor());
@@ -52,9 +50,7 @@ public class AdminProviderController {
         return "admin/provider-form";
     }
 
-    /**
-     * Procesar el alta de un nuevo proveedor.
-     */
+    ///procesar el alta
     @PostMapping("/guardar")
     public String createProvider(@RequestParam("cuit") String cuit,
                                  @RequestParam("razonSocial") String razonSocial,
@@ -71,9 +67,7 @@ public class AdminProviderController {
         }
     }
 
-    /**
-     * Formulario para editar un proveedor existente.
-     */
+    //ormulario para editar un proveedor
     @GetMapping("/editar/{id}")
     public String showEditForm(@PathVariable("id") String id, Model model) {
         try {
@@ -86,9 +80,7 @@ public class AdminProviderController {
         }
     }
 
-    /**
-     * Procesar la modificación de un proveedor existente.
-     */
+    ///procesar la modificación
     @PostMapping("/editar/{id}")
     public String updateProvider(@PathVariable("id") String id,
                                  @RequestParam("cuit") String cuit,
@@ -106,18 +98,14 @@ public class AdminProviderController {
         }
     }
 
-    /**
-     * Baja lógica de un proveedor (POST).
-     */
+
     @PostMapping("/eliminar/{id}")
     public String deleteProviderPost(@PathVariable("id") String id) {
         proveedorService.eliminarProveedor(id);
         return "redirect:/admin/providers?success=deleted";
     }
 
-    /**
-     * Baja lógica de un proveedor (GET para enlaces rápidos).
-     */
+
     @GetMapping("/eliminar/{id}")
     public String deleteProviderGet(@PathVariable("id") String id) {
         proveedorService.eliminarProveedor(id);

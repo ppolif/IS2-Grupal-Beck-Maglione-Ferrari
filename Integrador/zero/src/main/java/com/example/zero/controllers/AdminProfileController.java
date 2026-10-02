@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -54,7 +55,7 @@ public class AdminProfileController {
     @PostMapping
     public String actualizarPerfilAdmin(HttpSession session,
                                         @RequestParam("email") String email,
-                                        @RequestParam(value = "archivoFoto", required = false) org.springframework.web.multipart.MultipartFile archivoFoto,
+                                        @RequestParam(value = "archivoFoto", required = false) MultipartFile archivoFoto,
                                         @RequestParam(value = "foto", required = false) String foto,
                                         RedirectAttributes redirectAttributes) {
         Usuario usuarioSession = (Usuario) session.getAttribute("usuariosession");

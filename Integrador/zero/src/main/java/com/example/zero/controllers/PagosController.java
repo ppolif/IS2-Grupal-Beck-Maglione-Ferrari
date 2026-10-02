@@ -29,10 +29,8 @@ public class PagosController {
     private final MercadoPagoService mercadoPagoService;
     private final OrdenCompraService ordenCompraService;
 
-    /**
-     * Inicia el proceso de pago con Mercado Pago para el carrito de compras activo.
-     * Crea la preferencia de pago en Mercado Pago y redirige al cliente a la pantalla oficial de cobro.
-     */
+    ///inicia el proceso de pago con Mercado Pago para el carrito de compras activo.
+    ///crea la preferencia de pago en Mercado Pago y redirige al cliente a la pantalla oficial de cobro
     @RequestMapping(value = {"/api/mercadoPago", "/checkout/mercadopago", "/shop/checkout/mercadopago"}, method = {RequestMethod.GET, RequestMethod.POST})
     public String mercadoPago(HttpSession session,
                               HttpServletRequest request,
@@ -61,9 +59,11 @@ public class PagosController {
             }
 
             // construir URL base dinámica respetando proxies / tunnels (ngrok) si existen
+            //forma en que se comunican el cliente y el servidor
             String scheme = request.getHeader("X-Forwarded-Proto") != null
                     ? request.getHeader("X-Forwarded-Proto")
                     : request.getScheme();
+            //nombre o dirección IP de la computadora donde corre la aplicación
             String host = request.getHeader("X-Forwarded-Host") != null
                     ? request.getHeader("X-Forwarded-Host")
                     : (request.getServerName() + ((request.getServerPort() == 80 || request.getServerPort() == 443) ? "" : ":" + request.getServerPort()));

@@ -7,6 +7,11 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+
+///le dice a Spring que esta clase es un asesor global que "vigila" a todos los controladores del sistema
+/// No se llama manualmente con código
+/// Spring Boot lo activa automáticamente si un usuario intenta acceder a una ruta inexistente o un
+/// controlador lanza una excepción
 @ControllerAdvice
 public class GlobalExceptionHandler {
 

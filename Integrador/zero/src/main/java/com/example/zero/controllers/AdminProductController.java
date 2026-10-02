@@ -7,6 +7,7 @@ import com.example.zero.services.StockService;
 import com.example.zero.services.SubCategoriaService;
 import com.example.zero.services.VigenciaPrecioService;
 import com.example.zero.services.producto.ProductoService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -16,9 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Controlador para la gestión administrativa de productos (ABM).
- */
+
 @Controller
 @RequestMapping("/admin/products")
 public class AdminProductController {
@@ -29,7 +28,7 @@ public class AdminProductController {
     private final VigenciaPrecioService vigenciaPrecioService;
 
 
-    @org.springframework.beans.factory.annotation.Autowired
+    @Autowired
     public AdminProductController(ProductoService productoService,
                                   SubCategoriaService subCategoriaService,
                                   StockService stockService,

@@ -20,6 +20,8 @@ public class ImagenController {
     }
 
     @GetMapping({"/imagen/{id}", "/imagenes/{id}"})
+    ///representa la respuesta HTTP completa que el servidor le envía al cliente
+    ///da control sobre las 3 partes de una respuesta http: status code, headers, body
     public ResponseEntity<byte[]> obtenerImagen(@PathVariable("id") String id) {
         try {
             Imagen imagen = imagenService.buscarPorId(id);

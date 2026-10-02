@@ -5,10 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Representa un producto en el Reporte de Productos con análisis de stock por sucursal
- * y contacto de reposición al proveedor más económico.
- */
+///análisis de stock por sucursal y contacto de reposición al proveedor más económico.
 @Data
 @Builder
 @NoArgsConstructor

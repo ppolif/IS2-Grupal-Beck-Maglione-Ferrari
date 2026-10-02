@@ -33,10 +33,8 @@ public class NewsletterService {
     @Value("${spring.mail.username:zeroshopclothes@gmail.com}")
     private String remitente;
 
-    /**
-     * Tarea programada cada 10 días a las 09:00 hs mediante notación cron.
-     * Formato cron: segundo minuto hora día-del-mes mes día-de-la-semana
-     */
+    ///envio programado cada 10 días a las 09:00 hs mediante notación cron.
+    ///formato cron: segundo minuto hora día-del-mes mes día-de-la-semana
     @Scheduled(cron = "0 0 9 */10 * *")
     public void enviarNewsletterProgramado() {
         logger.info("Iniciando tarea programada: Envío de newsletter de ofertas cada 10 días.");
@@ -44,11 +42,7 @@ public class NewsletterService {
         logger.info("Tarea de newsletter finalizada. Total de correos enviados: {}", enviados);
     }
 
-    /**
-     * Envía el newsletter con el catálogo HTML embebido de ofertas a todos los usuarios activos.
-     *
-     * @return Cantidad de correos despachados satisfactoriamente
-     */
+
     @Transactional 
     public int enviarNewsletterOfertas() {
         List<Producto> ofertas = productoRepository.findByEnOfertaTrueAndEliminadoFalse();

@@ -8,9 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DTO contenedor para el Reporte de Proveedores con métricas y listado de menores costos por producto.
- */
+
 @Data
 @Builder
 @NoArgsConstructor

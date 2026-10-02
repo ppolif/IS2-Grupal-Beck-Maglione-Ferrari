@@ -10,6 +10,7 @@ import com.example.zero.enums.EstadoFactura;
 import com.example.zero.enums.TipoDePago;
 import com.example.zero.repositories.*;
 import com.example.zero.services.producto.ProductoService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,9 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Servicio de negocio para la gestión de compras y órdenes a Proveedores (FacturaProveedor).
- */
 @Service
 public class CompraProveedorService {
 
@@ -30,30 +28,17 @@ public class CompraProveedorService {
     private final DetalleRepository detalleRepository;
     private final StockRepository stockRepository;
     private final ProveedorRepository proveedorRepository;
-    private final ProductoRepository productoRepository;
     private final FormaDePagoRepository formaDePagoRepository;
     private final ProductoService productoService;
     private final StockService stockService;
 
-    public CompraProveedorService(FacturaProveedorRepository facturaProveedorRepository,
-                                  FacturaRepository facturaRepository,
-                                  DetalleRepository detalleRepository,
-                                  StockRepository stockRepository,
-                                  ProveedorRepository proveedorRepository,
-                                  ProductoRepository productoRepository,
-                                  FormaDePagoRepository formaDePagoRepository,
-                                  ProductoService productoService) {
-        this(facturaProveedorRepository, facturaRepository, detalleRepository, stockRepository,
-                proveedorRepository, productoRepository, formaDePagoRepository, productoService, null);
-    }
 
-    @org.springframework.beans.factory.annotation.Autowired
+    @Autowired
     public CompraProveedorService(FacturaProveedorRepository facturaProveedorRepository,
                                   FacturaRepository facturaRepository,
                                   DetalleRepository detalleRepository,
                                   StockRepository stockRepository,
                                   ProveedorRepository proveedorRepository,
-                                  ProductoRepository productoRepository,
                                   FormaDePagoRepository formaDePagoRepository,
                                   ProductoService productoService,
                                   StockService stockService) {
@@ -62,7 +47,6 @@ public class CompraProveedorService {
         this.detalleRepository = detalleRepository;
         this.stockRepository = stockRepository;
         this.proveedorRepository = proveedorRepository;
-        this.productoRepository = productoRepository;
         this.formaDePagoRepository = formaDePagoRepository;
         this.productoService = productoService;
         this.stockService = stockService;

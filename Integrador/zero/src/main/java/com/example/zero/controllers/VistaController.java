@@ -1,9 +1,13 @@
 package com.example.zero.controllers;
 
+import com.example.zero.dto.producto.ProductoDTO;
 import com.example.zero.entidades.compra.Factura;
+import com.example.zero.entidades.compraCliente.DetalleCompra;
+import com.example.zero.entidades.compraCliente.OrdenCompra;
 import com.example.zero.entidades.persona.Cliente;
 import com.example.zero.entidades.persona.Usuario;
 import com.example.zero.entidades.producto.Producto;
+import com.example.zero.entidades.zona.Direccion;
 import com.example.zero.enums.RolUsuario;
 import com.example.zero.services.CategoriaService;
 import com.example.zero.services.VentaService;
@@ -33,30 +37,30 @@ public class VistaController {
     private final com.example.zero.services.StockService stockService;
     private final com.example.zero.services.ContactoService contactoService;
 
-    // Inicio / Portada
+    // inicio tienda
     @GetMapping({"/", "/shop", "/shop/index"})
     public String shopIndex(Model model) {
-        List<com.example.zero.dto.producto.ProductoDTO> featured = productoService.listarActivos().stream()
-                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService, productoService))
+        List<ProductoDTO> featured = productoService.listarActivos().stream()
+                .map(p -> ProductoDTO.de(p, vigenciaPrecioService, stockService, productoService))
                 .toList();
         model.addAttribute("featuredProducts", featured);
 
-        List<com.example.zero.dto.producto.ProductoDTO> sale = productoService.listarEnOferta().stream()
-                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService, productoService))
+        List<ProductoDTO> sale = productoService.listarEnOferta().stream()
+                .map(p -> ProductoDTO.de(p, vigenciaPrecioService, stockService, productoService))
                 .toList();
         model.addAttribute("saleProducts", sale);
 
         return "shop/index";
     }
 
-    // Catálogo de Productos / Categorías
+    //catálogo de productos / categorías
     @GetMapping({"/shop/category", "/shop/categoria", "/shop/catalogo"})
     public String shopCategory(@RequestParam(value = "categoryId", required = false) String categoryId,
                                @RequestParam(value = "subCategoryId", required = false) String subCategoryId,
                                @RequestParam(value = "maxPrice", required = false) Double maxPrice,
                                Model model) {
-        List<com.example.zero.dto.producto.ProductoDTO> products = productoService.listarActivos().stream()
-                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService, productoService))
+        List<ProductoDTO> products = productoService.listarActivos().stream()
+                .map(p -> ProductoDTO.de(p, vigenciaPrecioService, stockService, productoService))
                 .toList();
 
         if (subCategoryId != null && !subCategoryId.trim().isEmpty()) {
@@ -83,6 +87,7 @@ public class VistaController {
             model.addAttribute("selectedCategory", categoryId.trim());
         }
 
+        //filtro por preciooo
         if (maxPrice != null && maxPrice > 0) {
             products = products.stream()
                     .filter(p -> p.getPrecioActual() <= maxPrice)
@@ -96,11 +101,11 @@ public class VistaController {
         return "shop/category";
     }
 
-    // Catálogo de Ofertas
+    // catálogo de ofertas
     @GetMapping({"/offers", "/ofertas", "/shop/offers", "/shop/ofertas"})
     public String shopOffers(Model model) {
-        List<com.example.zero.dto.producto.ProductoDTO> offers = productoService.listarEnOferta().stream()
-                .map(p -> com.example.zero.dto.producto.ProductoDTO.de(p, vigenciaPrecioService, stockService, productoService))
+        List<ProductoDTO> offers = productoService.listarEnOferta().stream()
+                .map(p -> ProductoDTO.de(p, vigenciaPrecioService, stockService, productoService))
                 .toList();
         model.addAttribute("products", offers);
         model.addAttribute("totalProducts", offers.size());
@@ -110,7 +115,7 @@ public class VistaController {
         return "shop/category";
     }
 
-    // Finalizar compra / Checkout
+    // finalizar compra/checkout
     @GetMapping({"/shop/checkout", "/shop/pagar"})
     public String shopCheckout(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
         Usuario usuario = (Usuario) session.getAttribute("usuariosession");
@@ -124,11 +129,11 @@ public class VistaController {
         }
 
         try {
-            com.example.zero.entidades.persona.Cliente cliente = ordenCompraService.obtenerOAsociarCliente(usuario);
+            Cliente cliente = ordenCompraService.obtenerOAsociarCliente(usuario);
             session.setAttribute("usuariosession", usuario);
 
-            com.example.zero.entidades.compraCliente.OrdenCompra carrito = ordenCompraService.obtenerOCrearCarrito(cliente);
-            List<com.example.zero.entidades.compraCliente.DetalleCompra> items = ordenCompraService.obtenerItemsActivos(carrito);
+            OrdenCompra carrito = ordenCompraService.obtenerOCrearCarrito(cliente);
+            List<DetalleCompra> items = ordenCompraService.obtenerItemsActivos(carrito);
 
             model.addAttribute("cliente", cliente);
             model.addAttribute("usuario", usuario);
@@ -145,7 +150,7 @@ public class VistaController {
             String ciudad = "";
             String zipCode = "";
             if (cliente.getDireccion() != null && !cliente.getDireccion().isEmpty()) {
-                com.example.zero.entidades.zona.Direccion dir = cliente.getDireccion().get(0);
+                Direccion dir = cliente.getDireccion().get(0);
                 String calle = dir.getCalle() != null ? dir.getCalle() : "";
                 String num = dir.getNumeracion() != null ? dir.getNumeracion() : "";
                 direccion = (calle + " " + num).trim();
@@ -165,7 +170,7 @@ public class VistaController {
         return "shop/checkout";
     }
 
-    // Confirmación de pedido
+    // confirmación de pedido
     @GetMapping({"/shop/confirmation", "/shop/confirmacion"})
     public String shopConfirmation(HttpSession session,
                                    Model model,
@@ -229,7 +234,7 @@ public class VistaController {
         return "shop/confirmation";
     }
 
-    // Ficha de producto individual
+    // detalle producto individual
     @GetMapping({"/products/{id}", "/product/{id}", "/shop/product/{id}", "/shop/products/{id}", "/shop/single-product", "/shop/producto"})
     public String shopSingleProduct(@PathVariable(value = "id", required = false) String pathId,
                                     @RequestParam(value = "id", required = false) String paramId,
@@ -267,7 +272,7 @@ public class VistaController {
         return "shop/single-product";
     }
 
-    // Pantalla 404
+    // pantalla 404
     @GetMapping({"/admin/404", "/admin/page-404"})
     public String admin404() {
         return "admin/page-404";

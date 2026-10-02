@@ -61,7 +61,7 @@ public class HistorialController {
         }
     }
 
-    ///Redirige al comprobante y detalle de una compra específica.
+    ///redirige al comprobante y detalle de una compra específica
     @GetMapping({"/historial/{orderNumber}", "/shop/historial/{orderNumber}"})
     public String verDetalleCompra(@PathVariable("orderNumber") String orderNumber) {
         return "redirect:/shop/confirmation?orderNumber=" + orderNumber;

@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * Representa una fila en el Reporte de Proveedores con el menor precio de costo registrado por producto.
- */
+
 @Data
 @Builder
 @NoArgsConstructor
