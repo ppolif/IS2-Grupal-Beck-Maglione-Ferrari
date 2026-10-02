@@ -13,10 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Servicio encargado de gestionar y consultar la jerarquía de Contacto.
- * Encapsula la obtención de correo electrónico y teléfono a través de las subclases correspondientes.
- */
+
 @Service
 public class ContactoService {
 

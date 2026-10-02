@@ -13,20 +13,14 @@ import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/**
- * Servicio encargado de generar archivos de exportación en formato .xlsx (Excel) y .csv
- * a partir de los DTOs de reportes.
- */
+///generar archivos de exportación en formato .xlsx (Excel) y .csv a partir de los DTOs de reportes.
 @Service
 public class ReporteExportService {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    // =========================================================================
-    // EXPORTACIÓN REPORTE DE VENTAS
-    // =========================================================================
-
+    ///exportacion de reporte de venta
     public byte[] exportarVentasCsv(ReporteVentasDTO dto) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(baos, StandardCharsets.UTF_8))) {
@@ -157,10 +151,7 @@ public class ReporteExportService {
         }
     }
 
-    // =========================================================================
-    // EXPORTACIÓN REPORTE DE PRODUCTOS (STOCK)
-    // =========================================================================
-
+    ///exportacion de reporte de producto stock
     public byte[] exportarProductosCsv(ReporteProductosDTO dto) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(baos, StandardCharsets.UTF_8))) {
@@ -277,10 +268,7 @@ public class ReporteExportService {
         }
     }
 
-    // =========================================================================
-    // EXPORTACIÓN REPORTE DE PROVEEDORES (MENOR COSTO)
-    // =========================================================================
-
+    ///exportacion reporte proveedor de menor costo
     public byte[] exportarProveedoresCsv(ReporteProveedoresDTO dto) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(baos, StandardCharsets.UTF_8))) {
@@ -391,10 +379,7 @@ public class ReporteExportService {
         }
     }
 
-    // =========================================================================
-    // UTILIDADES DE FORMATO Y ESTILO
-    // =========================================================================
-
+    ////cosas del formato y el estilo
     private CellStyle crearHeaderStyle(Workbook workbook) {
         CellStyle style = workbook.createCellStyle();
         Font font = workbook.createFont();

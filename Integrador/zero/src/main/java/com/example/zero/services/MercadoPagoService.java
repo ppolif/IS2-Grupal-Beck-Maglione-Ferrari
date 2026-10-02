@@ -49,16 +49,7 @@ public class MercadoPagoService {
         MercadoPagoConfig.setAccessToken(accessToken != null && !accessToken.isBlank() ? accessToken.trim() : DEFAULT_ACCESS_TOKEN);
     }
 
-    /*
-     * crea una preferencia de pago en Mercado Pago para los productos activos del carrito.
-     *
-     * @param carrito orden de compra activa del cliente (en estado PENDIENTE_COMPLETAR)
-     * @param cliente cliente autenticado
-     * @param baseUrl URL base del servidor (ej. http://localhost:8080)
-     * @return URL de redirección a la pasarela de Mercado Pago (init_point o sandbox_init_point)
-     * @throws MPException si ocurre un error general en el SDK de Mercado Pago
-     * @throws MPApiException si la API de Mercado Pago responde con error
-     */
+    ///crea una preferencia de pago en Mercado Pago para los productos activos del carrito.
     public String crearPreferenciaParaCarrito(OrdenCompra carrito, Cliente cliente, String baseUrl) throws MPException, MPApiException {
         inicializarConfiguracion();
 
@@ -152,16 +143,9 @@ public class MercadoPagoService {
         return redirectUrl;
     }
 
-    /**
-     * Procesa la confirmación de pago exitoso recibida desde Mercado Pago:
-     * registra la venta formalmente en el sistema, descuenta la orden de compra pasándola
-     * al estado PENDIENTE_ENVIO y genera la Factura correspondiente.
-     *
-     * @param externalReference ID de la orden de compra que se envió a Mercado Pago
-     * @param paymentId identificador del pago devuelto por Mercado Pago
-     * @param cliente cliente autenticado en sesión
-     * @return la Factura registrada
-     */
+    ///procesa la confirmación de pago exitoso recibida desde Mercado Pago:
+    ///registra la venta en el sistema, descuenta la orden de compra pasándola
+    ///al estado pendiente_envio y genera la factura.
     @Transactional
     public Factura procesarPagoExitoso(String externalReference, String paymentId, Cliente cliente) {
         OrdenCompra orden = null;

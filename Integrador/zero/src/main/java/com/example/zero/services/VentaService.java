@@ -34,9 +34,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
-/**
- * Servicio de negocio para la gestión y registro de ventas.
- */
+
 @Service
 public class VentaService {
 

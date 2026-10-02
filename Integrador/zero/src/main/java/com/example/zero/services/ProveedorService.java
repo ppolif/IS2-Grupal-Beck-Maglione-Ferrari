@@ -8,9 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Servicio de negocio para la gestión de Proveedores.
- */
+
 @Service
 public class ProveedorService {
 

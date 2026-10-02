@@ -12,10 +12,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Servicio de negocio para la gestión, cálculo y auditoría de Stock.
- * Cumple con el rol de Experto en Información para existencias de productos.
- */
 @Service
 public class StockService {
 
@@ -27,14 +23,8 @@ public class StockService {
         this.detalleRepository = detalleRepository;
     }
 
-    /**
-     * Calcula el stock actual de un producto a partir del último registro trazable
-     * en la tabla Stock (ordenado cronológicamente por la fecha de factura).
-     * Si no posee movimientos previos registrados en la tabla Stock, retorna 0.
-     *
-     * @param productoId ID del producto
-     * @return existencias actuales disponibles
-     */
+    ///calcula el stock actual de un producto a partir del último registro
+    ///en la tabla stock ordenado cronológicamente por la fecha de factura
     @Transactional(readOnly = true)
     public int calcularStockActual(String productoId) {
         if (productoId == null || productoId.trim().isEmpty()) {
@@ -45,12 +35,7 @@ public class StockService {
         return ultimoStock.map(stock -> Math.max(0, stock.getCantidadActual())).orElse(0);
     }
 
-    /**
-     * Busca el último registro de Stock asociado a un producto.
-     *
-     * @param productoId ID del producto
-     * @return Optional con la entidad Stock
-     */
+
     @Transactional(readOnly = true)
     public Optional<Stock> buscarStock(String productoId) {
         if (productoId == null || productoId.trim().isEmpty()) {
@@ -59,17 +44,13 @@ public class StockService {
         return stockRepository.findUltimoStockPorProducto(productoId.trim());
     }
 
-    /**
-     * Lista todos los registros de stock activos.
-     */
+
     @Transactional(readOnly = true)
     public List<Stock> listarStock() {
         return stockRepository.findByEliminadoFalse();
     }
 
-    /**
-     * Valida los datos requeridos para crear/modificar un stock.
-     */
+
     public void validar(Detalle detalle, int cantidadActual) {
         if (detalle == null) {
             throw new IllegalArgumentException("El detalle de factura no puede ser nulo al registrar stock");
@@ -79,17 +60,7 @@ public class StockService {
         }
     }
 
-    /**
-     * Crea o actualiza el registro histórico de Stock asociado a un Detalle.
-     * Si ya existe un registro de Stock vinculado a dicho Detalle, actualiza sus
-     * existencias y observación para garantizar idempotencia y evitar violaciones
-     * de la restricción UNIQUE sobre detalle_id.
-     *
-     * @param detalle Detalle de factura vinculado al movimiento
-     * @param nuevoBalance Balance resultante de existencias tras el movimiento
-     * @param observacion Motivo o referencia del movimiento (ej. Egreso por Venta o Ingreso por Compra)
-     * @return entidad Stock persistida
-     */
+
     @Transactional
     public Stock crearStock(Detalle detalle, int nuevoBalance, String observacion) {
         validar(detalle, nuevoBalance);
@@ -107,15 +78,6 @@ public class StockService {
         return stockRepository.save(stock);
     }
 
-    @Transactional
-    public Stock crearStock(String detalleId, int nuevoBalance, String observacion) {
-        if (detalleId == null || detalleId.trim().isEmpty()) {
-            throw new IllegalArgumentException("El ID del detalle no puede ser nulo o vacío");
-        }
-        Detalle detalle = detalleRepository.findById(detalleId.trim())
-                .orElseThrow(() -> new IllegalArgumentException("No se encontró el detalle con ID: " + detalleId));
-        return crearStock(detalle, nuevoBalance, observacion);
-    }
 
     @Transactional
     public Stock modificarStock(String id, int cantidadActual, String observacion) {
@@ -147,7 +109,6 @@ public class StockService {
         stockRepository.save(stock);
     }
 
-    // ==================== LÓGICA DE OPERACIONES DE STOCK ====================
 
     public boolean esStockCritico(int stockActual, int stockTotal) {
         if (stockTotal <= 0) {
