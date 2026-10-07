@@ -1,0 +1,8 @@
+$kind: http-request
+url: http://localhost:9000/api/v1/persona/paged/?page=0&size=5&sort=id,asc
+method: GET
+queryParams:
+  page: "0"
+  size: "5"
+  sort: id,asc
+order: 4325117370249273
