@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>CineApp - Inicio</title>
+    <!-- Importamos el tema oscuro "Cyborg" directamente desde internet -->
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/cyborg/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand fw-bold text-info" th:href="@{/}">🎬 CineApp</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link active" th:href="@{/}">Inicio</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/ruleta}">Ruleta</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center mt-5">
+            <div class="p-5 bg-dark border border-secondary rounded-4 shadow-lg">
+                <h1 class="text-white mb-4">Bienvenido a tu recomendador de películas</h1>
+                <p class="text-secondary mb-4 fs-5">Encuentra la película ideal basada en tu tiempo libre.</p>
+                <a th:href="@{/ruleta}" class="btn btn-info px-5 py-3 rounded-pill fw-bold text-dark">
+                    Ingresar a la Ruleta
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script de Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
