@@ -1,0 +1,10 @@
+$kind: http-request
+url: http://localhost:9000/api/v1/localidades/
+method: POST
+body:
+  type: json
+  content: |-
+    {
+        "denominacion": "Guaymallen"
+    }
+order: 3669892141763555
