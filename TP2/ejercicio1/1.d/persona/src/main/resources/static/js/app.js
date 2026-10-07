@@ -465,7 +465,7 @@ async function eliminarPersona(id) {
 }
 
 /* ==========================================================================
-   LIBROS (1.c BASE)
+   LIBROS & PDF (APERTURA EN NUEVA SOLAPA CON target="_blank")
    ========================================================================== */
 async function cargarLibros() {
     try {
@@ -474,17 +474,19 @@ async function cargarLibros() {
         tbody.innerHTML = '';
 
         if (!res.ok) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Aún no hay endpoint activo de Libros o no hay registros cargados.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Aún no hay endpoint activo de Libros o no hay registros cargados.</td></tr>';
             return;
         }
 
         const data = await res.json();
         if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No hay libros registrados</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No hay libros registrados</td></tr>';
             return;
         }
 
         data.forEach(libro => {
+            const tienePdf = Boolean(libro.nombreArchivoPdf);
+            const pdfName = libro.nombreArchivoPdf || 'Sin PDF cargado';
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="fw-bold">${libro.id}</td>
@@ -492,11 +494,26 @@ async function cargarLibros() {
                 <td><span class="badge bg-light text-dark border">${libro.genero || '-'}</span></td>
                 <td>${libro.fecha || '-'}</td>
                 <td>${libro.paginas || '-'}</td>
+                <td>
+                    ${tienePdf 
+                        ? `<span class="badge-pdf d-inline-flex align-items-center gap-1"><i class="bi bi-file-earmark-pdf"></i> ${escapeQuotes(pdfName)}</span>`
+                        : `<span class="badge bg-secondary-subtle text-muted">Sin PDF</span>`
+                    }
+                </td>
                 <td class="text-center">
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editarLibro(${libro.id}, '${escapeQuotes(libro.titulo)}', '${escapeQuotes(libro.genero)}', ${libro.fecha || 0}, ${libro.paginas || 0})" title="Editar Libro">
+                    ${tienePdf 
+                        ? `<button class="btn btn-open-pdf d-inline-flex align-items-center gap-1 shadow-sm" 
+                                   onclick="abrirPdfLibro(${libro.id})" title="Abrir PDF en pestaña nueva">
+                               <i class="bi bi-box-arrow-up-right"></i> Abrir PDF
+                           </button>`
+                        : `<button class="btn btn-sm btn-outline-secondary" disabled title="No posee PDF asignado">
+                               <i class="bi bi-file-earmark-x"></i> Sin PDF
+                           </button>`
+                    }
+                    <button class="btn btn-sm btn-outline-primary ms-1" onclick="editarLibro(${libro.id})" title="Editar Libro">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarLibro(${libro.id})" title="Eliminar Libro">
+                    <button class="btn btn-sm btn-outline-danger ms-1" onclick="eliminarLibro(${libro.id})" title="Eliminar Libro">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>
@@ -504,8 +521,9 @@ async function cargarLibros() {
             tbody.appendChild(tr);
         });
     } catch (err) {
+        console.error(err);
         document.getElementById('librosTableBody').innerHTML = 
-            '<tr><td colspan="6" class="text-center py-4 text-muted"><i class="bi bi-info-circle me-1"></i> Error al conectar con el servicio de libros.</td></tr>';
+            '<tr><td colspan="7" class="text-center py-4 text-muted"><i class="bi bi-info-circle me-1"></i> Error al conectar con el servicio de libros.</td></tr>';
     }
 }
 
@@ -521,11 +539,13 @@ async function buscarLibros() {
         tbody.innerHTML = '';
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Sin coincidencias para "' + escapeQuotes(filtro) + '"</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Sin coincidencias para "' + escapeQuotes(filtro) + '"</td></tr>';
             return;
         }
 
         data.forEach(libro => {
+            const tienePdf = Boolean(libro.nombreArchivoPdf);
+            const pdfName = libro.nombreArchivoPdf || 'Sin PDF cargado';
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="fw-bold">${libro.id}</td>
@@ -533,11 +553,26 @@ async function buscarLibros() {
                 <td><span class="badge bg-light text-dark border">${libro.genero || '-'}</span></td>
                 <td>${libro.fecha || '-'}</td>
                 <td>${libro.paginas || '-'}</td>
+                <td>
+                    ${tienePdf 
+                        ? `<span class="badge-pdf d-inline-flex align-items-center gap-1"><i class="bi bi-file-earmark-pdf"></i> ${escapeQuotes(pdfName)}</span>`
+                        : `<span class="badge bg-secondary-subtle text-muted">Sin PDF</span>`
+                    }
+                </td>
                 <td class="text-center">
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editarLibro(${libro.id}, '${escapeQuotes(libro.titulo)}', '${escapeQuotes(libro.genero)}', ${libro.fecha || 0}, ${libro.paginas || 0})" title="Editar Libro">
+                    ${tienePdf 
+                        ? `<button class="btn btn-open-pdf d-inline-flex align-items-center gap-1 shadow-sm" 
+                                   onclick="abrirPdfLibro(${libro.id})" title="Abrir PDF en pestaña nueva">
+                               <i class="bi bi-box-arrow-up-right"></i> Abrir PDF
+                           </button>`
+                        : `<button class="btn btn-sm btn-outline-secondary" disabled>
+                               <i class="bi bi-file-earmark-x"></i> Sin PDF
+                           </button>`
+                    }
+                    <button class="btn btn-sm btn-outline-primary ms-1" onclick="editarLibro(${libro.id})" title="Editar Libro">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarLibro(${libro.id})" title="Eliminar Libro">
+                    <button class="btn btn-sm btn-outline-danger ms-1" onclick="eliminarLibro(${libro.id})">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>
@@ -545,50 +580,77 @@ async function buscarLibros() {
             tbody.appendChild(tr);
         });
     } catch (err) {
-        notificar('Error en la búsqueda de libros', 'danger');
+        notificar('Error al buscar libros', 'danger');
     }
 }
 
 function abrirModalLibro() {
     document.getElementById('libroForm').reset();
     document.getElementById('libroId').value = '';
-    document.getElementById('libroModalTitle').textContent = 'Nuevo Libro';
+    document.getElementById('libroModalTitle').textContent = 'Cargar Nuevo Libro con PDF';
     libroModal.show();
 }
 
-function editarLibro(id, titulo, genero, fecha, paginas) {
-    document.getElementById('libroId').value = id;
-    document.getElementById('libroTitulo').value = titulo;
-    document.getElementById('libroGenero').value = genero || '';
-    document.getElementById('libroFecha').value = fecha || '';
-    document.getElementById('libroPaginas').value = paginas || '';
-    document.getElementById('libroModalTitle').textContent = 'Editar Libro';
-    libroModal.show();
+async function editarLibro(id) {
+    try {
+        const res = await fetch(`${API_URL.LIBROS}/${id}`);
+        if (!res.ok) throw new Error();
+        const libro = await res.json();
+        document.getElementById('libroForm').reset();
+        document.getElementById('libroId').value = libro.id;
+        document.getElementById('libroTitulo').value = libro.titulo || '';
+        document.getElementById('libroGenero').value = libro.genero || '';
+        document.getElementById('libroFecha').value = libro.fecha || '';
+        document.getElementById('libroPaginas').value = libro.paginas || '';
+        document.getElementById('libroModalTitle').textContent = 'Editar Libro con PDF';
+        libroModal.show();
+    } catch (err) {
+        notificar('Error al cargar datos del libro', 'danger');
+    }
+}
+
+/**
+ * Abre el PDF del libro en una pestaña/solapa nueva del navegador
+ */
+function abrirPdfLibro(id) {
+    const pdfUrl = `${API_URL.LIBROS}/${id}/pdf`;
+    window.open(pdfUrl, '_blank');
 }
 
 async function guardarLibro(e) {
     e.preventDefault();
     const id = document.getElementById('libroId').value;
-    const dto = {
-        titulo: document.getElementById('libroTitulo').value.trim(),
-        genero: document.getElementById('libroGenero').value.trim(),
-        fecha: parseInt(document.getElementById('libroFecha').value) || 0,
-        paginas: parseInt(document.getElementById('libroPaginas').value) || 0
-    };
+    const titulo = document.getElementById('libroTitulo').value.trim();
+    const genero = document.getElementById('libroGenero').value.trim();
+    const fecha = parseInt(document.getElementById('libroFecha').value) || 0;
+    const paginas = parseInt(document.getElementById('libroPaginas').value) || 0;
+    const fileInput = document.getElementById('libroArchivoPdf');
+
+    const formData = new FormData();
+    formData.append('titulo', titulo);
+    formData.append('genero', genero);
+    formData.append('fecha', fecha);
+    formData.append('paginas', paginas);
+
+    if (fileInput.files.length > 0) {
+        formData.append('file', fileInput.files[0]);
+    }
 
     try {
         const url = id ? `${API_URL.LIBROS}/${id}` : API_URL.LIBROS;
         const res = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dto)
+            body: formData
         });
-        if (!res.ok) throw new Error('Error al registrar libro');
+        if (!res.ok) {
+            const errorJson = await res.json().catch(() => ({}));
+            throw new Error(errorJson.error || 'Error al registrar libro');
+        }
         libroModal.hide();
-        notificar(`Libro ${id ? 'actualizado' : 'guardado'} correctamente`);
+        notificar(`Libro ${id ? 'actualizado' : 'guardado'} exitosamente con su PDF`);
         cargarLibros();
     } catch (err) {
-        notificar('Error al guardar libro', 'danger');
+        notificar('Error al guardar libro: ' + err.message, 'danger');
     }
 }
 
@@ -605,6 +667,10 @@ async function eliminarLibro(id) {
 }
 
 // Utilitarios
+function sanitizarNombre(nombre) {
+    return (nombre || 'libro').trim().toLowerCase().replace(/[^a-z0-9_-]/gi, '_');
+}
+
 function escapeQuotes(str) {
     if (!str) return '';
     return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');

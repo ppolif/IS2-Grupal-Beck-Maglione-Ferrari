@@ -36,3 +36,28 @@ body {
     color: #6c757d;
     background-color: #f8f9fa;
 }
+
+.btn-open-pdf {
+    background-color: #e63946;
+    color: #ffffff;
+    border: none;
+    font-size: 0.85rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.btn-open-pdf:hover {
+    background-color: #d62828;
+    color: #ffffff;
+}
+
+.badge-pdf {
+    font-size: 0.78rem;
+    padding: 5px 8px;
+    background-color: #fdf0ed;
+    color: #b02a37;
+    border: 1px solid #f5c2c7;
+    border-radius: 4px;
+    font-family: monospace;
+}

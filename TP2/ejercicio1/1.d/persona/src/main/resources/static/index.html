@@ -17,10 +17,10 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
         <div class="container-fluid px-4">
             <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="#">
-                <i class="bi bi-collection-play-fill fs-4"></i> Sistema de Biblioteca y Personas <span class="badge bg-light text-primary fs-6">1.c Base</span>
+                <i class="bi bi-collection-play-fill fs-4"></i> Sistema de Biblioteca y Personas <span class="badge bg-warning text-dark fs-6">1.d (Libros con PDF)</span>
             </a>
             <span class="navbar-text text-white-50">
-                <i class="bi bi-hdd-network"></i> Servidor API: Puerto 9000 (db_persona_1c)
+                <i class="bi bi-hdd-network"></i> Servidor API: Puerto 9001 (db_persona_1d)
             </span>
         </div>
     </nav>
@@ -46,7 +46,7 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link fw-semibold" id="libros-tab" data-bs-toggle="tab" data-bs-target="#libros-content" type="button" role="tab">
-                    <i class="bi bi-book-half me-1"></i> Libros
+                    <i class="bi bi-book-half me-1"></i> Libros & PDFs
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -106,26 +106,26 @@
                 </div>
             </section>
 
-            <!-- ========================= LIBROS ========================= -->
+            <!-- ========================= LIBROS & PDF ========================= -->
             <section class="tab-pane fade" id="libros-content" role="tabpanel">
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
                         <div>
-                            <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-book-half me-2"></i>Gestión de Libros</h5>
-                            <small class="text-muted">Listado y administración de libros.</small>
+                            <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-book-half me-2"></i>Gestión de Libros y Archivos PDF</h5>
+                            <small class="text-muted">Carga el PDF del libro y visualízalo en una solapa nueva.</small>
                         </div>
                         <div class="d-flex gap-2 flex-grow-1 flex-md-grow-0">
                             <div class="input-group">
-                                <input type="text" id="libroFiltro" class="form-control" placeholder="Buscar libro...">
-                                <button class="btn btn-outline-primary" type="button" onclick="buscarLibros()">
+                                <input type="text" id="libroFiltro" class="form-control" placeholder="Buscar por título o género...">
+                                <button class="btn btn-outline-primary" type="button" onclick="buscarLibros()" title="Buscar">
                                     <i class="bi bi-search"></i>
                                 </button>
-                                <button class="btn btn-outline-secondary" type="button" onclick="cargarLibros()">
+                                <button class="btn btn-outline-secondary" type="button" onclick="cargarLibros()" title="Recargar lista">
                                     <i class="bi bi-arrow-clockwise"></i>
                                 </button>
                             </div>
                             <button class="btn btn-success d-flex align-items-center text-nowrap gap-1" onclick="abrirModalLibro()">
-                                <i class="bi bi-plus-circle"></i> Nuevo Libro
+                                <i class="bi bi-file-earmark-plus"></i> Cargar Nuevo Libro + PDF
                             </button>
                         </div>
                     </div>
@@ -139,11 +139,12 @@
                                         <th>Género</th>
                                         <th>Año</th>
                                         <th>Páginas</th>
+                                        <th>Archivo PDF</th>
                                         <th class="text-center">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="librosTableBody">
-                                    <tr><td colspan="6" class="text-center py-4 text-muted">Cargando libros...</td></tr>
+                                    <tr><td colspan="7" class="text-center py-4 text-muted">Cargando libros...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -286,23 +287,23 @@
         </div>
     </div>
 
-    <!-- Modal Libro -->
+    <!-- Modal Libro + PDF -->
     <div class="modal fade" id="libroModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <form id="libroForm" onsubmit="guardarLibro(event)">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="libroModalTitle">Nuevo Libro</h5>
+                        <h5 class="modal-title" id="libroModalTitle">Cargar Nuevo Libro con PDF</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
                     <div class="modal-body">
                         <input type="hidden" id="libroId">
                         <div class="row g-3">
-                            <div class="col-12">
+                            <div class="col-md-8">
                                 <label class="form-label">Título del Libro <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="libroTitulo" required placeholder="Ej: Rayuela">
                             </div>
-                            <div class="col-12">
+                            <div class="col-md-4">
                                 <label class="form-label">Género</label>
                                 <input type="text" class="form-control" id="libroGenero" placeholder="Ej: Novela">
                             </div>
@@ -313,6 +314,17 @@
                             <div class="col-md-6">
                                 <label class="form-label">Páginas</label>
                                 <input type="number" class="form-control" id="libroPaginas" placeholder="Ej: 600">
+                            </div>
+                            <div class="col-12">
+                                <div class="p-3 border rounded bg-light">
+                                    <label class="form-label fw-bold text-primary mb-1">
+                                        <i class="bi bi-file-earmark-pdf text-danger fs-5 me-1"></i> Archivo PDF correspondiente
+                                    </label>
+                                    <input type="file" class="form-control" id="libroArchivoPdf" accept="application/pdf">
+                                    <div class="form-text">
+                                        El archivo se guardará bajo el formato requerido: <code>libro_{nombrelibro}_.pdf</code>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
