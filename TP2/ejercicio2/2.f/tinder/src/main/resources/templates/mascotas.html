@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Tinder de Mascota - Mis Mascotas</title>
+
+    <!-- Bootstrap core CSS -->
+    <link th:href="@{/vendor/bootstrap/css/bootstrap.min.css}" href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Catamaran:100,200,300,400,500,600,700,800,900" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Lato:100,100i,300,300i,400,400i,700,700i,900,900i" rel="stylesheet">
+
+    <!-- Custom styles -->
+    <link th:href="@{/css/one-page-wonder.min.css}" href="/css/one-page-wonder.min.css" rel="stylesheet">
+</head>
+
+<body>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-dark navbar-custom fixed-top">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/}">Tinder de Mascota</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/inicio}">Inicio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/logout}">Salir</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<header>
+    <h1 style="margin-top:100px; text-align: center;">Mis Mascotas</h1>
+</header>
+
+<section>
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-12">
+
+                <div class="d-flex justify-content-end gap-2 my-3">
+                    <a th:href="@{/mascota/editar-perfil(accion='Crear')}" class="btn btn-primary rounded-pill">¡Agrega una Mascota!</a>
+                </div>
+
+                <table class="table table-light table-hover align-middle text-center">
+                    <thead>
+                    <tr class="bg-black text-white">
+                        <th>Foto</th>
+                        <th>Nombre</th>
+                        <th>Sexo</th>
+                        <th>Tipo</th>
+                        <th>Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="mascota : ${mascotas}">
+                        <td>
+                            <img th:if="${mascota.foto != null}" th:src="@{/foto/usuario(id=${mascota.id})}" alt="Foto" style="width: 55px; height: 55px; object-fit: cover; border-radius: 100%;">
+                            <img th:if="${mascota.foto == null}" th:src="@{/img/m1.jpeg}" src="/img/m1.jpeg" alt="Defecto" style="width: 55px; height: 55px; object-fit: cover; border-radius: 100%;">
+                        </td>
+                        <td th:text="${mascota.nombre}"></td>
+                        <td th:text="${mascota.sexo}"></td>
+                        <td th:text="${mascota.tipo}"></td>
+                        <td>
+                            <a th:href="@{/mascota/editar-perfil(id=${mascota.id}, accion='Actualizar')}" class="btn btn-sm btn-outline-primary">Editar</a>
+                            <a th:href="@{/mascota/editar-perfil(id=${mascota.id}, accion='Eliminar')}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(mascotas)}">
+                        <td colspan="5" class="text-muted py-4">No tienes mascotas registradas actualmente.</td>
+                    </tr>
+
+                    <!-- para ejemplificar uso de sec -->
+                    <tr sec:authorize="hasRole('ADMIN')">
+                        <td colspan="5" class="text-muted py-4">Fila secreta para admins!!</td>
+                    </tr>
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="py-5 bg-black mt-5">
+    <div class="container">
+        <p class="m-0 text-center text-white small">Copyright &copy; Tinder de Mascota 2026</p>
+    </div>
+</footer>
+
+<!-- Bootstrap core JavaScript -->
+<script th:src="@{/vendor/jquery/jquery.min.js}" src="/vendor/jquery/jquery.min.js"></script>
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}" src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
