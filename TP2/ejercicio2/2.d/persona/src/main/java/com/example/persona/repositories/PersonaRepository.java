@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -17,22 +18,31 @@ public interface PersonaRepository extends BaseRepository<Persona, Long> {
 
     //boolean existsByDni(int dni);
 
-    @Query(value = "SELECT p FROM Persona p WHERE (p.nombre LIKE %:filtro% OR p.apellido LIKE %:filtro%) AND (p.activo = true OR p.activo IS NULL)")
+    @Query(value = "SELECT p FROM Persona p WHERE p.nombre LIKE %:filtro% OR p.apellido LIKE %:filtro%")
     List<Persona> search(@Param("filtro") String filtro);
 
-    @Query(value = "SELECT p FROM Persona p WHERE (p.nombre LIKE %:filtro% OR p.apellido LIKE %:filtro%) AND (p.activo = true OR p.activo IS NULL)")
+    @Query(value = "SELECT p FROM Persona p WHERE p.nombre LIKE %:filtro% OR p.apellido LIKE %:filtro%")
     Page<Persona> search(@Param("filtro") String filtro, Pageable pageable);
 
     @Query(
-            value = "SELECT * FROM persona WHERE (persona.nombre LIKE CONCAT('%', :filtro, '%') OR persona.apellido LIKE CONCAT('%', :filtro, '%')) AND (persona.activo IS NULL OR persona.activo = 1)",
+            value = "SELECT * FROM persona WHERE persona.nombre LIKE CONCAT('%', :filtro, '%') OR persona.apellido LIKE CONCAT('%', :filtro, '%')",
             nativeQuery = true
     )
     List<Persona> searchNativo(@Param("filtro") String filtro);
 
     @Query(
-            value = "SELECT * FROM persona WHERE (persona.nombre LIKE CONCAT('%', :filtro, '%') OR persona.apellido LIKE CONCAT('%', :filtro, '%')) AND (persona.activo IS NULL OR persona.activo = 1)",
-            countQuery = "SELECT count(*) FROM persona WHERE (persona.nombre LIKE CONCAT('%', :filtro, '%') OR persona.apellido LIKE CONCAT('%', :filtro, '%')) AND (persona.activo IS NULL OR persona.activo = 1)",
+            value = "SELECT * FROM persona WHERE persona.nombre LIKE CONCAT('%', :filtro, '%') OR persona.apellido LIKE CONCAT('%', :filtro, '%')",
+            countQuery = "SELECT count(*) FROM persona",
             nativeQuery = true
     )
     Page<Persona> searchNativo(@Param("filtro") String filtro, Pageable pageable);
+
+    @Query("SELECT DISTINCT p FROM Persona p LEFT JOIN FETCH p.libros")
+    List<Persona> findAllConLibros();
+
+    @Query("SELECT DISTINCT p FROM Persona p JOIN p.libros l WHERE l.fechaVencimientoDevolucion = :fecha")
+    List<Persona> findPersonasConLibrosAVencer(@Param("fecha") LocalDate fecha);
+
+    @Query("SELECT p FROM Persona p WHERE p.fechaNacimiento IS NOT NULL AND MONTH(p.fechaNacimiento) = :mes AND DAY(p.fechaNacimiento) = :dia")
+    List<Persona> findPersonasPorCumpleanios(@Param("mes") int mes, @Param("dia") int dia);
 }

@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +29,9 @@ public class Persona extends Base {
     @Column(name = "dni")
     private int dni;
 
+    @Column(name = "email")
+    private String email;
+
     @Column(name = "tiene_prestamo")
     private Boolean tienePrestamo = false;
 
@@ -42,4 +46,8 @@ public class Persona extends Base {
             inverseJoinColumns = @JoinColumn(name = "libro_id")
     )
     private List<Libro> libros = new ArrayList<Libro>();
+
+    @Column(name = "fecha_nacimiento")
+    private LocalDate fechaNacimiento;
+
 }

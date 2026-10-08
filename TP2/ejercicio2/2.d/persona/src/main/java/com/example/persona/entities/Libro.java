@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -32,5 +33,8 @@ public class Libro extends Base {
 
     @Column(name="prestado")
     private Boolean prestado = false;
+
+    @Column(name="fecha_vencimiento_devolucion")
+    private LocalDate fechaVencimientoDevolucion;
 
 }
