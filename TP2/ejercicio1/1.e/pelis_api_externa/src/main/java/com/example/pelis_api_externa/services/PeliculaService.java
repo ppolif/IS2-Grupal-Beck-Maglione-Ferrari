@@ -28,9 +28,8 @@ public class PeliculaService {
 
     public List<Pelicula> buscarPeliculas(Integer anio, String genero) {
 
-        //url base con el filtro obligatorio de tiempo
+        //url base con el filtro obligatorio de año
         //le damos la clave para que pueda acceder a la api
-        //filtro de año
         String urlBusqueda = "https://api.themoviedb.org/3/discover/movie?api_key=" + API_KEY
                 + "&language=es-ES"
                 + "&primary_release_year=" + anio;
@@ -43,7 +42,7 @@ public class PeliculaService {
         // la API de TMDb no devuelve una lista pura de películas, sino un objeto estructurado o "envoltorio" de paginación
         // adentro de ese objeto, la API manda primero metadatos de control (como "page": 1) y dentro de la propiedad "results"
         // contiene la lista real de las películas
-        TmdbResponse respuesta = restTemplate.getForObject(urlBusqueda.toString(), TmdbResponse.class);
+        TmdbResponse respuesta = restTemplate.getForObject(urlBusqueda, TmdbResponse.class);
 
         // verificar que no sea nulo y extraer la lista interna de películas
         if (respuesta != null && respuesta.getResults() != null) {
