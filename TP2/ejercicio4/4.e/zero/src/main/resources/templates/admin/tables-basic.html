@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<!-- Fragmento Head -->
+<head th:replace="~{admin/fragments/head :: head}"></head>
+
+<body class="d-flex">
+
+<!-- Fragmento Sidebar -->
+<aside th:replace="~{admin/fragments/sidebar :: sidebar}"></aside>
+
+<!-- Contenido Principal -->
+<main class="main-content-offset p-4 p-md-5 min-vh-100 d-flex flex-column flex-grow-1">
+
+  <!-- Top Navbar Fragment -->
+  <nav th:replace="~{admin/fragments/navbar :: navbar}"></nav>
+
+  <!-- Header de sección -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h1 class="h3 fw-bold text-brand-dark mb-1">Tablas de Pedidos y Facturas</h1>
+      <p class="text-muted small mb-0">Gestión de facturas de ventas a clientes y compras a proveedores.</p>
+    </div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0 small">
+        <li class="breadcrumb-item"><a th:href="@{/admin/registrar-venta}" class="text-decoration-none text-muted">Inicio</a></li>
+        <li class="breadcrumb-item active text-brand-dark" aria-current="page">Tablas de Órdenes</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Alertas de Éxito / Error -->
+  <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show rounded-3 py-2 small" role="alert">
+    <span th:text="${successMessage}">Operación exitosa</span>
+    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show rounded-3 py-2 small" role="alert">
+    <span th:text="${errorMessage}">Error en la operación</span>
+    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <!-- Contenedor Card de la Tabla -->
+  <div class="card bg-white border-brand rounded-4 shadow-sm overflow-hidden mb-4">
+
+    <!-- Controles Superiores de la Tabla -->
+    <div class="card-header bg-white border-bottom border-brand p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <form th:action="@{/admin/orders}" method="GET" class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="input-group input-group-sm" style="max-width: 320px;">
+          <span class="input-group-text bg-light border-brand"><i class="bi bi-search"></i></span>
+          <input type="text" name="keyword" th:value="${keyword}" class="form-control border-brand" placeholder="Buscar por cliente, proveedor o Nº...">
+        </div>
+        <button type="submit" class="btn btn-sm btn-dark border-brand d-flex align-items-center gap-1">
+          <i class="bi bi-funnel"></i> Filtrar
+        </button>
+        <a th:if="${keyword != null and !#strings.isEmpty(keyword)}" th:href="@{/admin/orders}" class="btn btn-sm btn-outline-secondary">Limpiar</a>
+      </form>
+    </div>
+
+    <!-- Tabla Responsiva -->
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="bg-brand-dark">
+        <tr>
+          <th class="ps-3 text-uppercase small text-secondary">Nº Factura / ID</th>
+          <th class="text-uppercase small text-secondary">Tipo</th>
+          <th class="text-uppercase small text-secondary">Cliente / Proveedor</th>
+          <th class="text-uppercase small text-secondary">Resumen Productos</th>
+          <th class="text-uppercase small text-secondary">Monto Total</th>
+          <th class="text-uppercase small text-secondary">Estado</th>
+          <th class="text-center text-uppercase small text-secondary pe-3">Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Mensaje si no hay órdenes -->
+        <tr th:if="${orders == null || #lists.isEmpty(orders)}">
+          <td colspan="7" class="text-center py-4 text-muted small">No se encontraron comprobantes registrados.</td>
+        </tr>
+
+        <!-- Filas dinámicas -->
+        <tr th:each="order : ${orders}">
+          <td class="ps-3 fw-bold text-brand-dark" th:text="${order.numeroFactura != null ? '#FAC-' + order.numeroFactura : '#FAC-' + order.id}">#FAC-1001</td>
+          <td>
+            <span th:if="${@ventaService.esCompraProveedor(order)}" class="badge bg-info bg-opacity-10 text-primary border border-info border-opacity-25 px-2 py-1">
+              <i class="bi bi-truck me-1"></i>Compra Proveedor
+            </span>
+            <span th:unless="${@ventaService.esCompraProveedor(order)}" class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">
+              <i class="bi bi-cart-check me-1"></i>Venta Cliente
+            </span>
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div th:if="${@ventaService.esCompraProveedor(order)}" class="rounded-circle bg-light border d-flex align-items-center justify-content-center text-primary" style="width: 36px; height: 36px; min-width: 36px;">
+                <i class="bi bi-building"></i>
+              </div>
+              <img th:unless="${@ventaService.esCompraProveedor(order)}"
+                   th:src="@{${imagenesPorOrder != null && imagenesPorOrder.containsKey(order.id) ? imagenesPorOrder.get(order.id) : (ventaService != null ? ventaService.obtenerFotoComprobante(order) : '/admin/assets/images/avatar.png')}}"
+                   onerror="this.src='/admin/assets/images/avatar.png'"
+                   alt="Avatar" class="rounded-circle border" width="36" height="36" style="object-fit: cover;">
+              <div>
+                <div class="small fw-bold text-brand-dark" th:text="${@ventaService.obtenerNombreComprobante(order)}">Eleanor Pena</div>
+                <div class="text-muted" style="font-size: 0.75rem;" th:text="${@ventaService.obtenerEmailComprobante(order)}">eleanor@example.com</div>
+              </div>
+            </div>
+          </td>
+          <td class="small fw-semibold text-truncate" style="max-width: 250px;" th:text="${@ventaService.obtenerResumenProductos(order)}" th:title="${@ventaService.obtenerResumenProductos(order)}">Oversized Hoodie</td>
+          <td class="small fw-bold text-brand-bold">$<span th:text="${#numbers.formatDecimal(order.totalPagado != null ? order.totalPagado : 0, 1, 'POINT', 2, 'POINT')}">89.90</span></td>
+          <td>
+            <span class="badge"
+                  th:classappend="${order.estado != null and (order.estado.name() == 'PAGADA' or order.estado.name() == 'ENTREGADA') ? 'bg-success text-white' : (order.estado != null and order.estado.name() == 'ANULADA' ? 'bg-danger text-white' : 'bg-warning text-dark')}"
+                  th:text="${order.estado != null ? order.estado.name() : 'PAGADA'}">PAGADA</span>
+          </td>
+          <td class="text-center pe-3">
+            <div class="btn-group btn-group-sm">
+              <a th:href="@{/admin/orders/{id}(id=${order.id})}" class="btn btn-outline-dark" title="Ver Factura / Comprobante">
+                <i class="bi bi-eye"></i>
+              </a>
+
+              <!-- BOTÓN AGREGADO: Abre la factura PDF en una nueva pestaña (target="_blank") con la opción del navegador para visualizar o descargar -->
+              <a th:href="@{'/admin/orders/' + ${(order.numeroFactura != null ? order.numeroFactura : order.id)} + '/factura/pdf'}"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 class="btn btn-outline-danger"
+                 title="Abrir / Descargar Factura PDF">
+                <i class="bi bi-file-earmark-pdf"></i>
+              </a>
+
+              <form th:if="${@ventaService.esCompraProveedor(order) and (#strings.toString(order.estado) != 'ENTREGADA' and #strings.toString(order.estado) != 'ANULADA')}"
+                    th:action="@{/admin/compras/{id}/entregar(id=${order.id})}" method="POST" class="d-inline"
+                    onsubmit="return confirm('¿Confirmas la recepción de mercadería? Esta acción incrementará el stock de los productos incluidos.');">
+                <button type="submit" class="btn btn-outline-success" title="Marcar como entregada e ingresar stock">
+                  <i class="bi bi-box-seam"></i>
+                </button>
+              </form>
+              <form th:action="@{/admin/orders/delete}" method="POST" class="d-inline" onsubmit="return confirm('¿Seguro que deseas eliminar este comprobante?');">
+                <input type="hidden" name="orderId" th:value="${order.id}">
+                <button type="submit" class="btn btn-outline-danger" title="Eliminar"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación Footer -->
+    <div class="card-footer bg-white border-top border-brand p-3 d-flex justify-content-between align-items-center flex-wrap gap-2"
+         th:if="${totalPages != null && totalPages > 1}">
+      <span class="small text-muted" th:text="'Página ' + (${currentPage != null ? currentPage : 1}) + ' de ' + ${totalPages}">Mostrando página 1 de 5</span>
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled' : ''">
+          <a class="page-link" th:href="@{/admin/orders(page=${currentPage - 1}, keyword=${keyword})}">&laquo;</a>
+        </li>
+        <li class="page-item" th:each="p : ${#numbers.sequence(1, totalPages)}"
+            th:classappend="${p == currentPage} ? 'active' : ''">
+          <a class="page-link" th:href="@{/admin/orders(page=${p}, keyword=${keyword})}" th:text="${p}">1</a>
+        </li>
+        <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled' : ''">
+          <a class="page-link" th:href="@{/admin/orders(page=${currentPage + 1}, keyword=${keyword})}">&raquo;</a>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- Footer Fragment -->
+  <footer th:replace="~{admin/fragments/footer :: footer}"></footer>
+
+</main>
+
+<!-- Scripts Fragment -->
+<div th:replace="~{admin/fragments/scripts :: scripts}"></div>
+
+</body>
+</html>

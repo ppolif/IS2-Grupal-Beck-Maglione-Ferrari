@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('¡Compra Exitosa!')}"></head>
+<body class="bg-slate-50 min-h-screen flex flex-col justify-between">
+
+    <div>
+        <header th:replace="~{fragments/navbar :: navbar}"></header>
+
+        <main class="max-w-2xl mx-auto px-4 py-16">
+            <div class="bg-white rounded-3xl border border-slate-200/80 shadow-md p-8 sm:p-12 text-center">
+                
+                <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl shadow-inner">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+
+                <span class="inline-block bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-2">
+                    Transacción Completada
+                </span>
+                <h1 class="font-serif-title text-3xl font-bold text-slate-800 mb-2">¡Gracias por tu compra!</h1>
+                <p class="text-xs text-slate-500 mb-8">
+                    La orden ha sido procesada mediante el algoritmo de compra (Template Method) y tu carrito ha sido reiniciado a cero con éxito.
+                </p>
+
+                <!-- Tarjeta de Comprobante -->
+                <div class="bg-slate-50 rounded-2xl p-6 text-left border border-slate-200 space-y-3 text-xs mb-8">
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-400">N° de Orden / Comprobante:</span>
+                        <strong class="text-slate-800" th:text="${orden.codigoComprobante}"></strong>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-400">Fecha y Hora:</span>
+                        <span class="text-slate-800 font-medium" th:text="${#temporals.format(orden.fecha, 'dd/MM/yyyy HH:mm')}"></span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-400">Método de Pago:</span>
+                        <span class="text-slate-800 font-semibold" th:text="${orden.metodoPago}"></span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-400">Artículos Comprados:</span>
+                        <span class="text-slate-800 text-right max-w-xs" th:text="${orden.resumenArticulos}"></span>
+                    </div>
+                    <div class="flex justify-between pt-2">
+                        <span class="text-sm font-bold text-slate-800">Total Facturado:</span>
+                        <span class="text-xl font-black text-bloom-600" th:text="'$' + ${#numbers.formatDecimal(orden.total, 1, 2)}"></span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <a th:href="@{/catalogo}" class="bg-bloom-600 hover:bg-bloom-700 text-white font-semibold text-xs px-6 py-3 rounded-xl shadow-sm transition">
+                        Volver a la Tienda
+                    </a>
+                    <a th:href="@{/historial}" class="border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold text-xs px-6 py-3 rounded-xl transition">
+                        Ver Mis Compras
+                    </a>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>
+
