@@ -1,0 +1,84 @@
+package com.example.zero.entidades.persona;
+
+import com.example.zero.entidades.Imagen;
+import com.example.zero.enums.TipoDocumento;
+
+import com.example.zero.entidades.empresa.Contacto;
+import com.example.zero.entidades.zona.Direccion;
+import com.example.zero.enums.TipoDocumento;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.UuidGenerator;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+/**
+ * Clase base de Persona. Es abstracta porque en el
+ * diagrama solo se instancian sus especializaciones Cliente y Empleado.
+ *
+ * Estrategia de herencia JOINED: cada subclase tiene su propia tabla, unida por el id,
+ * lo cual es razonable dado que Cliente y Empleado agregan campos y relaciones propias.
+ */
+@Entity
+@Table(name = "persona")
+@Inheritance(strategy = InheritanceType.JOINED)
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
+//@ToString(exclude = "usuario")
+public abstract class Persona {
+
+//    @Id
+//    @UuidGenerator
+//    @Column(name = "id", updatable = false, nullable = false, length = 36)
+//    private String id;
+
+    @Id
+    @Column(name = "numero_documento", nullable = false, length = 20)
+    private String numeroDocumento;
+
+    @Column(nullable = false, length = 100)
+    private String nombre;
+
+    @Column(nullable = false, length = 100)
+    private String apellido;
+
+    @Column(name = "fecha_nacimiento")
+    private LocalDate fechaNacimiento;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_documento", nullable = false, length = 20)
+    private TipoDocumento tipoDocumento;
+
+    @Column(nullable = false)
+    @lombok.Builder.Default
+    private boolean eliminado = false;
+
+
+     // una persona puede tener muchas fotos por borrado logico
+     @OneToMany(fetch = FetchType.LAZY)
+     @JoinColumn(name = "persona_documento")
+     private List<Imagen> imagen;
+
+    // Por borrado logico una persona tiene muchas direcciones
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "persona_documento")
+    private List<Direccion> direccion;
+
+    // persona muchos contactos.
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "persona_documento")
+    private List<Contacto> contactos;
+}

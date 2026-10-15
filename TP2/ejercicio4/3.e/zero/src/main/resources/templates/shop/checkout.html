@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{shop/fragments/head :: head}"></head>
+<body>
+
+<!-- Header Fragment -->
+<header th:replace="~{shop/fragments/header :: header}"></header>
+
+<!-- Banner / Breadcrumb Fragment -->
+<section th:replace="~{shop/fragments/banner :: banner}"></section>
+
+<!--================Checkout Area =================-->
+<section class="checkout_area section_gap">
+  <div class="container">
+
+    <!-- Mensajes de Error de Validación Global -->
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+      <span th:text="${errorMessage}">Por favor verifica los datos ingresados.</span>
+    </div>
+
+    <form class="billing_details" th:action="@{/checkout/mercadopago}" method="POST">
+      <div class="row">
+        <!-- Columna de Datos de Envío y Facturación -->
+        <div class="col-lg-8">
+          <h3>Datos de Facturación y Entrega</h3>
+          <div class="row contact_form">
+            <div class="col-md-6 form-group">
+              <label for="firstName" class="small font-weight-bold">Nombre *</label>
+              <input type="text" class="form-control" id="firstName" name="firstName"
+                     th:value="${cliente != null ? cliente.nombre : ''}" placeholder="Juan" required>
+            </div>
+            <div class="col-md-6 form-group">
+              <label for="lastName" class="small font-weight-bold">Apellido *</label>
+              <input type="text" class="form-control" id="lastName" name="lastName"
+                     th:value="${cliente != null ? cliente.apellido : ''}" placeholder="Pérez" required>
+            </div>
+            <div class="col-md-6 form-group">
+              <label for="phoneNumber" class="small font-weight-bold">Teléfono de Contacto *</label>
+              <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber"
+                     th:value="${customerPhone}" placeholder="+54 11 1234-5678" required>
+            </div>
+            <div class="col-md-6 form-group">
+              <label for="email" class="small font-weight-bold">Correo Electrónico *</label>
+              <input type="email" class="form-control" id="email" name="email"
+                     th:value="${usuario != null ? usuario.nombreUsuario : ''}" placeholder="juan.perez@email.com" required>
+            </div>
+            <div class="col-md-12 form-group">
+              <label for="address" class="small font-weight-bold">Dirección de Entrega (Calle y Altura) *</label>
+              <input type="text" class="form-control" id="address" name="address"
+                     th:value="${customerAddress}" placeholder="Av. Corrientes 1234, Piso 2 Depto B" required>
+            </div>
+            <div class="col-md-6 form-group">
+              <label for="city" class="small font-weight-bold">Ciudad / Localidad *</label>
+              <input type="text" class="form-control" id="city" name="city"
+                     th:value="${customerCity}" placeholder="Buenos Aires" required>
+            </div>
+            <div class="col-md-6 form-group">
+              <label for="zipCode" class="small font-weight-bold">Código Postal *</label>
+              <input type="text" class="form-control" id="zipCode" name="zipCode"
+                     th:value="${customerZip}" placeholder="C1043" required>
+            </div>
+            <div class="col-md-12 form-group">
+              <label for="orderNotes" class="small font-weight-bold">Notas o Instrucciones para la Entrega</label>
+              <textarea class="form-control" id="orderNotes" name="orderNotes"
+                        rows="2" placeholder="Tocar timbre, dejar en portería..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna de Resumen del Pedido (Order Box) -->
+        <div class="col-lg-4">
+          <div class="order_box shadow-sm">
+            <h2>Tu Pedido</h2>
+
+            <!-- Lista de Artículos -->
+            <ul class="list" th:if="${items != null && !#lists.isEmpty(items)}">
+              <li><a href="#"><strong>Producto</strong> <span>Total</span></a></li>
+              <li th:each="item : ${items}">
+                <a href="#">
+                  <span class="text-truncate d-inline-block" style="max-width: 150px;" th:text="${item.producto != null ? item.producto.nombre : 'Producto'}">Producto</span>
+                  <span class="middle" th:text="'x ' + ${item.cantidad}">x 01</span>
+                  <span class="last">$<span th:text="${#numbers.formatDecimal(item.subtotal != null ? item.subtotal : 0, 1, 'POINT', 2, 'POINT')}">720.00</span></span>
+                </a>
+              </li>
+            </ul>
+
+            <!-- Fallback si cart está vacío en preview -->
+            <ul class="list" th:if="${items == null || #lists.isEmpty(items)}">
+              <li><a href="#"><strong>Producto</strong> <span>Total</span></a></li>
+              <li><a href="#">Tu carrito está vacío <span class="middle">x 0</span> <span class="last">$0.00</span></a></li>
+            </ul>
+
+            <!-- Subtotales -->
+            <ul class="list list_2">
+              <li>
+                <a href="#">Subtotal
+                  <span>$<span th:text="${#numbers.formatDecimal(cart != null && cart.total != null ? cart.total : 0, 1, 'POINT', 2, 'POINT')}">0.00</span></span>
+                </a>
+              </li>
+              <li>
+                <a href="#">Total
+                  <span class="font-weight-bold text-brand-bold">$<span th:text="${#numbers.formatDecimal(cart != null && cart.total != null ? cart.total : 0, 1, 'POINT', 2, 'POINT')}">0.00</span></span>
+                </a>
+              </li>
+            </ul>
+
+            <!-- Método de Pago -->
+            <h4 class="h6 font-weight-bold mt-4 mb-3">Método de Pago</h4>
+            <div class="payment_item active mb-2">
+              <div class="radion_btn">
+                <input type="radio" id="f-option5" name="paymentMethod" value="CREDIT_CARD" checked>
+                <label for="f-option5">Tarjeta de Crédito / Débito</label>
+                <div class="check"></div>
+              </div>
+              <p class="small text-muted mt-1">Pago seguro procesado al instante.</p>
+            </div>
+            <div class="payment_item mb-3">
+              <div class="radion_btn">
+                <input type="radio" id="f-option6" name="paymentMethod" value="TRANSFER">
+                <label for="f-option6">Transferencia Bancaria</label>
+                <div class="check"></div>
+              </div>
+              <p class="small text-muted mt-1">Recibirás los datos bancarios para abonar tu orden.</p>
+            </div>
+
+            <!-- Términos y Condiciones -->
+            <div class="creat_account mb-3">
+              <input type="checkbox" id="termsCheck" required checked>
+              <label for="termsCheck" class="small">He leído y acepto los <a href="#" class="text-brand-soft">términos y condiciones</a></label>
+            </div>
+
+            <button type="submit" class="primary-btn w-100 border-0 text-center">Confirmar y Pagar con Mercado Pago</button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+  </div>
+</section>
+<!--================End Checkout Area =================-->
+
+<!-- Footer Fragment -->
+<footer th:replace="~{shop/fragments/footer :: footer}"></footer>
+
+<!-- Scripts Fragment -->
+<div th:replace="~{shop/fragments/scripts :: scripts}"></div>
+
+</body>
+</html>

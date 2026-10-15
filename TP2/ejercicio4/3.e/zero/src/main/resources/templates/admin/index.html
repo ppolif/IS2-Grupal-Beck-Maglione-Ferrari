@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0;url=/admin/registrar-venta">
+  <script th:inline="javascript">
+    window.location.replace(/*[[@{/admin/registrar-venta}]]*/ '/admin/registrar-venta');
+  </script>
+  <title>Redirigiendo a Registrar Venta...</title>
+</head>
+<body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f8f9fa;">
+  <div style="text-align: center;">
+    <h2>Cargando Registrar Venta...</h2>
+    <p>Si no es redirigido automáticamente, <a th:href="@{/admin/registrar-venta}">haga clic aquí</a>.</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,201 @@
+package com.example.zero.controllers;
+
+import com.example.zero.entidades.compraCliente.DetalleCompra;
+import com.example.zero.entidades.compraCliente.OrdenCompra;
+import com.example.zero.entidades.persona.Cliente;
+import com.example.zero.entidades.persona.Usuario;
+import com.example.zero.enums.RolUsuario;
+import com.example.zero.services.OrdenCompraService;
+import com.example.zero.services.StockService;
+import com.example.zero.services.producto.ProductoService;
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+
+@Controller
+@RequiredArgsConstructor
+public class CartController {
+
+    private final OrdenCompraService ordenCompraService;
+    private final StockService stockService;
+    private final ProductoService productoService;
+
+    ///vista principal del carrito :p
+    ///redirectAttributes es una interfaz derivada de Model para paasr datos de un controldador a otro cuando hacemos redireccion
+    @GetMapping({"/shop/cart", "/cart"})
+    public String showCart(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+        Usuario usuario = (Usuario) session.getAttribute("usuariosession");
+        if (usuario == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Debes iniciar sesión para acceder a tu carrito de compras.");
+            return "redirect:/login";
+        }
+
+        if (usuario.getRol() != RolUsuario.CLIENTE) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden acceder a un carrito ni operar como clientes.");
+            return "redirect:/admin";
+        }
+
+        try {
+            Cliente cliente = ordenCompraService.obtenerOAsociarCliente(usuario);
+            session.setAttribute("usuariosession", usuario);
+
+            OrdenCompra carrito = ordenCompraService.obtenerOCrearCarrito(cliente);
+            List<DetalleCompra> items = ordenCompraService.obtenerItemsActivos(carrito);
+
+            Map<String, Integer> stockPorItem = new HashMap<>();
+            Map<String, String> imagenesPorItem = new HashMap<>();
+            for (DetalleCompra item : items) {
+                if (item.getProducto() != null) {
+                    int stock = (stockService != null) ? stockService.calcularStockActual(item.getProducto().getId()) : 999;
+                    stockPorItem.put(item.getId(), stock);
+                    String imgUrl = (productoService != null) ? productoService.obtenerImagenUrl(item.getProducto()) : "/shop/img/cart.jpg";
+                    imagenesPorItem.put(item.getId(), imgUrl);
+                }
+            }
+
+            model.addAttribute("cart", carrito);
+            model.addAttribute("items", items);
+            model.addAttribute("stockPorItem", stockPorItem);
+            model.addAttribute("imagenesPorItem", imagenesPorItem);
+            model.addAttribute("productoService", productoService);
+            model.addAttribute("totalItems", ordenCompraService.contarItems(carrito));
+            return "shop/cart";
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", "Error al cargar el carrito: " + e.getMessage());
+            return "shop/cart";
+        }
+    }
+
+
+    @PostMapping({"/shop/cart/add", "/cart/add"})
+    public String addToCart(@RequestParam("productId") String productId,
+                            @RequestParam(value = "quantity", defaultValue = "1") int quantity,
+                            @RequestHeader(value = "Referer", required = false) String referer,
+                            HttpSession session,
+                            RedirectAttributes redirectAttributes) {
+        Usuario usuario = (Usuario) session.getAttribute("usuariosession");
+        if (usuario == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Debes iniciar sesión para agregar productos al carrito.");
+            return "redirect:/login";
+        }
+
+        if (usuario.getRol() != RolUsuario.CLIENTE) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden agregar productos al carrito ni operar como clientes.");
+            if (referer != null && !referer.isBlank()) {
+                return "redirect:" + referer;
+            }
+            return "redirect:/admin";
+        }
+
+        try {
+            Cliente cliente = ordenCompraService.obtenerOAsociarCliente(usuario);
+            session.setAttribute("usuariosession", usuario);
+
+            ordenCompraService.agregarProducto(cliente, productId, quantity);
+            redirectAttributes.addFlashAttribute("successMessage", "¡Producto agregado al carrito con éxito!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        if (referer != null && !referer.isBlank()) {
+            return "redirect:" + referer;
+        }
+        return "redirect:/shop/category";
+    }
+
+    ///actualiza cantidad de un item en el carrito
+    @PostMapping({"/shop/cart/update", "/cart/update"})
+    public String updateCartItem(@RequestParam("itemId") String itemId,
+                                 @RequestParam("quantity") int quantity,
+                                 HttpSession session,
+                                 RedirectAttributes redirectAttributes) {
+        Usuario usuario = (Usuario) session.getAttribute("usuariosession");
+        if (usuario == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Debes iniciar sesión para actualizar el carrito.");
+            return "redirect:/login";
+        }
+
+        if (usuario.getRol() != RolUsuario.CLIENTE) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden operar sobre el carrito.");
+            return "redirect:/admin";
+        }
+
+        try {
+            Cliente cliente = ordenCompraService.obtenerOAsociarCliente(usuario);
+            session.setAttribute("usuariosession", usuario);
+
+            ordenCompraService.actualizarCantidad(cliente, itemId, quantity);
+            redirectAttributes.addFlashAttribute("successMessage", "Carrito actualizado correctamente.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return "redirect:/shop/cart";
+    }
+
+
+    ///elimina un ítem específico del carrito
+    @PostMapping({"/shop/cart/remove", "/cart/remove"})
+    public String removeCartItem(@RequestParam("itemId") String itemId,
+                                 HttpSession session,
+                                 RedirectAttributes redirectAttributes) {
+        Usuario usuario = (Usuario) session.getAttribute("usuariosession");
+        if (usuario == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Debes iniciar sesión para operar con el carrito.");
+            return "redirect:/login";
+        }
+
+        if (usuario.getRol() != RolUsuario.CLIENTE) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden operar sobre el carrito.");
+            return "redirect:/admin";
+        }
+
+        try {
+            Cliente cliente = ordenCompraService.obtenerOAsociarCliente(usuario);
+            session.setAttribute("usuariosession", usuario);
+
+            ordenCompraService.eliminarProducto(cliente, itemId);
+            redirectAttributes.addFlashAttribute("successMessage", "Producto eliminado del carrito.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return "redirect:/shop/cart";
+    }
+
+    ///
+    @PostMapping({"/shop/cart/clear", "/cart/clear"})
+    public String clearCart(HttpSession session, RedirectAttributes redirectAttributes) {
+        Usuario usuario = (Usuario) session.getAttribute("usuariosession");
+        if (usuario == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Debes iniciar sesión para vaciar el carrito.");
+            return "redirect:/login";
+        }
+
+        if (usuario.getRol() != RolUsuario.CLIENTE) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Los usuarios administradores no pueden operar sobre el carrito.");
+            return "redirect:/admin";
+        }
+
+        try {
+            Cliente cliente = ordenCompraService.obtenerOAsociarCliente(usuario);
+            session.setAttribute("usuariosession", usuario);
+
+            ordenCompraService.vaciarCarrito(cliente);
+            redirectAttributes.addFlashAttribute("successMessage", "El carrito ha sido vaciado.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return "redirect:/shop/cart";
+    }
+
+}

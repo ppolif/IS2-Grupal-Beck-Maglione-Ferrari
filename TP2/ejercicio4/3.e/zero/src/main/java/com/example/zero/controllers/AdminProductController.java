@@ -1,0 +1,271 @@
+package com.example.zero.controllers;
+
+import com.example.zero.dto.producto.ProductoDTO;
+import com.example.zero.entidades.producto.Producto;
+import com.example.zero.entidades.producto.SubCategoria;
+import com.example.zero.services.StockService;
+import com.example.zero.services.SubCategoriaService;
+import com.example.zero.services.VigenciaPrecioService;
+import com.example.zero.services.producto.ProductoService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.ArrayList;
+import java.util.List;
+
+
+@Controller
+@RequestMapping("/admin/products")
+public class AdminProductController {
+
+    private final ProductoService productoService;
+    private final SubCategoriaService subCategoriaService;
+    private final StockService stockService;
+    private final VigenciaPrecioService vigenciaPrecioService;
+
+
+    @Autowired
+    public AdminProductController(ProductoService productoService,
+                                  SubCategoriaService subCategoriaService,
+                                  StockService stockService,
+                                  VigenciaPrecioService vigenciaPrecioService) {
+        this.productoService = productoService;
+        this.subCategoriaService = subCategoriaService;
+        this.stockService = stockService;
+        this.vigenciaPrecioService = vigenciaPrecioService;
+    }
+
+
+    @GetMapping
+    public String listProducts(Model model,
+                               @RequestParam(name = "success", required = false) String success,
+                               @RequestParam(name = "error", required = false) String error) {
+        List<Producto> productos = productoService.listarActivos();
+        List<ProductoDTO> dtos = new ArrayList<>();
+        int totalStockUnidades = 0;
+        int stockBienCount = 0;
+        int stockRegularCount = 0;
+        int stockMaloCount = 0;
+
+        for (Producto p : productos) {
+            double precio = 0.0;
+            try {
+                if (vigenciaPrecioService != null) {
+                    precio = vigenciaPrecioService.obtenerPrecioActual(p.getId());
+                } else {
+                    precio = productoService.obtenerPrecioActual(p.getId());
+                }
+            } catch (Exception ignored) {
+            }
+
+            int stock = (stockService != null) ? stockService.calcularStockActual(p.getId()) : 0;
+            ProductoDTO dto = ProductoDTO.de(p, precio, stock, stockService, productoService);
+            dtos.add(dto);
+
+            totalStockUnidades += stock;
+            if (stock > 50) {
+                stockBienCount++;
+            } else if (stock >= 20) {
+                stockRegularCount++;
+            } else {
+                stockMaloCount++;
+            }
+        }
+
+        model.addAttribute("products", dtos);
+        model.addAttribute("totalStockUnidades", totalStockUnidades);
+        model.addAttribute("stockBienCount", stockBienCount);
+        model.addAttribute("stockRegularCount", stockRegularCount);
+        model.addAttribute("stockMaloCount", stockMaloCount);
+
+        if ("created".equals(success)) {
+            model.addAttribute("successMessage", "Producto creado exitosamente.");
+        } else if ("updated".equals(success)) {
+            model.addAttribute("successMessage", "Producto modificado exitosamente.");
+        } else if ("deleted".equals(success)) {
+            model.addAttribute("successMessage", "Producto dado de baja exitosamente.");
+        }
+
+        if (error != null) {
+            model.addAttribute("errorMessage", error);
+        }
+
+        return "admin/products";
+    }
+
+    ///crear producto
+    @GetMapping("/nuevo")
+    public String showCreateForm(Model model) {
+        List<SubCategoria> subcategorias = subCategoriaService.listarActivas();
+        model.addAttribute("subcategorias", subcategorias);
+        model.addAttribute("isEdit", false);
+        model.addAttribute("producto", new Producto());
+        model.addAttribute("precioActual", 0.0);
+        model.addAttribute("stock", 0);
+        model.addAttribute("codigo", "");
+        model.addAttribute("nombre", "");
+        model.addAttribute("descripcion", "");
+        model.addAttribute("talle", "");
+        model.addAttribute("selectedSubcategoriaId", "");
+        model.addAttribute("enOferta", false);
+        return "admin/product-form";
+    }
+
+    ///procesa el formulario de alta
+    @PostMapping("/guardar")
+    public String createProduct(@RequestParam("codigo") String codigo,
+                                @RequestParam("nombre") String nombre,
+                                @RequestParam(name = "descripcion", required = false) String descripcion,
+                                @RequestParam(name = "talle", required = false) String talle,
+                                @RequestParam("subCategoriaId") String subCategoriaId,
+                                @RequestParam("precio") double precio,
+                                @RequestParam(name = "stock", defaultValue = "0") int stock,
+                                @RequestParam(name = "enOferta", defaultValue = "false") boolean enOferta,
+                                @RequestParam(name = "imagen", required = false) MultipartFile imagen,
+                                Model model,
+                                RedirectAttributes redirectAttributes) {
+        if (imagen == null || imagen.isEmpty()) {
+            model.addAttribute("errorMessage", "Debe seleccionar obligatoriamente una imagen del producto");
+            model.addAttribute("subcategorias", subCategoriaService.listarActivas());
+            model.addAttribute("isEdit", false);
+            model.addAttribute("codigo", codigo);
+            model.addAttribute("nombre", nombre);
+            model.addAttribute("descripcion", descripcion);
+            model.addAttribute("talle", talle);
+            model.addAttribute("selectedSubcategoriaId", subCategoriaId);
+            model.addAttribute("precio", precio);
+            model.addAttribute("stock", stock);
+            model.addAttribute("enOferta", enOferta);
+            return "admin/product-form";
+        }
+
+        try {
+            productoService.crearProducto(codigo, nombre, descripcion, talle, subCategoriaId, precio, enOferta, imagen);
+            return "redirect:/admin/products?success=created";
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "Error al crear el producto");
+            model.addAttribute("subcategorias", subCategoriaService.listarActivas());
+            model.addAttribute("isEdit", false);
+            model.addAttribute("codigo", codigo);
+            model.addAttribute("nombre", nombre);
+            model.addAttribute("descripcion", descripcion);
+            model.addAttribute("talle", talle);
+            model.addAttribute("selectedSubcategoriaId", subCategoriaId);
+            model.addAttribute("precio", precio);
+            model.addAttribute("stock", stock);
+            model.addAttribute("enOferta", enOferta);
+            return "admin/product-form";
+        }
+    }
+
+
+    ///formulario de edicion
+    @GetMapping("/editar/{id}")
+    public String showEditForm(@PathVariable("id") String id, Model model) {
+        try {
+            Producto producto = productoService.buscarPorId(id);
+            double precioActual = 0.0;
+            try {
+                if (vigenciaPrecioService != null) {
+                    precioActual = vigenciaPrecioService.obtenerPrecioActual(id);
+                } else {
+                    precioActual = productoService.obtenerPrecioActual(id);
+                }
+            } catch (Exception ignored) {
+            }
+            int stockActual = (stockService != null) ? stockService.calcularStockActual(id) : 0;
+
+            model.addAttribute("producto", producto);
+            model.addAttribute("precioActual", precioActual);
+            model.addAttribute("stock", stockActual);
+            model.addAttribute("subcategorias", subCategoriaService.listarActivas());
+            model.addAttribute("isEdit", true);
+            return "admin/product-form";
+        } catch (Exception e) {
+            return "redirect:/admin/products?error=" + (e.getMessage() != null ? e.getMessage() : "Error al cargar el producto");
+        }
+    }
+
+    ///procesa la modificacion
+    @PostMapping("/editar/{id}")
+    public String updateProduct(@PathVariable("id") String id,
+                                @RequestParam("nombre") String nombre,
+                                @RequestParam(name = "descripcion", required = false) String descripcion,
+                                @RequestParam(name = "talle", required = false) String talle,
+                                @RequestParam("subCategoriaId") String subCategoriaId,
+                                @RequestParam(name = "precio", required = false) Double precio,
+                                @RequestParam(name = "stock", required = false) Integer stock,
+                                @RequestParam(name = "enOferta", defaultValue = "false") boolean enOferta,
+                                Model model) {
+        try {
+            productoService.modificarProducto(id, nombre, descripcion, talle, subCategoriaId, enOferta);
+
+            if (precio != null && precio > 0) {
+                double precioActual = 0.0;
+                try {
+                    if (vigenciaPrecioService != null) {
+                        precioActual = vigenciaPrecioService.obtenerPrecioActual(id);
+                    } else {
+                        precioActual = productoService.obtenerPrecioActual(id);
+                    }
+                } catch (Exception ignored) {
+                }
+                if (Math.abs(precioActual - precio) > 0.001) {
+                    productoService.actualizarPrecio(id, precio);
+                }
+            }
+
+            return "redirect:/admin/products?success=updated";
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "Error al modificar el producto");
+            model.addAttribute("subcategorias", subCategoriaService.listarActivas());
+            model.addAttribute("isEdit", true);
+            try {
+                Producto prod = productoService.buscarPorId(id);
+                prod.setNombre(nombre);
+                prod.setDescripcion(descripcion);
+                prod.setTalle(talle);
+                prod.setEnOferta(enOferta);
+                model.addAttribute("producto", prod);
+            } catch (Exception ignored) {
+            }
+            model.addAttribute("precioActual", precio != null ? precio : 0.0);
+            model.addAttribute("stock", stock != null ? stock : 0);
+            return "admin/product-form";
+        }
+    }
+
+
+    ///baja logica con post
+    @PostMapping("/eliminar/{id}")
+    public String deleteProductPost(@PathVariable("id") String id) {
+        productoService.eliminarProducto(id);
+        return "redirect:/admin/products?success=deleted";
+    }
+
+    ///baja logica con get
+    @GetMapping("/eliminar/{id}")
+    public String deleteProductGet(@PathVariable("id") String id) {
+        productoService.eliminarProducto(id);
+        return "redirect:/admin/products?success=deleted";
+    }
+
+    ///actualización manual de precios por inflación
+    @PostMapping("/inflacion")
+    public String aplicarAumentoInflacion(@RequestParam("porcentaje") double porcentaje,
+                                          RedirectAttributes redirectAttributes) {
+        try {
+            int actualizados = productoService.aplicarAumentoGeneralPorInflacion(porcentaje);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    String.format(java.util.Locale.US, "Se aplicó exitosamente un aumento por inflación del %.2f%% a %d productos.", porcentaje, actualizados));
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Error al aplicar aumento por inflación: " + (e.getMessage() != null ? e.getMessage() : "Error inesperado"));
+        }
+        return "redirect:/admin/products";
+    }
+}
