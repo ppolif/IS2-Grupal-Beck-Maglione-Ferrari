@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Registrar Historia Clínica')}"></head>
+<body>
+    <div id="app">
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+        <div id="main">
+            <header class="mb-3">
+                <div th:replace="~{fragments/navbar :: navbar}"></div>
+            </header>
+
+            <div class="page-heading">
+                <h3>Abrir Historia Clínica</h3>
+                <p class="text-subtitle text-muted">Apertura inicial del historial clínico con su primer informe médico.</p>
+            </div>
+
+            <div class="page-content">
+                <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h4 class="card-title">Datos Iniciales</h4>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/historias/registrar}" method="POST">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label font-bold">Paciente *</label>
+                                    <select name="dniPaciente" class="form-select" required>
+                                        <option value="">-- Seleccione un paciente --</option>
+                                        <option th:each="p : ${pacientes}" th:value="${p.dni}" th:text="${p.dni + ' - ' + p.apellido + ', ' + p.nombre}"></option>
+                                    </select>
+                                    <small class="text-muted">Solo se puede abrir una historia clínica por paciente.</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label font-bold">Médico que atiende *</label>
+                                    <select name="medicoId" class="form-select" required>
+                                        <option value="">-- Seleccione un médico --</option>
+                                        <option th:each="m : ${medicos}" th:value="${m.id}" th:text="${m.apellido + ', ' + m.nombre + ' (DNI: ' + m.dni + ')'}"></option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12 mb-3">
+                                    <label class="form-label font-bold">Primer Detalle Clínico / Motivo de Consulta *</label>
+                                    <textarea name="detalleHistoria" class="form-control" rows="4" placeholder="Describa el motivo de consulta, antecedentes o diagnóstico inicial..." required></textarea>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary shadow-sm">
+                                    <i class="bi bi-folder-check me-1"></i> Registrar Historia Clínica
+                                </button>
+                                <a th:href="@{/historias/list}" class="btn btn-light-secondary shadow-sm">
+                                    <i class="bi bi-arrow-left me-1"></i> Cancelar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <footer th:replace="~{fragments/footer :: footer}"></footer>
+        </div>
+    </div>
+    <div th:replace="~{fragments/scripts :: scripts}"></div>
+</body>
+</html>
+
