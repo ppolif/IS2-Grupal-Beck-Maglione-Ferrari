@@ -1,0 +1,21 @@
+$kind: http-request
+url: 'http://localhost:9000/api/v1/autores/searchPaged?filtro=Liliana&page=0&size=5&sort=id,desc'
+method: GET
+queryParams:
+  - key: filtro
+    value: Liliana
+    disabled: false
+    description: "Filter autores by nombre or apellido"
+  - key: page
+    value: "0"
+    disabled: false
+    description: "Page number (0-indexed)"
+  - key: size
+    value: "5"
+    disabled: false
+    description: "Page size"
+  - key: sort
+    value: 'id,desc'
+    disabled: false
+    description: "Sort by field and direction (e.g. id,desc or nombre,asc)"
+order: 4461411472777147
