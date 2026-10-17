@@ -31,7 +31,7 @@
                                         <th>Paciente</th>
                                         <th>DNI</th>
                                         <th>Registrado por</th>
-                                        <th class="text-center" style="width: 160px;">Acciones</th>
+                                        <th class="text-center" style="width: 240px;">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -42,9 +42,14 @@
                                         <td><span class="badge bg-light-primary text-primary" th:text="${h.paciente.dni}"></span></td>
                                         <td th:text="${h.usuario != null ? h.usuario.nombreUsuario : 'Sistema'}"></td>
                                         <td class="text-center">
-                                            <a th:href="@{/historias/ver/{id}(id=${h.id})}" class="btn btn-sm btn-info text-white shadow-sm">
-                                                <i class="bi bi-eye-fill me-1"></i> Ver Historial
-                                            </a>
+                                            <div class="d-flex justify-content-center gap-1">
+                                                <a th:href="@{/historias/ver/{id}(id=${h.id})}" class="btn btn-sm btn-info text-white shadow-sm">
+                                                    <i class="bi bi-eye-fill me-1"></i> Ver Historial
+                                                </a>
+                                                <a th:href="@{/historias/{id}/exportar(id=${h.id}, formato='txt')}" class="btn btn-sm btn-outline-secondary shadow-sm" title="Exportar en formato TXT">
+                                                    <i class="bi bi-file-earmark-text"></i> TXT
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr th:if="${#lists.isEmpty(historias)}">

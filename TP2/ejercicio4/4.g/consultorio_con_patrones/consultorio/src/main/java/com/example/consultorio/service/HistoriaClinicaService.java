@@ -42,25 +42,33 @@ public class HistoriaClinicaService extends TemplateGestorHistoria {
         }
     }
 
+    // Usamos el Builder de HistoriaClinica para construir la instancia inicial de forma fluida,
+    // delegando al Builder la inicializacion por defecto de su coleccion de detalles y estado.
     @Override
     protected HistoriaClinica inicializarHistoria(Paciente paciente, Usuario usuario) {
-        HistoriaClinica historia = new HistoriaClinica();
-        historia.setPaciente(paciente);
-        historia.setUsuario(usuario);
-        historia.setEliminado(false);
-        return historia;
+        return HistoriaClinica.builder()
+                .paciente(paciente)
+                .usuario(usuario)
+                .eliminado(false)
+                .build();
     }
 
+    // Usamos el Builder de DetalleHistoriaClinica para construir un detalle consistente
+    // con su fecha actual, medico, descripcion y referencia a la historia clinica antes de asociarlo.
     @Override
     protected void asociarDetalleAHistoria(HistoriaClinica historia, DetalleHistoriaClinica detalle) {
         if (historia.getDetalles() == null) {
             historia.setDetalles(new java.util.ArrayList<>());
         }
-        detalle.setId(null);
-        detalle.setFechaHistoria(new Date());
-        detalle.setHistoria(historia);
-        detalle.setEliminado(false);
-        historia.getDetalles().add(detalle);
+        DetalleHistoriaClinica nuevoDetalle = DetalleHistoriaClinica.builder()
+                .id(null)
+                .fechaHistoria(new Date())
+                .detalleHistoria(detalle.getDetalleHistoria())
+                .medico(detalle.getMedico())
+                .historia(historia)
+                .eliminado(false)
+                .build();
+        historia.getDetalles().add(nuevoDetalle);
     }
 
     @Override

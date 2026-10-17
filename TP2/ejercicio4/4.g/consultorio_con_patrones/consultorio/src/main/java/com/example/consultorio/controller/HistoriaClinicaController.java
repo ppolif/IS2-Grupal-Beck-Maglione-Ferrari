@@ -1,57 +1,55 @@
 package com.example.consultorio.controller;
 
-import com.example.consultorio.entities.DetalleHistoriaClinica;
 import com.example.consultorio.entities.HistoriaClinica;
-import com.example.consultorio.service.HistoriaClinicaService;
-import com.example.consultorio.service.MedicoService;
-import com.example.consultorio.service.PacienteService;
+import com.example.consultorio.facade.ConsultorioFacade;
+import com.example.consultorio.strategy.ExportarHistoriaStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+// Gracias al patron Facade (ConsultorioFacade), este controlador web queda completamente
+// desacoplado de la complejidad del subsistema (PacienteService, MedicoService, UsuarioService,
+// HistoriaClinicaService y los Builders de las entidades). Solo se comunica con la fachada
+// pasandole los IDs y el texto plano recibidos desde los formularios HTML.
 @Controller
 @RequestMapping("/historias")
 public class HistoriaClinicaController {
 
     @Autowired
-    private HistoriaClinicaService historiaClinicaService;
-
-    @Autowired
-    private PacienteService pacienteService;
-
-    @Autowired
-    private MedicoService medicoService;
+    private ConsultorioFacade consultorioFacade;
 
     @GetMapping("/list")
     public String listar(Model model) {
-        model.addAttribute("historias", historiaClinicaService.listarHistoriasActivas());
+        model.addAttribute("historias", consultorioFacade.listarHistoriasActivas());
         return "historias/lista";
     }
 
     @GetMapping("/registrar")
     public String formularioRegistro(Model model) {
-        model.addAttribute("pacientes", pacienteService.listarActivos());
-        model.addAttribute("medicos", medicoService.listarActivos());
-        model.addAttribute("detalle", new DetalleHistoriaClinica());
+        model.addAttribute("pacientes", consultorioFacade.listarPacientesActivos());
+        model.addAttribute("medicos", consultorioFacade.listarMedicosActivos());
         return "historias/registrar";
     }
 
     @PostMapping("/registrar")
     public String registrar(@RequestParam("dniPaciente") String dniPaciente,
                             @RequestParam("medicoId") String medicoId,
-                            @ModelAttribute("detalle") DetalleHistoriaClinica detalle,
+                            @RequestParam("detalleHistoria") String detalleHistoria,
                             RedirectAttributes attributes,
                             Model model) {
         try {
-            detalle.setMedico(medicoService.buscarPorId(medicoId));
-            historiaClinicaService.ejecutarRegistro(dniPaciente, detalle);
+            // Una unica llamada a la fachada pasando los IDs y el texto del formulario
+            consultorioFacade.registrarHistoriaClinica(dniPaciente, medicoId, detalleHistoria);
             attributes.addFlashAttribute("msgExito", "Historia clínica registrada exitosamente.");
             return "redirect:/historias/list";
         } catch (Exception e) {
-            model.addAttribute("pacientes", pacienteService.listarActivos());
-            model.addAttribute("medicos", medicoService.listarActivos());
+            model.addAttribute("pacientes", consultorioFacade.listarPacientesActivos());
+            model.addAttribute("medicos", consultorioFacade.listarMedicosActivos());
             model.addAttribute("msgError", e.getMessage());
             return "historias/registrar";
         }
@@ -59,22 +57,20 @@ public class HistoriaClinicaController {
 
     @GetMapping("/ver/{id}")
     public String verDetalles(@PathVariable String id, Model model) {
-        HistoriaClinica historia = historiaClinicaService.obtenerHistoriaPorId(id);
+        HistoriaClinica historia = consultorioFacade.obtenerHistoriaPorId(id);
         model.addAttribute("historia", historia);
-        model.addAttribute("medicos", medicoService.listarActivos());
-        model.addAttribute("nuevoDetalle", new DetalleHistoriaClinica());
+        model.addAttribute("medicos", consultorioFacade.listarMedicosActivos());
         return "historias/ver";
     }
 
     @PostMapping("/{id}/agregar-detalle")
     public String agregarDetalle(@PathVariable String id,
                                  @RequestParam("medicoId") String medicoId,
-                                 @ModelAttribute("nuevoDetalle") DetalleHistoriaClinica nuevoDetalle,
+                                 @RequestParam("detalleHistoria") String detalleHistoria,
                                  RedirectAttributes attributes) {
         try {
-            HistoriaClinica historia = historiaClinicaService.obtenerHistoriaPorId(id);
-            nuevoDetalle.setMedico(medicoService.buscarPorId(medicoId));
-            historiaClinicaService.ejecutarAgregarDetalle(historia.getPaciente().getDni(), nuevoDetalle);
+            // Una unica llamada a la fachada pasando los IDs y el texto del formulario
+            consultorioFacade.agregarDetalleAHistoria(id, medicoId, detalleHistoria);
             attributes.addFlashAttribute("msgExito", "Nuevo detalle agregado correctamente.");
         } catch (Exception e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
@@ -87,11 +83,29 @@ public class HistoriaClinicaController {
                                   @PathVariable String detalleId,
                                   RedirectAttributes attributes) {
         try {
-            historiaClinicaService.ejecutarBajaDetalle(id, detalleId);
+            consultorioFacade.eliminarDetalleDeHistoria(id, detalleId);
             attributes.addFlashAttribute("msgExito", "Detalle eliminado correctamente.");
         } catch (Exception e) {
             attributes.addFlashAttribute("msgError", e.getMessage());
         }
         return "redirect:/historias/ver/" + id;
+    }
+
+    // Endpoint que permite descargar la historia clinica en formato TXT o CSV
+    // delegando en la fachada, la cual aplica internamente el patron Strategy.
+    @GetMapping("/{id}/exportar")
+    public ResponseEntity<byte[]> exportarHistoria(@PathVariable String id,
+                                                   @RequestParam(value = "formato", defaultValue = "txt") String formato) {
+        HistoriaClinica historia = consultorioFacade.obtenerHistoriaPorId(id);
+        ExportarHistoriaStrategy strategy = consultorioFacade.prepararEstrategiaExportacion(formato);
+        byte[] contenido = consultorioFacade.exportarHistoriaClinica(id, formato);
+
+        String dni = historia.getPaciente() != null ? historia.getPaciente().getDni() : id;
+        String nombreArchivo = "historia_clinica_" + dni + strategy.getExtension();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nombreArchivo + "\"")
+                .contentType(MediaType.parseMediaType(strategy.getContentType()))
+                .body(contenido);
     }
 }
