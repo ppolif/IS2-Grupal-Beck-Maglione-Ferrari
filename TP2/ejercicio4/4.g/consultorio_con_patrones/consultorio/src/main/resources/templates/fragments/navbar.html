@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav th:fragment="navbar" class="navbar navbar-header navbar-expand navbar-light mb-3">
+    <a href="#" class="burger-btn d-block d-xl-none">
+        <i class="bi bi-justify fs-3"></i>
+    </a>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="ms-auto d-flex align-items-center">
+            <div class="user-menu d-flex align-items-center" th:if="${session.usuariosession != null}">
+                <div class="user-name text-end me-3">
+                    <h6 class="mb-0 text-gray-600" th:text="${session.usuariosession.nombreUsuario}">Usuario</h6>
+                    <p class="mb-0 text-sm text-success">Conectado</p>
+                </div>
+                <div class="user-img d-flex align-items-center">
+                    <div class="avatar avatar-md bg-primary text-white d-flex align-items-center justify-content-center rounded-circle" style="width: 40px; height: 40px;">
+                        <i class="bi bi-person-fill fs-5"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+</body>
+</html>
+

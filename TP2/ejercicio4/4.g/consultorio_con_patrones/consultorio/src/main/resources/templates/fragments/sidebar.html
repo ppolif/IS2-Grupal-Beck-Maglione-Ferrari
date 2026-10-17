@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="sidebar" id="sidebar" class="active">
+    <div class="sidebar-wrapper active">
+        <div class="sidebar-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="logo">
+                    <a th:href="@{/pacientes/list}">
+                        <h4 class="text-primary mb-0"><i class="bi bi-hospital"></i> Consultorio</h4>
+                    </a>
+                </div>
+                <div class="toggler">
+                    <a href="#" class="sidebar-hide d-xl-none d-block"><i class="bi bi-x bi-middle"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-menu">
+            <ul class="menu">
+                <li class="sidebar-title">Gestión Médica</li>
+
+                <li class="sidebar-item" th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI.startsWith('/pacientes')} ? 'active' : ''">
+                    <a th:href="@{/pacientes/list}" class='sidebar-link'>
+                        <i class="bi bi-people-fill"></i>
+                        <span>Pacientes</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item" th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI.startsWith('/medicos')} ? 'active' : ''">
+                    <a th:href="@{/medicos/list}" class='sidebar-link'>
+                        <i class="bi bi-heart-pulse-fill"></i>
+                        <span>Médicos</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item" th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI.startsWith('/historias')} ? 'active' : ''">
+                    <a th:href="@{/historias/list}" class='sidebar-link'>
+                        <i class="bi bi-journal-medical"></i>
+                        <span>Historias Clínicas</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-title">Usuario</li>
+
+                <li class="sidebar-item">
+                    <form id="logoutForm" th:action="@{/logout}" method="post" class="d-none"></form>
+                    <a th:href="@{/logout}" onclick="event.preventDefault(); document.getElementById('logoutForm').submit();" class='sidebar-link text-danger'>
+                        <i class="bi bi-box-arrow-right text-danger"></i>
+                        <span>Cerrar Sesión</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
+    </div>
+</div>
+</body>
+</html>
+
