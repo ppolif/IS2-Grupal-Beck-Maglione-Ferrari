@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Alta de Proveedor (HU6)')}"></head>
+<body class="bg-slate-50 min-h-screen flex flex-col justify-between">
+
+    <div>
+        <header th:replace="~{fragments/navbar :: navbar}"></header>
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <main class="max-w-5xl mx-auto px-4 py-12">
+            
+            <div class="mb-8">
+                <span class="text-xs uppercase font-bold tracking-widest text-bloom-600 bg-rose-50 px-3 py-1 rounded-full">
+                    Panel Administrador
+                </span>
+                <h1 class="font-serif-title text-3xl font-bold text-slate-800 mt-2">Alta y Ubicación de Proveedores (HU6)</h1>
+                <p class="text-xs text-slate-500">Registrar un nuevo proveedor con las coordenadas de su dirección y visualizar todos los proveedores en OpenStreetMap.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start mb-8">
+                
+                <!-- Formulario Alta de Proveedor con Coordenadas de Dirección (HU6) -->
+                <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8">
+                    <h2 class="text-sm font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center space-x-2">
+                        <i class="fa-solid fa-truck-field text-bloom-500"></i>
+                        <span>Datos y Dirección del Proveedor</span>
+                    </h2>
+
+                    <form th:action="@{/admin/proveedores/nuevo}" method="post" class="space-y-4">
+                        <!-- Nombre del Proveedor -->
+                        <div>
+                            <label for="nombre" class="block text-xs font-semibold text-slate-700 mb-1">Nombre de la Empresa o Vivero *</label>
+                            <input type="text" id="nombre" name="nombre" required placeholder="Ej. Orquídeas del Litoral S.A."
+                                   class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-bloom-500 focus:outline-none">
+                            <span class="text-[11px] text-slate-400 mt-1 block">Se valida que no esté vacío y no se encuentre duplicado en la base de datos.</span>
+                        </div>
+
+                        <!-- Coordenadas de la Dirección: Latitud y Longitud ingresadas manualmente -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="latitud" class="block text-xs font-semibold text-slate-700 mb-1">Latitud *</label>
+                                <input type="number" step="any" min="-90" max="90" id="latitud" name="latitud" required
+                                       placeholder="Ej. -32.8895"
+                                       class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-bloom-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label for="longitud" class="block text-xs font-semibold text-slate-700 mb-1">Longitud *</label>
+                                <input type="number" step="any" min="-180" max="180" id="longitud" name="longitud" required
+                                       placeholder="Ej. -68.8458"
+                                       class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-bloom-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <span class="text-[11px] text-slate-400 block">Ingrese las coordenadas geográficas (en grados decimales) donde se ubica el proveedor.</span>
+
+                        <button type="submit"
+                                class="w-full bg-bloom-600 hover:bg-bloom-700 text-white font-bold py-3 px-4 rounded-xl text-xs shadow-md shadow-rose-200 transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Guardar Proveedor</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Lista de Proveedores Activos -->
+                <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8">
+                    <h2 class="text-sm font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between">
+                        <span>Proveedores Activos</span>
+                        <span class="text-xs text-slate-400" th:text="${#lists.size(proveedores)} + ' registrados'"></span>
+                    </h2>
+
+                    <div class="divide-y divide-slate-100 max-h-72 overflow-y-auto text-xs">
+                        <div th:each="prov : ${proveedores}" class="py-3 flex justify-between items-center">
+                            <div>
+                                <span class="font-bold text-slate-800 block" th:text="${prov.nombre}"></span>
+                                <span class="text-[10px] text-slate-400 block" th:text="'ID: ' + ${#strings.substring(prov.id, 0, 8)}"></span>
+                                <!-- Muestra las coordenadas si el proveedor tiene dirección asociada -->
+                                <span th:if="${prov.direccion != null}" class="text-[11px] text-slate-500 mt-0.5 block">
+                                    <i class="fa-solid fa-location-dot text-bloom-500 mr-1"></i>
+                                    <span th:text="'Lat: ' + ${prov.direccion.latitud} + ' | Lng: ' + ${prov.direccion.longitud}"></span>
+                                </span>
+                            </div>
+                            <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full">Activo</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Mapa de Ubicación de Proveedores con OpenStreetMap y Leaflet.js -->
+            <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8">
+                <h2 class="text-sm font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center space-x-2">
+                    <i class="fa-solid fa-map-location-dot text-bloom-500"></i>
+                    <span>Mapa de Ubicación de Proveedores (OpenStreetMap)</span>
+                </h2>
+                <!-- Contenedor donde Leaflet.js renderiza el mapa -->
+                <div id="map" class="w-full h-96 rounded-2xl border border-slate-200 z-10"></div>
+            </div>
+
+        </main>
+    </div>
+
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+    <!--
+      Integración Spring Boot + Thymeleaf + Leaflet.js + OpenStreetMap:
+      1. Se usa th:inline="javascript" (artículo de Herman Maleiane) para inyectar la lista
+         de proveedores enviada desde el controlador de Spring Boot en una variable JS.
+      2. Se inicializa el mapa con Leaflet.js usando las teselas gratuitas de OpenStreetMap
+         (artículo de Abhishek Ranjan).
+      3. Se itera sobre los proveedores agregando un marcador (L.marker) por cada dirección.
+    -->
+    <script th:inline="javascript">
+        // 1. Inicializar el mapa centrado por defecto en Mendoza, Argentina
+        var map = L.map('map').setView([-32.8895, -68.8458], 12);
+
+        // 2. Cargar la capa base de OpenStreetMap (OSM Tile Layer)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // 3. Obtener la lista de proveedores desde el Model de Spring Boot mediante Thymeleaf
+        var proveedores = /*[[${proveedores}]]*/ [];
+
+        // Arreglo para almacenar las coordenadas y ajustar el zoom automáticamente a todos los marcadores
+        var coordenadasMarcadores = [];
+
+        // 4. Recorrer cada proveedor y colocar su marcador en el mapa si tiene dirección cargada
+        proveedores.forEach(function(prov) {
+            if (prov.direccion && prov.direccion.latitud != null && prov.direccion.longitud != null) {
+                var lat = prov.direccion.latitud;
+                var lng = prov.direccion.longitud;
+
+                // Crear marcador en las coordenadas del proveedor y asociar un popup informativo
+                L.marker([lat, lng])
+                    .addTo(map)
+                    .bindPopup(
+                        '<strong>' + prov.nombre + '</strong><br>' +
+                        'Lat: ' + lat + '<br>Lng: ' + lng
+                    );
+
+                coordenadasMarcadores.push([lat, lng]);
+            }
+        });
+
+        // 5. Si existen proveedores con coordenadas, encuadrar el mapa para mostrar todos los marcadores
+        if (coordenadasMarcadores.length > 0) {
+            var bounds = L.latLngBounds(coordenadasMarcadores);
+            map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+        }
+    </script>
+</body>
+</html>

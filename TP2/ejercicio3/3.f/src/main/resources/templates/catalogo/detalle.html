@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${articulo.nombre})}"></head>
+<body class="bg-slate-50 min-h-screen flex flex-col justify-between">
+
+    <div>
+        <header th:replace="~{fragments/navbar :: navbar}"></header>
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            
+            <a th:href="@{/catalogo}" class="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-bloom-600 mb-6 transition">
+                <i class="fa-solid fa-arrow-left mr-2"></i> Volver al Catálogo
+            </a>
+
+            <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-8 p-6 sm:p-10">
+                
+                <!-- Imagen Ampliada -->
+                <div class="relative bg-slate-100 rounded-2xl overflow-hidden flex items-center justify-center min-h-[350px]">
+                    <img th:if="${articulo.imagen != null}"
+                         th:src="@{/imagen/{id}(id=${articulo.imagen.id})}"
+                         th:alt="${articulo.nombre}"
+                         class="w-full h-full object-cover">
+                    <div th:unless="${articulo.imagen != null}" class="text-slate-400 text-center">
+                        <i class="fa-solid fa-image text-5xl mb-2"></i>
+                        <p class="text-xs">Imagen no disponible</p>
+                    </div>
+                </div>
+
+                <!-- Detalles del Artículo (HU3) -->
+                <div class="flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center space-x-2 mb-2">
+                            <span class="bg-rose-100 text-bloom-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                                Producto Activo
+                            </span>
+                            <span th:if="${articulo.proveedor != null}"
+                                  th:text="'Provisto por ' + ${articulo.proveedor.nombre}"
+                                  class="text-xs text-slate-500 font-medium">
+                            </span>
+                        </div>
+
+                        <h1 class="font-serif-title text-3xl font-bold text-slate-900 mb-3" th:text="${articulo.nombre}"></h1>
+
+                        <div class="text-3xl font-bold text-slate-900 mb-6">
+                            $<span th:text="${#numbers.formatDecimal(articulo.precio, 1, 2)}"></span>
+                            <span class="text-xs font-normal text-slate-400">IVA incluido</span>
+                        </div>
+
+                        <p class="text-sm text-slate-600 leading-relaxed mb-6">
+                            Cultivo cuidado y seleccionado bajo altos estándares botánicos. Ideal para decoración de interiores, obsequios y ambientaciones florales exclusivas.
+                        </p>
+
+                        <div class="border-y border-slate-100 py-4 mb-6 space-y-2 text-xs text-slate-500">
+                            <p><i class="fa-solid fa-check text-emerald-500 mr-2"></i>Disponible para entrega inmediata</p>
+                            <p><i class="fa-solid fa-truck-fast text-slate-400 mr-2"></i>Envío con empaque floral protector</p>
+                        </div>
+                    </div>
+
+                    <!-- Formulario de Compra con Selección de Cantidad (HU4) -->
+                    <form th:action="@{/carrito/agregar}" method="post" class="space-y-4">
+                        <input type="hidden" name="articuloId" th:value="${articulo.id}">
+                        
+                        <div class="flex items-center space-x-4">
+                            <label for="cantidad" class="text-xs font-semibold text-slate-700">Cantidad:</label>
+                            <input type="number" id="cantidad" name="cantidad" value="1" min="1" max="99"
+                                   class="w-20 px-3 py-2 border border-slate-200 rounded-xl text-center font-bold text-slate-800 focus:ring-2 focus:ring-bloom-500 focus:outline-none">
+                            
+                            <button type="submit" 
+                                    class="flex-1 bg-bloom-600 hover:bg-bloom-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md shadow-rose-200 transition flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-cart-plus"></i>
+                                <span>Agregar al Carrito</span>
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>
+
