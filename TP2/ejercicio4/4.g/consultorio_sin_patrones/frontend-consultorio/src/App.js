@@ -1,23 +1,53 @@
-import logo from './logo.svg';
+import React, { useState } from 'react';
+import Login from './components/Login';
+import Navbar from './components/Navbar';
+import Pacientes from './components/Pacientes';
+import Medicos from './components/Medicos';
+import HistoriasClinicas from './components/HistoriasClinicas';
+import FotosPaciente from './components/FotosPaciente';
 import './App.css';
 
 function App() {
+  const [usuario, setUsuario] = useState(null);
+  const [vista, setVista] = useState('pacientes'); // 'pacientes' | 'medicos' | 'historias' | 'fotos'
+  const [pacienteSeleccionadoId, setPacienteSeleccionadoId] = useState(null);
+
+  if (!usuario) {
+    return <Login onLogin={setUsuario} />;
+  }
+
+  const verFotos = (pacienteId) => {
+    setPacienteSeleccionadoId(pacienteId);
+    setVista('fotos');
+  };
+
+  const volverAPacientes = () => {
+    setPacienteSeleccionadoId(null);
+    setVista('pacientes');
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <Navbar
+        usuario={usuario}
+        vistaActual={vista}
+        onCambiarVista={setVista}
+        onLogout={() => {
+          setUsuario(null);
+          setVista('pacientes');
+        }}
+      />
+      <div className="container">
+        {vista === 'pacientes' && <Pacientes onVerFotos={verFotos} />}
+        {vista === 'medicos' && <Medicos />}
+        {vista === 'historias' && <HistoriasClinicas />}
+        {vista === 'fotos' && (
+          <FotosPaciente
+            pacienteId={pacienteSeleccionadoId}
+            onVolver={volverAPacientes}
+          />
+        )}
+      </div>
     </div>
   );
 }

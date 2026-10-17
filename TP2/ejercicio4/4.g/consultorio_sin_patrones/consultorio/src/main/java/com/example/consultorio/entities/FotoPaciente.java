@@ -1,5 +1,6 @@
 package com.example.consultorio.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -14,10 +15,12 @@ public class FotoPaciente {
     private String nombre;
     private String mime;
 
+    @JsonIgnore
     @Lob
     @Column(columnDefinition = "LONGBLOB")
     private byte[] contenido;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "paciente_id")
     private Paciente paciente;
