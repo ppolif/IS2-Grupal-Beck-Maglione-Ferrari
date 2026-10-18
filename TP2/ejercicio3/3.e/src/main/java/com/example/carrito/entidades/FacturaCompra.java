@@ -6,14 +6,14 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "registros_compra")
+@Table(name = "facturas_compra")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class RegistroCompra {
+public class FacturaCompra {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -44,4 +44,3 @@ public class RegistroCompra {
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 }
-

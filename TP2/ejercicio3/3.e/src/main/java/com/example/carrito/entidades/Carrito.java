@@ -36,29 +36,4 @@ public class Carrito {
     @OneToMany(mappedBy = "carrito", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<Detalle> detalles = new ArrayList<>();
-
-    public void recalcularTotal() {
-        if (detalles == null || detalles.isEmpty()) {
-            this.total = 0.0;
-            return;
-        }
-        double sumatoria = 0.0;
-        for (Detalle d : detalles) {
-            if (!d.isEliminado()) {
-                d.recalcularSubtotal();
-                sumatoria += d.getSubtotal();
-            }
-        }
-        this.total = Math.round(sumatoria * 100.0) / 100.0;
-    }
-
-    public void agregarDetalle(Detalle detalle) {
-        if (this.detalles == null) {
-            this.detalles = new ArrayList<>();
-        }
-        this.detalles.add(detalle);
-        detalle.setCarrito(this);
-        recalcularTotal();
-    }
 }
-

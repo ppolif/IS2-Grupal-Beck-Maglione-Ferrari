@@ -4,12 +4,12 @@ import com.example.carrito.dtos.ComprobantePago;
 import com.example.carrito.dtos.DatosPagoDTO;
 import com.example.carrito.entidades.Carrito;
 import com.example.carrito.entidades.Detalle;
-import com.example.carrito.entidades.RegistroCompra;
+import com.example.carrito.entidades.FacturaCompra;
 import com.example.carrito.entidades.Usuario;
 import com.example.carrito.excepciones.ErrorServicio;
 import com.example.carrito.repositorios.CarritoRepositorio;
 import com.example.carrito.repositorios.DetalleRepositorio;
-import com.example.carrito.repositorios.RegistroCompraRepositorio;
+import com.example.carrito.repositorios.FacturaCompraRepositorio;
 import com.example.carrito.repositorios.UsuarioRepositorio;
 import com.example.carrito.servicios.CarritoServicio;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,10 +37,13 @@ public abstract class ProcesadorCompraTemplate {
     protected UsuarioRepositorio usuarioRepositorio;
 
     @Autowired
-    protected RegistroCompraRepositorio registroCompraRepositorio;
+    protected FacturaCompraRepositorio facturaCompraRepositorio;
 
     @Autowired
     protected DetalleRepositorio detalleRepositorio;
+
+    @Autowired
+    protected CarritoServicio carritoServicio;
 
     /**
      * MÉTODO PLANTILLA (TEMPLATE METHOD)
@@ -48,7 +51,7 @@ public abstract class ProcesadorCompraTemplate {
      * Es '@Transactional' para asegurar atomicidad (Criterio HU5: Si falla, el carrito NO se vacía).
      */
     @Transactional(rollbackFor = Exception.class)
-    public final RegistroCompra procesarCompra(String carritoId, String usuarioId, DatosPagoDTO datosPago)
+    public final FacturaCompra procesarCompra(String carritoId, String usuarioId, DatosPagoDTO datosPago)
             throws ErrorServicio {
 
         // 1. Paso Concreto: Validar existencia de Carrito y Usuario
@@ -67,8 +70,8 @@ public abstract class ProcesadorCompraTemplate {
         // 5. Paso Abstracto: Ejecutar la transacción de pago correspondiente
         ComprobantePago comprobante = ejecutarTransaccionPago(totalFinal, datosPago);
 
-        // 6. Paso Concreto: Generar registro histórico de compra asociado al Usuario (HU2 y HU5)
-        RegistroCompra orden = generarRegistroCompra(carrito, usuario, totalFinal, comprobante);
+        // 6. Paso Concreto: Generar registro histórico de factura de compra asociado al Usuario (HU2 y HU5)
+        FacturaCompra orden = generarFacturaCompra(carrito, usuario, totalFinal, comprobante);
 
         // 7. Paso Concreto: Vaciar/limpiar lógicamente el carrito actual y reiniciar total a 0 (HU5)
         limpiarCarrito(carrito);
@@ -116,7 +119,7 @@ public abstract class ProcesadorCompraTemplate {
     }
 
     protected void validarCarritoConProductosActivos(Carrito carrito) throws ErrorServicio {
-        carrito.recalcularTotal();
+        carritoServicio.recalcularTotal(carrito);
         List<Detalle> detallesActivos = carrito.getDetalles().stream()
                 .filter(d -> !d.isEliminado() && d.getCantidad() > 0)
                 .collect(Collectors.toList());
@@ -140,14 +143,14 @@ public abstract class ProcesadorCompraTemplate {
         }
     }
 
-    protected RegistroCompra generarRegistroCompra(Carrito carrito, Usuario usuario, double totalFinal,
-                                                   ComprobantePago comprobante) {
+    protected FacturaCompra generarFacturaCompra(Carrito carrito, Usuario usuario, double totalFinal,
+                                                 ComprobantePago comprobante) {
         String resumen = carrito.getDetalles().stream()
                 .filter(d -> !d.isEliminado())
                 .map(d -> d.getArticulo().getNombre() + " (x" + d.getCantidad() + ")")
                 .collect(Collectors.joining(", "));
 
-        RegistroCompra orden = RegistroCompra.builder()
+        FacturaCompra orden = FacturaCompra.builder()
                 .usuario(usuario)
                 .fecha(LocalDateTime.now())
                 .total(totalFinal)
@@ -157,7 +160,7 @@ public abstract class ProcesadorCompraTemplate {
                 .eliminado(false)
                 .build();
 
-        return registroCompraRepositorio.save(orden);
+        return facturaCompraRepositorio.save(orden);
     }
 
     // =========================================================================
@@ -178,7 +181,7 @@ public abstract class ProcesadorCompraTemplate {
     // PASO HOOK (Comportamiento por defecto con opción de sobrescritura)
     // =========================================================================
 
-    protected void notificarConfirmacion(Usuario usuario, RegistroCompra orden, ComprobantePago comprobante) {
+    protected void notificarConfirmacion(Usuario usuario, FacturaCompra orden, ComprobantePago comprobante) {
         System.out.println("[AUDITORÍA COMPRA] Compra procesada con éxito para usuario: "
                 + usuario.getEmail() + " | Orden ID: " + orden.getId()
                 + " | Total: $" + orden.getTotal()

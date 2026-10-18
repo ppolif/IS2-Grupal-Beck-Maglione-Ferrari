@@ -3,7 +3,7 @@ package com.example.carrito.controladores;
 import com.example.carrito.dtos.DatosPagoDTO;
 import com.example.carrito.entidades.Carrito;
 import com.example.carrito.entidades.Detalle;
-import com.example.carrito.entidades.RegistroCompra;
+import com.example.carrito.entidades.FacturaCompra;
 import com.example.carrito.entidades.Usuario;
 import com.example.carrito.excepciones.ErrorServicio;
 import com.example.carrito.servicios.CarritoServicio;
@@ -38,7 +38,7 @@ public class CarritoControlador {
         try {
             Usuario usuario = usuarioServicio.buscarPorEmail(principal.getName());
             Carrito carrito = carritoServicio.obtenerOCrearCarritoActivo(usuario);
-            carrito.recalcularTotal();
+            carritoServicio.recalcularTotal(carrito);
 
             List<Detalle> detallesActivos = carrito.getDetalles().stream()
                     .filter(d -> !d.isEliminado())
@@ -69,7 +69,7 @@ public class CarritoControlador {
                     .metodoPago("DIRECTA")
                     .build();
 
-            RegistroCompra orden = procesador.procesarCompra(carrito.getId(), usuario.getId(), datosPago);
+            FacturaCompra orden = procesador.procesarCompra(carrito.getId(), usuario.getId(), datosPago);
 
             return "redirect:/checkout/exito/" + orden.getId();
         } catch (ErrorServicio e) {

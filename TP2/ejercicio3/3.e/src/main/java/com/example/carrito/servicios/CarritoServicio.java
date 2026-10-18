@@ -27,6 +27,36 @@ public class CarritoServicio {
     @Autowired
     private ArticuloRepositorio articuloRepositorio;
 
+    public void recalcularTotal(Carrito carrito) {
+        if (carrito == null) {
+            return;
+        }
+        if (carrito.getDetalles() == null || carrito.getDetalles().isEmpty()) {
+            carrito.setTotal(0.0);
+            return;
+        }
+        double sumatoria = 0.0;
+        for (Detalle d : carrito.getDetalles()) {
+            if (!d.isEliminado()) {
+                d.recalcularSubtotal();
+                sumatoria += d.getSubtotal();
+            }
+        }
+        carrito.setTotal(Math.round(sumatoria * 100.0) / 100.0);
+    }
+
+    public void agregarDetalle(Carrito carrito, Detalle detalle) {
+        if (carrito == null || detalle == null) {
+            return;
+        }
+        if (carrito.getDetalles() == null) {
+            carrito.setDetalles(new ArrayList<>());
+        }
+        carrito.getDetalles().add(detalle);
+        detalle.setCarrito(carrito);
+        recalcularTotal(carrito);
+    }
+
     @Transactional
     public Carrito obtenerOCrearCarritoActivo(Usuario usuario) {
         return carritoRepositorio.findByUsuarioIdAndEliminadoFalse(usuario.getId())
@@ -64,19 +94,18 @@ public class CarritoServicio {
             det.setCantidad(det.getCantidad() + cantidad);
             det.recalcularSubtotal();
             detalleRepositorio.save(det);
+            recalcularTotal(carrito);
         } else {
             Detalle nuevoDetalle = Detalle.builder()
                     .articulo(articulo)
-                    .carrito(carrito)
                     .cantidad(cantidad)
                     .eliminado(false)
                     .build();
             nuevoDetalle.recalcularSubtotal();
             detalleRepositorio.save(nuevoDetalle);
-            carrito.getDetalles().add(nuevoDetalle);
+            agregarDetalle(carrito, nuevoDetalle);
         }
 
-        carrito.recalcularTotal();
         return carritoRepositorio.save(carrito);
     }
 
@@ -96,7 +125,7 @@ public class CarritoServicio {
         }
 
         detalleRepositorio.save(detalle);
-        carrito.recalcularTotal();
+        recalcularTotal(carrito);
         return carritoRepositorio.save(carrito);
     }
 
@@ -127,4 +156,3 @@ public class CarritoServicio {
         carritoRepositorio.save(carrito);
     }
 }
-
