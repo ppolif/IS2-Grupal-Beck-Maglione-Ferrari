@@ -29,7 +29,7 @@ public class BookService {
         book.setId(id);
         return repository.save(book);
     }
-
+// Comentario para testing del workflow
     public void delete(Long id) {
         repository.deleteById(id);
     }
