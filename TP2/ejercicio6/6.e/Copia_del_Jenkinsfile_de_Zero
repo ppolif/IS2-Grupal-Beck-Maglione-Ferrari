@@ -1,0 +1,12 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Verificación') {
+            steps {
+                echo 'Comprobando cambios en github'
+            }
+        }
+    }
+}
+
