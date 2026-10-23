@@ -1,11 +1,3 @@
-# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: Java CI with Maven
 
 on:
@@ -13,6 +5,11 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: TP2/ejercicio6/6.e/CatalogueManagement
 
 jobs:
   test:
@@ -27,6 +24,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: 'maven'
+          cache-dependency-path: 'TP2/ejercicio6/6.e/CatalogueManagement/pom.xml'
 
       - name: Run tests
         run: mvn test
@@ -36,7 +34,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: target/surefire-reports/
+          path: TP2/ejercicio6/6.e/CatalogueManagement/target/surefire-reports/
 
   build:
     runs-on: ubuntu-latest
@@ -51,10 +49,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: 'maven'
+          cache-dependency-path: 'TP2/ejercicio6/6.e/CatalogueManagement/pom.xml'
 
       - name: Build with Maven
         run: mvn clean compile
-
-    # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
-    - name: Update dependency graph
-      uses: advanced-security/maven-dependency-submission-action@571e99aab1055c2e71a1e2309b9691de18d6b7d6
