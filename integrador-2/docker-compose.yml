@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   db:
@@ -20,7 +19,7 @@ services:
       retries: 5
 
   backend:
-    build: .
+    build: ./backend # Apuntamos a la subcarpeta del backend
     container_name: dulcemayor-backend
     restart: always
     ports:
@@ -33,6 +32,33 @@ services:
       SPRING_DATASOURCE_USERNAME: dulcemayor_user
       SPRING_DATASOURCE_PASSWORD: dulcemayor_pass
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+
+  frontend-admin:
+    build: ./frontend-admin
+    container_name: dulcemayor-admin
+    restart: always
+    ports:
+      - "3000:80" # Nginx corre en el 80 internamente
+    depends_on:
+      - backend
+
+  frontend-institucional:
+    build: ./frontend-institucional
+    container_name: dulcemayor-institucional
+    restart: always
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+
+  frontend-preventor:
+    build: ./frontend-preventor
+    container_name: dulcemayor-preventor
+    restart: always
+    ports:
+      - "3002:80"
+    depends_on:
+      - backend
 
 volumes:
   db_data:
