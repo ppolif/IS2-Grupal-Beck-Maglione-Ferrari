@@ -4,14 +4,14 @@ pipeline {
     stages {
         stage('Backend: Compilación y Pruebas') {
             steps {
-                dir('backend') {
+                dir('integrador-2/backend') {
                     sh 'mvn clean test'
                 }
             }
         }
         stage('Frontend Admin: Build') {
             steps {
-                dir('frontend-admin') {
+                dir('integrador-2/frontend-admin') {
                     sh 'npm install'
                     sh 'npm run build'
                 }
@@ -19,7 +19,7 @@ pipeline {
         }
         stage('Frontend Institucional: Build') {
             steps {
-                dir('frontend-institucional') {
+                dir('integrador-2/frontend-institucional') {
                     sh 'npm install'
                     sh 'npm run build'
                 }
@@ -27,7 +27,7 @@ pipeline {
         }
         stage('Frontend Preventor: Build') {
             steps {
-                dir('frontend-preventor') {
+                dir('integrador-2/frontend-preventor') {
                     sh 'npm install'
                     sh 'npm run build'
                 }
@@ -35,7 +35,9 @@ pipeline {
         }
         stage('Docker: Validar Imágenes') {
             steps {
-                sh 'docker compose build'
+                dir('integrador-2') {
+                    sh 'docker compose build'
+                }
             }
         }
     }
