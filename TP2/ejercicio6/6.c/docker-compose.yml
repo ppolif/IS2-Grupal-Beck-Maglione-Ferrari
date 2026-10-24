@@ -1,0 +1,57 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: zero-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: zero
+      MYSQL_ROOT_PASSWORD: 1234
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p1234"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - zero-network
+
+  zero:
+    build:
+      context: ./zero
+      dockerfile: Dockerfile
+    container_name: zero-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_APPLICATION_NAME=zero
+      - PORT=8080
+      - DB_URL=jdbc:mysql://mysql:3306/zero?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      - DB_USERNAME=root
+      - DB_PASSWORD=1234
+      - MAIL_HOST=smtp.gmail.com
+      - MAIL_PORT=587
+      - MAIL_USERNAME=zeroshopclothes@gmail.com
+      - MAIL_PASSWORD=rextjelsxboonfst
+      - MERCADOPAGO_ACCESS_TOKEN=APP_USR-6862216951145229-092415-dc100a089839820f98fa6d5aefabdff4-3693808838
+      - MERCADOPAGO_BASE_URL=https://colonial-shush-doable.ngrok-free.dev
+      - THYMELEAF_CACHE=true
+      - JPA_DDL_AUTO=update
+      - JPA_SHOW_SQL=false
+    networks:
+      - zero-network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  zero-network:
+    driver: bridge
