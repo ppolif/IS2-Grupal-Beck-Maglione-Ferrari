@@ -1,0 +1,26 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Maven & Build
+target/
+.mvn/timing.properties
+
+# IDE & Editor
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Documentación y reglas internas
+HELP.md
+REGLAS-AGENTE.md
+rules/
+jmeter.log
+*.log
+
+# Subagentes / Configs locales
+.agents/
+.gemini/
