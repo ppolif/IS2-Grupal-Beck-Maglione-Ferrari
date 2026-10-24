@@ -1,0 +1,3942 @@
+openapi: 3.0.3
+info:
+  title: Dulce Mayor API
+  version: 1.0.0
+  description: |
+    Contrato de la API REST de **Dulce Mayor** (TP Integrador N°2, Ingeniería del Software II, UNCuyo).
+    Es la única interfaz que usan las tres aplicaciones cliente: dashboard administrativo, sitio institucional/portal del cliente y portal móvil de preventores y distribuidores.
+
+    ## Convenciones
+    - Prefijo `/api/v1`. Identificadores UUID. Fechas ISO 8601. Montos en pesos argentinos (`number`).
+    - **Autenticación:** JWT en `Authorization: Bearer <token>`. Los endpoints marcados como públicos no lo requieren.
+    - **Permisos:** cada operación declara `x-roles` (roles habilitados). `AUTENTICADO` = cualquier usuario con sesión. El backend debe traducirlo a `@PreAuthorize`.
+    - **Clave temporal:** mientras `claveTemporal=true`, toda operación salvo `POST /auth/cambiar-clave` y `GET /auth/perfil` responde `403` con `code=CAMBIO_CLAVE_REQUERIDO`.
+    - **Borrado lógico:** `DELETE` marca `eliminado=true`; los listados no devuelven eliminados.
+    - **Paginación:** los listados grandes devuelven `{content, page, size, totalElements, totalPages}`. Los catálogos chicos (geografía, categorías, formas de pago, empresas) devuelven arreglos simples.
+    - **Errores:** siempre `ErrorResponse` (`timestamp, status, code, message, path, errors[]`).
+    - **Pedidos:** el cliente nunca envía precios; los fija el backend con la `VigenciaPrecio` vigente.
+    - **Filtrado por dueño:** PREVENTISTA ve solo lo propio, DISTRIBUIDOR solo sus rutas, MINORISTA solo sus pedidos y facturas.
+servers:
+- {url: 'http://localhost:8080/api/v1', description: Desarrollo local}
+security:
+- bearerAuth: []
+tags:
+- {name: Autenticación}
+- {name: Usuarios}
+- {name: Personas}
+- {name: Mayorista}
+- {name: Imágenes}
+- {name: Geografía}
+- {name: Productos}
+- {name: Stock}
+- {name: Promociones}
+- {name: Pedidos}
+- {name: Portal del minorista}
+- {name: Facturación y pagos}
+- {name: Rutas}
+- {name: Reportes}
+- {name: Estadísticas}
+- {name: Notificaciones}
+- {name: Sitio público}
+paths:
+  /auth/cambiar-clave:
+    post:
+      tags: [Autenticación]
+      operationId: modificarClave
+      summary: Cambiar la propia clave
+      x-roles: [AUTENTICADO]
+      description: |-
+        Es el **único** endpoint (junto con /auth/perfil) permitido mientras `claveTemporal=true`. La nueva clave no puede ser la clave por defecto.
+
+        **Roles:** AUTENTICADO.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CambiarClaveRequest'}
+      responses:
+        '204': {description: Clave modificada}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /auth/login:
+    post:
+      tags: [Autenticación]
+      operationId: login
+      summary: Iniciar sesión (empleados y clientes)
+      security: []
+      x-roles: []
+      description: |-
+        Si el usuario aún tiene la clave temporal, la respuesta trae `debeCambiarClave=true`.
+
+        **Acceso:** público (sin token).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LoginRequest'}
+      responses:
+        '200':
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+  /auth/login-externo:
+    post:
+      tags: [Autenticación]
+      operationId: loginExterno
+      summary: Iniciar sesión con red social (clientes)
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LoginExternoRequest'}
+      responses:
+        '200':
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+  /auth/perfil:
+    get:
+      tags: [Autenticación]
+      operationId: perfil
+      summary: Datos del usuario autenticado
+      x-roles: [AUTENTICADO]
+      description: '**Roles:** AUTENTICADO.'
+      responses:
+        '200':
+          description: Perfil
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PerfilResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /auth/registro:
+    post:
+      tags: [Autenticación]
+      operationId: registrarMinorista
+      summary: Registro de un minorista (cliente) en el portal
+      security: []
+      x-roles: []
+      description: |-
+        Crea Minorista + Usuario con rol MINORISTA. Si ya existe un Minorista cargado por un preventor con el mismo correo, se vincula.
+
+        **Acceso:** público (sin token).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RegistroMinoristaRequest'}
+      responses:
+        '201':
+          description: Cliente registrado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AuthResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /categorias:
+    get:
+      tags: [Productos]
+      operationId: listarCategoria
+      summary: Listar categoria
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      responses:
+        '200':
+          description: Listado
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/CategoriaResponse'}
+    post:
+      tags: [Productos]
+      operationId: crearCategoria
+      summary: Crear Categoria
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CategoriaRequest'}
+      responses:
+        '201':
+          description: Categoria creado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CategoriaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /categorias/{id}:
+    get:
+      tags: [Productos]
+      operationId: buscarCategoria
+      summary: Buscar Categoria por id
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Categoria
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CategoriaResponse'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Productos]
+      operationId: modificarCategoria
+      summary: Modificar Categoria
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CategoriaRequest'}
+      responses:
+        '200':
+          description: Categoria modificado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CategoriaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Productos]
+      operationId: eliminarCategoria
+      summary: Eliminar Categoria (borrado lógico)
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /departamentos:
+    get:
+      tags: [Geografía]
+      operationId: listarDepartamento
+      summary: Listar departamento
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      parameters:
+      - name: provinciaId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Listado
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/DepartamentoResponse'}
+    post:
+      tags: [Geografía]
+      operationId: crearDepartamento
+      summary: Crear Departamento
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DepartamentoRequest'}
+      responses:
+        '201':
+          description: Departamento creado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DepartamentoResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /departamentos/{id}:
+    get:
+      tags: [Geografía]
+      operationId: buscarDepartamento
+      summary: Buscar Departamento por id
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Departamento
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DepartamentoResponse'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Geografía]
+      operationId: modificarDepartamento
+      summary: Modificar Departamento
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/DepartamentoRequest'}
+      responses:
+        '200':
+          description: Departamento modificado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DepartamentoResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Geografía]
+      operationId: eliminarDepartamento
+      summary: Eliminar Departamento (borrado lógico)
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /empleados:
+    get:
+      tags: [Personas]
+      operationId: listarEmpleado
+      summary: Listar empleado
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: |-
+        Filtrar por `rol=PREVENTISTA` o `rol=DISTRIBUIDOR` para poblar selectores.
+
+        **Roles:** JEFE, ADMINISTRATIVO.
+      parameters:
+      - name: rol
+        in: query
+        required: false
+        schema: {$ref: '#/components/schemas/RolEmpleado'}
+      - name: legajo
+        in: query
+        required: false
+        schema: {type: string}
+        description: Búsqueda exacta por legajo (buscarPreventor / buscarDistribuidor)
+      - name: q
+        in: query
+        required: false
+        schema: {type: string}
+        description: Nombre, apellido o documento
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      - {$ref: '#/components/parameters/Sort'}
+      responses:
+        '200':
+          description: Listado paginado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/EmpleadoPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Personas]
+      operationId: crearEmpleado
+      summary: Crear Empleado
+      x-roles: [JEFE]
+      description: '**Roles:** JEFE.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/EmpleadoRequest'}
+      responses:
+        '201':
+          description: Empleado creado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/EmpleadoResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /empleados/{id}:
+    get:
+      tags: [Personas]
+      operationId: buscarEmpleado
+      summary: Buscar Empleado por id
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Empleado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/EmpleadoResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Personas]
+      operationId: modificarEmpleado
+      summary: Modificar Empleado
+      x-roles: [JEFE]
+      description: '**Roles:** JEFE.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/EmpleadoRequest'}
+      responses:
+        '200':
+          description: Empleado modificado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/EmpleadoResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Personas]
+      operationId: eliminarEmpleado
+      summary: Eliminar Empleado (borrado lógico)
+      x-roles: [JEFE]
+      description: '**Roles:** JEFE.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /estadisticas/pedidos-por-preventor-por-dia:
+    get:
+      tags: [Estadísticas]
+      operationId: estadisticaPedidosPorPreventorPorDia
+      summary: 'Gráfico de barras: pedidos por preventor por día en un mes'
+      x-roles: [JEFE]
+      description: '**Roles:** JEFE.'
+      parameters:
+      - name: anio
+        in: query
+        required: true
+        schema: {type: integer, format: int32}
+      - name: mes
+        in: query
+        required: true
+        schema: {type: integer, minimum: 1, maximum: 12}
+      responses:
+        '200':
+          description: Series para el gráfico de barras
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PedidosPorPreventorPorDiaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /estadisticas/stock-por-producto:
+    get:
+      tags: [Estadísticas]
+      operationId: estadisticaStockPorProducto
+      summary: 'Gráfico de torta: cantidad en stock por producto'
+      x-roles: [JEFE]
+      description: '**Roles:** JEFE.'
+      responses:
+        '200':
+          description: Datos para el gráfico de torta
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/StockPorProductoItem'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /facturas:
+    get:
+      tags: [Facturación y pagos]
+      operationId: listarFactura
+      summary: Listar facturas
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: |-
+        Las facturas se generan con `POST /pedidos/{id}/procesar`; no se crean a mano.
+
+        **Roles:** JEFE, ADMINISTRATIVO.
+      parameters:
+      - name: estado
+        in: query
+        required: false
+        schema: {$ref: '#/components/schemas/EstadoFactura'}
+      - name: minoristaId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      - {$ref: '#/components/parameters/Desde'}
+      - {$ref: '#/components/parameters/Hasta'}
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      - {$ref: '#/components/parameters/Sort'}
+      responses:
+        '200':
+          description: Listado paginado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FacturaPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /facturas/{id}:
+    get:
+      tags: [Facturación y pagos]
+      operationId: buscarFactura
+      summary: Buscar factura
+      x-roles: [JEFE, ADMINISTRATIVO, MINORISTA]
+      description: |-
+        El MINORISTA solo accede a facturas propias.
+
+        **Roles:** JEFE, ADMINISTRATIVO, MINORISTA.
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Factura
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FacturaResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /facturas/{id}/anular:
+    post:
+      tags: [Facturación y pagos]
+      operationId: anularFactura
+      summary: Anular factura
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: |-
+        No se puede anular una factura con pagos registrados (409).
+
+        **Roles:** JEFE, ADMINISTRATIVO.
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Factura anulada
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FacturaResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /facturas/{id}/pagos:
+    get:
+      tags: [Facturación y pagos]
+      operationId: listarPagoPorFactura
+      summary: Pagos de una factura
+      x-roles: [JEFE, ADMINISTRATIVO, MINORISTA]
+      description: '**Roles:** JEFE, ADMINISTRATIVO, MINORISTA.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Pagos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/PagoResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    post:
+      tags: [Facturación y pagos]
+      operationId: registrarPago
+      summary: Registrar un pago
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: |-
+        Si la suma de pagos cubre el total, la factura pasa a PAGADA. 409 si la factura está ANULADA o el monto excede el saldo.
+
+        **Roles:** JEFE, ADMINISTRATIVO.
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PagoRequest'}
+      responses:
+        '201':
+          description: Pago registrado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PagoResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /facturas/{id}/pdf:
+    get:
+      tags: [Facturación y pagos]
+      operationId: descargarFacturaPdf
+      summary: Descargar la factura electrónica en PDF
+      x-roles: [JEFE, ADMINISTRATIVO, MINORISTA]
+      description: |-
+        El MINORISTA solo descarga facturas propias.
+
+        **Roles:** JEFE, ADMINISTRATIVO, MINORISTA.
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: PDF de la factura
+          content:
+            application/pdf:
+              schema: {type: string, format: binary}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /facturas/{id}/qr-pago:
+    get:
+      tags: [Facturación y pagos]
+      operationId: generarQrPago
+      summary: QR para pagar con billetera virtual
+      x-roles: [JEFE, ADMINISTRATIVO, MINORISTA]
+      description: |-
+        El QR es simulado (no hay integración con pasarelas reales): codifica el número de factura, el saldo y una referencia. 409 si la factura no está PENDIENTE_PAGO.
+
+        **Roles:** JEFE, ADMINISTRATIVO, MINORISTA.
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Imagen PNG del QR
+          content:
+            image/png:
+              schema: {type: string, format: binary}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /facturas/{id}/reenviar-correo:
+    post:
+      tags: [Facturación y pagos]
+      operationId: reenviarFacturaPorCorreo
+      summary: Reenviar la factura por correo al responsable del comercio
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Correo enviado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /formas-de-pago:
+    get:
+      tags: [Facturación y pagos]
+      operationId: listarFormaDePago
+      summary: Listar formadepago
+      x-roles: [AUTENTICADO]
+      description: '**Roles:** AUTENTICADO.'
+      responses:
+        '200':
+          description: Listado
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/FormaDePagoResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Facturación y pagos]
+      operationId: crearFormaDePago
+      summary: Crear FormaDePago
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FormaDePagoRequest'}
+      responses:
+        '201':
+          description: FormaDePago creado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FormaDePagoResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /formas-de-pago/{id}:
+    get:
+      tags: [Facturación y pagos]
+      operationId: buscarFormaDePago
+      summary: Buscar FormaDePago por id
+      x-roles: [AUTENTICADO]
+      description: '**Roles:** AUTENTICADO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: FormaDePago
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FormaDePagoResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Facturación y pagos]
+      operationId: modificarFormaDePago
+      summary: Modificar FormaDePago
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/FormaDePagoRequest'}
+      responses:
+        '200':
+          description: FormaDePago modificado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FormaDePagoResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Facturación y pagos]
+      operationId: eliminarFormaDePago
+      summary: Eliminar FormaDePago (borrado lógico)
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /imagenes:
+    post:
+      tags: [Imágenes]
+      operationId: crearImagen
+      summary: Subir una imagen
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: |-
+        Tamaño máximo recomendado: 5 MB. Formatos: jpg, png, webp.
+
+        **Roles:** JEFE, ADMINISTRATIVO.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                archivo: {type: string, format: binary}
+                tipoImagen: {$ref: '#/components/schemas/TipoImagen'}
+              required: [archivo, tipoImagen]
+      responses:
+        '201':
+          description: Imagen guardada
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ImagenResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /imagenes/{id}:
+    delete:
+      tags: [Imágenes]
+      operationId: eliminarImagen
+      summary: Eliminar imagen
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminada}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /imagenes/{id}/contenido:
+    get:
+      tags: [Imágenes]
+      operationId: buscarImagen
+      summary: Descargar el contenido de una imagen
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Binario de la imagen
+          content:
+            image/jpeg:
+              schema: {type: string, format: binary}
+            image/png:
+              schema: {type: string, format: binary}
+            image/webp:
+              schema: {type: string, format: binary}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /localidades:
+    get:
+      tags: [Geografía]
+      operationId: listarLocalidad
+      summary: Listar localidad
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      parameters:
+      - name: departamentoId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Listado
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/LocalidadResponse'}
+    post:
+      tags: [Geografía]
+      operationId: crearLocalidad
+      summary: Crear Localidad
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LocalidadRequest'}
+      responses:
+        '201':
+          description: Localidad creado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LocalidadResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /localidades/{id}:
+    get:
+      tags: [Geografía]
+      operationId: buscarLocalidad
+      summary: Buscar Localidad por id
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Localidad
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LocalidadResponse'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Geografía]
+      operationId: modificarLocalidad
+      summary: Modificar Localidad
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LocalidadRequest'}
+      responses:
+        '200':
+          description: Localidad modificado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/LocalidadResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Geografía]
+      operationId: eliminarLocalidad
+      summary: Eliminar Localidad (borrado lógico)
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /mayoristas:
+    get:
+      tags: [Mayorista]
+      operationId: listarMayorista
+      summary: Listar mayorista
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: |-
+        La empresa dueña del sistema (Dulce Mayor). `tipoEmpresa` distingue la sede central de las sucursales.
+
+        **Roles:** JEFE, ADMINISTRATIVO.
+      responses:
+        '200':
+          description: Listado
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/MayoristaResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Mayorista]
+      operationId: crearMayorista
+      summary: Crear Mayorista
+      x-roles: [JEFE]
+      description: '**Roles:** JEFE.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MayoristaRequest'}
+      responses:
+        '201':
+          description: Mayorista creado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MayoristaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /mayoristas/{id}:
+    get:
+      tags: [Mayorista]
+      operationId: buscarMayorista
+      summary: Buscar Mayorista por id
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Mayorista
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MayoristaResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Mayorista]
+      operationId: modificarMayorista
+      summary: Modificar Mayorista
+      x-roles: [JEFE]
+      description: '**Roles:** JEFE.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MayoristaRequest'}
+      responses:
+        '200':
+          description: Mayorista modificado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MayoristaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Mayorista]
+      operationId: eliminarMayorista
+      summary: Eliminar Mayorista (borrado lógico)
+      x-roles: [JEFE]
+      description: '**Roles:** JEFE.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /mayoristas/{id}/configuracion-correo:
+    get:
+      tags: [Mayorista]
+      operationId: buscarConfiguracionCorreoMayoristaPorMayorista
+      summary: Ver configuración SMTP del mayorista
+      x-roles: [JEFE]
+      description: '**Roles:** JEFE.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Configuración (sin clave)
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ConfiguracionCorreoMayoristaResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Mayorista]
+      operationId: modificarConfiguracionCorreoMayorista
+      summary: Crear o actualizar configuración SMTP
+      x-roles: [JEFE]
+      description: '**Roles:** JEFE.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ConfiguracionCorreoMayoristaRequest'}
+      responses:
+        '200':
+          description: Configuración guardada
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ConfiguracionCorreoMayoristaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /mi-cuenta/facturas:
+    get:
+      tags: [Portal del minorista]
+      operationId: listarFacturaPorMinorista
+      summary: Mis facturas
+      x-roles: [MINORISTA]
+      description: '**Roles:** MINORISTA.'
+      parameters:
+      - name: estado
+        in: query
+        required: false
+        schema: {$ref: '#/components/schemas/EstadoFactura'}
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      - {$ref: '#/components/parameters/Sort'}
+      responses:
+        '200':
+          description: Facturas del cliente autenticado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FacturaMiCuentaPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /mi-cuenta/pedidos:
+    get:
+      tags: [Portal del minorista]
+      operationId: listarPedidoPorCliente
+      summary: Mis pedidos
+      x-roles: [MINORISTA]
+      description: '**Roles:** MINORISTA.'
+      parameters:
+      - name: estado
+        in: query
+        required: false
+        schema: {$ref: '#/components/schemas/EstadoPedido'}
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      - {$ref: '#/components/parameters/Sort'}
+      responses:
+        '200':
+          description: Historial de pedidos del cliente autenticado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PedidoMiCuentaPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /mi-cuenta/pedidos/{id}:
+    get:
+      tags: [Portal del minorista]
+      operationId: buscarPedidoDeMiCuenta
+      summary: Detalle y estado actual de un pedido propio
+      x-roles: [MINORISTA]
+      description: '**Roles:** MINORISTA.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Pedido
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PedidoResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /minoristas:
+    get:
+      tags: [Personas]
+      operationId: listarMinorista
+      summary: Listar minorista
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: '**Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.'
+      parameters:
+      - name: numeroDocumento
+        in: query
+        required: false
+        schema: {type: string}
+        description: Búsqueda exacta (buscarMinoristaPorDocumento)
+      - name: q
+        in: query
+        required: false
+        schema: {type: string}
+        description: Nombre, apellido o documento
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      - {$ref: '#/components/parameters/Sort'}
+      responses:
+        '200':
+          description: Listado paginado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MinoristaPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Personas]
+      operationId: crearMinorista
+      summary: Crear Minorista
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: '**Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MinoristaRequest'}
+      responses:
+        '201':
+          description: Minorista creado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MinoristaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /minoristas/{id}:
+    get:
+      tags: [Personas]
+      operationId: buscarMinorista
+      summary: Buscar Minorista por id
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: '**Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Minorista
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MinoristaResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Personas]
+      operationId: modificarMinorista
+      summary: Modificar Minorista
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: '**Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MinoristaRequest'}
+      responses:
+        '200':
+          description: Minorista modificado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MinoristaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Personas]
+      operationId: eliminarMinorista
+      summary: Eliminar Minorista (borrado lógico)
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /notificaciones/newsletter/enviar:
+    post:
+      tags: [Notificaciones]
+      operationId: enviarNewsletter
+      summary: Disparar manualmente el newsletter de ofertas
+      x-roles: [JEFE]
+      description: |-
+        El envío normal es automático: tarea programada el día 5 de cada mes. Este endpoint sirve para pruebas y demostración.
+
+        **Roles:** JEFE.
+      responses:
+        '200':
+          description: Newsletter enviado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NewsletterEnvioResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /pagos/{id}:
+    delete:
+      tags: [Facturación y pagos]
+      operationId: eliminarPago
+      summary: Eliminar un pago registrado por error
+      x-roles: [JEFE]
+      description: '**Roles:** JEFE.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /paises:
+    get:
+      tags: [Geografía]
+      operationId: listarPais
+      summary: Listar pais
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      responses:
+        '200':
+          description: Listado
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/PaisResponse'}
+    post:
+      tags: [Geografía]
+      operationId: crearPais
+      summary: Crear Pais
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PaisRequest'}
+      responses:
+        '201':
+          description: Pais creado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaisResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /paises/{id}:
+    get:
+      tags: [Geografía]
+      operationId: buscarPais
+      summary: Buscar Pais por id
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Pais
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaisResponse'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Geografía]
+      operationId: modificarPais
+      summary: Modificar Pais
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PaisRequest'}
+      responses:
+        '200':
+          description: Pais modificado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaisResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Geografía]
+      operationId: eliminarPais
+      summary: Eliminar Pais (borrado lógico)
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /pedidos:
+    get:
+      tags: [Pedidos]
+      operationId: listarPedido
+      summary: Listar pedidos
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: |-
+        Si el rol es PREVENTISTA solo ve los pedidos que él cargó.
+
+        **Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.
+      parameters:
+      - name: estado
+        in: query
+        required: false
+        schema: {$ref: '#/components/schemas/EstadoPedido'}
+      - name: preventorId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      - name: distribuidorId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      - name: puntoDeVentaId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      - name: minoristaId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      - {$ref: '#/components/parameters/Desde'}
+      - {$ref: '#/components/parameters/Hasta'}
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      - {$ref: '#/components/parameters/Sort'}
+      responses:
+        '200':
+          description: Listado paginado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PedidoPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Pedidos]
+      operationId: crearPedido
+      summary: Cargar un pedido
+      x-roles: [JEFE, PREVENTISTA]
+      description: |-
+        Valida que haya productos activos con stock, aplica el código de promoción si corresponde, fija precios vigentes y registra el primer HistorialEstadoPedido.
+
+        **Roles:** JEFE, PREVENTISTA.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PedidoRequest'}
+      responses:
+        '201':
+          description: Pedido cargado en estado CARGADO
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PedidoResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /pedidos/{id}:
+    get:
+      tags: [Pedidos]
+      operationId: buscarPedido
+      summary: Buscar pedido
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: '**Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Pedido
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PedidoResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Pedidos]
+      operationId: modificarPedido
+      summary: Modificar pedido (solo en CARGADO)
+      x-roles: [JEFE, PREVENTISTA]
+      description: '**Roles:** JEFE, PREVENTISTA.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PedidoUpdateRequest'}
+      responses:
+        '200':
+          description: Pedido modificado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PedidoResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /pedidos/{id}/anular:
+    post:
+      tags: [Pedidos]
+      operationId: anularPedido
+      summary: Anular pedido
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: |-
+        Permitido desde CARGADO o SIN_STOCK.
+
+        **Roles:** JEFE, ADMINISTRATIVO.
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AnularPedidoRequest'}
+      responses:
+        '200':
+          description: Pedido anulado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PedidoResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /pedidos/{id}/historial:
+    get:
+      tags: [Pedidos]
+      operationId: listarHistorialPorPedido
+      summary: Trazabilidad del pedido
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA, MINORISTA]
+      description: |-
+        El MINORISTA solo puede ver pedidos de sus puntos de venta.
+
+        **Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA, MINORISTA.
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Historial ordenado cronológicamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/HistorialEstadoPedidoResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /pedidos/{id}/procesar:
+    post:
+      tags: [Pedidos]
+      operationId: procesarPedido
+      summary: Procesar y facturar un pedido
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: |-
+        Verifica stock de todos los ítems en una única transacción. Con stock: descuenta, genera la Factura (PENDIENTE_PAGO), pasa a FACTURADO y envía el correo de confirmación. Sin stock: pasa a SIN_STOCK. 409 si el estado actual no es CARGADO o SIN_STOCK.
+
+        **Roles:** JEFE, ADMINISTRATIVO.
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Resultado del procesamiento
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ProcesamientoPedidoResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /productos:
+    get:
+      tags: [Productos]
+      operationId: listarProducto
+      summary: Listar producto
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: |-
+        Incluye `precioVigente` y `stockActual` en tiempo real (el preventor usa `soloConStock=true`).
+
+        **Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema: {type: string}
+        description: Nombre o código
+      - name: categoriaId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      - name: subCategoriaId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      - name: enOferta
+        in: query
+        required: false
+        schema: {type: boolean}
+      - name: soloConStock
+        in: query
+        required: false
+        schema: {type: boolean}
+        description: true = solo productos con stock > 0 (catálogo del preventor)
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      - {$ref: '#/components/parameters/Sort'}
+      responses:
+        '200':
+          description: Listado paginado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ProductoPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Productos]
+      operationId: crearProducto
+      summary: Crear Producto
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProductoRequest'}
+      responses:
+        '201':
+          description: Producto creado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ProductoResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /productos/{id}:
+    get:
+      tags: [Productos]
+      operationId: buscarProducto
+      summary: Buscar Producto por id
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: '**Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Producto
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ProductoResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Productos]
+      operationId: modificarProducto
+      summary: Modificar Producto
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProductoRequest'}
+      responses:
+        '200':
+          description: Producto modificado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ProductoResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Productos]
+      operationId: eliminarProducto
+      summary: Eliminar Producto (borrado lógico)
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /productos/{id}/stock:
+    get:
+      tags: [Stock]
+      operationId: buscarStockPorProducto
+      summary: Stock actual de un producto
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: '**Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Stock
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StockResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Stock]
+      operationId: modificarStock
+      summary: Ajustar el stock (conteo físico)
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/StockAjusteRequest'}
+      responses:
+        '200':
+          description: Stock ajustado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StockResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /productos/{id}/stock/reposiciones:
+    post:
+      tags: [Stock]
+      operationId: reponerStock
+      summary: Registrar reposición de stock
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: |-
+        Suma `cantidad` al stock. Si había pedidos en SIN_STOCK pueden volver a procesarse.
+
+        **Roles:** JEFE, ADMINISTRATIVO.
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/StockReposicionRequest'}
+      responses:
+        '200':
+          description: Stock actualizado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StockResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /productos/{id}/vigencias-precio:
+    get:
+      tags: [Productos]
+      operationId: listarVigenciaPrecio
+      summary: Historial de precios del producto
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Vigencias
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/VigenciaPrecioResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    post:
+      tags: [Productos]
+      operationId: crearVigenciaPrecio
+      summary: Registrar un nuevo precio
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: |-
+        Cierra la vigencia anterior (su fechaHasta = día previo a fechaDesde). No se permiten vigencias solapadas (409).
+
+        **Roles:** JEFE, ADMINISTRATIVO.
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/VigenciaPrecioRequest'}
+      responses:
+        '201':
+          description: Vigencia creada
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/VigenciaPrecioResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /promociones:
+    get:
+      tags: [Promociones]
+      operationId: listarPromocion
+      summary: Listar promocion
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - name: soloVigentes
+        in: query
+        required: false
+        schema: {type: boolean}
+      responses:
+        '200':
+          description: Listado
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/PromocionResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Promociones]
+      operationId: crearPromocion
+      summary: Crear Promocion
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PromocionRequest'}
+      responses:
+        '201':
+          description: Promocion creado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PromocionResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /promociones/codigo/{codigo}:
+    get:
+      tags: [Promociones]
+      operationId: buscarPromocionVigentePorCodigo
+      summary: Validar un código de descuento
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: |-
+        404 si el código no existe o no está vigente. El preventor lo usa para validar antes de confirmar el pedido.
+
+        **Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.
+      parameters:
+      - name: codigo
+        in: path
+        required: true
+        schema: {type: string}
+      responses:
+        '200':
+          description: Promoción vigente
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PromocionResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /promociones/{id}:
+    get:
+      tags: [Promociones]
+      operationId: buscarPromocion
+      summary: Buscar Promocion por id
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Promocion
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PromocionResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Promociones]
+      operationId: modificarPromocion
+      summary: Modificar Promocion
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PromocionRequest'}
+      responses:
+        '200':
+          description: Promocion modificado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PromocionResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Promociones]
+      operationId: eliminarPromocion
+      summary: Eliminar Promocion (borrado lógico)
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /provincias:
+    get:
+      tags: [Geografía]
+      operationId: listarProvincia
+      summary: Listar provincia
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      parameters:
+      - name: paisId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Listado
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/ProvinciaResponse'}
+    post:
+      tags: [Geografía]
+      operationId: crearProvincia
+      summary: Crear Provincia
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProvinciaRequest'}
+      responses:
+        '201':
+          description: Provincia creado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ProvinciaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /provincias/{id}:
+    get:
+      tags: [Geografía]
+      operationId: buscarProvincia
+      summary: Buscar Provincia por id
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Provincia
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ProvinciaResponse'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Geografía]
+      operationId: modificarProvincia
+      summary: Modificar Provincia
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProvinciaRequest'}
+      responses:
+        '200':
+          description: Provincia modificado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ProvinciaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Geografía]
+      operationId: eliminarProvincia
+      summary: Eliminar Provincia (borrado lógico)
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /publico/catalogo:
+    get:
+      tags: [Sitio público]
+      operationId: listarCatalogoPublico
+      summary: Catálogo público (solo productos con stock)
+      security: []
+      x-roles: []
+      description: |-
+        Un producto sin stock deja de aparecer automáticamente.
+
+        **Acceso:** público (sin token).
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema: {type: string}
+      - name: categoriaId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      - name: subCategoriaId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      - name: enOferta
+        in: query
+        required: false
+        schema: {type: boolean}
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      - {$ref: '#/components/parameters/Sort'}
+      responses:
+        '200':
+          description: Listado paginado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ProductoPublicoPage'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+  /publico/catalogo/{id}:
+    get:
+      tags: [Sitio público]
+      operationId: buscarProductoPublico
+      summary: Detalle de un producto del catálogo
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Producto
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ProductoPublicoResponse'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /publico/chatbot/presupuesto:
+    post:
+      tags: [Sitio público]
+      operationId: consultarChatbotPresupuesto
+      summary: Chatbot con IA para armar un presupuesto
+      security: []
+      x-roles: []
+      description: |-
+        Endpoint público: aplicar límite de frecuencia (429 Too Many Requests) y límite de largo del mensaje.
+
+        **Acceso:** público (sin token).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ChatbotPresupuestoRequest'}
+      responses:
+        '200':
+          description: Respuesta del asistente con presupuesto calculado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ChatbotPresupuestoResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '429': {description: Demasiadas solicitudes.}
+  /publico/cotizacion-dolar:
+    get:
+      tags: [Sitio público]
+      operationId: buscarCotizacionDolar
+      summary: Cotización actualizada del dólar
+      security: []
+      x-roles: []
+      description: |-
+        El backend consume una API externa (detrás de un Adapter) con caché corta; si falla, devuelve el último valor con `esValorRespaldo=true`.
+
+        **Acceso:** público (sin token).
+      responses:
+        '200':
+          description: Cotización
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CotizacionDolarResponse'}
+  /publico/sucursales:
+    get:
+      tags: [Sitio público]
+      operationId: listarSucursalesPublicas
+      summary: Sucursales (ubicación, fotos y contactos)
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      responses:
+        '200':
+          description: Sucursales
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/MayoristaResponse'}
+  /puntos-de-venta:
+    get:
+      tags: [Personas]
+      operationId: listarPuntoDeVenta
+      summary: Listar puntodeventa
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: '**Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.'
+      parameters:
+      - name: minoristaId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      - name: preventorId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+        description: Puntos asignados a un preventor
+      - name: q
+        in: query
+        required: false
+        schema: {type: string}
+        description: Nombre del comercio
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      - {$ref: '#/components/parameters/Sort'}
+      responses:
+        '200':
+          description: Listado paginado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PuntoDeVentaPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Personas]
+      operationId: crearPuntoDeVenta
+      summary: Crear PuntoDeVenta
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: '**Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PuntoDeVentaRequest'}
+      responses:
+        '201':
+          description: PuntoDeVenta creado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PuntoDeVentaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /puntos-de-venta/{id}:
+    get:
+      tags: [Personas]
+      operationId: buscarPuntoDeVenta
+      summary: Buscar PuntoDeVenta por id
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: '**Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: PuntoDeVenta
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PuntoDeVentaResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Personas]
+      operationId: modificarPuntoDeVenta
+      summary: Modificar PuntoDeVenta
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: '**Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PuntoDeVentaRequest'}
+      responses:
+        '200':
+          description: PuntoDeVenta modificado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PuntoDeVentaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Personas]
+      operationId: eliminarPuntoDeVenta
+      summary: Eliminar PuntoDeVenta (borrado lógico)
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /reportes/facturacion:
+    get:
+      tags: [Reportes]
+      operationId: reporteFacturacion
+      summary: Montos facturados
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: |-
+        Formatos: json y pdf.
+
+        **Roles:** JEFE, ADMINISTRATIVO.
+      parameters:
+      - {$ref: '#/components/parameters/Desde'}
+      - {$ref: '#/components/parameters/Hasta'}
+      - {$ref: '#/components/parameters/Formato'}
+      responses:
+        '200':
+          description: Reporte en el formato pedido
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReporteTabular'}
+            application/pdf:
+              schema: {type: string, format: binary}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /reportes/minoristas:
+    get:
+      tags: [Reportes]
+      operationId: reporteMinoristas
+      summary: Clientes minoristas
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: |-
+        Datos de clientes minoristas y sus puntos de venta. Formatos: json (pantalla) y pdf.
+
+        **Roles:** JEFE, ADMINISTRATIVO.
+      parameters:
+      - {$ref: '#/components/parameters/Desde'}
+      - {$ref: '#/components/parameters/Hasta'}
+      - {$ref: '#/components/parameters/Formato'}
+      responses:
+        '200':
+          description: Reporte en el formato pedido
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReporteTabular'}
+            application/pdf:
+              schema: {type: string, format: binary}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /reportes/pedidos:
+    get:
+      tags: [Reportes]
+      operationId: reportePedidos
+      summary: Pedidos realizados y estado de envío
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: |-
+        Formatos: json y pdf.
+
+        **Roles:** JEFE, ADMINISTRATIVO.
+      parameters:
+      - {$ref: '#/components/parameters/Desde'}
+      - {$ref: '#/components/parameters/Hasta'}
+      - name: estado
+        in: query
+        required: false
+        schema: {$ref: '#/components/schemas/EstadoPedido'}
+      - {$ref: '#/components/parameters/Formato'}
+      responses:
+        '200':
+          description: Reporte en el formato pedido
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReporteTabular'}
+            application/pdf:
+              schema: {type: string, format: binary}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /reportes/productos-mas-vendidos:
+    get:
+      tags: [Reportes]
+      operationId: reporteProductosMasVendidos
+      summary: Golosinas más vendidas
+      x-roles: [JEFE]
+      description: |-
+        Formatos: json, pdf y xlsx.
+
+        **Roles:** JEFE.
+      parameters:
+      - {$ref: '#/components/parameters/Desde'}
+      - {$ref: '#/components/parameters/Hasta'}
+      - name: limite
+        in: query
+        required: false
+        schema: {type: integer, default: 10}
+      - {$ref: '#/components/parameters/Formato'}
+      responses:
+        '200':
+          description: Reporte en el formato pedido
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReporteTabular'}
+            application/pdf:
+              schema: {type: string, format: binary}
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: {type: string, format: binary}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /reportes/rendimiento-preventores:
+    get:
+      tags: [Reportes]
+      operationId: reporteRendimientoPreventores
+      summary: Rendimiento de preventores
+      x-roles: [JEFE]
+      description: |-
+        Pedidos y monto por preventor en el período. Formatos: json, pdf y xlsx.
+
+        **Roles:** JEFE.
+      parameters:
+      - {$ref: '#/components/parameters/Desde'}
+      - {$ref: '#/components/parameters/Hasta'}
+      - {$ref: '#/components/parameters/Formato'}
+      responses:
+        '200':
+          description: Reporte en el formato pedido
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReporteTabular'}
+            application/pdf:
+              schema: {type: string, format: binary}
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: {type: string, format: binary}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /reportes/ventas-historico:
+    get:
+      tags: [Reportes]
+      operationId: reporteVentasHistorico
+      summary: Histórico de ventas por departamento y preventor
+      x-roles: [JEFE]
+      description: |-
+        Formatos: json, pdf y **xlsx** (exportación a Excel requerida por el enunciado).
+
+        **Roles:** JEFE.
+      parameters:
+      - {$ref: '#/components/parameters/Desde'}
+      - {$ref: '#/components/parameters/Hasta'}
+      - name: departamentoId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      - name: preventorId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      - {$ref: '#/components/parameters/Formato'}
+      responses:
+        '200':
+          description: Reporte en el formato pedido
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReporteTabular'}
+            application/pdf:
+              schema: {type: string, format: binary}
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: {type: string, format: binary}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /rutas-distribuidor:
+    get:
+      tags: [Rutas]
+      operationId: listarRutaPorFechaDistribuidor
+      summary: Listar rutas de distribuidores
+      x-roles: [JEFE, ADMINISTRATIVO, DISTRIBUIDOR]
+      description: |-
+        El DISTRIBUIDOR solo ve las propias.
+
+        **Roles:** JEFE, ADMINISTRATIVO, DISTRIBUIDOR.
+      parameters:
+      - name: responsableId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      - {$ref: '#/components/parameters/Fecha'}
+      - name: estado
+        in: query
+        required: false
+        schema: {$ref: '#/components/schemas/RutaEstado'}
+      responses:
+        '200':
+          description: Rutas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/RutaResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [Rutas]
+      operationId: crearRutaDistribuidor
+      summary: Armar la ruta de entrega de un distribuidor
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: |-
+        409 si algún pedido no está FACTURADO o si el distribuidor ya tiene ruta ese día.
+
+        **Roles:** JEFE, ADMINISTRATIVO.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RutaDistribuidorRequest'}
+      responses:
+        '201':
+          description: Ruta creada; pedidos en EN_REPARTO
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RutaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /rutas-distribuidor/mi-ruta-del-dia:
+    get:
+      tags: [Rutas]
+      operationId: buscarRutaDistribuidorDelDia
+      summary: Mi ruta de entrega del día (distribuidor)
+      x-roles: [DISTRIBUIDOR]
+      description: '**Roles:** DISTRIBUIDOR.'
+      parameters:
+      - {$ref: '#/components/parameters/Fecha'}
+      responses:
+        '200':
+          description: Ruta con paradas ordenadas
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RutaResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /rutas-distribuidor/{id}:
+    get:
+      tags: [Rutas]
+      operationId: buscarRutaDistribuidor
+      summary: Buscar ruta de distribuidor
+      x-roles: [JEFE, ADMINISTRATIVO, DISTRIBUIDOR]
+      description: '**Roles:** JEFE, ADMINISTRATIVO, DISTRIBUIDOR.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Ruta
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RutaResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /rutas-distribuidor/{id}/cerrar:
+    post:
+      tags: [Rutas]
+      operationId: cambiarEstadoRutaDistribuidor
+      summary: Cerrar la ruta de entrega del día
+      x-roles: [DISTRIBUIDOR, JEFE, ADMINISTRATIVO]
+      description: |-
+        Cambia el estado: REALIZADA si todos los pedidos fueron entregados, INCOMPLETA si quedaron pendientes. 409 si ya estaba cerrada.
+
+        **Roles:** DISTRIBUIDOR, JEFE, ADMINISTRATIVO.
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Ruta cerrada
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RutaResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /rutas-distribuidor/{id}/entregas:
+    post:
+      tags: [Rutas]
+      operationId: registrarParadaCompletadaDistribuidor
+      summary: Marcar un pedido como Entregado y obtener el siguiente punto
+      x-roles: [DISTRIBUIDOR, JEFE, ADMINISTRATIVO]
+      description: |-
+        Pasa el pedido a ENTREGADO (con historial), avanza `paradaActual`, **envía el correo de aviso al próximo punto de venta** y devuelve la siguiente parada para mostrarla en el mapa. Al entregar la última, la ruta pasa a REALIZADA.
+
+        **Roles:** DISTRIBUIDOR, JEFE, ADMINISTRATIVO.
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/EntregaRequest'}
+      responses:
+        '200':
+          description: Entrega registrada y siguiente punto sugerido
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AvanceRutaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /rutas-preventor:
+    get:
+      tags: [Rutas]
+      operationId: listarRutaPorFechaPreventor
+      summary: Listar rutas de preventores
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: |-
+        El PREVENTISTA solo ve las propias.
+
+        **Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.
+      parameters:
+      - name: responsableId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      - {$ref: '#/components/parameters/Fecha'}
+      - name: estado
+        in: query
+        required: false
+        schema: {$ref: '#/components/schemas/RutaEstado'}
+      responses:
+        '200':
+          description: Rutas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/RutaResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /rutas-preventor/generar:
+    post:
+      tags: [Rutas]
+      operationId: crearRutaPreventor
+      summary: Generar la ruta diaria de un preventor
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: |-
+        La ruta nace PENDIENTE. 409 si ya existe una ruta de esa persona para esa fecha.
+
+        **Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RutaPreventorGenerarRequest'}
+      responses:
+        '201':
+          description: Ruta generada
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RutaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /rutas-preventor/mi-ruta-del-dia:
+    get:
+      tags: [Rutas]
+      operationId: buscarRutaPreventorDelDia
+      summary: Mi ruta del día (preventor)
+      x-roles: [PREVENTISTA]
+      description: '**Roles:** PREVENTISTA.'
+      parameters:
+      - {$ref: '#/components/parameters/Fecha'}
+      responses:
+        '200':
+          description: Ruta del día con todas las paradas (para dibujar la zona en el mapa)
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RutaResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /rutas-preventor/{id}:
+    get:
+      tags: [Rutas]
+      operationId: buscarRutaPreventor
+      summary: Buscar ruta de preventor
+      x-roles: [JEFE, ADMINISTRATIVO, PREVENTISTA]
+      description: '**Roles:** JEFE, ADMINISTRATIVO, PREVENTISTA.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Ruta
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RutaResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /rutas-preventor/{id}/cerrar:
+    post:
+      tags: [Rutas]
+      operationId: cambiarEstadoRutaPreventor
+      summary: Cerrar la ruta del día
+      x-roles: [PREVENTISTA, JEFE, ADMINISTRATIVO]
+      description: |-
+        Cambia el estado: REALIZADA si todas las paradas están completas, INCOMPLETA si quedaron pendientes. 409 si ya estaba cerrada.
+
+        **Roles:** PREVENTISTA, JEFE, ADMINISTRATIVO.
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Ruta cerrada
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RutaResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /rutas-preventor/{id}/completar-parada:
+    post:
+      tags: [Rutas]
+      operationId: registrarParadaCompletadaPreventor
+      summary: Marcar un punto como visitado y obtener el siguiente
+      x-roles: [PREVENTISTA, JEFE]
+      description: |-
+        Se llama después de tomar un pedido. Recalcula el punto pendiente más cercano al actual (vecino más cercano). Al completar la última parada, la ruta pasa a REALIZADA.
+
+        **Roles:** PREVENTISTA, JEFE.
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CompletarParadaPreventorRequest'}
+      responses:
+        '200':
+          description: Ruta actualizada y siguiente punto sugerido
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AvanceRutaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /stock:
+    get:
+      tags: [Stock]
+      operationId: listarStock
+      summary: Listar stock
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema: {type: string}
+        description: Nombre o código de producto
+      - name: soloSinStock
+        in: query
+        required: false
+        schema: {type: boolean}
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      - {$ref: '#/components/parameters/Sort'}
+      responses:
+        '200':
+          description: Listado paginado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StockPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /subcategorias:
+    get:
+      tags: [Productos]
+      operationId: listarSubCategoria
+      summary: Listar subcategoria
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      parameters:
+      - name: categoriaId
+        in: query
+        required: false
+        schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Listado
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/SubCategoriaResponse'}
+    post:
+      tags: [Productos]
+      operationId: crearSubCategoria
+      summary: Crear SubCategoria
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SubCategoriaRequest'}
+      responses:
+        '201':
+          description: SubCategoria creado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SubCategoriaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /subcategorias/{id}:
+    get:
+      tags: [Productos]
+      operationId: buscarSubCategoria
+      summary: Buscar SubCategoria por id
+      security: []
+      x-roles: []
+      description: '**Acceso:** público (sin token).'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: SubCategoria
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SubCategoriaResponse'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Productos]
+      operationId: modificarSubCategoria
+      summary: Modificar SubCategoria
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SubCategoriaRequest'}
+      responses:
+        '200':
+          description: SubCategoria modificado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SubCategoriaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Productos]
+      operationId: eliminarSubCategoria
+      summary: Eliminar SubCategoria (borrado lógico)
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /usuarios:
+    get:
+      tags: [Usuarios]
+      operationId: listarUsuario
+      summary: Listar usuarios
+      x-roles: [JEFE]
+      description: |-
+        Los usuarios se crean junto con su persona: empleados en `POST /empleados`, clientes en `/auth/registro`.
+
+        **Roles:** JEFE.
+      parameters:
+      - name: rol
+        in: query
+        required: false
+        schema: {$ref: '#/components/schemas/RolUsuario'}
+      - name: q
+        in: query
+        required: false
+        schema: {type: string}
+        description: Busca por nombre de usuario
+      - {$ref: '#/components/parameters/Page'}
+      - {$ref: '#/components/parameters/Size'}
+      - {$ref: '#/components/parameters/Sort'}
+      responses:
+        '200':
+          description: Listado paginado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UsuarioPage'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /usuarios/{id}:
+    get:
+      tags: [Usuarios]
+      operationId: buscarUsuario
+      summary: Buscar usuario
+      x-roles: [JEFE]
+      description: '**Roles:** JEFE.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '200':
+          description: Usuario
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UsuarioResponse'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    put:
+      tags: [Usuarios]
+      operationId: modificarUsuario
+      summary: Modificar nombre de usuario o rol
+      x-roles: [JEFE]
+      description: '**Roles:** JEFE.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UsuarioUpdateRequest'}
+      responses:
+        '200':
+          description: Usuario modificado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/UsuarioResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Usuarios]
+      operationId: eliminarUsuario
+      summary: Eliminar usuario (borrado lógico)
+      x-roles: [JEFE]
+      description: '**Roles:** JEFE.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminado}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /usuarios/{id}/restablecer-clave:
+    post:
+      tags: [Usuarios]
+      operationId: restablecerClave
+      summary: Restablecer la clave por defecto
+      x-roles: [JEFE]
+      description: '**Roles:** JEFE.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Clave restablecida; el usuario deberá cambiarla en el próximo ingreso}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /vigencias-precio/{id}:
+    put:
+      tags: [Productos]
+      operationId: modificarVigenciaPrecio
+      summary: Modificar una vigencia de precio
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/VigenciaPrecioRequest'}
+      responses:
+        '200':
+          description: Vigencia modificada
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/VigenciaPrecioResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      tags: [Productos]
+      operationId: eliminarVigenciaPrecio
+      summary: Eliminar una vigencia de precio
+      x-roles: [JEFE, ADMINISTRATIVO]
+      description: '**Roles:** JEFE, ADMINISTRATIVO.'
+      parameters:
+      - {$ref: '#/components/parameters/Id'}
+      responses:
+        '204': {description: Eliminada}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+      description: Identificador del recurso (UUID).
+    Page:
+      name: page
+      in: query
+      schema: {type: integer, minimum: 0, default: 0}
+      description: Número de página (base 0).
+    Size:
+      name: size
+      in: query
+      schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+      description: Tamaño de página.
+    Sort:
+      name: sort
+      in: query
+      schema: {type: string, example: 'nombre,asc'}
+      description: 'Orden: campo,asc|desc.'
+    Desde:
+      name: desde
+      in: query
+      schema: {type: string, format: date}
+    Hasta:
+      name: hasta
+      in: query
+      schema: {type: string, format: date}
+    Fecha:
+      name: fecha
+      in: query
+      schema: {type: string, format: date}
+      description: Por defecto, hoy.
+    Formato:
+      name: formato
+      in: query
+      schema: {$ref: '#/components/schemas/FormatoReporte'}
+      description: json (pantalla), pdf o xlsx. Por defecto json.
+  responses:
+    BadRequest:
+      description: Datos inválidos (code=VALIDACION) o regla de negocio incumplida.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+    Unauthorized:
+      description: Token ausente, inválido o vencido.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+    Forbidden:
+      description: Sin permiso para el rol, o cambio de clave pendiente (code=CAMBIO_CLAVE_REQUERIDO).
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+    NotFound:
+      description: Recurso inexistente (code=NO_ENCONTRADO).
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+    Conflict:
+      description: Conflicto de estado o duplicado (code=TRANSICION_INVALIDA, STOCK_INSUFICIENTE, DUPLICADO).
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+  schemas:
+    TipoDocumento:
+      type: string
+      enum: [DNI, CUIT, PASAPORTE]
+    TipoContacto:
+      type: string
+      enum: [PERSONAL, LABORAL, EMPRESA]
+    TipoTelefono:
+      type: string
+      enum: [FIJO, CELULAR]
+    TipoEmpresa:
+      type: string
+      enum: [SEDE_CENTRAL, SUCURSAL]
+    TipoImagen:
+      type: string
+      enum: [PRODUCTO, SUCURSAL, LOGO_EMPRESA]
+    RolUsuario:
+      type: string
+      enum: [ADMINISTRATIVO, JEFE, PREVENTISTA, MINORISTA, DISTRIBUIDOR]
+    RolEmpleado:
+      type: string
+      enum: [ADMINISTRATIVO, JEFE, PREVENTISTA, DISTRIBUIDOR]
+    ProveedorAuth:
+      type: string
+      enum: [LOCAL, GOOGLE, FACEBOOK]
+    EstadoPedido:
+      type: string
+      enum: [CARGADO, SIN_STOCK, FACTURADO, EN_REPARTO, ENTREGADO, ANULADO]
+    EstadoFactura:
+      type: string
+      enum: [PENDIENTE_PAGO, PAGADA, ANULADA]
+    TipoPago:
+      type: string
+      enum: [EFECTIVO, TRANSFERENCIA, BILLETERA_VIRTUAL]
+    RutaEstado:
+      type: string
+      enum: [REALIZADA, PENDIENTE, INCOMPLETA]
+    TipoRuta:
+      type: string
+      enum: [PREVENTOR, DISTRIBUIDOR]
+    FormatoReporte:
+      type: string
+      enum: [json, pdf, xlsx]
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp: {type: string, format: date-time}
+        status: {type: integer, format: int32}
+        code: {type: string, description: 'Código de error estable para el frontend (ej. VALIDACION, NO_ENCONTRADO, CAMBIO_CLAVE_REQUERIDO, STOCK_INSUFICIENTE, TRANSICION_INVALIDA).'}
+        message: {type: string}
+        path: {type: string}
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              campo: {type: string}
+              mensaje: {type: string}
+      required: [timestamp, status, code, message, path]
+    DireccionRequest:
+      type: object
+      properties:
+        calle: {type: string}
+        numeracion: {type: string}
+        barrio: {type: string}
+        manzanaPiso: {type: string}
+        casaDepartamento: {type: string}
+        referencia: {type: string}
+        latitud: {type: number, format: double, minimum: -90, maximum: 90}
+        longitud: {type: number, format: double, minimum: -180, maximum: 180}
+        localidadId: {type: string, format: uuid}
+      required: [calle, numeracion, localidadId]
+    DireccionResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        calle: {type: string}
+        numeracion: {type: string}
+        barrio: {type: string}
+        manzanaPiso: {type: string}
+        casaDepartamento: {type: string}
+        referencia: {type: string}
+        latitud: {type: number, format: double}
+        longitud: {type: number, format: double}
+        localidadId: {type: string, format: uuid}
+        localidadNombre: {type: string}
+        departamentoId: {type: string, format: uuid}
+        departamentoNombre: {type: string}
+        provinciaNombre: {type: string}
+    ContactoRequest:
+      type: object
+      properties:
+        medio:
+          type: string
+          enum: [CORREO, TELEFONICO]
+          description: Define qué subclase de Contacto se crea.
+        tipoContacto: {$ref: '#/components/schemas/TipoContacto'}
+        observacion: {type: string}
+        email: {type: string, format: email, description: Obligatorio si medio=CORREO.}
+        telefono: {type: string, description: Obligatorio si medio=TELEFONICO.}
+        tipoTelefono: {$ref: '#/components/schemas/TipoTelefono'}
+      required: [medio, tipoContacto]
+    ContactoResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        medio:
+          type: string
+          enum: [CORREO, TELEFONICO]
+        tipoContacto: {$ref: '#/components/schemas/TipoContacto'}
+        observacion: {type: string}
+        email: {type: string}
+        telefono: {type: string}
+        tipoTelefono: {$ref: '#/components/schemas/TipoTelefono'}
+    UsuarioResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        nombreUsuario: {type: string}
+        rol: {$ref: '#/components/schemas/RolUsuario'}
+        claveTemporal: {type: boolean, description: true mientras la clave sea la temporal por defecto.}
+        proveedorAuth: {$ref: '#/components/schemas/ProveedorAuth'}
+    UsuarioUpdateRequest:
+      type: object
+      properties:
+        nombreUsuario: {type: string}
+        rol: {$ref: '#/components/schemas/RolUsuario'}
+      required: [nombreUsuario, rol]
+    LoginRequest:
+      type: object
+      properties:
+        nombreUsuario: {type: string}
+        clave: {type: string, format: password}
+      required: [nombreUsuario, clave]
+    LoginExternoRequest:
+      type: object
+      properties:
+        proveedor:
+          type: string
+          enum: [GOOGLE, FACEBOOK]
+        tokenExterno: {type: string, description: Token de identidad entregado por el proveedor OAuth2.}
+      required: [proveedor, tokenExterno]
+    AuthResponse:
+      type: object
+      properties:
+        token: {type: string}
+        tipo: {type: string, example: Bearer}
+        expiraEn: {type: integer, description: Segundos hasta que expira el token.}
+        debeCambiarClave: {type: boolean, description: 'Si es true, el frontend debe llevar al usuario a cambiar la clave: el backend rechaza todo otro endpoint con 403 CAMBIO_CLAVE_REQUERIDO.'}
+        usuario: {$ref: '#/components/schemas/UsuarioResponse'}
+      required: [token, tipo, expiraEn, debeCambiarClave, usuario]
+    RegistroMinoristaRequest:
+      type: object
+      properties:
+        nombre: {type: string}
+        apellido: {type: string}
+        tipoDocumento: {$ref: '#/components/schemas/TipoDocumento'}
+        numeroDocumento: {type: string}
+        email: {type: string, format: email}
+        clave: {type: string, format: password, minLength: 8}
+        nombreComercio: {type: string, description: 'Opcional: se informa para facilitar la carga posterior de puntos de venta.'}
+      required: [nombre, apellido, tipoDocumento, numeroDocumento, email, clave]
+    CambiarClaveRequest:
+      type: object
+      properties:
+        claveActual: {type: string, format: password}
+        nuevaClave: {type: string, format: password, minLength: 8}
+        confirmarClave: {type: string, format: password}
+      required: [claveActual, nuevaClave, confirmarClave]
+    PerfilResponse:
+      type: object
+      properties:
+        usuario: {$ref: '#/components/schemas/UsuarioResponse'}
+        personaId: {type: string, format: uuid}
+        nombre: {type: string}
+        apellido: {type: string}
+      required: [usuario]
+    EmpleadoRequest:
+      type: object
+      properties:
+        nombre: {type: string}
+        apellido: {type: string}
+        fechaNacimiento: {type: string, format: date}
+        tipoDocumento: {$ref: '#/components/schemas/TipoDocumento'}
+        numeroDocumento: {type: string}
+        direcciones:
+          type: array
+          items: {$ref: '#/components/schemas/DireccionRequest'}
+        contactos:
+          type: array
+          items: {$ref: '#/components/schemas/ContactoRequest'}
+        legajo: {type: string}
+        nombreUsuario: {type: string}
+        rol: {$ref: '#/components/schemas/RolEmpleado'}
+      required: [nombre, apellido, tipoDocumento, numeroDocumento, legajo, nombreUsuario, rol]
+      description: 'Crea al empleado y su Usuario. El Usuario nace con la clave por defecto y claveTemporal=true. Según el rol el backend instancia la clase: PREVENTISTA -> Preventor, DISTRIBUIDOR -> Distribuidor,
+        ADMINISTRATIVO y JEFE -> Empleado.'
+    EmpleadoResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        legajo: {type: string}
+        nombre: {type: string}
+        apellido: {type: string}
+        fechaNacimiento: {type: string, format: date}
+        tipoDocumento: {$ref: '#/components/schemas/TipoDocumento'}
+        numeroDocumento: {type: string}
+        direcciones:
+          type: array
+          items: {$ref: '#/components/schemas/DireccionResponse'}
+        contactos:
+          type: array
+          items: {$ref: '#/components/schemas/ContactoResponse'}
+        usuario: {$ref: '#/components/schemas/UsuarioResponse'}
+    EmpleadoResumen:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        nombre: {type: string}
+        apellido: {type: string}
+        rol: {$ref: '#/components/schemas/RolUsuario'}
+    MinoristaRequest:
+      type: object
+      properties:
+        nombre: {type: string}
+        apellido: {type: string}
+        fechaNacimiento: {type: string, format: date}
+        tipoDocumento: {$ref: '#/components/schemas/TipoDocumento'}
+        numeroDocumento: {type: string}
+        direcciones:
+          type: array
+          items: {$ref: '#/components/schemas/DireccionRequest'}
+        contactos:
+          type: array
+          items: {$ref: '#/components/schemas/ContactoRequest'}
+      required: [nombre, apellido, tipoDocumento, numeroDocumento]
+      description: Minorista = cliente. Se crea sin Usuario; cuando se registra en el portal con el mismo correo, el sistema vincula ambos. Se recomienda cargar al menos un contacto de correo (se usa para
+        las notificaciones).
+    MinoristaResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        nombre: {type: string}
+        apellido: {type: string}
+        fechaNacimiento: {type: string, format: date}
+        tipoDocumento: {$ref: '#/components/schemas/TipoDocumento'}
+        numeroDocumento: {type: string}
+        direcciones:
+          type: array
+          items: {$ref: '#/components/schemas/DireccionResponse'}
+        contactos:
+          type: array
+          items: {$ref: '#/components/schemas/ContactoResponse'}
+        tieneUsuario: {type: boolean}
+    MinoristaResumen:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        nombre: {type: string}
+        apellido: {type: string}
+        email: {type: string}
+    PuntoDeVentaRequest:
+      type: object
+      properties:
+        nombreComercio: {type: string}
+        minoristaId: {type: string, format: uuid}
+        direccion: {$ref: '#/components/schemas/DireccionRequest'}
+        preventorId: {type: string, format: uuid, description: Preventor asignado (opcional).}
+      required: [nombreComercio, minoristaId, direccion]
+    PuntoDeVentaResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        nombreComercio: {type: string}
+        minorista: {$ref: '#/components/schemas/MinoristaResumen'}
+        direccion: {$ref: '#/components/schemas/DireccionResponse'}
+        preventor: {$ref: '#/components/schemas/EmpleadoResumen'}
+    MayoristaRequest:
+      type: object
+      properties:
+        razonSocial: {type: string}
+        cuit: {type: string}
+        tipoEmpresa: {$ref: '#/components/schemas/TipoEmpresa'}
+        direcciones:
+          type: array
+          items: {$ref: '#/components/schemas/DireccionRequest'}
+        contactos:
+          type: array
+          items: {$ref: '#/components/schemas/ContactoRequest'}
+        imagenIds:
+          type: array
+          items: {type: string, format: uuid}
+          description: Fotos de sucursales (tipoImagen=SUCURSAL) y logo (tipoImagen=LOGO_EMPRESA).
+      required: [razonSocial, cuit, tipoEmpresa]
+    MayoristaResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        razonSocial: {type: string}
+        cuit: {type: string}
+        tipoEmpresa: {$ref: '#/components/schemas/TipoEmpresa'}
+        direcciones:
+          type: array
+          items: {$ref: '#/components/schemas/DireccionResponse'}
+        contactos:
+          type: array
+          items: {$ref: '#/components/schemas/ContactoResponse'}
+        imagenIds:
+          type: array
+          items: {type: string, format: uuid}
+    ConfiguracionCorreoMayoristaRequest:
+      type: object
+      properties:
+        correo: {type: string, format: email}
+        clave: {type: string, format: password}
+        puerto: {type: string}
+        smtp: {type: string}
+        tls: {type: boolean}
+      required: [correo, clave, puerto, smtp, tls]
+    ConfiguracionCorreoMayoristaResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        correo: {type: string}
+        puerto: {type: string}
+        smtp: {type: string}
+        tls: {type: boolean}
+      description: Nunca devuelve la clave.
+    ImagenResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        nombre: {type: string}
+        mime: {type: string}
+        tipoImagen: {$ref: '#/components/schemas/TipoImagen'}
+    PaisRequest:
+      type: object
+      properties:
+        nombre: {type: string}
+      required: [nombre]
+    PaisResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        nombre: {type: string}
+    ProvinciaRequest:
+      type: object
+      properties:
+        nombre: {type: string}
+        paisId: {type: string, format: uuid}
+      required: [nombre, paisId]
+    ProvinciaResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        nombre: {type: string}
+        paisId: {type: string, format: uuid}
+    DepartamentoRequest:
+      type: object
+      properties:
+        nombre: {type: string}
+        provinciaId: {type: string, format: uuid}
+      required: [nombre, provinciaId]
+    DepartamentoResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        nombre: {type: string}
+        provinciaId: {type: string, format: uuid}
+    LocalidadRequest:
+      type: object
+      properties:
+        nombre: {type: string}
+        codigoPostal: {type: string}
+        departamentoId: {type: string, format: uuid}
+      required: [nombre, departamentoId, codigoPostal]
+    LocalidadResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        nombre: {type: string}
+        codigoPostal: {type: string}
+        departamentoId: {type: string, format: uuid}
+    CategoriaRequest:
+      type: object
+      properties:
+        nombre: {type: string}
+      required: [nombre]
+    CategoriaResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        nombre: {type: string}
+    SubCategoriaRequest:
+      type: object
+      properties:
+        nombre: {type: string}
+        categoriaId: {type: string, format: uuid}
+      required: [nombre, categoriaId]
+    SubCategoriaResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        nombre: {type: string}
+        categoriaId: {type: string, format: uuid}
+    ProductoRequest:
+      type: object
+      properties:
+        codigo: {type: string}
+        nombre: {type: string}
+        descripcion: {type: string}
+        presentacion: {type: string, example: Caja x24}
+        unidadesPorBulto: {type: integer, minimum: 1}
+        enOferta: {type: boolean}
+        imagenId: {type: string, format: uuid}
+        subCategoriaId: {type: string, format: uuid}
+        precioInicial: {type: number, format: double, description: 'Solo al crear: genera la primera VigenciaPrecio (fechaDesde=hoy, fechaHasta=null).'}
+        stockInicial: {type: integer, minimum: 0, description: 'Solo al crear: cantidad inicial de Stock.'}
+      required: [codigo, nombre, presentacion, unidadesPorBulto, subCategoriaId]
+    ProductoResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        codigo: {type: string}
+        nombre: {type: string}
+        descripcion: {type: string}
+        presentacion: {type: string}
+        unidadesPorBulto: {type: integer, format: int32}
+        enOferta: {type: boolean}
+        imagenId: {type: string, format: uuid}
+        subCategoriaId: {type: string, format: uuid}
+        subCategoriaNombre: {type: string}
+        categoriaId: {type: string, format: uuid}
+        categoriaNombre: {type: string}
+        precioVigente: {type: number, format: double}
+        stockActual: {type: integer, format: int32}
+    ProductoPublicoResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        codigo: {type: string}
+        nombre: {type: string}
+        descripcion: {type: string}
+        presentacion: {type: string}
+        unidadesPorBulto: {type: integer, format: int32}
+        enOferta: {type: boolean}
+        imagenId: {type: string, format: uuid}
+        categoriaNombre: {type: string}
+        subCategoriaNombre: {type: string}
+        precio: {type: number, format: double}
+      description: 'Vista pública: no expone cantidades de stock. Solo aparecen productos con stock > 0.'
+    VigenciaPrecioRequest:
+      type: object
+      properties:
+        fechaDesde: {type: string, format: date}
+        fechaHasta: {type: string, format: date, nullable: true}
+        precio: {type: number, format: double}
+      required: [fechaDesde, precio]
+    VigenciaPrecioResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        productoId: {type: string, format: uuid}
+        fechaDesde: {type: string, format: date}
+        fechaHasta: {type: string, format: date, nullable: true}
+        precio: {type: number, format: double}
+    StockResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        productoId: {type: string, format: uuid}
+        productoNombre: {type: string}
+        cantidadActual: {type: integer, format: int32}
+        observacion: {type: string}
+    StockAjusteRequest:
+      type: object
+      properties:
+        cantidadActual: {type: integer, minimum: 0}
+        observacion: {type: string}
+      required: [cantidadActual]
+    StockReposicionRequest:
+      type: object
+      properties:
+        cantidad: {type: integer, minimum: 1}
+        observacion: {type: string}
+      required: [cantidad]
+    PromocionRequest:
+      type: object
+      properties:
+        codigo: {type: string}
+        descripcion: {type: string}
+        porcentajeDescuento: {type: number, format: double, minimum: 0, maximum: 100}
+        cantidadMinima: {type: integer, nullable: true, description: Descuento por volumen (opcional).}
+        productoId: {type: string, format: uuid, nullable: true, description: Producto destacado (opcional).}
+        fechaDesde: {type: string, format: date}
+        fechaHasta: {type: string, format: date}
+      required: [codigo, porcentajeDescuento, fechaDesde, fechaHasta]
+    PromocionResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        codigo: {type: string}
+        descripcion: {type: string}
+        porcentajeDescuento: {type: number, format: double}
+        cantidadMinima: {type: integer, format: int32}
+        productoId: {type: string, format: uuid}
+        productoNombre: {type: string}
+        fechaDesde: {type: string, format: date}
+        fechaHasta: {type: string, format: date}
+    FormaDePagoRequest:
+      type: object
+      properties:
+        tipoPago: {$ref: '#/components/schemas/TipoPago'}
+        observacion: {type: string, description: Ej. alias bancario para TRANSFERENCIA.}
+      required: [tipoPago]
+    FormaDePagoResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        tipoPago: {$ref: '#/components/schemas/TipoPago'}
+        observacion: {type: string}
+    DetallePedidoRequest:
+      type: object
+      properties:
+        productoId: {type: string, format: uuid}
+        cantidad: {type: integer, minimum: 1}
+      required: [productoId, cantidad]
+    PedidoRequest:
+      type: object
+      properties:
+        puntoDeVentaId: {type: string, format: uuid}
+        codigoPromocion: {type: string, nullable: true}
+        detalles:
+          type: array
+          minItems: 1
+          items: {$ref: '#/components/schemas/DetallePedidoRequest'}
+      required: [puntoDeVentaId, detalles]
+      description: El preventor se toma del usuario autenticado (o se informa si lo carga el jefe). El precio unitario lo fija el backend con la VigenciaPrecio vigente; el cliente nunca envía precios.
+    PedidoUpdateRequest:
+      type: object
+      properties:
+        codigoPromocion: {type: string, nullable: true}
+        detalles:
+          type: array
+          minItems: 1
+          items: {$ref: '#/components/schemas/DetallePedidoRequest'}
+      required: [detalles]
+      description: Solo permitido mientras el pedido está en CARGADO.
+    DetallePedidoResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        productoId: {type: string, format: uuid}
+        productoNombre: {type: string}
+        presentacion: {type: string}
+        cantidad: {type: integer, format: int32}
+        precioUnitario: {type: number, format: double}
+        subtotal: {type: number, format: double}
+    PedidoResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        numeroPedido: {type: integer, format: int64}
+        fechaHoraCarga: {type: string, format: date-time}
+        estado: {$ref: '#/components/schemas/EstadoPedido'}
+        puntoDeVenta: {$ref: '#/components/schemas/PuntoDeVentaResponse'}
+        preventor: {$ref: '#/components/schemas/EmpleadoResumen'}
+        distribuidor:
+          allOf:
+          - {$ref: '#/components/schemas/EmpleadoResumen'}
+          nullable: true
+          description: Se completa solo cuando el pedido entra a una RutaDistribuidor; nunca se carga a mano.
+        codigoPromocion: {type: string}
+        subtotal: {type: number, format: double}
+        descuento: {type: number, format: double}
+        total: {type: number, format: double}
+        detalles:
+          type: array
+          items: {$ref: '#/components/schemas/DetallePedidoResponse'}
+        facturaId: {type: string, format: uuid, nullable: true, description: 'Se resuelve por consulta (buscarFacturaPorPedido): en el dominio la Factura guarda al Pedido.'}
+    HistorialEstadoPedidoResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        estado: {$ref: '#/components/schemas/EstadoPedido'}
+        fechaHora: {type: string, format: date-time}
+        usuario: {type: string}
+        observacion: {type: string}
+    AnularPedidoRequest:
+      type: object
+      properties:
+        observacion: {type: string}
+    ItemSinStock:
+      type: object
+      properties:
+        productoId: {type: string, format: uuid}
+        productoNombre: {type: string}
+        solicitado: {type: integer, format: int32}
+        disponible: {type: integer, format: int32}
+    ProcesamientoPedidoResponse:
+      type: object
+      properties:
+        pedido: {$ref: '#/components/schemas/PedidoResponse'}
+        factura:
+          allOf:
+          - {$ref: '#/components/schemas/FacturaResponse'}
+          nullable: true
+        itemsSinStock:
+          type: array
+          items: {$ref: '#/components/schemas/ItemSinStock'}
+      required: [pedido]
+      description: 'Si hay stock: pedido FACTURADO y factura generada. Si falta stock: pedido SIN_STOCK, sin factura, y se detallan los ítems.'
+    DetalleFacturaResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        productoId: {type: string, format: uuid}
+        productoNombre: {type: string}
+        cantidad: {type: integer, format: int32}
+        precioUnitario: {type: number, format: double}
+        subtotal: {type: number, format: double}
+    PagoRequest:
+      type: object
+      properties:
+        formaDePagoId: {type: string, format: uuid}
+        monto: {type: number, format: double, minimum: 0.01}
+        referencia: {type: string, description: 'Alias, nro. de operación o referencia del QR.'}
+        observacion: {type: string}
+      required: [formaDePagoId, monto]
+    PagoResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        facturaId: {type: string, format: uuid}
+        formaDePago: {$ref: '#/components/schemas/FormaDePagoResponse'}
+        monto: {type: number, format: double}
+        fechaPago: {type: string, format: date-time}
+        referencia: {type: string}
+        observacion: {type: string}
+    FacturaResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        numeroFactura: {type: integer, format: int64}
+        fechaFactura: {type: string, format: date-time}
+        pedidoId: {type: string, format: uuid}
+        estado: {$ref: '#/components/schemas/EstadoFactura'}
+        total: {type: number, format: double}
+        totalPagado: {type: number, format: double}
+        saldo: {type: number, format: double}
+        detalles:
+          type: array
+          items: {$ref: '#/components/schemas/DetalleFacturaResponse'}
+        pagos:
+          type: array
+          items: {$ref: '#/components/schemas/PagoResponse'}
+    RutaPreventorGenerarRequest:
+      type: object
+      properties:
+        preventorId: {type: string, format: uuid, description: Opcional si lo pide el propio preventor.}
+        fecha: {type: string, format: date}
+        latitudInicial: {type: number, format: double}
+        longitudInicial: {type: number, format: double}
+      required: [fecha]
+      description: Genera la ruta con los puntos de venta asignados al preventor, ordenados por vecino más cercano (haversine) desde la posición inicial.
+    RutaDistribuidorRequest:
+      type: object
+      properties:
+        distribuidorId: {type: string, format: uuid}
+        fecha: {type: string, format: date}
+        pedidoIds:
+          type: array
+          minItems: 1
+          items: {type: string, format: uuid}
+          description: Pedidos en estado FACTURADO.
+      required: [distribuidorId, fecha, pedidoIds]
+      description: Crea la ruta (PENDIENTE), ordena las paradas, pasa los pedidos a EN_REPARTO (con registro en el historial) y asigna `Pedido.distribuidor`.
+    CompletarParadaPreventorRequest:
+      type: object
+      properties:
+        puntoDeVentaId: {type: string, format: uuid}
+        pedidoId: {type: string, format: uuid, nullable: true}
+      required: [puntoDeVentaId]
+    EntregaRequest:
+      type: object
+      properties:
+        pedidoId: {type: string, format: uuid}
+        observacion: {type: string}
+      required: [pedidoId]
+    ParadaResponse:
+      type: object
+      properties:
+        orden: {type: integer, format: int32}
+        completada: {type: boolean}
+        puntoDeVenta: {$ref: '#/components/schemas/PuntoDeVentaResponse'}
+        pedidoId: {type: string, format: uuid, nullable: true}
+      description: Vista calculada a partir de la ruta; no es una entidad persistida.
+    RutaResponse:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        tipo: {$ref: '#/components/schemas/TipoRuta'}
+        fecha: {type: string, format: date}
+        estado: {$ref: '#/components/schemas/RutaEstado'}
+        paradaActual:
+          allOf:
+          - {$ref: '#/components/schemas/PuntoDeVentaResponse'}
+          nullable: true
+          description: PuntoDeVenta que se está atendiendo (Ruta.paradaActual). Nulo si la ruta no tiene paradas pendientes.
+        responsable: {$ref: '#/components/schemas/EmpleadoResumen'}
+        paradas:
+          type: array
+          items: {$ref: '#/components/schemas/ParadaResponse'}
+      description: 'Estado: PENDIENTE al crearse; REALIZADA cuando todas las paradas se completaron; INCOMPLETA si se cerró con paradas sin completar.'
+    AvanceRutaResponse:
+      type: object
+      properties:
+        ruta: {$ref: '#/components/schemas/RutaResponse'}
+        siguienteParada:
+          allOf:
+          - {$ref: '#/components/schemas/ParadaResponse'}
+          nullable: true
+        rutaFinalizada: {type: boolean}
+    ReporteTabular:
+      type: object
+      properties:
+        titulo: {type: string}
+        generadoEn: {type: string, format: date-time}
+        desde: {type: string, format: date}
+        hasta: {type: string, format: date}
+        columnas:
+          type: array
+          items:
+            type: object
+            properties:
+              clave: {type: string}
+              titulo: {type: string}
+        filas:
+          type: array
+          items: {type: object, additionalProperties: true}
+      required: [titulo, columnas, filas]
+      description: Estructura genérica para mostrar en pantalla. Las claves de cada fila coinciden con columnas[].clave.
+    PedidosPorPreventorPorDiaResponse:
+      type: object
+      properties:
+        anio: {type: integer, format: int32}
+        mes: {type: integer, format: int32}
+        series:
+          type: array
+          items:
+            type: object
+            properties:
+              preventorId: {type: string, format: uuid}
+              preventorNombre: {type: string}
+              puntos:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    dia: {type: integer, format: int32}
+                    cantidad: {type: integer, format: int32}
+    StockPorProductoItem:
+      type: object
+      properties:
+        productoId: {type: string, format: uuid}
+        productoNombre: {type: string}
+        cantidad: {type: integer, format: int32}
+    NewsletterEnvioResponse:
+      type: object
+      properties:
+        destinatarios: {type: integer, format: int32}
+        productosEnOferta: {type: integer, format: int32}
+    CotizacionDolarResponse:
+      type: object
+      properties:
+        moneda: {type: string, example: USD}
+        compra: {type: number, format: double}
+        venta: {type: number, format: double}
+        fechaActualizacion: {type: string, format: date-time}
+        fuente: {type: string}
+        esValorRespaldo: {type: boolean, description: true si la API externa falló y se devuelve el último valor guardado.}
+    ChatbotMensaje:
+      type: object
+      properties:
+        rol:
+          type: string
+          enum: [usuario, asistente]
+        texto: {type: string}
+      required: [rol, texto]
+    ChatbotPresupuestoRequest:
+      type: object
+      properties:
+        mensaje: {type: string, maxLength: 1000}
+        historial:
+          type: array
+          maxItems: 20
+          items: {$ref: '#/components/schemas/ChatbotMensaje'}
+      required: [mensaje]
+    ChatbotItem:
+      type: object
+      properties:
+        productoId: {type: string, format: uuid}
+        productoNombre: {type: string}
+        presentacion: {type: string}
+        cantidad: {type: integer, format: int32}
+        precioUnitario: {type: number, format: double}
+        subtotal: {type: number, format: double}
+    ChatbotPresupuestoResponse:
+      type: object
+      properties:
+        respuesta: {type: string}
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ChatbotItem'}
+        total: {type: number, format: double}
+        advertencias:
+          type: array
+          items: {type: string}
+      required: [respuesta, items, total]
+      description: El modelo de lenguaje solo interpreta el pedido. Precios, subtotales y total los calcula el backend con precios vigentes; productos sin stock o inexistentes van en 'advertencias'.
+    UsuarioPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {$ref: '#/components/schemas/UsuarioResponse'}
+        page: {type: integer, format: int32}
+        size: {type: integer, format: int32}
+        totalElements: {type: integer, format: int64}
+        totalPages: {type: integer, format: int32}
+      required: [content, page, size, totalElements, totalPages]
+    EmpleadoPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {$ref: '#/components/schemas/EmpleadoResponse'}
+        page: {type: integer, format: int32}
+        size: {type: integer, format: int32}
+        totalElements: {type: integer, format: int64}
+        totalPages: {type: integer, format: int32}
+      required: [content, page, size, totalElements, totalPages]
+    MinoristaPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {$ref: '#/components/schemas/MinoristaResponse'}
+        page: {type: integer, format: int32}
+        size: {type: integer, format: int32}
+        totalElements: {type: integer, format: int64}
+        totalPages: {type: integer, format: int32}
+      required: [content, page, size, totalElements, totalPages]
+    PuntoDeVentaPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {$ref: '#/components/schemas/PuntoDeVentaResponse'}
+        page: {type: integer, format: int32}
+        size: {type: integer, format: int32}
+        totalElements: {type: integer, format: int64}
+        totalPages: {type: integer, format: int32}
+      required: [content, page, size, totalElements, totalPages]
+    ProductoPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {$ref: '#/components/schemas/ProductoResponse'}
+        page: {type: integer, format: int32}
+        size: {type: integer, format: int32}
+        totalElements: {type: integer, format: int64}
+        totalPages: {type: integer, format: int32}
+      required: [content, page, size, totalElements, totalPages]
+    StockPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {$ref: '#/components/schemas/StockResponse'}
+        page: {type: integer, format: int32}
+        size: {type: integer, format: int32}
+        totalElements: {type: integer, format: int64}
+        totalPages: {type: integer, format: int32}
+      required: [content, page, size, totalElements, totalPages]
+    PedidoPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {$ref: '#/components/schemas/PedidoResponse'}
+        page: {type: integer, format: int32}
+        size: {type: integer, format: int32}
+        totalElements: {type: integer, format: int64}
+        totalPages: {type: integer, format: int32}
+      required: [content, page, size, totalElements, totalPages]
+    PedidoMiCuentaPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {$ref: '#/components/schemas/PedidoResponse'}
+        page: {type: integer, format: int32}
+        size: {type: integer, format: int32}
+        totalElements: {type: integer, format: int64}
+        totalPages: {type: integer, format: int32}
+      required: [content, page, size, totalElements, totalPages]
+    FacturaMiCuentaPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {$ref: '#/components/schemas/FacturaResponse'}
+        page: {type: integer, format: int32}
+        size: {type: integer, format: int32}
+        totalElements: {type: integer, format: int64}
+        totalPages: {type: integer, format: int32}
+      required: [content, page, size, totalElements, totalPages]
+    FacturaPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {$ref: '#/components/schemas/FacturaResponse'}
+        page: {type: integer, format: int32}
+        size: {type: integer, format: int32}
+        totalElements: {type: integer, format: int64}
+        totalPages: {type: integer, format: int32}
+      required: [content, page, size, totalElements, totalPages]
+    ProductoPublicoPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {$ref: '#/components/schemas/ProductoPublicoResponse'}
+        page: {type: integer, format: int32}
+        size: {type: integer, format: int32}
+        totalElements: {type: integer, format: int64}
+        totalPages: {type: integer, format: int32}
+      required: [content, page, size, totalElements, totalPages]
