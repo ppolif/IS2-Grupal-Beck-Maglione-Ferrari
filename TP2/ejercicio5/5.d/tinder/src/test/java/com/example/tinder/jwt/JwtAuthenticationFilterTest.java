@@ -1,7 +1,9 @@
 package com.example.tinder.jwt;
 
+import com.example.tinder.repositorios.UsuarioRepositorio;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterEach;
@@ -32,6 +34,9 @@ public class JwtAuthenticationFilterTest {
     private UserDetailsService userDetailsService;
 
     @Mock
+    private UsuarioRepositorio usuarioRepositorio;
+
+    @Mock
     private HttpServletRequest request;
 
     @Mock
@@ -58,7 +63,8 @@ public class JwtAuthenticationFilterTest {
     }
 
     @Test
-    void testDoFilterInternalSinHeaderAuthorization() throws ServletException, IOException {
+    void testDoFilterInternalSinCookieNiHeader() throws ServletException, IOException {
+        when(request.getCookies()).thenReturn(null);
         when(request.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn(null);
 
         filter.doFilterInternal(request, response, filterChain);
@@ -68,15 +74,39 @@ public class JwtAuthenticationFilterTest {
     }
 
     @Test
-    void testDoFilterInternalConTokenValido() throws ServletException, IOException {
-        String token = "tokenValidoMock";
-        String email = "test@tinder.com";
+    void testDoFilterInternalConCookieJwt() throws ServletException, IOException {
+        String token = "jwtTokenEnCookie";
+        String email = "usuario@tinder.com";
         UserDetails userDetails = new User(
                 email,
                 "password",
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
         );
 
+        Cookie[] cookies = new Cookie[]{new Cookie("jwt", token)};
+        when(request.getCookies()).thenReturn(cookies);
+        when(jwtService.getUsernameFromToken(token)).thenReturn(email);
+        when(userDetailsService.loadUserByUsername(email)).thenReturn(userDetails);
+        when(jwtService.isTokenValid(token, userDetails)).thenReturn(true);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain, times(1)).doFilter(request, response);
+        assertNotNull(SecurityContextHolder.getContext().getAuthentication(), "Debe autenticar con la cookie JWT");
+        assertEquals(email, SecurityContextHolder.getContext().getAuthentication().getName());
+    }
+
+    @Test
+    void testDoFilterInternalConHeaderBearer() throws ServletException, IOException {
+        String token = "jwtTokenEnHeader";
+        String email = "usuario@tinder.com";
+        UserDetails userDetails = new User(
+                email,
+                "password",
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+
+        when(request.getCookies()).thenReturn(null);
         when(request.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + token);
         when(jwtService.getUsernameFromToken(token)).thenReturn(email);
         when(userDetailsService.loadUserByUsername(email)).thenReturn(userDetails);
@@ -85,8 +115,7 @@ public class JwtAuthenticationFilterTest {
         filter.doFilterInternal(request, response, filterChain);
 
         verify(filterChain, times(1)).doFilter(request, response);
-        assertNotNull(SecurityContextHolder.getContext().getAuthentication(), "Debe establecerse la autenticación");
+        assertNotNull(SecurityContextHolder.getContext().getAuthentication(), "Debe autenticar con la cabecera Bearer");
         assertEquals(email, SecurityContextHolder.getContext().getAuthentication().getName());
     }
 }
-

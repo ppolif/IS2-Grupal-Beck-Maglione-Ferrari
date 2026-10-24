@@ -1,7 +1,9 @@
 package com.example.tinder.configuraciones;
 
 import com.example.tinder.jwt.JwtAuthenticationFilter;
+import com.example.tinder.jwt.JwtService;
 import jakarta.servlet.DispatcherType;
+import jakarta.servlet.http.Cookie;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +12,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -23,13 +26,16 @@ public class SecurityConfig {
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    @Autowired
+    private JwtService jwtService;
+
     // Encriptador de contraseñas
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // Administrador de autenticación expuesto como Bean para el controlador REST de autenticación
+    // Administrador de autenticación
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
@@ -39,19 +45,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Deshabilitar CSRF para permitir peticiones REST sin estado
                 .csrf(csrf -> csrf.disable())
 
-                // Sección donde se indica al sistema qué URLs están protegidas y cuáles no
                 .authorizeHttpRequests(auth -> auth
 
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
 
                         // Recursos estáticos públicos (CSS, JS, imágenes)
                         .requestMatchers("/css/**", "/js/**", "/img/**", "/imagenes/**", "/styles.css", "/*.css", "/vendor/**").permitAll()
-
-                        // Endpoints públicos de autenticación REST (JWT)
-                        .requestMatchers("/auth/**", "/api/auth/**").permitAll()
 
                         // Vistas públicas
                         .requestMatchers(
@@ -72,27 +73,41 @@ public class SecurityConfig {
                         // Rutas exclusivas de administrador
                         .requestMatchers("/admin/*").hasRole("ADMIN")
 
-                        // Cualquier otra petición requiere autenticación (sea por sesión o por Bearer Token JWT)
+                        // Cualquier otra petición requiere autenticación
                         .anyRequest().authenticated()
                 )
 
-                // Filtro JWT antes del filtro de usuario/contraseña estándar
+                // Intercepta peticiones del navegador para validar el JWT de la cookie
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
-                // Configuración de formulario de login para vistas Spring MVC clásicas
+                // Proceso de inicio de sesión de Spring MVC con emisión de Cookie JWT
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/logincheck")
                         .usernameParameter("email")
                         .passwordParameter("clave")
-                        .defaultSuccessUrl("/inicio", true)
+                        .successHandler((request, response, authentication) -> {
+                            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+                            String token = jwtService.getToken(userDetails);
+
+                            // Emite la cookie HTTP con el JWT
+                            Cookie cookie = new Cookie("jwt", token);
+                            cookie.setHttpOnly(true);
+                            cookie.setPath("/");
+                            cookie.setMaxAge(3600); // 1 hora
+                            response.addCookie(cookie);
+
+                            response.sendRedirect("/inicio");
+                        })
                         .permitAll()
                 )
 
-                // Configuración de logout
+                // Cierre de sesión que destruye la cookie JWT y la sesión
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout")
+                        .deleteCookies("jwt", "JSESSIONID")
+                        .invalidateHttpSession(true)
                         .permitAll()
                 );
 
