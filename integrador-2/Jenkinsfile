@@ -1,6 +1,11 @@
 pipeline {
     agent any
     
+    tools {
+        maven 'Maven3'
+        nodejs 'Node20'
+    }
+    
     stages {
         stage('Backend: Compilación y Pruebas') {
             steps {
@@ -9,6 +14,7 @@ pipeline {
                 }
             }
         }
+        // ... (mantené el resto de las etapas intactas)
         stage('Frontend Admin: Build') {
             steps {
                 dir('integrador-2/frontend-admin') {
