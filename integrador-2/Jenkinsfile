@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Backend: Compilación y Pruebas') {
+            steps {
+                dir('backend') {
+                    sh 'mvn clean test'
+                }
+            }
+        }
+        stage('Frontend Admin: Build') {
+            steps {
+                dir('frontend-admin') {
+                    sh 'npm install'
+                    sh 'npm run build'
+                }
+            }
+        }
+        stage('Frontend Institucional: Build') {
+            steps {
+                dir('frontend-institucional') {
+                    sh 'npm install'
+                    sh 'npm run build'
+                }
+            }
+        }
+        stage('Frontend Preventor: Build') {
+            steps {
+                dir('frontend-preventor') {
+                    sh 'npm install'
+                    sh 'npm run build'
+                }
+            }
+        }
+        stage('Docker: Validar Imágenes') {
+            steps {
+                sh 'docker compose build'
+            }
+        }
+    }
+}
