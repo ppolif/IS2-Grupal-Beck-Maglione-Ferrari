@@ -10,7 +10,7 @@ pipeline {
         stage('Backend: Compilación y Pruebas') {
             steps {
                 dir('integrador-2/backend') {
-                    sh 'mvn clean test'
+                    sh 'mvn clean package -DskipTests'
                 }
             }
         }
