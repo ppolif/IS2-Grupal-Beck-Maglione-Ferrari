@@ -10,7 +10,7 @@ pipeline {
         stage('Backend: Compilación y Pruebas') {
             steps {
                 dir('integrador-2/backend') {
-                    sh 'mvn clean package -DskipTests'
+                    sh 'mvn clean test -Dspring.profiles.active=test'
                 }
             }
         }
@@ -45,6 +45,11 @@ pipeline {
                     sh 'docker compose build'
                 }
             }
+        }
+    } 
+    post {
+        always {
+            sh 'docker image prune -f'
         }
     }
 }
