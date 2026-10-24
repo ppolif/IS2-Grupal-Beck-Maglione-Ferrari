@@ -6,7 +6,7 @@
 
 ## 1. Qué estamos construyendo
 
-Software de gestión integral y ecosistema web para **Dulce Mayor**, una empresa mayorista de golosinas de Mendoza (Argentina). Es el Trabajo Práctico Integrador N°2 de *Ingeniería del Software II* (UNCuyo, Facultad de Ingeniería, 2026).
+Software de gestión integral y ecosistema web para **Dulce Mayor**, una empresa mayorista de golosinas de Mendoza (Argentina).
 
 Circuito operativo que el sistema debe cubrir y **trazar de punta a punta**:
 
@@ -18,15 +18,12 @@ Circuito operativo que el sistema debe cubrir y **trazar de punta a punta**:
 
 Además hay un sitio web institucional con catálogo público para que los minoristas vean el surtido.
 
-## 2. Restricciones obligatorias (vienen del enunciado)
+## 2. Restricciones obligatorias
 
 - Arquitectura **cliente-servidor, al menos 3 capas, API REST**.
 - **El servidor y los clientes deben estar en lenguajes de programación distintos.** Por eso, si el backend es Java, **no usar Thymeleaf**: los clientes son React o Angular.
 - Se deben implementar **patrones de diseño** (ver sección 8).
-- Metodología **Scrum**. Versionado con **Git**, integración continua con **Jenkins**, despliegue con **Docker**.
-- Tablero Kanban en Jira (esto lo maneja el equipo, no el asistente).
-- Mínimo **70% del software funcionando** en la presentación del 13 de noviembre.
-- Cronograma: Sprint 1 del 16/10 al 30/10; Sprint 2 hasta el 13/11 (presentación final).
+- Versionado con **Git**, integración continua con **Jenkins**, despliegue con **Docker**.
 - El equipo debe poder explicar qué patrones usó, dónde y por qué, y de dónde salieron las plantillas web. **Escribí código claro y comentá las decisiones de patrones.**
 
 ## 3. Las 4 aplicaciones
@@ -48,7 +45,7 @@ Las 3 apps frontend consumen **únicamente** la API REST del backend. Ninguna ac
 | **Distribuidor** | Ver su ruta de entregas del día en un mapa. Marcar pedidos como "Entregado" y recibir la sugerencia del siguiente punto. |
 | **Administrativo / Almacenero** | Alta y modificación de productos. Verificar stock. Procesar y facturar pedidos. Registrar pagos. Cambiar su propia contraseña. |
 | **Jefe Administrativo** | Todo lo del administrativo y del preventor, más: alta de usuarios, reportes globales de ventas por período, rendimiento de preventores, golosinas más vendidas, estadísticas. Descarga de reportes en PDF y Excel. |
-| **Cliente (minorista)** | Registrarse e iniciar sesión (correo electrónico o redes sociales). Ver historial de pedidos, estado de sus envíos, descargar facturas históricas, ver el QR de pago si eligió billetera virtual. |
+| **Minorista(cliente)** | Registrarse e iniciar sesión (correo electrónico o redes sociales). Ver historial de pedidos, estado de sus envíos, descargar facturas históricas, ver el QR de pago si eligió billetera virtual. |
 
 ## 5. Requerimientos funcionales por módulo
 
