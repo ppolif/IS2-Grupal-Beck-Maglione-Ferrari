@@ -1,0 +1,73 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = 'catalogue-management'
+        CONTAINER_NAME = 'catalogue-app'
+        APP_PORT = '8081'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo '=== Paso 1: Obteniendo codigo ==='
+                checkout scm
+            }
+        }
+
+        stage('Build & Test') {
+            steps {
+                echo '=== Paso 2: Compilando y ejecutando pruebas con Maven ==='
+                script {
+                    if (fileExists('pom.xml')) {
+                        sh 'mvn clean package'
+                    } else if (fileExists('TP2/ejercicio6/6.e/CatalogueManagement/pom.xml')) {
+                        dir('TP2/ejercicio6/6.e/CatalogueManagement') {
+                            sh 'mvn clean package'
+                        }
+                    } else {
+                        error 'No se encontro el archivo pom.xml'
+                    }
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                echo '=== Paso 3: Construyendo imagen Docker ==='
+                script {
+                    if (fileExists('Dockerfile')) {
+                        sh "docker build -t ${env.IMAGE_NAME}:latest ."
+                    } else if (fileExists('TP2/ejercicio6/6.e/CatalogueManagement/Dockerfile')) {
+                        dir('TP2/ejercicio6/6.e/CatalogueManagement') {
+                            sh "docker build -t ${env.IMAGE_NAME}:latest ."
+                        }
+                    } else {
+                        error 'No se encontro el Dockerfile'
+                    }
+                }
+            }
+        }
+
+        stage('Docker Deploy') {
+            steps {
+                echo '=== Paso 4: Desplegando contenedor de la aplicacion ==='
+                sh """
+                    docker stop ${env.CONTAINER_NAME} || true
+                    docker rm ${env.CONTAINER_NAME} || true
+                    docker run -d --name ${env.CONTAINER_NAME} -p ${env.APP_PORT}:8080 ${env.IMAGE_NAME}:latest
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline finalizado con exito. Aplicacion disponible en http://localhost:${env.APP_PORT}/swagger-ui/index.html#/"
+        }
+        failure {
+            echo 'El pipeline ha fallado. Revisa los logs de la consola.'
+        }
+    }
+}
+
