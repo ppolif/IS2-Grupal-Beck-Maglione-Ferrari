@@ -154,6 +154,30 @@ Cada patrón aplicado debe quedar **comentado en el código** (qué patrón es y
 
 ## 10. Arquitectura y convenciones
 
+### 10.1 Dependencias entre capas y servicios (obligatorio)
+
+1. **Flujo único:** `controller → service → repository`. Ninguna capa se salta a otra.
+2. **Un servicio inyecta solo el repositorio de su propia entidad** (`<Entidad>Service` usa
+   `<Entidad>Repository`). Para datos de otra entidad inyecta el **servicio** de esa entidad.
+   Ejemplo: `SubCategoriaService` usa `SubCategoriaRepository` y llama a `CategoriaService`;
+   nunca usa `CategoriaRepository`.
+3. **Qué viaja entre capas:** los DTO cruzan solo controlador ↔ servicio. Entre servicios se
+   intercambian entidades mediante métodos de acceso interno (`obtenerEntidad(id)`), que los
+   controladores no usan. Los controladores nunca ven entidades ni repositorios.
+4. **La dirección de las dependencias sigue las flechas del UML** (`01-dominio.md`): si `A → B`,
+   `AService` puede inyectar `BService` y nunca al revés. Consecuencia: el servicio referenciado
+   no consulta a quienes lo referencian (por ejemplo, `CategoriaService` no revisa subcategorías);
+   esa regla vive en el servicio que referencia o en un orquestador.
+5. **Orquestadores:** los flujos que necesitan varios servicios (procesar pedido, registrar
+   entrega, armar ruta) van en un servicio orquestador (`ProcesamientoPedidoService`, etc.) que
+   depende de otros servicios y del que no depende nadie. Define la transacción del flujo.
+6. **Servicios de lectura** (reportes, estadísticas, catálogo público): clases `*LecturaService`
+   que pueden consultar varios repositorios, **solo para leer**. Es la única excepción a la regla 2.
+7. **Inyección por constructor**, sin `@Autowired` sobre campos, y
+   `spring.main.allow-circular-references=false`.
+8. **Verificación automática:** los tests ArchUnit corren en `mvn test` (y por lo tanto en
+   Jenkins). Si alguien rompe una regla, el build falla.
+
 - Capas del backend: `restcontroller → service → repository → entity`. Los DTO viajan entre controlador y servicio. La lógica de negocio vive **solo** en los servicios.
 - Paquetes por módulo de dominio (por ejemplo `producto`, `pedido`, `facturacion`), no por tipo técnico.
 - API versionada: `/api/v1/...`. Recursos en plural y en minúsculas. Códigos HTTP correctos (201 al crear, 204 al eliminar, 400/404/409/403/401 según corresponda).
