@@ -1,111 +1,86 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Poppins', sans-serif;
+
+  --color-brand-pink: #ffcef3;
+  --color-brand-pink-strong: #e86bc4;
+  --color-brand-blue: #a1eafb;
+  --color-brand-blue-strong: #3fb8d9;
+  --color-brand-ink: #2b2b3a;
+  --color-brand-muted: #6b6b80;
+  --color-brand-border: #ececf2;
+  --color-brand-success: #7ed6a5;
+  --color-brand-warning: #ffd98a;
+  --color-brand-error: #ff8fa3;
+  --color-brand-dark: #292838;
+  --color-brand-bg: #fdfdfd;
+  --color-brand-canvas: #edf0f8;
+
+  --shadow-card: 0 14px 40px rgba(56, 52, 84, 0.09);
+  --shadow-modal: 0 22px 80px rgba(32, 30, 50, 0.25);
+  --shadow-btn: 0 8px 20px rgba(232, 107, 196, 0.2);
+  --shadow-phone: 0 24px 80px rgba(37, 35, 55, 0.22);
+}
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  --bg: #fdfdfd;
+  --pink: #ffcef3;
+  --pink-strong: #e86bc4;
+  --blue: #a1eafb;
+  --blue-strong: #3fb8d9;
+  --ink: #2b2b3a;
+  --muted: #6b6b80;
+  --border: #ececf2;
+  --success: #7ed6a5;
+  --warning: #ffd98a;
+  --error: #ff8fa3;
+  --surface: #ffffff;
+  --shadow: 0 14px 40px rgba(56, 52, 84, 0.09);
+  font-family: 'Poppins', sans-serif;
+  color: #2b2b3a;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+/* Candy Mark icon from prototype */
+.candy-mark {
+  width: 34px;
+  height: 24px;
+  background: linear-gradient(135deg, #e86bc4, #3fb8d9);
+  border-radius: 9px;
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
 }
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+.candy-mark:before,
+.candy-mark:after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  border: 7px solid transparent;
 }
-
-body {
-  margin: 0;
+.candy-mark:before {
+  left: -12px;
+  border-right-color: #ffcef3;
 }
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+.candy-mark:after {
+  right: -12px;
+  border-left-color: #a1eafb;
 }
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+.candy-mark i {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  top: 8px;
+  left: 7px;
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+.candy-mark b {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background: #ffffff;
+  border-radius: 50%;
+  top: 8px;
+  right: 7px;
 }

@@ -75,4 +75,14 @@
 ### 4. Desvíos respecto de los documentos
 - Ninguno. Se mantuvo la estructura de paquetes existente (`config`, `controllers`, `dtos`, `entities`, `repositories`, `services`) documentada en `03-arquitectura.md` sin mover archivos existentes.
 
+---
+
+## Avance en los front ends: Desarrollo de interfaces UI
+- **Construcción de 3 frontends independientes (React + Tailwind CSS v4):**
+  - `frontend-institucional`: catálogo mayorista, sucursales con mapa, registro de usuarios minoristas, carrito con cupones y perfil con detalle de pedido, descarga de factura PDF y visor de QR de pago.
+  - `frontend-preventor`: app mobile-first/desktop para preventores (rutero, alta de comercios, catálogo y carrito con promociones) y distribuidores (reparto y tickets de entrega), desacoplados vía `RoleRouter.jsx`.
+  - `frontend-admin`: interfaz unificada para administrativo (stock, productos, facturación de pedidos y pagos) y jefe (dashboard con Recharts, estadísticas, gestión de usuarios y reportes descargables en PDF/Excel).
+- **Sistema de diseño y responsividad:** tokens compartidos en `@theme` (colores, Poppins, isotipo `candy-mark`), navegación por rol sin menús filtrados, mapas con OpenStreetMap y compilación exitosa (`npm run build`).
+
+
 
