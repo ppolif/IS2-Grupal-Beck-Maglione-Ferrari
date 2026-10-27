@@ -1,32 +1,57 @@
-# React + TypeScript + Vite
+# Frontend Preventores y Distribuidores - Dulce Mayor
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Aplicación móvil y de escritorio adaptada para el equipo de preventores y repartidores de Dulce Mayor. Desarrollada con React, Vite y Tailwind CSS v4, orientada a decisiones ágiles en ruta y supervisión en computadora.
 
-Currently, two official plugins are available:
+## Roles Soportados
+- **preventor**: Gestión de hoja de ruta, visitas en calle, catálogo de productos, registro de nuevos minoristas y confirmación de pedidos.
+- **distribuidor**: Gestión de entregas asignadas del día, cobranzas en efectivo/transferencia y hoja de ruta con tickets de entrega.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Instrucciones de Ejecución
 
-## React Compiler
+1. **Instalar dependencias:**
+   ```bash
+   npm install
+   ```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+2. **Ejecutar en modo de desarrollo:**
+   ```bash
+   npm run dev
+   ```
 
-## Expanding the Oxlint configuration
+3. **Construir para producción:**
+   ```bash
+   npm run build
+   ```
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Cómo Cambiar el Rol de Prueba
+En `src/mocks/session.js` puedes alternar el valor de la propiedad `rol`:
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```js
+export const usuarioMock = {
+  id: "usr-prev-01",
+  nombre: "Lucía Martínez",
+  email: "lucia.martinez@dulcemayor.com",
+  avatar: "LM",
+  rol: "preventor", // Cambiar por "distribuidor" para ver la interfaz del repartidor
+  zona: "Zona Godoy Cruz",
+  unidad: "Unidad 08 · Gran Mendoza"
+};
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+`RoleRouter.jsx` detecta automáticamente este rol y monta el layout, la barra de navegación y las rutas correspondientes sin menús filtrados.
+
+## Vistas Disponibles por Rol
+
+### Preventor (`rol: "preventor"`)
+- `/recorrido` - Mapa de paradas y ficha de visita actual (con OpenStreetMap)
+- `/registro-comercio` - Alta rápida de clientes minoristas en ruta
+- `/tienda` - Catálogo de productos para carga de pedidos
+- `/carrito` - Pedido en curso, control de bultos y descuentos
+- `/perfil` - Estadísticas de visitas realizadas y datos de la zona
+- `/cambiar-password` - Cambio de credenciales
+
+### Distribuidor (`rol: "distribuidor"`)
+- `/pedidos` - Lista de entregas del día ("10 entregas asignadas") y control de pagos
+- `/recorrido` - Mapa de reparto y ticket de entrega por bultos (con OpenStreetMap)
+- `/perfil` - Estadísticas de entregas completadas y unidad de reparto
+- `/cambiar-password` - Cambio de credenciales

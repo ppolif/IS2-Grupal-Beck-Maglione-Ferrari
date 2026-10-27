@@ -1,32 +1,47 @@
-# React + TypeScript + Vite
+# Frontend Institucional - Dulce Mayor
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Aplicación web institucional y tienda mayorista para clientes y visitantes de Dulce Mayor. Desarrollada con React, Vite y Tailwind CSS v4, fiel al prototipo del sistema de diseño.
 
-Currently, two official plugins are available:
+## Rol Asociado
+- **cliente** (Visitante o comercio cliente logueado)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Instrucciones de Ejecución
 
-## React Compiler
+1. **Instalar dependencias:**
+   ```bash
+   npm install
+   ```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+2. **Ejecutar en modo de desarrollo:**
+   ```bash
+   npm run dev
+   ```
 
-## Expanding the Oxlint configuration
+3. **Construir para producción:**
+   ```bash
+   npm run build
+   ```
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## Configuración de Sesión y Rol de Prueba
+En `src/mocks/session.js` puedes modificar el estado de sesión del cliente (logueado / no logueado):
+```js
+export const usuarioMock = {
+  id: "usr-cliente-01",
+  nombre: "Juan Pérez",
+  email: "juan.perez@comercio.com",
+  comercio: "Kiosco San Martín",
+  rol: "cliente",
+  logueado: true, // Cambia a false para ver el navbar en modo visitante
+  avatar: "JP"
+};
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Vistas Disponibles
+- `/` - Inicio (Hero, catálogo preview, beneficios, dólar hoy)
+- `/tienda` - Catálogo mayorista completo con buscador y filtros por categoría
+- `/carrito` - Carrito de compras y cálculo de descuentos por volumen (Ruta protegida)
+- `/sucursales` - Sucursales y depósitos en Mendoza con OpenStreetMap
+- `/contacto` - Información de la empresa y formulario de consulta
+- `/perfil` - Datos de la cuenta comercial e historial de pedidos (Ruta protegida)
+- `/login` - Acceso para comercios registrados
+- `/registro` - Formulario de alta para nuevos comercios
