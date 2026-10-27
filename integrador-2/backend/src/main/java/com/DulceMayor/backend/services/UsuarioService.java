@@ -30,7 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class UsuarioService implements UserDetailsService {
 
     public static final String CLAVE_POR_DEFECTO = Usuario.CLAVE_POR_DEFECTO;
-    public static final String ClavePorDefecto = Usuario.CLAVE_POR_DEFECTO;
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
@@ -51,11 +50,6 @@ public class UsuarioService implements UserDetailsService {
         Usuario usuario = usuarioRepository.findByNombreUsuarioAndEliminadoFalse(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado o inactivo"));
         return new UsuarioPrincipal(usuario);
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<Usuario> buscarActivoPorId(String id) {
-        return usuarioRepository.findByIdAndEliminadoFalse(id);
     }
 
     @Transactional(readOnly = true)

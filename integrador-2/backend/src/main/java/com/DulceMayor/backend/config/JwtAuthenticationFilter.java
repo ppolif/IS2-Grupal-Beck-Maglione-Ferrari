@@ -93,8 +93,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        Optional<Usuario> usuarioOpt = usuarioService.buscarActivoPorId(usuarioId);
-        if (usuarioOpt.isEmpty()) {
+        Usuario usuarioOpt = usuarioService.buscarUsuario(usuarioId);
+        if (usuarioOpt == null) {
             escribirError(
                     response,
                     HttpStatus.UNAUTHORIZED,
@@ -105,7 +105,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        Usuario usuario = usuarioOpt.get();
+        Usuario usuario = usuarioOpt;
 
         if (usuario.isClaveTemporal() && !esRutaPermitidaConClaveTemporal(request)) {
             escribirError(

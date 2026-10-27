@@ -41,3 +41,38 @@
 ### 4. Desvíos respecto de los documentos
 - Ninguno respecto del dominio (`01-dominio.md`) ni del contrato (`04-openapi.yaml`). Se respetó la estructura de paquetes existente en el repositorio (`config`, `controllers`, `dtos`, `entities`, `repositories`, `services`) tal como indica `03-arquitectura.md` y la consigna del Paso 1.
 
+---
+
+## Paso 2: Golden slice "Categoria" + clases base + tests de arquitectura
+
+### 1. Qué se hizo
+- **Clases base de infraestructura reutilizables:**
+  - `EntidadBase` (`com.DulceMayor.backend.entities.EntidadBase`): superclase mapeada (`@MappedSuperclass`) con `id: String` (UUID autogenerado) y `eliminado: boolean = false` (borrado lógico). `Usuario` y `Categoria` heredan de `EntidadBase`.
+  - `BaseRepository<E extends EntidadBase>` (`com.DulceMayor.backend.repositories.BaseRepository`): interfaz `@NoRepositoryBean` que extiende `JpaRepository<E, String>` con consultas estándar filtrando `eliminado = false` (`findByIdAndEliminadoFalse`, `findAllByEliminadoFalse`, `existsByIdAndEliminadoFalse`).
+  - `BaseMapper<E, Req, Res>` (`com.DulceMayor.backend.dtos.BaseMapper`): interfaz genérica para mappers MapStruct (`aEntidad`, `actualizarEntidad`, `aResponse`, `aResponseList`).
+  - `BaseService<E extends EntidadBase, Req, Res>` (`com.DulceMayor.backend.services.BaseService`): aplica el patrón **Template Method** en la capa de servicio para las operaciones `crear`, `modificar`, `eliminar` (baja lógica), `buscar` y `listar`, recibiendo y devolviendo DTOs, con pasos personalizables (`prepararRequest`, `validarCrear`, `validarModificar`, `validarEliminar`, `aEntidad`, `actualizarEntidad`, `aResponse`, `buscarEntidadesActivas`, y hooks pre/post persistencia). Incluye `obtenerEntidad(String id)` (lanza `404 NO_ENCONTRADO` si no existe o está eliminada) para consumo interno entre servicios sin pasar por DTO.
+  - `BaseController<Req, Res>` (`com.DulceMayor.backend.controllers.BaseController`): aplica el patrón **Template Method** en la capa de controlador mediante los métodos plantilla protegidos `ejecutarListar` (200), `ejecutarBuscar` (200), `ejecutarCrear` (201 con header `Location`), `ejecutarModificar` (200) y `ejecutarEliminar` (204). Los endpoints y anotaciones `@PreAuthorize` se declaran explícitamente en cada controlador concreto.
+- **Módulo de referencia (`Categoria`):**
+  - `Categoria` (`com.DulceMayor.backend.entities.Categoria`): entidad JPA que extiende `EntidadBase` con atributo `nombre` (`nullable = false`, `length = 100`).
+  - `CategoriaRepository` (`com.DulceMayor.backend.repositories.CategoriaRepository`): extiende `BaseRepository<Categoria>` con consultas de unicidad case-insensitive (`existsByNombreIgnoreCase`, `existsByNombreIgnoreCaseAndIdNot`, `existsByNombreIgnoreCaseAndEliminadoFalse`, `existsByNombreIgnoreCaseAndIdNotAndEliminadoFalse`, `findByNombreIgnoreCaseAndEliminadoFalse`) y listado ordenado (`findAllByEliminadoFalseOrderByNombreAsc`).
+  - `CategoriaRequest` y `CategoriaResponse` (`com.DulceMayor.backend.dtos`): records que respetan exactamente los schemas de `04-openapi.yaml`.
+  - `CategoriaMapper` (`com.DulceMayor.backend.dtos.CategoriaMapper`): mapper `@Mapper(componentModel = "spring")` que implementa `BaseMapper<Categoria, CategoriaRequest, CategoriaResponse>`.
+  - `CategoriaService` (`com.DulceMayor.backend.services.CategoriaService`): extiende `BaseService`, quita espacios sobrantes del nombre (`trim()`), valida obligatoriedad y longitud máxima (100 caracteres) y verifica unicidad sin distinguir mayúsculas/minúsculas lanzando `409 Conflict` con `code = DUPLICADO` (sin chocar consigo misma al modificar).
+  - `CategoriaController` (`com.DulceMayor.backend.controllers.CategoriaController`): expone `/categorias` y `/api/v1/categorias` con los `operationId` exactos (`listarCategoria`, `crearCategoria`, `buscarCategoria`, `modificarCategoria`, `eliminarCategoria`). `GET` públicos y `POST`/`PUT`/`DELETE` restringidos a `JEFE` y `ADMINISTRATIVO` vía `@PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")`.
+- **Tests de arquitectura y del módulo (`src/test/java`):**
+  - `ArquitecturaTests`: verifica con ArchUnit (`com.tngtech.archunit:archunit-junit5:1.3.0`) las reglas de la sección 10.1 de `GENERAL.md` (cada `*Service` solo depende de su `<Entidad>Repository` salvo `*LecturaService`; ningún controlador depende de repositorios ni de entidades; entidades no dependen de servicios ni controladores; servicios no dependen de controladores; sin `@Autowired` en campos; ausencia de ciclos entre capas de aplicación/dominio). Se comprobó empíricamente que cada una de las 6 reglas falla en rojo al introducir una violación temporal y vuelve a verde al revertirla.
+  - `CategoriaServiceTest` (Mockito): alta, duplicado (`409 DUPLICADO`), modificación, baja lógica y búsqueda de inexistente (`404 NO_ENCONTRADO`).
+  - `CategoriaRepositoryTest` (H2): consulta de duplicados sin distinguir mayúsculas/minúsculas y exclusión del propio ID.
+  - `CategoriaControllerTest` (MockMvc + Spring Security): pruebas integrales de rutas públicas y privadas, roles permitidos/denegados, validaciones, duplicados, 404, 204 y verificación del JSON `ErrorResponse`.
+
+### 2. Decisiones tomadas
+- **Configuración de procesadores de anotaciones en Maven:** en `backend/pom.xml` se configuraron conjuntamente `lombok`, `lombok-mapstruct-binding` (`0.2.0`) y `mapstruct-processor` (`1.5.5.Final`) dentro de `<annotationProcessorPaths>` de `maven-compiler-plugin`, garantizando la generación limpia de builders (`@SuperBuilder`) y mappers Spring en tiempo de compilación.
+- **Desacoplamiento total entre `BaseController` y `entities`:** `BaseController<Req, Res>` está parametrizado únicamente por los tipos DTO (`Req`, `Res`) y delega en `BaseService<?, Req, Res>`, de modo que ninguna clase del paquete `controllers` tiene referencias (ni siquiera en firmas genéricas) al paquete `entities`.
+
+### 3. Pendientes anotados para próximos pasos
+- **Validación de subcategorías activas al eliminar una `Categoria`:** conforme a la regla 4 de la sección 10.1 de `GENERAL.md` (la dependencia apunta de `SubCategoria` hacia `Categoria` y no al revés), `CategoriaService` NO depende de `SubCategoriaRepository`. Queda **pendiente resolver en el módulo `SubCategoria`** la validación o coordinación previa a la baja lógica de una categoría con subcategorías asociadas.
+
+### 4. Desvíos respecto de los documentos
+- Ninguno. Se mantuvo la estructura de paquetes existente (`config`, `controllers`, `dtos`, `entities`, `repositories`, `services`) documentada en `03-arquitectura.md` sin mover archivos existentes.
+
+
