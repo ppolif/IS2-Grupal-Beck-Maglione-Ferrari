@@ -24,9 +24,20 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
  * que toda respuesta de error cumpla con el esquema ErrorResponse de OpenAPI
  * sin exponer detalles internos ni stack traces.
  */
+
+/**
+ * Es una combinación de @ControllerAdvice + @ResponseBody. Le dice a Spring:
+ * "Escuchá todas las excepciones que lance cualquier @RestController del proyecto,
+ * interceptalas acá y convertí lo que devuelvan estos métodos directamente a JSON"
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    //indica qué tipo de excepción atrapa ese método
+    //HttpServletRequest request:
+    //Todos los métodos lo reciben como parámetro para poder llamar a request.getRequestURI(),
+    // que obtiene la ruta exacta que falló (por ejemplo, "/api/v1/categorias") y la incluye en
+    // el JSON de respuesta (path).
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex,
