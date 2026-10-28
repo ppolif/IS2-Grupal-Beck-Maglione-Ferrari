@@ -1,0 +1,4 @@
+$kind: http-request
+url: http://localhost:9000/api/v1/libros
+method: GET
+order: 4000000000000002

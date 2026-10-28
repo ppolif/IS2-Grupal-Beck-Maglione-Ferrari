@@ -75,40 +75,7 @@ public class AuthController {
         }
     }
 
-    // Registro administrativo básico preexistente
-    @GetMapping("/admin/register")
-    public String showAdminRegisterPage(HttpSession session) {
-        Usuario usuarioLogueado = (Usuario) session.getAttribute("usuariosession");
-        if (usuarioLogueado != null) {
-            return "redirect:/admin/registrar-venta";
-        }
-        return "admin/page-register";
-    }
 
-    @PostMapping("/admin/register")
-    public String processAdminRegister(@RequestParam("nombre") String nombre,
-                                       @RequestParam("email") String email,
-                                       @RequestParam("password") String password,
-                                       @RequestParam("confirmPassword") String confirmPassword,
-                                       HttpServletRequest request,
-                                       HttpSession session,
-                                       Model model) {
-        if (!password.equals(confirmPassword)) {
-            model.addAttribute("errorMessage", "Las contraseñas no coinciden");
-            return "admin/page-register";
-        }
-
-        try {
-            Usuario nuevoUsuario = usuarioService.crearUsuario(email, password, RolUsuario.ADMINISTRATIVO, null);
-            session.setAttribute("usuariosession", nuevoUsuario);
-            return "redirect:/admin/registrar-venta";
-        } catch (IllegalArgumentException e) {
-            model.addAttribute("errorMessage", e.getMessage());
-            return "admin/page-register";
-        }
-    }
-
-    // Registro público completo para clientes (gestión dinámica 100% Thymeleaf + Java)
     @GetMapping("/register")
     public String showRegisterPage(HttpSession session, Model model) {
         Usuario usuarioLogueado = (Usuario) session.getAttribute("usuariosession");
@@ -132,7 +99,7 @@ public class AuthController {
                                   @RequestParam(value = "fotoPerfil", required = false) MultipartFile fotoPerfil,
                                   HttpSession session,
                                   Model model) {
-        // Normalizar accion en caso de valores duplicados o concatenados por comas (ej: ",registrar" o "registrar,registrar")
+
         String accionLimpia = accion;
         if (accionLimpia != null && accionLimpia.contains(",")) {
             for (String parte : accionLimpia.split(",")) {
@@ -145,7 +112,7 @@ public class AuthController {
             }
         }
 
-        // Acciones dinámicas de recarga en cascada gestionadas por el servidor (compatibilidad)
+        // recarga en cascada
         if ("cambiarPais".equals(accionLimpia)) {
             dto.setProvinciaId(null);
             dto.setDepartamentoId(null);
@@ -203,18 +170,6 @@ public class AuthController {
         }
     }
 
-    public String processRegister(ClienteRegistroDTO dto,
-                                  String accion,
-                                  HttpSession session,
-                                  Model model) {
-        return processRegister(dto, accion, null, session, model);
-    }
-
-    public String processRegister(ClienteRegistroDTO dto,
-                                  HttpSession session,
-                                  Model model) {
-        return processRegister(dto, null, null, session, model);
-    }
 
     // Endpoints de confirmación y activación de cuenta por correo (rules/CONTROLLERS.md)
     @GetMapping("/verify")
@@ -264,29 +219,27 @@ public class AuthController {
 
     private void cargarDatosFormularioRegistro(Model model, ClienteRegistroDTO dto) {
         model.addAttribute("tiposDocumento", TipoDocumento.values());
-        if (nacionalidadRepository != null) {
-            model.addAttribute("nacionalidades", nacionalidadRepository.findByEliminadoFalse());
+
+        model.addAttribute("nacionalidades", nacionalidadRepository.findByEliminadoFalse());
+
+        model.addAttribute("paises", zonaService.listarPaisesActivos());
+
+        if (dto != null && dto.getPaisId() != null && !dto.getPaisId().trim().isEmpty()) {
+            model.addAttribute("provincias", zonaService.listarProvinciasPorPais(dto.getPaisId()));
+        } else {
+            model.addAttribute("provincias", List.of());
         }
-        if (zonaService != null) {
-            model.addAttribute("paises", zonaService.listarPaisesActivos());
 
-            if (dto != null && dto.getPaisId() != null && !dto.getPaisId().trim().isEmpty()) {
-                model.addAttribute("provincias", zonaService.listarProvinciasPorPais(dto.getPaisId()));
-            } else {
-                model.addAttribute("provincias", List.of());
-            }
+        if (dto != null && dto.getProvinciaId() != null && !dto.getProvinciaId().trim().isEmpty()) {
+            model.addAttribute("departamentos", zonaService.listarDepartamentosPorProvincia(dto.getProvinciaId()));
+        } else {
+            model.addAttribute("departamentos", List.of());
+        }
 
-            if (dto != null && dto.getProvinciaId() != null && !dto.getProvinciaId().trim().isEmpty()) {
-                model.addAttribute("departamentos", zonaService.listarDepartamentosPorProvincia(dto.getProvinciaId()));
-            } else {
-                model.addAttribute("departamentos", List.of());
-            }
-
-            if (dto != null && dto.getDepartamentoId() != null && !dto.getDepartamentoId().trim().isEmpty()) {
-                model.addAttribute("localidades", zonaService.listarLocalidadesPorDepartamento(dto.getDepartamentoId()));
-            } else {
-                model.addAttribute("localidades", List.of());
-            }
+        if (dto != null && dto.getDepartamentoId() != null && !dto.getDepartamentoId().trim().isEmpty()) {
+            model.addAttribute("localidades", zonaService.listarLocalidadesPorDepartamento(dto.getDepartamentoId()));
+        } else {
+            model.addAttribute("localidades", List.of());
         }
     }
 

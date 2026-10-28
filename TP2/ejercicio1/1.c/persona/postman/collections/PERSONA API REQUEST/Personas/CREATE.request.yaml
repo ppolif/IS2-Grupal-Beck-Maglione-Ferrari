@@ -1,0 +1,36 @@
+$kind: http-request
+url: http://localhost:9000/api/v1/persona
+method: POST
+body:
+  type: json
+  content: |-
+    {
+        "nombre": "Martin",
+        "apellido": "Maglione",
+        "dni":46916025,
+        "domicilio": {
+            "calle":"av. Piola",
+            "numero": 420,
+            "localidad": {
+                "id": 1,
+                "denominacion": "Godoy Cruz"
+            }
+        },
+        "libros": [
+            {
+                "titulo": "Los dias del venado",
+                "fecha": 2012,
+                "genero": "fantastico",
+                "paginas": 420,
+                "autores": [
+                    {
+                        "id": 1,
+                        "nombre": "Liliana",
+                        "apellido": "Bodoc",
+                        "biografia": "Gran mentora y referente"
+                    }
+                ]
+            }
+        ]
+    }
+order: 3669892141763555

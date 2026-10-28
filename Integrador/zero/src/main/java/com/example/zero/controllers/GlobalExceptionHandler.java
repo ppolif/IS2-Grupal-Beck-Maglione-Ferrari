@@ -7,19 +7,14 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+
+///le dice a Spring que esta clase es un asesor global que "vigila" a todos los controladores del sistema
+/// No se llama manualmente con código
+/// Spring Boot lo activa automáticamente si un usuario intenta acceder a una ruta inexistente o un
+/// controlador lanza una excepción
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({MaxUploadSizeExceededException.class, MultipartException.class})
-    public String handleMaxSizeException(Exception exc, HttpServletRequest request, RedirectAttributes redirectAttributes) {
-        redirectAttributes.addFlashAttribute("errorMessage", "El archivo seleccionado es demasiado grande. Por favor selecciona una imagen de menor tamaño (máximo 50MB).");
-
-        String referer = request.getHeader("Referer");
-        if (referer != null && !referer.isBlank()) {
-            return "redirect:" + referer;
-        }
-        return "redirect:/register";
-    }
 
     @ExceptionHandler({org.springframework.web.servlet.resource.NoResourceFoundException.class,
                        org.springframework.web.servlet.NoHandlerFoundException.class})

@@ -19,11 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Controlador para la integración del flujo de pagos con Mercado Pago.
- * Maneja la creación de la preferencia desde el carrito, la redirección hacia la pasarela
- * y el retorno exitoso de la transacción.
- */
+///controlador para la integración del flujo de pagos con mercado pago.
+///maneja la creación de la preferencia desde el carrito, la redirección hacia la pasarela
+///y el retorno de la transacción.
 @Controller
 @RequiredArgsConstructor
 public class PagosController {
@@ -31,10 +29,8 @@ public class PagosController {
     private final MercadoPagoService mercadoPagoService;
     private final OrdenCompraService ordenCompraService;
 
-    /**
-     * Inicia el proceso de pago con Mercado Pago para el carrito de compras activo.
-     * Crea la preferencia de pago en Mercado Pago y redirige al cliente a la pantalla oficial de cobro.
-     */
+    ///inicia el proceso de pago con Mercado Pago para el carrito de compras activo.
+    ///crea la preferencia de pago en Mercado Pago y redirige al cliente a la pantalla oficial de cobro
     @RequestMapping(value = {"/api/mercadoPago", "/checkout/mercadopago", "/shop/checkout/mercadopago"}, method = {RequestMethod.GET, RequestMethod.POST})
     public String mercadoPago(HttpSession session,
                               HttpServletRequest request,
@@ -62,10 +58,12 @@ public class PagosController {
                 return "redirect:/shop/cart";
             }
 
-            // Construir URL base dinámica respetando proxies / tunnels (ngrok) si existen
+            // construir URL base dinámica respetando proxies / tunnels (ngrok) si existen
+            //forma en que se comunican el cliente y el servidor
             String scheme = request.getHeader("X-Forwarded-Proto") != null
                     ? request.getHeader("X-Forwarded-Proto")
                     : request.getScheme();
+            //nombre o dirección IP de la computadora donde corre la aplicación
             String host = request.getHeader("X-Forwarded-Host") != null
                     ? request.getHeader("X-Forwarded-Host")
                     : (request.getServerName() + ((request.getServerPort() == 80 || request.getServerPort() == 443) ? "" : ":" + request.getServerPort()));
@@ -85,10 +83,8 @@ public class PagosController {
     }
 
 
-    /**
-     * Retorno exitoso de Mercado Pago tras un pago aprobado.
-     * Registra la venta y redirige a la página de confirmación con los detalles del pedido.
-     */
+    ///retorno exitoso de mercado pago
+    ///registra la venta y redirige a la página de confirmación con los detalles del pedido.
     @GetMapping({"/checkout/success", "/api/mercadoPago/success", "/shop/checkout/success"})
     public String pagoExitoso(@RequestParam(name = "payment_id", required = false) String paymentId,
                               @RequestParam(name = "status", required = false) String status,

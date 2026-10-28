@@ -1,0 +1,74 @@
+pipeline {
+    agent any
+
+    options {
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '15'))
+    }
+
+    tools {
+        maven 'Maven3'
+        nodejs 'Node20'
+    }
+
+    stages {
+        stage('Backend: Compilación y Pruebas') {
+            steps {
+                dir('integrador-2/backend') {
+                    // El .env de CI se carga como credencial y se exporta solo
+                    // dentro de este bloque. Los tests usan H2 y el perfil "test".
+                    withCredentials([file(credentialsId: 'dulce-mayor-env', variable: 'ENV_FILE')]) {
+                        sh '''
+                            set -a
+                            . "$ENV_FILE"
+                            set +a
+                            mvn -B clean test -Dspring.profiles.active=test
+                        '''
+                    }
+                }
+            }
+        }
+        stage('Frontend Admin: Build') {
+            steps {
+                dir('integrador-2/frontend-admin') {
+                    sh 'npm install'
+                    sh 'npm run build'
+                }
+            }
+        }
+        stage('Frontend Institucional: Build') {
+            steps {
+                dir('integrador-2/frontend-institucional') {
+                    sh 'npm install'
+                    sh 'npm run build'
+                }
+            }
+        }
+        stage('Frontend Preventor: Build') {
+            steps {
+                dir('integrador-2/frontend-preventor') {
+                    sh 'npm install'
+                    sh 'npm run build'
+                }
+            }
+        }
+        stage('Docker: Validar Imágenes') {
+            steps {
+                dir('integrador-2') {
+                    // --env-file evita las advertencias de variables vacías al interpolar el compose.
+                    withCredentials([file(credentialsId: 'dulce-mayor-env', variable: 'ENV_FILE')]) {
+                        sh 'docker compose --env-file "$ENV_FILE" build'
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Informe de tests en Jenkins (útil como evidencia para la presentación).
+            junit testResults: 'integrador-2/backend/target/surefire-reports/*.xml', allowEmptyResults: true
+            sh 'docker image prune -f'
+        }
+    }
+}

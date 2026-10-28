@@ -10,6 +10,7 @@ import com.example.zero.enums.EstadoFactura;
 import com.example.zero.enums.TipoDePago;
 import com.example.zero.repositories.*;
 import com.example.zero.services.producto.ProductoService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,9 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Servicio de negocio para la gestión de compras y órdenes a Proveedores (FacturaProveedor).
- */
 @Service
 public class CompraProveedorService {
 
@@ -30,30 +28,17 @@ public class CompraProveedorService {
     private final DetalleRepository detalleRepository;
     private final StockRepository stockRepository;
     private final ProveedorRepository proveedorRepository;
-    private final ProductoRepository productoRepository;
     private final FormaDePagoRepository formaDePagoRepository;
     private final ProductoService productoService;
     private final StockService stockService;
 
-    public CompraProveedorService(FacturaProveedorRepository facturaProveedorRepository,
-                                  FacturaRepository facturaRepository,
-                                  DetalleRepository detalleRepository,
-                                  StockRepository stockRepository,
-                                  ProveedorRepository proveedorRepository,
-                                  ProductoRepository productoRepository,
-                                  FormaDePagoRepository formaDePagoRepository,
-                                  ProductoService productoService) {
-        this(facturaProveedorRepository, facturaRepository, detalleRepository, stockRepository,
-                proveedorRepository, productoRepository, formaDePagoRepository, productoService, null);
-    }
 
-    @org.springframework.beans.factory.annotation.Autowired
+    @Autowired
     public CompraProveedorService(FacturaProveedorRepository facturaProveedorRepository,
                                   FacturaRepository facturaRepository,
                                   DetalleRepository detalleRepository,
                                   StockRepository stockRepository,
                                   ProveedorRepository proveedorRepository,
-                                  ProductoRepository productoRepository,
                                   FormaDePagoRepository formaDePagoRepository,
                                   ProductoService productoService,
                                   StockService stockService) {
@@ -62,7 +47,6 @@ public class CompraProveedorService {
         this.detalleRepository = detalleRepository;
         this.stockRepository = stockRepository;
         this.proveedorRepository = proveedorRepository;
-        this.productoRepository = productoRepository;
         this.formaDePagoRepository = formaDePagoRepository;
         this.productoService = productoService;
         this.stockService = stockService;
@@ -99,7 +83,6 @@ public class CompraProveedorService {
         Proveedor proveedor = proveedorRepository.findActive(proveedorId.trim())
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró el proveedor activo con ID: " + proveedorId));
 
-        // 1. Número correlativo o ingresado
         Long numeroFactura = numeroFacturaIngresado;
         if (numeroFactura == null || numeroFactura <= 0) {
             numeroFactura = facturaRepository.findTopByOrderByNumeroFacturaDesc()
@@ -107,7 +90,6 @@ public class CompraProveedorService {
                     .orElse(5001L);
         }
 
-        // 2. Forma de pago
         TipoDePago tipoPago;
         try {
             tipoPago = (formaDePagoStr != null && !formaDePagoStr.trim().isEmpty())
@@ -116,6 +98,7 @@ public class CompraProveedorService {
         } catch (IllegalArgumentException e) {
             tipoPago = TipoDePago.TRANSFERENCIA;
         }
+
 
         final TipoDePago finalTipoPago = tipoPago;
         FormaDePago formaDePago = formaDePagoRepository.findByTipoPagoAndEliminadoFalse(finalTipoPago)
@@ -127,7 +110,7 @@ public class CompraProveedorService {
                                 .build()
                 ));
 
-        // 3. Estado de la Factura
+
         EstadoFactura estado;
         try {
             estado = (estadoStr != null && !estadoStr.trim().isEmpty())
@@ -137,7 +120,7 @@ public class CompraProveedorService {
             estado = EstadoFactura.SIN_DEFINIR;
         }
 
-        // 4. Instanciar FacturaProveedor
+
         FacturaProveedor facturaProveedor = new FacturaProveedor();
         facturaProveedor.setProveedor(proveedor);
         facturaProveedor.setNumeroFactura(numeroFactura);
@@ -148,7 +131,7 @@ public class CompraProveedorService {
         facturaProveedor.setEliminado(false);
         facturaProveedor.setDetalles(new HashSet<>());
 
-        // 5. Procesar detalles de compra e incrementar stock solo si es ENTREGADA
+        // procesar detalles de compra e incrementar stock solo si es entregada
         double total = 0.0;
         List<Detalle> detallesList = new ArrayList<>();
 
@@ -187,7 +170,7 @@ public class CompraProveedorService {
             detallesList.add(detalle);
             facturaProveedor.getDetalles().add(detalle);
 
-            // Si el estado es ENTREGADA al registrar, se incrementa el stock inmediatamente
+            // incremento de stock
             if (estado == EstadoFactura.ENTREGADA) {
                 int stockActual = (stockService != null)
                         ? stockService.calcularStockActual(producto.getId())
@@ -195,14 +178,14 @@ public class CompraProveedorService {
                 int nuevoBalance = (stockService != null)
                         ? stockService.aumentarStock(stockActual, cantidad)
                         : stockActual + cantidad;
-                // Guardar stock trazable asociado al detalle
+
             }
         }
 
         facturaProveedor.setTotalPagado(Math.round(total * 100.0) / 100.0);
         FacturaProveedor guardada = facturaProveedorRepository.save(facturaProveedor);
 
-        // Guardar detalles y registrar Stock trazable si corresponde
+
         for (Detalle d : detallesList) {
             d.setFactura(guardada);
             Detalle detGuardado = detalleRepository.save(d);
@@ -234,14 +217,7 @@ public class CompraProveedorService {
         return guardada;
     }
 
-    /**
-     * Marca una orden de compra a proveedor como ENTREGADA, incrementando de manera
-     * atómica y trazable el stock de cada producto incluido según el diagrama de secuencia.
-     *
-     * @param facturaProveedorId ID de la orden de compra a proveedor
-     * @return entidad FacturaProveedor actualizada a ENTREGADA
-     * @throws IllegalStateException si la factura ya fue entregada previamente
-     */
+
     @Transactional
     public FacturaProveedor marcarComoEntregada(String facturaProveedorId) {
         FacturaProveedor factura = buscarPorId(facturaProveedorId);
@@ -320,10 +296,7 @@ public class CompraProveedorService {
         facturaProveedorRepository.save(factura);
     }
 
-    /**
-     * Obtiene el costo unitario de compra más reciente para un producto y proveedor dados,
-     * buscando en la factura de compra más reciente de ese proveedor que contenga dicho producto.
-     */
+    ///btiene el costo unitario de compra más reciente para un producto y proveedor dados,
     @Transactional(readOnly = true)
     public Double obtenerUltimoCostoUnitario(String proveedorId, String productoId) {
         if (proveedorId == null || proveedorId.isBlank() || productoId == null || productoId.isBlank()) {
@@ -340,10 +313,7 @@ public class CompraProveedorService {
         return 0.0;
     }
 
-    /**
-            * Calcula el costo o precio unitario a partir de un Detalle.
-     * Al ser una regla de negocio y cálculo financiero, corresponde a la capa de Servicio.
-            */
+    ///calcula el costo o precio unitario a partir de un detalle
     public double calcularCostoUnitario(Detalle detalle) {
         if (detalle == null || detalle.getCantidad() <= 0) {
             return 0.0;

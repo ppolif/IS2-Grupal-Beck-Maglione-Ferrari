@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<nav th:fragment="navbar" class="bg-white/95 backdrop-blur-md sticky top-0 z-50 border-b border-rose-100 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-20 items-center">
+            
+            <!-- Logo Brand (BloomShop) -->
+            <div class="flex items-center space-x-3">
+                <a th:href="@{/}" class="flex items-center space-x-2">
+                    <span class="w-10 h-10 rounded-full bg-bloom-100 text-bloom-600 flex items-center justify-center text-xl shadow-inner">
+                        <i class="fa-solid fa-spa"></i>
+                    </span>
+                    <div>
+                        <span class="font-serif-title text-2xl font-bold tracking-tight text-slate-800">Bloom<span class="text-bloom-600">Shop</span></span>
+                        <span class="block text-[10px] uppercase tracking-widest text-slate-400 font-semibold -mt-1">Boutique & Nursery</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Enlaces Principales -->
+            <div class="hidden md:flex items-center space-x-8 font-medium text-sm text-slate-600">
+                <a th:href="@{/catalogo}" class="hover:text-bloom-600 transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-store text-xs text-slate-400"></i>
+                    <span>Catálogo</span>
+                </a>
+                
+                <!-- Menú Admin (solo visible para administradores) -->
+                <div sec:authorize="hasRole('ADMIN')" class="relative group">
+                    <button class="flex items-center space-x-1.5 text-bloom-700 font-semibold hover:text-bloom-800">
+                        <i class="fa-solid fa-shield-halved text-xs"></i>
+                        <span>Panel Admin</span>
+                        <i class="fa-solid fa-chevron-down text-[10px] ml-0.5"></i>
+                    </button>
+                    <div class="absolute left-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-2 hidden group-hover:block transition-all">
+                        <a th:href="@{/admin/articulos/nuevo}" class="block px-4 py-2 text-xs text-slate-700 hover:bg-bloom-50 hover:text-bloom-600">
+                            <i class="fa-solid fa-plus-circle mr-2 text-bloom-500"></i>Alta de Artículo (HU7)
+                        </a>
+                        <a th:href="@{/admin/proveedores/nuevo}" class="block px-4 py-2 text-xs text-slate-700 hover:bg-bloom-50 hover:text-bloom-600">
+                            <i class="fa-solid fa-truck-field mr-2 text-bloom-500"></i>Alta de Proveedor (HU6)
+                        </a>
+                    </div>
+                </div>
+
+                <a sec:authorize="isAuthenticated()" th:href="@{/historial}" class="hover:text-bloom-600 transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-clock-rotate-left text-xs text-slate-400"></i>
+                    <span>Mis Compras</span>
+                </a>
+            </div>
+
+            <!-- Botones de Acción (Carrito y Usuario) -->
+            <div class="flex items-center space-x-4">
+                
+                <!-- Botón Carrito con Contador Dinámico -->
+                <a th:href="@{/carrito}" class="relative p-2.5 rounded-full text-slate-700 hover:text-bloom-600 hover:bg-bloom-50 transition">
+                    <i class="fa-solid fa-bag-shopping text-xl"></i>
+                    <span th:if="${cantidadItemsCarrito != null && cantidadItemsCarrito > 0}"
+                          th:text="${cantidadItemsCarrito}"
+                          class="absolute -top-1 -right-1 bg-bloom-600 text-white text-[11px] font-bold rounded-full h-5 w-5 flex items-center justify-center ring-2 ring-white">
+                        0
+                    </span>
+                </a>
+
+                <!-- Autenticación Usuario -->
+                <div sec:authorize="isAnonymous()" class="flex items-center space-x-2">
+                    <a th:href="@{/login}" class="text-xs font-semibold text-slate-700 hover:text-bloom-600 px-3 py-2 rounded-lg transition">
+                        Iniciar Sesión
+                    </a>
+                    <a th:href="@{/registro}" class="text-xs font-semibold bg-bloom-600 hover:bg-bloom-700 text-white px-4 py-2 rounded-lg shadow-sm shadow-rose-200 transition">
+                        Registrarse
+                    </a>
+                </div>
+
+                <div sec:authorize="isAuthenticated()" class="flex items-center space-x-3">
+                    <span class="text-xs text-slate-500 hidden sm:inline">
+                        Hola, <strong class="text-slate-700" sec:authentication="name">Usuario</strong>
+                    </span>
+                    <form th:action="@{/logout}" method="post" class="inline">
+                        <button type="submit" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Cerrar sesión">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</nav>
+</body>
+</html>
+

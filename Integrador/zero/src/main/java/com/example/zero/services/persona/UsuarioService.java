@@ -60,11 +60,6 @@ public class UsuarioService {
     }
 
     @Transactional
-    public Usuario crearUsuario(String nombreUsuario, String clave, RolUsuario rol, Persona persona) {
-        return crearUsuario(nombreUsuario, clave, rol, persona, true);
-    }
-
-    @Transactional
     public Usuario crearUsuario(String nombreUsuario, String clave, RolUsuario rol, Persona persona, boolean activo) {
         validar(nombreUsuario, clave, rol);
         String usuarioLimpio = nombreUsuario.trim().toLowerCase();

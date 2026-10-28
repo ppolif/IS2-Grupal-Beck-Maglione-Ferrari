@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="alerts">
+    <div th:if="${msgExito != null}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span th:text="${msgExito}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${msgError != null}" class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span th:text="${msgError}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+</body>
+</html>
+

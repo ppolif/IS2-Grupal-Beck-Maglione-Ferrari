@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Ruleta - Resultados</title>
+    <!-- El mismo tema oscuro Cyborg por internet -->
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/cyborg/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand fw-bold text-info" th:href="@{/}">🎬 CineApp</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}">Inicio</a></li>
+                <li class="nav-item"><a class="nav-link active" th:href="@{/ruleta}">Ruleta</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <!-- Tarjeta del Formulario -->
+    <div class="card bg-dark border-secondary mb-5 shadow">
+        <div class="card-body">
+            <form th:action="@{/ruleta/buscar}" method="GET" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label text-white fw-bold">Año *</label>
+                    <!-- Agregamos 'required' para que el usuario no pueda enviar el formulario vacío -->
+                    <input type="number" class="form-control bg-black text-white border-secondary" name="anio" placeholder="Ej: 2023" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-white fw-bold">Género (Opcional)</label>
+                    <select name="genero" class="form-select bg-black text-white border-secondary">
+                        <option value="">Todos</option>
+                        <option value="28">Acción</option>
+                        <option value="35">Comedia</option>
+                        <option value="27">Terror</option>
+                        <option value="878">Ciencia Ficción</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-info w-100 fw-bold text-dark">Buscar Películas</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Grilla de Resultados -->
+    <div class="row" th:if="${peliculas != null}">
+        <h3 class="text-white mb-4 border-bottom border-secondary pb-2">Tus Resultados</h3>
+
+        <div class="col-lg-4 col-md-6 mb-4" th:each="pelicula : ${peliculas}">
+            <div class="card bg-dark text-white border-secondary shadow-lg h-100">
+                <img th:src="${pelicula.posterUrl}" class="card-img-top" alt="Poster" style="height: 400px; object-fit: cover;">
+                <div class="card-body">
+                    <h5 class="card-title text-info fw-bold" th:text="${pelicula.titulo}">Título</h5>
+                    <div class="d-flex justify-content-between my-3">
+                        <span class="badge bg-secondary fs-6" th:text="${pelicula.fechaEstreno}">Año</span>
+                    </div>
+                    <p class="card-text text-light opacity-75" style="font-size: 0.9rem;" th:text="${pelicula.sinopsis}"></p>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(peliculas)}" class="col-12">
+            <div class="alert alert-warning text-center fw-bold text-dark">No se encontraron películas con esos filtros. Intenta con más minutos.</div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

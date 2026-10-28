@@ -1,0 +1,7 @@
+Funcionalidad Propuesta: Módulo de Seguros y Asistencia al Viajero
+
+El cliente ahora puede incluir dentro de su Paquete Turístico distintas pólizas de seguro (médico, cancelación, pérdida de equipaje). Cada póliza es provista por una empresa externa y cuenta con cláusulas específicas de cobertura.
+
+Creamos una superclase Servicio de la cual heredarian Servicio de Transporte, Alojamiento, Excursion y se agrega Seguro de Viaje. Esta ultima se divide por herencia en SeguroMedico,SeguroCancelacion,SeguroEquipaje.
+
+

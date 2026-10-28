@@ -18,9 +18,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Controlador de Administración para gestionar Órdenes de Compra a Proveedores (FacturaProveedor).
- */
+//abm de ordenes de compra a proveedores
 @Controller
 public class AdminPurchaseOrderController {
 
@@ -36,9 +34,7 @@ public class AdminPurchaseOrderController {
         this.productoService = productoService;
     }
 
-    /**
-     * Formulario de registro de orden de compra / FacturaProveedor y listado de órdenes registradas.
-     */
+    //formulario
     @GetMapping({"/admin/registrar-compra", "/admin/compras/nueva", "/admin/purchase-orders", "/admin/purchase-orders/nueva"})
     public String showRegistrarCompraForm(Model model,
                                           @RequestParam(name = "success", required = false) String success,
@@ -58,10 +54,7 @@ public class AdminPurchaseOrderController {
         return "admin/registrar-compra";
     }
 
-    /**
-     * Procesa y persiste la FacturaProveedor con sus detalles de compra.
-     * Número de factura y fecha de factura se generan automáticamente si se omiten.
-     */
+    ///
     @PostMapping({"/admin/compras/guardar", "/admin/purchase-orders"})
     public String registrarCompra(@RequestParam("proveedorId") String proveedorId,
                                   @RequestParam(name = "numeroFactura", required = false) Long numeroFactura,
@@ -101,24 +94,8 @@ public class AdminPurchaseOrderController {
         }
     }
 
-    /**
-     * Sobrecarga sin numeroFactura ni fechaFactura.
-     */
-    public String registrarCompra(String proveedorId,
-                                  String formaDePago,
-                                  String estado,
-                                  List<String> productoIds,
-                                  List<Integer> cantidades,
-                                  List<Double> costosUnitarios,
-                                  Model model,
-                                  RedirectAttributes redirectAttributes) {
-        return registrarCompra(proveedorId, null, null, formaDePago, estado, productoIds, cantidades, costosUnitarios, model, redirectAttributes);
-    }
 
-    /**
-     * Fragmento Thymeleaf para consultar y renderizar el costo unitario más reciente
-     * de un producto provisto por un proveedor específico (Spring MVC sin REST).
-     */
+    ///busca el ultimo precio al que un proveedor cobro un producto para mostrarlo en el formulario
     @GetMapping("/admin/compras/costo-unitario")
     public String obtenerCostoUnitario(
             @RequestParam(value = "proveedorId", required = false) String proveedorId,
@@ -135,9 +112,7 @@ public class AdminPurchaseOrderController {
         return "admin/fragments/costo-unitario :: bloqueCosto";
     }
 
-    /**
-     * Baja lógica de una orden de compra a proveedor.
-     */
+    ///baja logica
     @PostMapping("/admin/purchase-orders/eliminar/{id}")
     public String eliminarCompra(@PathVariable("id") String id, RedirectAttributes redirectAttributes) {
         try {
@@ -148,10 +123,7 @@ public class AdminPurchaseOrderController {
         }
     }
 
-    /**
-     * Endpoint para marcar una orden de compra como ENTREGADA e ingresar el stock correspondiente,
-     * siguiendo el diagrama de secuencia.
-     */
+    ///marcar como entregada la factura, que es lo que aumenta el stock
     @PostMapping({"/admin/compras/{id}/entregar", "/admin/purchase-orders/{id}/entregar", "/admin/compras/{id}/pagar", "/admin/purchase-orders/{id}/pagar"})
     public String marcarComoEntregada(@PathVariable("id") String id, RedirectAttributes redirectAttributes) {
         try {
@@ -167,6 +139,8 @@ public class AdminPurchaseOrderController {
         }
     }
 
+    //metodo que carga los datos para elegir en el formulario de registro de factura. se hace otro metodo porque
+    //se usa en show y en registrarCompra (en caso de que falle, vuelve a mostrar lo mismo)
     private void cargarDatosModelo(Model model) {
         List<Proveedor> proveedores = proveedorService.listarActivos();
         if (proveedores == null || proveedores.isEmpty()) {

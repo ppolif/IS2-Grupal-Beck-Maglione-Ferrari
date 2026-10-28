@@ -1,0 +1,6 @@
+NOMBRE;APELLIDO;DNI;CALLE;NÚMERO;
+Distribuidora Los Andes;SA;30111222;San Martin;1234;
+Libreria Del Centro;SRL;30222333;Mitre;567;
+Papelera Cuyana;SA;30333444;Las Heras;890;
+Imprenta Grafica;SRL;30444555;Colon;432;
+Editorial Aconcagua;SA;30555666;Sarmiento;765;

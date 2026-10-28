@@ -1,0 +1,1711 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3200 2150" width="3200" height="2150">
+
+        <defs>
+            <filter id="shadow" x="-8%" y="-8%" width="120%" height="120%">
+                <feDropShadow dx="1.5" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.12"/>
+            </filter>
+        </defs>
+        <rect width="100%" height="100%" fill="#FFFFFF"/>
+        
+        <!-- Header Banner -->
+        <g id="header">
+            <rect x="0" y="0" width="3200" height="75" fill="#1A237E"/>
+            <text x="1600" y="42" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF" letter-spacing="1">DIAGRAMA ENTIDAD - RELACIÓN (MODELO CONCEPTUAL DER)</text>
+            <text x="1600" y="63" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#E0E0E0">Entidades (Rectángulos) | Atributos (Círculos) | Claves Primarias (Doble Círculo) | Relaciones (Rombos) | Cardinalidades (mín, máx)</text>
+        </g>
+        
+<!-- SECTIONS -->
+
+        <g class="section">
+            <rect x="60" y="100" width="1000" height="880" rx="14" ry="14" fill="#F8FAFC" stroke="#B0BEC5" stroke-width="1.8" stroke-dasharray="6,6"/>
+            <rect x="85" y="86" width="272.0" height="28" rx="6" ry="6" fill="#263238"/>
+            <text x="221.0" y="105" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="12" fill="#FFFFFF">MÓDULO: UBICACIÓN GEOGRÁFICA</text>
+        </g>
+        
+
+        <g class="section">
+            <rect x="1100" y="100" width="1050" height="880" rx="14" ry="14" fill="#F8FAFC" stroke="#B0BEC5" stroke-width="1.8" stroke-dasharray="6,6"/>
+            <rect x="1125" y="86" width="348.5" height="28" rx="6" ry="6" fill="#263238"/>
+            <text x="1299.25" y="105" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="12" fill="#FFFFFF">MÓDULO: PERSONAS, USUARIOS Y PERSONAL</text>
+        </g>
+        
+
+        <g class="section">
+            <rect x="60" y="1030" width="1300" height="1080" rx="14" ry="14" fill="#F8FAFC" stroke="#B0BEC5" stroke-width="1.8" stroke-dasharray="6,6"/>
+            <rect x="85" y="1016" width="374.0" height="28" rx="6" ry="6" fill="#263238"/>
+            <text x="272.0" y="1035" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="12" fill="#FFFFFF">MÓDULO: EMPRESA, PROVEEDORES Y CONTACTOS</text>
+        </g>
+        
+
+        <g class="section">
+            <rect x="1400" y="1030" width="1740" height="970" rx="14" ry="14" fill="#F8FAFC" stroke="#B0BEC5" stroke-width="1.8" stroke-dasharray="6,6"/>
+            <rect x="1425" y="1016" width="408.0" height="28" rx="6" ry="6" fill="#263238"/>
+            <text x="1629.0" y="1035" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="12" fill="#FFFFFF">MÓDULO: PRODUCTOS, STOCK, PRECIOS E IMÁGENES</text>
+        </g>
+        
+
+        <g class="section">
+            <rect x="2200" y="100" width="940" height="880" rx="14" ry="14" fill="#F8FAFC" stroke="#B0BEC5" stroke-width="1.8" stroke-dasharray="6,6"/>
+            <rect x="2225" y="86" width="306.0" height="28" rx="6" ry="6" fill="#263238"/>
+            <text x="2378.0" y="105" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="12" fill="#FFFFFF">MÓDULO: VENTAS, FACTURAS Y PAGOS</text>
+        </g>
+        
+<!-- LINES -->
+<line x1="180" y1="180" x2="80" y2="140" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="180" y1="180" x2="80" y2="190" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="180" y1="180" x2="80" y2="240" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="520" y1="180" x2="520" y2="115" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="520" y1="180" x2="620" y2="125" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="520" y1="180" x2="420" y2="115" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="860" y1="290" x2="975" y2="235" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="860" y1="290" x2="985" y2="285" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="860" y1="290" x2="985" y2="335" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="560" y1="460" x2="670" y2="520" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="560" y1="460" x2="560" y2="535" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="560" y1="460" x2="450" y2="535" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="560" y1="460" x2="350" y2="490" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="560" y1="740" x2="390" y2="670" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="560" y1="740" x2="370" y2="720" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="560" y1="740" x2="370" y2="770" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="560" y1="740" x2="390" y2="820" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="560" y1="740" x2="460" y2="860" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="560" y1="740" x2="580" y2="860" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="560" y1="740" x2="690" y2="850" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="560" y1="740" x2="740" y2="795" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="180" y1="180" x2="350" y2="180" stroke="#37474F" stroke-width="1.8"/>
+<line x1="350" y1="180" x2="520" y2="180" stroke="#37474F" stroke-width="1.8"/>
+<line x1="520" y1="180" x2="710" y2="225" stroke="#37474F" stroke-width="1.8"/>
+<line x1="710" y1="225" x2="860" y2="290" stroke="#37474F" stroke-width="1.8"/>
+<line x1="860" y1="290" x2="740" y2="395" stroke="#37474F" stroke-width="1.8"/>
+<line x1="740" y1="395" x2="560" y2="460" stroke="#37474F" stroke-width="1.8"/>
+<line x1="560" y1="460" x2="560" y2="600" stroke="#37474F" stroke-width="1.8"/>
+<line x1="560" y1="600" x2="560" y2="740" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1600" y1="360" x2="1600" y2="275" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1600" y1="360" x2="1460" y2="285" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1600" y1="360" x2="1740" y2="285" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1600" y1="360" x2="1410" y2="335" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1600" y1="360" x2="1790" y2="335" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1600" y1="360" x2="1440" y2="385" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1260" y1="580" x2="1160" y2="505" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1260" y1="580" x2="1160" y2="550" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1260" y1="580" x2="1160" y2="595" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1260" y1="580" x2="1160" y2="640" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1260" y1="580" x2="1180" y2="685" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1260" y1="580" x2="1280" y2="690" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1260" y1="580" x2="1375" y2="650" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1260" y1="580" x2="1375" y2="540" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1260" y1="580" x2="1385" y2="590" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1880" y1="580" x2="1880" y2="660" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2000" y1="820" x2="1930" y2="880" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2000" y1="820" x2="2030" y2="880" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2000" y1="820" x2="2110" y2="850" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1580" y1="740" x2="1440" y2="740" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1580" y1="740" x2="1490" y2="805" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1600" y1="360" x2="1400" y2="475" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1400" y1="475" x2="1260" y2="580" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1600" y1="360" x2="1760" y2="475" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1760" y1="475" x2="1880" y2="580" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1600" y1="360" x2="1590" y2="570" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1590" y1="570" x2="1580" y2="740" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1880" y1="580" x2="1950" y2="715" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1950" y1="715" x2="2000" y2="820" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1600" y1="360" x2="980" y2="580" stroke="#37474F" stroke-width="1.8"/>
+<line x1="980" y1="580" x2="560" y2="740" stroke="#37474F" stroke-width="1.8"/>
+<line x1="680" y1="1150" x2="540" y2="1120" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="680" y1="1150" x2="540" y2="1170" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="680" y1="1150" x2="570" y2="1220" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="680" y1="1150" x2="670" y2="1235" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="680" y1="1150" x2="780" y2="1230" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="200" y1="1380" x2="90" y2="1330" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="200" y1="1380" x2="90" y2="1380" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="200" y1="1380" x2="90" y2="1430" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="200" y1="1380" x2="110" y2="1480" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="680" y1="1470" x2="680" y2="1390" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="680" y1="1470" x2="560" y2="1410" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="680" y1="1470" x2="550" y2="1470" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="680" y1="1470" x2="560" y2="1530" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="420" y1="1730" x2="300" y2="1790" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="420" y1="1730" x2="410" y2="1805" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="420" y1="1730" x2="520" y2="1805" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="840" y1="1730" x2="790" y2="1805" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="840" y1="1730" x2="890" y2="1805" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="680" y1="1150" x2="620" y2="960" stroke="#37474F" stroke-width="1.8"/>
+<line x1="620" y1="960" x2="560" y2="740" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1580" y1="740" x2="1100" y2="940" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1100" y1="940" x2="680" y2="1150" stroke="#37474F" stroke-width="1.8"/>
+<line x1="680" y1="1150" x2="680" y2="1310" stroke="#37474F" stroke-width="1.8"/>
+<line x1="680" y1="1310" x2="680" y2="1470" stroke="#37474F" stroke-width="1.8"/>
+<line x1="200" y1="1380" x2="440" y2="1420" stroke="#37474F" stroke-width="1.8"/>
+<line x1="440" y1="1420" x2="680" y2="1470" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1600" y1="360" x2="1120" y2="1080" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1120" y1="1080" x2="680" y2="1470" stroke="#37474F" stroke-width="1.8"/>
+<line x1="680" y1="1470" x2="520" y2="1610" stroke="#37474F" stroke-width="1.8"/>
+<line x1="520" y1="1610" x2="420" y2="1730" stroke="#37474F" stroke-width="1.8"/>
+<line x1="680" y1="1470" x2="770" y2="1610" stroke="#37474F" stroke-width="1.8"/>
+<line x1="770" y1="1610" x2="840" y2="1730" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2960" y1="1140" x2="3090" y2="1090" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2960" y1="1140" x2="3090" y2="1140" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2960" y1="1140" x2="3090" y2="1190" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2600" y1="1140" x2="2600" y2="1070" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2600" y1="1140" x2="2690" y2="1080" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2600" y1="1140" x2="2510" y2="1080" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2200" y1="1280" x2="2330" y2="1210" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2200" y1="1280" x2="2360" y2="1255" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2200" y1="1280" x2="2360" y2="1305" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2200" y1="1280" x2="2340" y2="1355" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2200" y1="1280" x2="2310" y2="1400" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2200" y1="1280" x2="2230" y2="1400" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2200" y1="1280" x2="2140" y2="1400" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2750" y1="1390" x2="2890" y2="1340" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2750" y1="1390" x2="2910" y2="1390" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2750" y1="1390" x2="2910" y2="1440" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2750" y1="1390" x2="2850" y2="1480" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2750" y1="1390" x2="2750" y2="1480" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1650" y1="1270" x2="1530" y2="1220" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1650" y1="1270" x2="1520" y2="1270" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1650" y1="1270" x2="1520" y2="1320" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1650" y1="1270" x2="1560" y2="1370" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1650" y1="1270" x2="1660" y2="1370" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1650" y1="1270" x2="1750" y2="1360" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1700" y1="1650" x2="1590" y2="1690" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1700" y1="1650" x2="1690" y2="1730" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1700" y1="1650" x2="1800" y2="1720" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="1700" y1="1650" x2="1830" y2="1660" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2960" y1="1140" x2="2780" y2="1140" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2780" y1="1140" x2="2600" y2="1140" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2600" y1="1140" x2="2400" y2="1210" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2400" y1="1210" x2="2200" y2="1280" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2200" y1="1280" x2="2480" y2="1360" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2480" y1="1360" x2="2750" y2="1390" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2200" y1="1280" x2="1920" y2="1270" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1920" y1="1270" x2="1650" y2="1270" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1600" y1="360" x2="1610" y2="860" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1610" y1="860" x2="1650" y2="1270" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2400" y1="175" x2="2300" y2="120" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2400" y1="175" x2="2400" y2="115" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2400" y1="175" x2="2500" y2="115" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2400" y1="175" x2="2520" y2="165" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2820" y1="280" x2="2960" y2="220" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2820" y1="280" x2="3030" y2="255" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2820" y1="280" x2="3040" y2="305" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2820" y1="280" x2="3020" y2="355" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2820" y1="280" x2="2950" y2="385" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2820" y1="280" x2="2870" y2="385" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2820" y1="280" x2="2780" y2="385" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2350" y1="460" x2="2240" y2="415" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2350" y1="460" x2="2230" y2="465" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2350" y1="460" x2="2240" y2="515" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2350" y1="460" x2="2330" y2="535" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2820" y1="640" x2="2960" y2="580" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2820" y1="640" x2="3040" y2="620" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2820" y1="640" x2="3040" y2="670" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2820" y1="640" x2="3030" y2="720" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2820" y1="640" x2="2970" y2="765" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2820" y1="640" x2="2820" y2="745" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2820" y1="640" x2="2710" y2="730" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2350" y1="820" x2="2240" y2="770" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2350" y1="820" x2="2220" y2="820" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2350" y1="820" x2="2240" y2="870" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2350" y1="820" x2="2350" y2="895" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2350" y1="820" x2="2460" y2="880" stroke="#90A4AE" stroke-width="1.3"/>
+<line x1="2820" y1="280" x2="2610" y2="220" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2610" y1="220" x2="2400" y2="175" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2820" y1="280" x2="2580" y2="370" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2580" y1="370" x2="2350" y2="460" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2820" y1="280" x2="2350" y2="340" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2350" y1="340" x2="1880" y2="580" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2820" y1="280" x2="1500" y2="970" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1500" y1="970" x2="200" y2="1380" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2820" y1="280" x2="2820" y2="460" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2820" y1="460" x2="2820" y2="640" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2820" y1="640" x2="2350" y2="620" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2350" y1="620" x2="1880" y2="580" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2820" y1="640" x2="2200" y2="690" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2200" y1="690" x2="1580" y2="740" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2820" y1="640" x2="2580" y2="740" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2580" y1="740" x2="2350" y2="820" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2350" y1="460" x2="2250" y2="950" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2250" y1="950" x2="2200" y2="1280" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2350" y1="820" x2="2260" y2="1080" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2260" y1="1080" x2="2200" y2="1280" stroke="#37474F" stroke-width="1.8"/>
+<line x1="2350" y1="460" x2="1980" y2="950" stroke="#37474F" stroke-width="1.8"/>
+<line x1="1980" y1="950" x2="1700" y2="1650" stroke="#37474F" stroke-width="1.8"/>
+<!-- ELEMENTS -->
+
+        <g class="entity" id="ent_pais">
+            <rect x="115.0" y="158.0" width="130" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="180" y="185" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">PAIS</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_pais_id">
+                <ellipse cx="80" cy="140" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="80" cy="140" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="80" y="144" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_pais_nombre">
+                <ellipse cx="80" cy="190" rx="38" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="80" y="194" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">nombre</text>
+            </g>
+            
+
+            <g class="attr" id="attr_pais_eliminado">
+                <ellipse cx="80" cy="240" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="80" y="244" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_provincia">
+            <rect x="450.0" y="158.0" width="140" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="520" y="185" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">PROVINCIA</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_provincia_id">
+                <ellipse cx="520" cy="115" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="520" cy="115" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="520" y="119" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_provincia_nombre">
+                <ellipse cx="620" cy="125" rx="38" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="620" y="129" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">nombre</text>
+            </g>
+            
+
+            <g class="attr" id="attr_provincia_eliminado">
+                <ellipse cx="420" cy="115" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="420" y="119" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_departamento">
+            <rect x="780.0" y="268.0" width="160" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="860" y="295" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">DEPARTAMENTO</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_departamento_id">
+                <ellipse cx="975" cy="235" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="975" cy="235" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="975" y="239" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_departamento_nombre">
+                <ellipse cx="985" cy="285" rx="38" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="985" y="289" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">nombre</text>
+            </g>
+            
+
+            <g class="attr" id="attr_departamento_eliminado">
+                <ellipse cx="985" cy="335" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="985" y="339" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_localidad">
+            <rect x="490.0" y="438.0" width="140" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="560" y="465" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">LOCALIDAD</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_localidad_id">
+                <ellipse cx="670" cy="520" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="670" cy="520" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="670" y="524" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_localidad_nombre">
+                <ellipse cx="560" cy="535" rx="38" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="560" y="539" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">nombre</text>
+            </g>
+            
+
+            <g class="attr" id="attr_localidad_codigo_postal">
+                <ellipse cx="450" cy="535" rx="50" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="450" y="539" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">codigo_postal</text>
+            </g>
+            
+
+            <g class="attr" id="attr_localidad_eliminado">
+                <ellipse cx="350" cy="490" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="350" y="494" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_direccion">
+            <rect x="485.0" y="717.0" width="150" height="46" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="560" y="745" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">DIRECCION</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_direccion_id">
+                <ellipse cx="390" cy="670" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="390" cy="670" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="390" y="674" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_direccion_calle">
+                <ellipse cx="370" cy="720" rx="35" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="370" y="724" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">calle</text>
+            </g>
+            
+
+            <g class="attr" id="attr_direccion_numeracion">
+                <ellipse cx="370" cy="770" rx="45" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="370" y="774" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">numeracion</text>
+            </g>
+            
+
+            <g class="attr" id="attr_direccion_barrio">
+                <ellipse cx="390" cy="820" rx="36" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="390" y="824" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">barrio</text>
+            </g>
+            
+
+            <g class="attr" id="attr_direccion_manzana_piso">
+                <ellipse cx="460" cy="860" rx="52" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="460" y="864" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">manzana_piso</text>
+            </g>
+            
+
+            <g class="attr" id="attr_direccion_casa_departamento">
+                <ellipse cx="580" cy="860" rx="64" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="580" y="864" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">casa_departamento</text>
+            </g>
+            
+
+            <g class="attr" id="attr_direccion_referencia">
+                <ellipse cx="690" cy="850" rx="45" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="690" y="854" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">referencia</text>
+            </g>
+            
+
+            <g class="attr" id="attr_direccion_eliminado">
+                <ellipse cx="740" cy="795" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="740" y="799" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="256.5" y="171.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="273.5" y="184.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="409.5" y="171.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="426.5" y="184.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,N)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_pais_prov">
+            <polygon points="350,156.0 402.5,180 350,204.0 297.5,180" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="350" y="184" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">divide_en</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="607.5" y="195.75" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="624.5" y="208.75" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="760.5" y="245.25" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="777.5" y="258.25" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,N)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_prov_depto">
+            <polygon points="710,201.0 765.0,225 710,249.0 655.0,225" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="710" y="229" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">compone_de</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="777.0" y="338.75" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="794.0" y="351.75" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="642.0" y="415.25" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="659.0" y="428.25" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,N)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_depto_loc">
+            <polygon points="740,371.0 792.5,395 740,419.0 687.5,395" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="740" y="399" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">contiene</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="543.0" y="528.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="560.0" y="541.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="543.0" y="654.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="560.0" y="667.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,N)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_loc_dir">
+            <polygon points="560,576.0 612.5,600 560,624.0 507.5,600" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="560" y="604" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">ubica_en</text>
+        </g>
+        
+
+        <g class="entity" id="ent_persona">
+            <rect x="1520.0" y="337.0" width="160" height="46" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="1600" y="365" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">PERSONA</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_persona_numero_documento">
+                <ellipse cx="1600" cy="275" rx="72" ry="21" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="1600" cy="275" rx="68" ry="17" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="1600" y="279" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">numero_documento</text>
+            </g>
+            
+
+            <g class="attr" id="attr_persona_nombre">
+                <ellipse cx="1460" cy="285" rx="38" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1460" y="289" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">nombre</text>
+            </g>
+            
+
+            <g class="attr" id="attr_persona_apellido">
+                <ellipse cx="1740" cy="285" rx="38" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1740" y="289" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">apellido</text>
+            </g>
+            
+
+            <g class="attr" id="attr_persona_fecha_nacimiento">
+                <ellipse cx="1410" cy="335" rx="58" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1410" y="339" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">fecha_nacimiento</text>
+            </g>
+            
+
+            <g class="attr" id="attr_persona_tipo_documento">
+                <ellipse cx="1790" cy="335" rx="58" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1790" y="339" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">tipo_documento</text>
+            </g>
+            
+
+            <g class="attr" id="attr_persona_eliminado">
+                <ellipse cx="1440" cy="385" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1440" y="389" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_usuario">
+            <rect x="1190.0" y="558.0" width="140" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="1260" y="585" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">USUARIO</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_usuario_id">
+                <ellipse cx="1160" cy="505" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="1160" cy="505" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="1160" y="509" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_usuario_nombre_usuario">
+                <ellipse cx="1160" cy="550" rx="55" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1160" y="554" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">nombre_usuario</text>
+            </g>
+            
+
+            <g class="attr" id="attr_usuario_clave">
+                <ellipse cx="1160" cy="595" rx="32" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1160" y="599" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">clave</text>
+            </g>
+            
+
+            <g class="attr" id="attr_usuario_rol">
+                <ellipse cx="1160" cy="640" rx="30" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1160" y="644" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">rol</text>
+            </g>
+            
+
+            <g class="attr" id="attr_usuario_activo">
+                <ellipse cx="1180" cy="685" rx="32" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1180" y="689" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">activo</text>
+            </g>
+            
+
+            <g class="attr" id="attr_usuario_codigo_confirmacion">
+                <ellipse cx="1280" cy="690" rx="66" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1280" y="694" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">codigo_confirmacion</text>
+            </g>
+            
+
+            <g class="attr" id="attr_usuario_codigo_expiracion">
+                <ellipse cx="1375" cy="650" rx="62" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1375" y="654" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">codigo_expiracion</text>
+            </g>
+            
+
+            <g class="attr" id="attr_usuario_foto">
+                <ellipse cx="1375" cy="540" rx="30" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1375" y="544" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">foto</text>
+            </g>
+            
+
+            <g class="attr" id="attr_usuario_eliminado">
+                <ellipse cx="1385" cy="590" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1385" y="594" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_cliente">
+            <rect x="1810.0" y="558.0" width="140" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="1880" y="585" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">CLIENTE</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_cliente_numero_documento">
+                <ellipse cx="1880" cy="660" rx="72" ry="21" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="1880" cy="660" rx="68" ry="17" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="1880" y="664" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">numero_documento</text>
+            </g>
+            
+
+        <g class="entity" id="ent_nacionalidad">
+            <rect x="1925.0" y="798.0" width="150" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="2000" y="825" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">NACIONALIDAD</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_nacionalidad_id">
+                <ellipse cx="1930" cy="880" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="1930" cy="880" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="1930" y="884" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_nacionalidad_nombre">
+                <ellipse cx="2030" cy="880" rx="38" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2030" y="884" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">nombre</text>
+            </g>
+            
+
+            <g class="attr" id="attr_nacionalidad_eliminado">
+                <ellipse cx="2110" cy="850" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2110" y="854" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_empleado">
+            <rect x="1510.0" y="718.0" width="140" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="1580" y="745" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">EMPLEADO</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_empleado_numero_documento">
+                <ellipse cx="1440" cy="740" rx="72" ry="21" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="1440" cy="740" rx="68" ry="17" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="1440" y="744" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">numero_documento</text>
+            </g>
+            
+
+            <g class="attr" id="attr_empleado_tipo_empleado">
+                <ellipse cx="1490" cy="805" rx="52" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1490" y="809" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">tipo_empleado</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="1473.0" y="414.25" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1490.0" y="427.25" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="1320.0" y="513.25" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1337.0" y="526.25" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_per_usr">
+            <polygon points="1400,450.0 1457.5,475 1400,500.0 1342.5,475" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="1400" y="479" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">posee_cuenta</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="1671.0" y="414.25" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1688.0" y="427.25" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="1797.0" y="513.25" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1814.0" y="526.25" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_per_cli">
+            <polygon points="1760,451.0 1807.5,475 1760,499.0 1712.5,475" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="1760" y="479" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">es_un</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="1577.5" y="466.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1594.5" y="479.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="1568.5" y="637.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1585.5" y="650.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_per_emp">
+            <polygon points="1590,546.0 1642.5,570 1590,594.0 1537.5,570" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="1590" y="574" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">es_un_emp</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="1901.5" y="645.25" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1918.5" y="658.25" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,N)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="1955.5" y="753.25" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1972.5" y="766.25" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_cli_nac">
+            <polygon points="1950,690.0 2010.0,715 1950,740.0 1890.0,715" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="1950" y="719" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">nacionalidad_de</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="1242.0" y="472.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1259.0" y="485.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,N)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="774.0" y="643.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="791.0" y="656.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_per_dir">
+            <polygon points="980,555.0 1032.5,580 980,605.0 927.5,580" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="980" y="584" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">reside_en</text>
+        </g>
+        
+
+        <g class="entity" id="ent_empresa">
+            <rect x="605.0" y="1127.0" width="150" height="46" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="680" y="1155" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">EMPRESA</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_empresa_id">
+                <ellipse cx="540" cy="1120" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="540" cy="1120" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="540" y="1124" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_empresa_razon_social">
+                <ellipse cx="540" cy="1170" rx="48" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="540" y="1174" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">razon_social</text>
+            </g>
+            
+
+            <g class="attr" id="attr_empresa_cuit">
+                <ellipse cx="570" cy="1220" rx="32" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="570" y="1224" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">cuit</text>
+            </g>
+            
+
+            <g class="attr" id="attr_empresa_tipo_sucursal">
+                <ellipse cx="670" cy="1235" rx="52" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="670" y="1239" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">tipo_sucursal</text>
+            </g>
+            
+
+            <g class="attr" id="attr_empresa_eliminado">
+                <ellipse cx="780" cy="1230" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="780" y="1234" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_proveedor">
+            <rect x="125.0" y="1357.0" width="150" height="46" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="200" y="1385" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">PROVEEDOR</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_proveedor_id">
+                <ellipse cx="90" cy="1330" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="90" cy="1330" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="90" y="1334" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_proveedor_razon_social">
+                <ellipse cx="90" cy="1380" rx="48" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="90" y="1384" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">razon_social</text>
+            </g>
+            
+
+            <g class="attr" id="attr_proveedor_cuit">
+                <ellipse cx="90" cy="1430" rx="32" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="90" y="1434" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">cuit</text>
+            </g>
+            
+
+            <g class="attr" id="attr_proveedor_eliminado">
+                <ellipse cx="110" cy="1480" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="110" y="1484" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_contacto">
+            <rect x="605.0" y="1447.0" width="150" height="46" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="680" y="1475" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">CONTACTO</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_contacto_id">
+                <ellipse cx="680" cy="1390" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="680" cy="1390" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="680" y="1394" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_contacto_tipo_contacto">
+                <ellipse cx="560" cy="1410" rx="50" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="560" y="1414" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">tipo_contacto</text>
+            </g>
+            
+
+            <g class="attr" id="attr_contacto_observacion">
+                <ellipse cx="550" cy="1470" rx="45" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="550" y="1474" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">observacion</text>
+            </g>
+            
+
+            <g class="attr" id="attr_contacto_eliminado">
+                <ellipse cx="560" cy="1530" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="560" y="1534" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_contacto_telefonico">
+            <rect x="330.0" y="1708.0" width="180" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="420" y="1735" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">CONTACTO_TELEFONICO</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_contacto_telefonico_id">
+                <ellipse cx="300" cy="1790" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="300" cy="1790" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="300" y="1794" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_contacto_telefonico_telefono">
+                <ellipse cx="410" cy="1805" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="410" y="1809" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">telefono</text>
+            </g>
+            
+
+            <g class="attr" id="attr_contacto_telefonico_tipo_telefono">
+                <ellipse cx="520" cy="1805" rx="50" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="520" y="1809" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">tipo_telefono</text>
+            </g>
+            
+
+        <g class="entity" id="ent_contacto_correo">
+            <rect x="730.0" y="1708.0" width="220" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="840" y="1735" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">CONTACTO_CORREO_ELECTRONICO</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_contacto_correo_id">
+                <ellipse cx="790" cy="1805" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="790" cy="1805" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="790" y="1809" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_contacto_correo_email">
+                <ellipse cx="890" cy="1805" rx="35" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="890" y="1809" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">email</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="630.0" y="1036.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="647.0" y="1049.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,N)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="576.0" y="852.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="593.0" y="865.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_emp_dir">
+            <polygon points="620,936.0 672.5,960 620,984.0 567.5,960" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="620" y="964" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">radica_en</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="1299.0" y="841.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1316.0" y="854.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,N)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="894.0" y="1025.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="911.0" y="1038.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_emp_empresa">
+            <polygon points="1100,916.0 1152.5,940 1100,964.0 1047.5,940" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="1100" y="944" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">trabaja_en</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="663.0" y="1229.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="680.0" y="1242.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,N)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="663.0" y="1373.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="680.0" y="1386.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_emp_cont">
+            <polygon points="680,1285.0 737.5,1310 680,1335.0 622.5,1310" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="680" y="1314" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">comunica_con</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="315.0" y="1393.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="332.0" y="1406.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,N)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="531.0" y="1433.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="548.0" y="1446.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_prov_cont">
+            <polygon points="440,1395.0 497.5,1420 440,1445.0 382.5,1420" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="440" y="1424" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">contacto_prov</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="1319.0" y="747.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1336.0" y="760.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,N)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="905.0" y="1246.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="922.0" y="1259.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,N)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_per_cont">
+            <polygon points="1120,1055.0 1180.0,1080 1120,1105.0 1060.0,1080" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="1120" y="1084" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">tiene_contacto</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="575.0" y="1538.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="592.0" y="1551.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="458.0" y="1655.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="475.0" y="1668.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_cont_tel">
+            <polygon points="520,1586.0 570.0,1610 520,1634.0 470.0,1610" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="520" y="1614" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">es_un_tel</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="712.5" y="1538.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="729.5" y="1551.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="784.5" y="1655.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="801.5" y="1668.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_cont_mail">
+            <polygon points="770,1586.0 820.0,1610 770,1634.0 720.0,1610" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="770" y="1614" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">es_un_mail</text>
+        </g>
+        
+
+        <g class="entity" id="ent_categoria">
+            <rect x="2890.0" y="1118.0" width="140" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="2960" y="1145" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">CATEGORIA</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_categoria_id">
+                <ellipse cx="3090" cy="1090" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="3090" cy="1090" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="3090" y="1094" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_categoria_nombre">
+                <ellipse cx="3090" cy="1140" rx="38" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="3090" y="1144" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">nombre</text>
+            </g>
+            
+
+            <g class="attr" id="attr_categoria_eliminado">
+                <ellipse cx="3090" cy="1190" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="3090" y="1194" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_subcategoria">
+            <rect x="2525.0" y="1118.0" width="150" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="2600" y="1145" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">SUBCATEGORIA</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_subcategoria_id">
+                <ellipse cx="2600" cy="1070" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="2600" cy="1070" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="2600" y="1074" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_subcategoria_nombre">
+                <ellipse cx="2690" cy="1080" rx="38" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2690" y="1084" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">nombre</text>
+            </g>
+            
+
+            <g class="attr" id="attr_subcategoria_eliminado">
+                <ellipse cx="2510" cy="1080" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2510" y="1084" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_producto">
+            <rect x="2125.0" y="1257.0" width="150" height="46" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="2200" y="1285" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">PRODUCTO</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_producto_id">
+                <ellipse cx="2330" cy="1210" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="2330" cy="1210" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="2330" y="1214" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_producto_codigo">
+                <ellipse cx="2360" cy="1255" rx="35" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2360" y="1259" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">codigo</text>
+            </g>
+            
+
+            <g class="attr" id="attr_producto_nombre">
+                <ellipse cx="2360" cy="1305" rx="38" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2360" y="1309" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">nombre</text>
+            </g>
+            
+
+            <g class="attr" id="attr_producto_descripcion">
+                <ellipse cx="2340" cy="1355" rx="45" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2340" y="1359" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">descripcion</text>
+            </g>
+            
+
+            <g class="attr" id="attr_producto_talle">
+                <ellipse cx="2310" cy="1400" rx="32" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2310" y="1404" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">talle</text>
+            </g>
+            
+
+            <g class="attr" id="attr_producto_en_oferta">
+                <ellipse cx="2230" cy="1400" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2230" y="1404" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">en_oferta</text>
+            </g>
+            
+
+            <g class="attr" id="attr_producto_eliminado">
+                <ellipse cx="2140" cy="1400" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2140" y="1404" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_vigencia_precio">
+            <rect x="2670.0" y="1368.0" width="160" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="2750" y="1395" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">VIGENCIA_PRECIO</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_vigencia_precio_id">
+                <ellipse cx="2890" cy="1340" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="2890" cy="1340" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="2890" y="1344" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_vigencia_precio_fecha_desde">
+                <ellipse cx="2910" cy="1390" rx="48" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2910" y="1394" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">fecha_desde</text>
+            </g>
+            
+
+            <g class="attr" id="attr_vigencia_precio_fecha_hasta">
+                <ellipse cx="2910" cy="1440" rx="48" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2910" y="1444" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">fecha_hasta</text>
+            </g>
+            
+
+            <g class="attr" id="attr_vigencia_precio_precio">
+                <ellipse cx="2850" cy="1480" rx="35" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2850" y="1484" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">precio</text>
+            </g>
+            
+
+            <g class="attr" id="attr_vigencia_precio_eliminado">
+                <ellipse cx="2750" cy="1480" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2750" y="1484" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_imagen">
+            <rect x="1580.0" y="1248.0" width="140" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="1650" y="1275" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">IMAGEN</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_imagen_id">
+                <ellipse cx="1530" cy="1220" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="1530" cy="1220" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="1530" y="1224" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_imagen_nombre">
+                <ellipse cx="1520" cy="1270" rx="38" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1520" y="1274" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">nombre</text>
+            </g>
+            
+
+            <g class="attr" id="attr_imagen_contenido">
+                <ellipse cx="1520" cy="1320" rx="42" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1520" y="1324" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">contenido</text>
+            </g>
+            
+
+            <g class="attr" id="attr_imagen_mime">
+                <ellipse cx="1560" cy="1370" rx="32" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1560" y="1374" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">mime</text>
+            </g>
+            
+
+            <g class="attr" id="attr_imagen_tipo_imagen">
+                <ellipse cx="1660" cy="1370" rx="48" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1660" y="1374" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">tipo_imagen</text>
+            </g>
+            
+
+            <g class="attr" id="attr_imagen_eliminado">
+                <ellipse cx="1750" cy="1360" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1750" y="1364" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_stock">
+            <rect x="1630.0" y="1628.0" width="140" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="1700" y="1655" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">STOCK</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_stock_id">
+                <ellipse cx="1590" cy="1690" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="1590" cy="1690" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="1590" y="1694" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_stock_cantidad_actual">
+                <ellipse cx="1690" cy="1730" rx="55" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1690" y="1734" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">cantidad_actual</text>
+            </g>
+            
+
+            <g class="attr" id="attr_stock_observacion">
+                <ellipse cx="1800" cy="1720" rx="45" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1800" y="1724" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">observacion</text>
+            </g>
+            
+
+            <g class="attr" id="attr_stock_eliminado">
+                <ellipse cx="1830" cy="1660" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="1830" y="1664" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="2844.0" y="1131.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2861.0" y="1144.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="2682.0" y="1131.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2699.0" y="1144.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,N)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_cat_subcat">
+            <polygon points="2780,1116.0 2835.0,1140 2780,1164.0 2725.0,1140" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="2780" y="1144" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">clasifica_en</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="2473.0" y="1169.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2490.0" y="1182.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="2293.0" y="1232.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2310.0" y="1245.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,N)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_subcat_prod">
+            <polygon points="2400,1186.0 2455.0,1210 2400,1234.0 2345.0,1210" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="2400" y="1214" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">pertenece_a</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="2337.0" y="1315.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2354.0" y="1328.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="2584.5" y="1364.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2601.5" y="1377.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,N)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_prod_vig">
+            <polygon points="2480,1336.0 2535.0,1360 2480,1384.0 2425.0,1360" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="2480" y="1364" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">tiene_precio</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="2029.0" y="1265.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2046.0" y="1278.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,N)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="1781.5" y="1261.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1798.5" y="1274.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_prod_img">
+            <polygon points="1920,1246.0 1977.5,1270 1920,1294.0 1862.5,1270" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="1920" y="1274" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">ilustrado_por</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="1588.5" y="626.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1605.5" y="639.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="1611.0" y="1035.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1628.0" y="1048.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_per_img">
+            <polygon points="1610,836.0 1662.5,860 1610,884.0 1557.5,860" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="1610" y="864" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">foto_perfil</text>
+        </g>
+        
+
+        <g class="entity" id="ent_forma_de_pago">
+            <rect x="2320.0" y="153.0" width="160" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="2400" y="180" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">FORMA_DE_PAGO</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_forma_de_pago_id">
+                <ellipse cx="2300" cy="120" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="2300" cy="120" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="2300" y="124" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_forma_de_pago_tipo_pago">
+                <ellipse cx="2400" cy="115" rx="45" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2400" y="119" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">tipo_pago</text>
+            </g>
+            
+
+            <g class="attr" id="attr_forma_de_pago_observacion">
+                <ellipse cx="2500" cy="115" rx="45" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2500" y="119" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">observacion</text>
+            </g>
+            
+
+            <g class="attr" id="attr_forma_de_pago_eliminado">
+                <ellipse cx="2520" cy="165" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2520" y="169" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_factura">
+            <rect x="2745.0" y="257.0" width="150" height="46" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="2820" y="285" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">FACTURA</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_factura_id">
+                <ellipse cx="2960" cy="220" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="2960" cy="220" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="2960" y="224" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_factura_numero_factura">
+                <ellipse cx="3030" cy="255" rx="55" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="3030" y="259" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">numero_factura</text>
+            </g>
+            
+
+            <g class="attr" id="attr_factura_fecha_factura">
+                <ellipse cx="3040" cy="305" rx="52" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="3040" y="309" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">fecha_factura</text>
+            </g>
+            
+
+            <g class="attr" id="attr_factura_total_pagado">
+                <ellipse cx="3020" cy="355" rx="50" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="3020" y="359" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">total_pagado</text>
+            </g>
+            
+
+            <g class="attr" id="attr_factura_estado">
+                <ellipse cx="2950" cy="385" rx="35" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2950" y="389" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">estado</text>
+            </g>
+            
+
+            <g class="attr" id="attr_factura_dtype">
+                <ellipse cx="2870" cy="385" rx="32" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2870" y="389" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">dtype</text>
+            </g>
+            
+
+            <g class="attr" id="attr_factura_eliminado">
+                <ellipse cx="2780" cy="385" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2780" y="389" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_detalle_factura">
+            <rect x="2270.0" y="438.0" width="160" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="2350" y="465" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">DETALLE_FACTURA</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_detalle_factura_id">
+                <ellipse cx="2240" cy="415" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="2240" cy="415" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="2240" y="419" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_detalle_factura_cantidad">
+                <ellipse cx="2230" cy="465" rx="36" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2230" y="469" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">cantidad</text>
+            </g>
+            
+
+            <g class="attr" id="attr_detalle_factura_subtotal">
+                <ellipse cx="2240" cy="515" rx="36" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2240" y="519" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">subtotal</text>
+            </g>
+            
+
+            <g class="attr" id="attr_detalle_factura_eliminado">
+                <ellipse cx="2330" cy="535" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2330" y="539" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_orden_compra">
+            <rect x="2740.0" y="617.0" width="160" height="46" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="2820" y="645" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">ORDEN_COMPRA</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_orden_compra_id">
+                <ellipse cx="2960" cy="580" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="2960" cy="580" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="2960" y="584" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_orden_compra_identificador_compra">
+                <ellipse cx="3040" cy="620" rx="70" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="3040" y="624" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">identificador_compra</text>
+            </g>
+            
+
+            <g class="attr" id="attr_orden_compra_fecha">
+                <ellipse cx="3040" cy="670" rx="32" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="3040" y="674" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">fecha</text>
+            </g>
+            
+
+            <g class="attr" id="attr_orden_compra_total">
+                <ellipse cx="3030" cy="720" rx="32" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="3030" y="724" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">total</text>
+            </g>
+            
+
+            <g class="attr" id="attr_orden_compra_estado_orden_compra">
+                <ellipse cx="2970" cy="765" rx="75" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2970" y="769" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">estado_orden_compra</text>
+            </g>
+            
+
+            <g class="attr" id="attr_orden_compra_email_usuario">
+                <ellipse cx="2820" cy="745" rx="55" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2820" y="749" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">email_usuario</text>
+            </g>
+            
+
+            <g class="attr" id="attr_orden_compra_eliminado">
+                <ellipse cx="2710" cy="730" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2710" y="734" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+        <g class="entity" id="ent_detalle_compra">
+            <rect x="2270.0" y="798.0" width="160" height="44" rx="6" ry="6" fill="#E3F2FD" stroke="#1565C0" stroke-width="2.2" filter="url(#shadow)"/>
+            <text x="2350" y="825" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="13" fill="#0D47A1">DETALLE_COMPRA</text>
+        </g>
+        
+
+            <g class="attr-pk" id="attr_detalle_compra_id">
+                <ellipse cx="2240" cy="770" rx="36" ry="20" fill="none" stroke="#C62828" stroke-width="1.6"/>
+                <ellipse cx="2240" cy="770" rx="32" ry="16" fill="#FFEBEE" stroke="#C62828" stroke-width="1.6"/>
+                <text x="2240" y="774" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#B71C1C">id</text>
+            </g>
+            
+
+            <g class="attr" id="attr_detalle_compra_cantidad">
+                <ellipse cx="2220" cy="820" rx="36" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2220" y="824" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">cantidad</text>
+            </g>
+            
+
+            <g class="attr" id="attr_detalle_compra_precio_unitario">
+                <ellipse cx="2240" cy="870" rx="52" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2240" y="874" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">precio_unitario</text>
+            </g>
+            
+
+            <g class="attr" id="attr_detalle_compra_subtotal">
+                <ellipse cx="2350" cy="895" rx="36" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2350" y="899" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">subtotal</text>
+            </g>
+            
+
+            <g class="attr" id="attr_detalle_compra_eliminado">
+                <ellipse cx="2460" cy="880" rx="40" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+                <text x="2460" y="884" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">eliminado</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="2687.5" y="238.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2704.5" y="251.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,N)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="2498.5" y="190.75" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2515.5" y="203.75" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_fac_pago">
+            <polygon points="2610,196.0 2665.0,220 2610,244.0 2555.0,220" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="2610" y="224" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">pagada_con</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="2671.0" y="320.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2688.0" y="333.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="2459.5" y="401.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2476.5" y="414.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,N)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_fac_det">
+            <polygon points="2580,346.0 2632.5,370 2580,394.0 2527.5,370" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="2580" y="374" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">consta_de</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="2544.5" y="304.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2561.5" y="317.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,N)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="2121.5" y="439.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2138.5" y="452.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_fac_cli">
+            <polygon points="2350,316.0 2405.0,340 2350,364.0 2295.0,340" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="2350" y="344" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">facturado_a</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="2077.0" y="650.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2094.0" y="663.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,N)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="898.0000000000001" y="1145.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="915.0000000000001" y="1158.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_fac_prov">
+            <polygon points="1500,946.0 1555.0,970 1500,994.0 1445.0,970" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="1500" y="974" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">emitida_por</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="2803.0" y="370.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2820.0" y="383.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="2803.0" y="532.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2820.0" y="545.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_fac_ord">
+            <polygon points="2820,436.0 2877.5,460 2820,484.0 2762.5,460" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="2820" y="464" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">liquida_orden</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="2544.5" y="620.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2561.5" y="633.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,N)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="2121.5" y="593.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2138.5" y="606.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_ord_cli">
+            <polygon points="2350,596.0 2407.5,620 2350,644.0 2292.5,620" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="2350" y="624" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">solicitada_por</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="2462.0" y="658.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2479.0" y="671.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,N)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="1904.0" y="703.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1921.0" y="716.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_ord_emp">
+            <polygon points="2200,666.0 2260.0,690 2200,714.0 2140.0,690" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="2200" y="694" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">gestionada_por</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="2671.0" y="686.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2688.0" y="699.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="2459.5" y="767.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2476.5" y="780.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,N)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_ord_det">
+            <polygon points="2580,716.0 2635.0,740 2580,764.0 2525.0,740" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="2580" y="744" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">incluye_item</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="2278.0" y="720.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2295.0" y="733.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,N)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="2210.5" y="1089.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2227.5" y="1102.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_detfac_prod">
+            <polygon points="2250,926.0 2305.0,950 2250,974.0 2195.0,950" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="2250" y="954" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">asocia_prod</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="2283.5" y="954.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2300.5" y="967.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,N)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="2216.0" y="1161.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2233.0" y="1174.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_detord_prod">
+            <polygon points="2260,1056.0 2320.0,1080 2260,1104.0 2200.0,1080" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="2260" y="1084" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">producto_pedido</text>
+        </g>
+        
+
+            <g class="card-badge">
+                <rect x="2129.5" y="720.5" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="2146.5" y="733.5" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,1)</text>
+            </g>
+            
+
+            <g class="card-badge">
+                <rect x="1837.0" y="1256.0" width="34" height="18" rx="4" ry="4" fill="#FFFFFF" fill-opacity="0.95" stroke="#90A4AE" stroke-width="1"/>
+                <text x="1854.0" y="1269.0" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(0,1)</text>
+            </g>
+            
+
+        <g class="relation" id="rel_rel_detfac_stock">
+            <polygon points="1980,926.0 2035.0,950 1980,974.0 1925.0,950" fill="#FFF9C4" stroke="#F57F17" stroke-width="2.0" filter="url(#shadow)"/>
+            <text x="1980" y="954" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">afecta_stock</text>
+        </g>
+        
+
+        <!-- Leyenda -->
+        <g id="legend" transform="translate(2350, 2030)">
+            <rect x="0" y="0" width="790" height="85" rx="8" ry="8" fill="#ECEFF1" stroke="#B0BEC5" stroke-width="1.2"/>
+            <text x="395" y="18" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="11.5" fill="#37474F">REFERENCIAS DE NOTACIÓN DER (CHEN)</text>
+            
+            <!-- Entidad -->
+            <rect x="25" y="32" width="90" height="32" rx="4" ry="4" fill="#E3F2FD" stroke="#1565C0" stroke-width="2"/>
+            <text x="70" y="52" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="11" fill="#0D47A1">Entidad</text>
+            
+            <!-- Relación -->
+            <polygon points="195,32 245,48 195,64 145,48" fill="#FFF9C4" stroke="#F57F17" stroke-width="1.8"/>
+            <text x="195" y="52" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#E65100">Relación</text>
+            
+            <!-- Atributo Simple -->
+            <ellipse cx="320" cy="48" rx="42" ry="16" fill="#F1F8E9" stroke="#33691E" stroke-width="1.3"/>
+            <text x="320" y="52" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#1B5E20">Atributo</text>
+            
+            <!-- Clave Primaria -->
+            <ellipse cx="445" cy="48" rx="44" ry="18" fill="none" stroke="#C62828" stroke-width="1.5"/>
+            <ellipse cx="445" cy="48" rx="40" ry="15" fill="#FFEBEE" stroke="#C62828" stroke-width="1.5"/>
+            <text x="445" y="52" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10" fill="#B71C1C">Clave Primaria</text>
+            
+            <!-- Cardinalidad -->
+            <rect x="540" y="39" width="36" height="18" rx="4" ry="4" fill="#FFFFFF" stroke="#90A4AE" stroke-width="1"/>
+            <text x="558" y="52" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" font-size="10.5" fill="#1A237E">(1,N)</text>
+            <text x="655" y="52" text-anchor="middle" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#455A64">Cardinalidad</text>
+        </g>
+        
+</svg>

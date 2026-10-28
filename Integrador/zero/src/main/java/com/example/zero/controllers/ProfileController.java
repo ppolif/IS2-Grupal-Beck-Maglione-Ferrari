@@ -75,11 +75,6 @@ public class ProfileController {
         return "redirect:/profile";
     }
 
-    public String actualizarPerfil(HttpSession session,
-                                   String email,
-                                   String foto,
-                                   RedirectAttributes redirectAttributes) {
-        return actualizarPerfil(session, email, null, foto, redirectAttributes);
-    }
+
 }
 

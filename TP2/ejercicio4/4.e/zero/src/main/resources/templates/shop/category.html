@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{shop/fragments/head :: head}"></head>
+<body id="category">
+
+<!-- Header Fragment -->
+<header th:replace="~{shop/fragments/header :: header}"></header>
+
+<!-- Banner Fragment -->
+<section th:replace="~{shop/fragments/banner :: banner}"></section>
+
+<div class="container py-5">
+  <div class="row">
+    <!-- Sidebar de Filtros -->
+    <div class="col-xl-3 col-lg-4 col-md-5">
+      <div class="sidebar-categories">
+        <div class="head">Categorías</div>
+        <ul class="main-categories">
+          <!-- Todas las Categorías -->
+          <li class="main-nav-list">
+            <a th:href="@{/shop/category}"
+               th:classappend="${selectedCategory == null && isOffersPage == null} ? 'font-weight-bold text-brand-dark' : ''">
+              <span class="lnr lnr-arrow-right"></span>
+              <span>Todos los productos</span>
+            </a>
+          </li>
+          <!-- Enlace Directo a Ofertas -->
+          <li class="main-nav-list">
+            <a th:href="@{/offers}"
+               th:classappend="${isOffersPage != null && isOffersPage} ? 'font-weight-bold text-warning' : ''">
+              <span class="lnr lnr-arrow-right"></span>
+              <span>Ofertas Especiales</span>
+            </a>
+          </li>
+          <!-- Si vienen categorías desde el backend -->
+          <th:block th:if="${categories != null && !#lists.isEmpty(categories)}" th:each="cat : ${categories}">
+            <!-- Categoría Principal (al clickear se ven todos los productos de esta categoría) -->
+            <li class="main-nav-list">
+              <a th:href="@{/shop/category(categoryId=${cat.id})}"
+                 th:classappend="${selectedCategory == cat.id && selectedSubCategory == null} ? 'font-weight-bold text-brand-dark' : ''">
+                <span class="lnr lnr-arrow-right"></span>
+                <span th:text="${cat.nombre != null ? cat.nombre : cat.name}">Categoría</span>
+              </a>
+            </li>
+            <!-- Subcategorías asociadas -->
+            <li class="main-nav-list child" th:each="sub : ${cat.subCategorias}" th:if="${sub != null && !sub.eliminado}">
+              <a th:href="@{/shop/category(categoryId=${cat.id}, subCategoryId=${sub.id})}"
+                 th:classappend="${selectedSubCategory == sub.id} ? 'font-weight-bold text-brand-dark' : ''">
+                <span class="lnr lnr-chevron-right text-muted mr-1" style="font-size: 10px; display: inline-block;"></span>
+                <span th:text="${sub.nombre}">Subcategoría</span>
+              </a>
+            </li>
+          </th:block>
+
+          <!-- Fallback cuando no hay lista del backend -->
+          <li th:if="${categories == null || #lists.isEmpty(categories)}" class="main-nav-list">
+            <a th:href="@{/shop/category}"><span class="lnr lnr-arrow-right"></span>Sin categorías registradas</a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-filter mt-4">
+        <div class="top-filter-head">Filtrar por Precio</div>
+        <div class="common-filter p-3">
+          <form action="category.html" th:action="@{/shop/category}" method="GET">
+            <input type="hidden" name="categoryId" th:value="${selectedCategory}" th:if="${selectedCategory != null}">
+            <input type="hidden" name="subCategoryId" th:value="${selectedSubCategory}" th:if="${selectedSubCategory != null}">
+            <div class="form-group mb-2">
+              <label class="small text-muted">Precio Máximo:</label>
+              <input type="number" name="maxPrice" class="form-control form-control-sm" placeholder="Ej: 200" th:value="${maxPrice != null ? maxPrice : param.maxPrice}">
+            </div>
+            <button type="submit" class="btn btn-sm btn-dark w-100 mt-2">Aplicar Filtro</button>
+            <a href="category.html" th:href="@{/shop/category}" class="btn btn-sm btn-link text-muted w-100 mt-1">Limpiar</a>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grilla de Productos y Barra Superior -->
+    <div class="col-xl-9 col-lg-8 col-md-7">
+
+      <!-- Titulo condicional para Ofertas -->
+      <div th:if="${isOffersPage != null && isOffersPage}" class="mb-4 p-3 bg-light rounded border border-warning">
+        <h4 class="font-weight-bold text-dark mb-1"><i class="ti-tag text-warning mr-2"></i>Ofertas Especiales ZERO</h4>
+        <p class="text-muted small mb-0">Listado de productos con descuentos por tiempo limitado.</p>
+      </div>
+
+      <!-- Barra de Filtros Superior -->
+      <div class="filter-bar d-flex flex-wrap align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center">
+          <span class="small text-muted" th:if="${totalProducts != null}" th:text="'Mostrando ' + ${totalProducts} + ' productos'">Mostrando productos</span>
+        </div>
+        <!-- Paginación -->
+        <div class="pagination m-0" th:if="${totalPages != null && totalPages > 1}">
+          <a th:href="@{/shop/category(page=${currentPage - 1})}" class="prev-arrow" th:if="${currentPage > 1}"><i class="fa fa-long-arrow-left"></i></a>
+          <a th:each="p : ${#numbers.sequence(1, totalPages)}"
+             th:href="@{/shop/category(page=${p})}"
+             th:text="${p}"
+             th:classappend="${p == currentPage} ? 'active' : ''">1</a>
+          <a th:href="@{/shop/category(page=${currentPage + 1})}" class="next-arrow" th:if="${currentPage < totalPages}"><i class="fa fa-long-arrow-right"></i></a>
+        </div>
+      </div>
+
+      <!-- Sección Productos -->
+      <section class="lattest-product-area pb-40 category-list">
+        <div class="row">
+
+          <!-- Productos Dinámicos desde Backend -->
+          <div class="col-lg-4 col-md-6 mb-4" th:if="${products != null && !#lists.isEmpty(products)}" th:each="prod : ${products}">
+            <div class="single-product position-relative bg-white p-3 rounded shadow-sm" style="margin-top: 0; margin-bottom: 0;">
+              <div class="position-absolute" style="top: 15px; left: 15px; z-index: 2;" th:if="${prod.enOferta}">
+                <span class="badge badge-danger text-uppercase font-weight-bold px-2 py-1 shadow-sm">OFERTA</span>
+              </div>
+              <a th:href="@{/product/{id}(id=${prod.id})}">
+                <div class="product-img-wrap mb-3 position-relative">
+                  <img class="img-fluid rounded" th:src="${prod.imagenUrl}" th:alt="${prod.nombre}"
+                       src="/shop/img/product/p1.jpg" onerror="this.src='/shop/img/product/p1.jpg'"
+                       th:classappend="${prod.stock <= 0} ? 'img-no-stock' : ''"
+                       style="width: 100%; height: 220px; object-fit: cover; margin-bottom: 0;">
+                  <div th:if="${prod.stock <= 0}" class="overlay-no-stock">
+                    <span class="badge-no-stock">Sin Stock</span>
+                  </div>
+                </div>
+              </a>
+              <div class="product-details text-center">
+                <a th:href="@{/product/{id}(id=${prod.id})}" class="text-dark d-block">
+                  <h6 class="font-weight-bold text-dark text-truncate" th:text="${prod.nombre}">Zapatillas Zero Runner</h6>
+                </a>
+                <div class="price mb-2">
+                  <h6 th:classappend="${prod.enOferta} ? 'text-danger font-weight-bold' : 'text-dark font-weight-bold'">$<span th:text="${#numbers.formatDecimal(prod.precioActual != null ? prod.precioActual : 0, 1, 'POINT', 2, 'POINT')}">150.00</span></h6>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fallback cuando no hay productos del backend -->
+          <div class="col-12 py-5 text-center" th:if="${products == null || #lists.isEmpty(products)}">
+            <h5 class="text-muted">No se encontraron productos disponibles en este momento.</h5>
+            <a th:href="@{/shop/category}" class="primary-btn mt-3">Ver Todos los Productos</a>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- Footer Fragment -->
+<footer th:replace="~{shop/fragments/footer :: footer}"></footer>
+
+<!-- Scripts Fragment -->
+<div th:replace="~{shop/fragments/scripts :: scripts}"></div>
+
+</body>
+</html>
+

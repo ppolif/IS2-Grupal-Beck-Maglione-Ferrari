@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Historial de Compras')}"></head>
+<body class="bg-slate-50 min-h-screen flex flex-col justify-between">
+
+    <div>
+        <header th:replace="~{fragments/navbar :: navbar}"></header>
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            
+            <div class="mb-8 flex justify-between items-center">
+                <div>
+                    <h1 class="font-serif-title text-3xl font-bold text-slate-800">Historial de Compras</h1>
+                    <p class="text-xs text-slate-500 mt-1">Órdenes generadas y confirmadas en tu cuenta.</p>
+                </div>
+                <a th:href="@{/catalogo}" class="text-xs font-semibold text-bloom-600 hover:text-bloom-700">
+                    <i class="fa-solid fa-plus-circle mr-1"></i> Nueva compra
+                </a>
+            </div>
+
+            <!-- Si no hay compras registradas -->
+            <div th:if="${#lists.isEmpty(historial)}" class="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm">
+                <i class="fa-solid fa-receipt text-4xl text-slate-300 mb-3"></i>
+                <h3 class="text-base font-bold text-slate-700">Aún no has registrado compras</h3>
+                <p class="text-xs text-slate-400 mt-1 mb-6">Tus pedidos confirmados aparecerán aquí con su detalle y método de pago.</p>
+                <a th:href="@{/catalogo}" class="bg-bloom-600 hover:bg-bloom-700 text-white font-semibold text-xs px-6 py-2.5 rounded-xl shadow-sm transition">
+                    Explorar Productos
+                </a>
+            </div>
+
+            <!-- Listado de Compras (HU2) -->
+            <div th:unless="${#lists.isEmpty(historial)}" class="space-y-4">
+                <div th:each="compra : ${historial}" class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 hover:shadow-md transition">
+                    
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-slate-100 gap-2">
+                        <div>
+                            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Comprobante</span>
+                            <span class="font-mono text-sm font-bold text-slate-800" th:text="${compra.codigoComprobante}"></span>
+                        </div>
+                        <div class="text-left sm:text-right">
+                            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Fecha</span>
+                            <span class="text-xs text-slate-600" th:text="${#temporals.format(compra.fecha, 'dd/MM/yyyy HH:mm')}"></span>
+                        </div>
+                    </div>
+
+                    <div class="py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-xs">
+                        <div>
+                            <span class="text-slate-400 block text-[11px] mb-1">Ítems comprados:</span>
+                            <p class="font-medium text-slate-700 max-w-xl" th:text="${compra.resumenArticulos}"></p>
+                        </div>
+                        <div class="bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
+                            <span class="text-[10px] text-slate-400 block uppercase font-bold">Modalidad de Pago</span>
+                            <span class="font-bold text-slate-700" th:text="${compra.metodoPago}"></span>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                        <span class="text-slate-400">Total abonado:</span>
+                        <span class="text-lg font-black text-bloom-600" th:text="'$' + ${#numbers.formatDecimal(compra.total, 1, 2)}"></span>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>
+

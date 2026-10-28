@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${titleList})}"></head>
+<body>
+    <div id="app">
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+        <div id="main">
+            <header class="mb-3">
+                <div th:replace="~{fragments/navbar :: navbar}"></div>
+            </header>
+
+            <div class="page-heading d-flex justify-content-between align-items-center">
+                <h3 th:text="${titleList}">Médicos</h3>
+                <a th:href="@{/medicos/alta}" class="btn btn-primary shadow-sm">
+                    <i class="bi bi-person-plus-fill me-1"></i> Nuevo Médico
+                </a>
+            </div>
+
+            <div class="page-content">
+                <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="card-title">Listado de Profesionales Médicos</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>DNI</th>
+                                        <th>Apellido y Nombre</th>
+                                        <th class="text-center" style="width: 150px;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="m : ${items}">
+                                        <td><strong th:text="${m.dni}"></strong></td>
+                                        <td th:text="${m.apellido + ', ' + m.nombre}"></td>
+                                        <td class="text-center">
+                                            <a th:href="@{/medicos/modificar/{id}(id=${m.id})}" class="btn btn-sm btn-outline-warning me-1" title="Editar">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            <a th:href="@{/medicos/baja/{id}(id=${m.id})}" class="btn btn-sm btn-outline-danger" title="Dar de baja" onclick="return confirm('¿Confirma la baja lógica de este médico?');">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(items)}">
+                                        <td colspan="3" class="text-center text-muted py-4">
+                                            <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+                                            No hay médicos registrados en el sistema.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer th:replace="~{fragments/footer :: footer}"></footer>
+        </div>
+    </div>
+    <div th:replace="~{fragments/scripts :: scripts}"></div>
+</body>
+</html>
+

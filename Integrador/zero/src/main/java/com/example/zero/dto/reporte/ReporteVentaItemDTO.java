@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * Representa una fila en el detalle del Reporte de Ventas.
- */
+///epresenta una fila en el detalle del Reporte de Ventas
 @Data
 @Builder
 @NoArgsConstructor

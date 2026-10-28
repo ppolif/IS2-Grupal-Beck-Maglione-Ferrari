@@ -9,14 +9,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-/**
- * Controlador global de errores para Spring Boot que intercepta rutas no encontradas
- * y renderiza la plantilla amigable page-404.html.
- */
+
 @Controller
 public class CustomErrorController implements ErrorController {
 
     @RequestMapping("/error")
+    /// HttpServletRequest y HttpServletResponse
+    ///son para acceder a información de bajo nivel de la petición HTTP (cookies, headers, IP, URLs).
+    ///representan el mensaje de petición del cliente y el mensaje de respuesta del servidor en el protocolo HTTP
     public String handleError(HttpServletRequest request, HttpServletResponse response, Model model) {
         Object status = request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
         Object message = request.getAttribute(RequestDispatcher.ERROR_MESSAGE);

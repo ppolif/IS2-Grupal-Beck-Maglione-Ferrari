@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = 'zero-app'
+        DOCKER_TAG   = "${BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('Verificación') {
+            steps {
+                echo 'Comprobando cambios en el repositorio'
+            }
+        }
+
+        stage('Tests y Validación') {
+            steps {
+                echo 'Ejecutando pruebas unitarias y de integración...'
+                sh './mvnw clean test'
+            }
+        }
+
+        stage('Construcción de Imagen Docker') {
+            steps {
+                echo "Construyendo imagen Docker para producción: ${DOCKER_IMAGE}:${DOCKER_TAG}..."
+                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} -t ${DOCKER_IMAGE}:latest ."
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline finalizado.'
+        }
+        success {
+            echo 'Construcción y empaquetado Docker exitosos.'
+        }
+        failure {
+            echo 'Hubo un error en la ejecución del pipeline.'
+        }
+    }
+}

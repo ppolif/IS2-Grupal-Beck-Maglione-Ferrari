@@ -1,0 +1,13 @@
+$kind: http-request
+url: http://localhost:9000/api/v1/autores/1
+method: POST
+body:
+  type: json
+  content: |-
+    {
+        "id": 1,
+        "nombre": "Liliana",
+        "apellido": "Bodoc",
+        "biografia": "Gran mentora y referente"
+    }
+order: 4021902046841737

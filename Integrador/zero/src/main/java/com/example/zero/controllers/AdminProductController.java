@@ -7,6 +7,7 @@ import com.example.zero.services.StockService;
 import com.example.zero.services.SubCategoriaService;
 import com.example.zero.services.VigenciaPrecioService;
 import com.example.zero.services.producto.ProductoService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -16,9 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Controlador para la gestión administrativa de productos (ABM).
- */
+
 @Controller
 @RequestMapping("/admin/products")
 public class AdminProductController {
@@ -28,11 +27,8 @@ public class AdminProductController {
     private final StockService stockService;
     private final VigenciaPrecioService vigenciaPrecioService;
 
-    public AdminProductController(ProductoService productoService, SubCategoriaService subCategoriaService) {
-        this(productoService, subCategoriaService, null, null);
-    }
 
-    @org.springframework.beans.factory.annotation.Autowired
+    @Autowired
     public AdminProductController(ProductoService productoService,
                                   SubCategoriaService subCategoriaService,
                                   StockService stockService,
@@ -43,9 +39,7 @@ public class AdminProductController {
         this.vigenciaPrecioService = vigenciaPrecioService;
     }
 
-    /**
-     * Listado de productos activos.
-     */
+
     @GetMapping
     public String listProducts(Model model,
                                @RequestParam(name = "success", required = false) String success,
@@ -103,9 +97,7 @@ public class AdminProductController {
         return "admin/products";
     }
 
-    /**
-     * Formulario para crear un nuevo producto.
-     */
+    ///crear producto
     @GetMapping("/nuevo")
     public String showCreateForm(Model model) {
         List<SubCategoria> subcategorias = subCategoriaService.listarActivas();
@@ -123,9 +115,7 @@ public class AdminProductController {
         return "admin/product-form";
     }
 
-    /**
-     * Procesar la creación de un nuevo producto con imagen obligatoria.
-     */
+    ///procesa el formulario de alta
     @PostMapping("/guardar")
     public String createProduct(@RequestParam("codigo") String codigo,
                                 @RequestParam("nombre") String nombre,
@@ -172,43 +162,8 @@ public class AdminProductController {
         }
     }
 
-    /**
-     * Sobrecarga para compatibilidad con llamadas y tests existentes con imagen pero sin stock.
-     */
-    public String createProduct(String codigo, String nombre, String descripcion, String talle,
-                                String subCategoriaId, double precio, boolean enOferta,
-                                MultipartFile imagen, Model model, RedirectAttributes redirectAttributes) {
-        return createProduct(codigo, nombre, descripcion, talle, subCategoriaId, precio, 0, enOferta, imagen, model, redirectAttributes);
-    }
 
-    /**
-     * Sobrecarga para compatibilidad con llamadas y tests existentes sin MultipartFile.
-     */
-    public String createProduct(String codigo, String nombre, String descripcion, String talle,
-                                String subCategoriaId, double precio, boolean enOferta,
-                                Model model, RedirectAttributes redirectAttributes) {
-        try {
-            productoService.crearProducto(codigo, nombre, descripcion, talle, subCategoriaId, precio, enOferta);
-            return "redirect:/admin/products?success=created";
-        } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "Error al crear el producto");
-            model.addAttribute("subcategorias", subCategoriaService.listarActivas());
-            model.addAttribute("isEdit", false);
-            model.addAttribute("codigo", codigo);
-            model.addAttribute("nombre", nombre);
-            model.addAttribute("descripcion", descripcion);
-            model.addAttribute("talle", talle);
-            model.addAttribute("selectedSubcategoriaId", subCategoriaId);
-            model.addAttribute("precio", precio);
-            model.addAttribute("stock", 0);
-            model.addAttribute("enOferta", enOferta);
-            return "admin/product-form";
-        }
-    }
-
-    /**
-     * Formulario para editar un producto existente.
-     */
+    ///formulario de edicion
     @GetMapping("/editar/{id}")
     public String showEditForm(@PathVariable("id") String id, Model model) {
         try {
@@ -235,9 +190,7 @@ public class AdminProductController {
         }
     }
 
-    /**
-     * Procesar la modificación de un producto existente.
-     */
+    ///procesa la modificacion
     @PostMapping("/editar/{id}")
     public String updateProduct(@PathVariable("id") String id,
                                 @RequestParam("nombre") String nombre,
@@ -286,35 +239,22 @@ public class AdminProductController {
         }
     }
 
-    /**
-     * Sobrecarga para tests existentes de modificación sin stock.
-     */
-    public String updateProduct(String id, String nombre, String descripcion, String talle,
-                                String subCategoriaId, Double precio, boolean enOferta, Model model) {
-        return updateProduct(id, nombre, descripcion, talle, subCategoriaId, precio, null, enOferta, model);
-    }
 
-    /**
-     * Baja lógica de un producto (POST).
-     */
+    ///baja logica con post
     @PostMapping("/eliminar/{id}")
     public String deleteProductPost(@PathVariable("id") String id) {
         productoService.eliminarProducto(id);
         return "redirect:/admin/products?success=deleted";
     }
 
-    /**
-     * Baja lógica de un producto (GET para facilidad desde links).
-     */
+    ///baja logica con get
     @GetMapping("/eliminar/{id}")
     public String deleteProductGet(@PathVariable("id") String id) {
         productoService.eliminarProducto(id);
         return "redirect:/admin/products?success=deleted";
     }
 
-    /**
-     * Endpoint para actualización manual de precios por inflación (Admin).
-     */
+    ///actualización manual de precios por inflación
     @PostMapping("/inflacion")
     public String aplicarAumentoInflacion(@RequestParam("porcentaje") double porcentaje,
                                           RedirectAttributes redirectAttributes) {

@@ -22,10 +22,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 
-/**
- * Servicio encargado de la generación y orquestación de datos para el módulo de Reportes.
- * Trabaja exclusivamente con DTOs como portadores de información.
- */
+
 @Service
 public class ReporteService {
 
@@ -48,9 +45,7 @@ public class ReporteService {
         this.empresaService = empresaService;
     }
 
-    /**
-     * Genera el Reporte de Ventas filtrando por rango de fechas.
-     */
+    ///genera el reporte de ventas filtrando por rango de fechas.
     @Transactional(readOnly = true)
     public ReporteVentasDTO generarReporteVentas(LocalDate fechaDesde, LocalDate fechaHasta) {
         LocalDate hoy = LocalDate.now();

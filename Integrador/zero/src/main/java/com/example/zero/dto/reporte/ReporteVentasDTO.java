@@ -9,9 +9,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DTO contenedor para el Reporte de Ventas completo (resumen y detalle).
- */
+///DTO contenedor para el Reporte de Ventas completo (resumen y detalle)
 @Data
 @Builder
 @NoArgsConstructor

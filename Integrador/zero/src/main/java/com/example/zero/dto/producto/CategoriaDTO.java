@@ -10,10 +10,7 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DTO para representar una categoría junto a sus subcategorías activas
- * en la navegación del catálogo de la tienda.
- */
+
 @Getter
 @Setter
 @NoArgsConstructor

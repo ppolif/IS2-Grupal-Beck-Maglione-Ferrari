@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Consultorio Médico</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/assets/css/bootstrap.css}">
+    <link rel="stylesheet" th:href="@{/assets/vendors/bootstrap-icons/bootstrap-icons.css}">
+    <link rel="stylesheet" th:href="@{/assets/css/app.css}">
+    <link rel="stylesheet" th:href="@{/assets/css/pages/auth.css}">
+</head>
+<body>
+    <div id="auth">
+        <div class="row h-100">
+            <div class="col-lg-5 col-12">
+                <div id="auth-left">
+                    <div class="auth-logo mb-4">
+                        <h3 class="text-primary"><i class="bi bi-hospital"></i> Consultorio Médico</h3>
+                    </div>
+                    <h1 class="auth-title">Registro</h1>
+                    <p class="auth-subtitle mb-4">Crear un nuevo usuario administrativo para operar en el consultorio.</p>
+
+                    <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+                    <form th:action="@{/registro}" method="POST">
+                        <div class="form-group position-relative has-icon-left mb-4">
+                            <input type="text" name="nombreUsuario" class="form-control form-control-xl" placeholder="Nombre de Usuario" required autofocus>
+                            <div class="form-control-icon">
+                                <i class="bi bi-person"></i>
+                            </div>
+                        </div>
+                        <div class="form-group position-relative has-icon-left mb-4">
+                            <input type="password" name="clave" class="form-control form-control-xl" placeholder="Contraseña" required>
+                            <div class="form-control-icon">
+                                <i class="bi bi-shield-lock"></i>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-block btn-lg shadow-lg mt-3 w-100" type="submit">Registrar Administrativo</button>
+                    </form>
+                    <div class="text-center mt-4 text-lg fs-6">
+                        <p class="text-gray-600">¿Ya tienes cuenta? <a th:href="@{/login}" class="font-bold">Iniciar Sesión</a>.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7 d-none d-lg-block">
+                <div id="auth-right" class="d-flex align-items-center justify-content-center h-100" style="background: linear-gradient(135deg, #435ebe 0%, #25396f 100%);">
+                    <div class="text-white text-center p-5">
+                        <i class="bi bi-person-badge text-white" style="font-size: 5rem;"></i>
+                        <h2 class="text-white mt-3">Personal Administrativo</h2>
+                        <p class="text-white-50">Acceso seguro con permisos de gestión clínica y administrativa.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

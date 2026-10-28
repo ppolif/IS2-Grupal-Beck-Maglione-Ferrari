@@ -14,6 +14,7 @@ import org.hibernate.annotations.UuidGenerator;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
+// Clase de las que heredan el correo y el numero de telefono
 public abstract class Contacto {
     @Id
     @UuidGenerator

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<aside class="sidebar-wrapper" id="sidebar" th:fragment="sidebar">
+  <!-- Brand Logo -->
+  <a class="sidebar-brand sidebar-brand-zero d-flex align-items-center gap-2 mb-4 text-decoration-none" th:href="@{/admin/registrar-venta}">
+    <img th:src="@{/admin/assets/images/logo-zero.svg}" alt="Zero Admin" style="height: 36px;">
+    <span class="h5 fw-bold mb-0 text-brand-dark">ZERO ADMIN</span>
+  </a>
+
+  <!-- Menu Links -->
+  <div class="flex-grow-1 overflow-y-auto">
+    <div class="small fw-bold text-uppercase text-muted px-2 mb-2">Menú</div>
+    <ul class="nav nav-pills flex-column gap-1 mb-4">
+      <li class="nav-item">
+        <a th:href="@{/admin/registrar-venta}" class="nav-link d-flex align-items-center gap-2">
+          <i class="bi bi-cart-check"></i>
+          <span>Registrar venta</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a th:href="@{/admin/registrar-compra}" class="nav-link d-flex align-items-center gap-2">
+          <i class="bi bi-truck"></i>
+          <span>Registrar compra proveedores</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a th:href="@{/admin/orders}" class="nav-link d-flex align-items-center gap-2">
+          <i class="bi bi-table"></i>
+          <span>Tablas de Órdenes</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a th:href="@{/admin/products}" class="nav-link d-flex align-items-center gap-2">
+          <i class="bi bi-box-seam"></i>
+          <span>Productos</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a th:href="@{/admin/providers}" class="nav-link d-flex align-items-center gap-2">
+          <i class="bi bi-building"></i>
+          <span>Proveedores</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a th:href="@{/admin/reportes}" class="nav-link d-flex align-items-center gap-2">
+          <i class="bi bi-bar-chart-line"></i>
+          <span>Reportes</span>
+        </a>
+      </li>
+
+    </ul>
+
+  </div>
+
+  <!-- Perfil Card Footer -->
+  <a th:href="@{/admin/profile}" class="sidebar-profile d-flex align-items-center gap-2 p-2 bg-white rounded-3 border mt-auto text-decoration-none">
+    <img th:src="@{${session.usuariosession != null && session.usuariosession.foto != null && !session.usuariosession.foto.isBlank() ? session.usuariosession.foto : '/admin/assets/images/avatar.png'}}"
+         alt="Avatar" class="rounded-circle object-fit-cover" width="38" height="38"
+         onerror="this.src='/admin/assets/images/avatar.png'">
+    <div class="overflow-hidden">
+      <div class="small fw-bold text-truncate text-brand-dark" th:text="${session.usuariosession != null ? session.usuariosession.rol : 'Administrador'}">Administrador</div>
+      <div class="text-muted text-truncate" style="font-size: 0.75rem;" th:text="${session.usuariosession != null ? session.usuariosession.nombreUsuario : 'admin@zero.com'}">admin@zero.com</div>
+    </div>
+  </a>
+</aside>
+
+</body>
+</html>

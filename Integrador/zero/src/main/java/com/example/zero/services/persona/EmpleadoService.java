@@ -26,7 +26,7 @@ public class EmpleadoService {
         this.usuarioRepository = usuarioRepository;
     }
 
-    public void validar(String numeroDocumento, String nombre, String apellido) {
+    public void validar(String numeroDocumento, String nombre, String apellido, TipoDocumento tipoDocumento) {
         if (numeroDocumento == null || numeroDocumento.trim().isEmpty()) {
             throw new IllegalArgumentException("El número de documento no puede estar vacío");
         }
@@ -36,13 +36,16 @@ public class EmpleadoService {
         if (apellido == null || apellido.trim().isEmpty()) {
             throw new IllegalArgumentException("El apellido no puede estar vacío");
         }
+        if (tipoDocumento == null) {
+            throw new IllegalArgumentException("El tipo de documento no puede estar vacío");
+        }
     }
 
     @Transactional
     public Empleado crearEmpleado(String numeroDocumento, String nombre, String apellido,
                                   LocalDate fechaNacimiento, TipoDocumento tipoDocumento,
                                   TipoEmpleado tipoEmpleado, Empresa empresa) {
-        validar(numeroDocumento, nombre, apellido);
+        validar(numeroDocumento, nombre, apellido, tipoDocumento);
         String docLimpio = numeroDocumento.trim();
 
         Optional<Empleado> existente = empleadoRepository.findByNumeroDocumentoAndEliminadoFalse(docLimpio);
@@ -52,11 +55,11 @@ public class EmpleadoService {
 
         Empleado empleado = Empleado.builder()
                 .numeroDocumento(docLimpio)
-                .nombre(nombre.trim())
-                .apellido(apellido.trim())
-                .fechaNacimiento(fechaNacimiento != null ? fechaNacimiento : LocalDate.of(1990, 1, 1))
-                .tipoDocumento(tipoDocumento != null ? tipoDocumento : TipoDocumento.DNI)
-                .tipoEmpleado(tipoEmpleado != null ? tipoEmpleado : TipoEmpleado.ADMINISTRATIVO)
+                .nombre(nombre)
+                .apellido(apellido)
+                .fechaNacimiento(fechaNacimiento)
+                .tipoDocumento(tipoDocumento)
+                .tipoEmpleado(tipoEmpleado)
                 .empresa(empresa)
                 .eliminado(false)
                 .build();
@@ -70,18 +73,16 @@ public class EmpleadoService {
                                       TipoEmpleado tipoEmpleado, Empresa empresa) {
         Empleado empleado = buscarPorDocumento(numeroDocumento);
 
-        if (nombre != null && !nombre.trim().isEmpty()) {
-            empleado.setNombre(nombre.trim());
-        }
-        if (apellido != null && !apellido.trim().isEmpty()) {
-            empleado.setApellido(apellido.trim());
-        }
+        validar(numeroDocumento, nombre, apellido, tipoDocumento);
+
+        empleado.setNombre(nombre);
+        empleado.setApellido(apellido);
+        empleado.setTipoDocumento(tipoDocumento);
+
         if (fechaNacimiento != null) {
             empleado.setFechaNacimiento(fechaNacimiento);
         }
-        if (tipoDocumento != null) {
-            empleado.setTipoDocumento(tipoDocumento);
-        }
+
         if (tipoEmpleado != null) {
             empleado.setTipoEmpleado(tipoEmpleado);
         }

@@ -1,0 +1,39 @@
+$kind: http-request
+url: http://localhost:9000/api/v1/persona/2
+method: POST
+body:
+  type: json
+  content: |-
+    {
+        "id": 2,
+        "nombre": "Tincho",
+        "apellido": "Maglione",
+        "dni":46916025,
+        "domicilio": {
+            "calle":"av. Piola",
+            "numero": 420,
+            "latitud": "-32.88970575178735",
+            "longitud": "68.84457510855037",
+            "localidad": {
+                "id": 1,
+                "denominacion": "Godoy Cruz"
+            }
+        },
+        "libros": [
+            {
+                "titulo": "Los dias del venado",
+                "fecha": 2012,
+                "genero": "fantastico",
+                "paginas": 420,
+                "autores": [
+                    {
+                        "id": 1,
+                        "nombre": "Liliana",
+                        "apellido": "Bodoc",
+                        "biografia": "Gran mentora y referente"
+                    }
+                ]
+            }
+        ]
+    }
+order: 4021902046841737

@@ -1,0 +1,11 @@
+<div th:fragment="_card" class="card my-2 shadow-sm">
+    <img th:src="${videojuego.imagen != null and !videojuego.imagen.isEmpty()} ? (${videojuego.imagen.startsWith('http')} ? ${videojuego.imagen} : @{'/imagenes/' + ${videojuego.imagen}}) : 'https://dummyimage.com/450x300/dee2e6/6c757d.jpg'"
+         class="card-img-top" style="height: 180px; object-fit: cover;" alt="videojuego imagen">
+    <div class="card-body">
+        <h5 class="card-title" th:text="${videojuego.titulo}">Card title</h5>
+        <p class="card-text">Precio : <span th:text="'$' + ${#numbers.formatDecimal(videojuego.precio, 1, 2)}">1</span></p>
+        <a th:href="@{'/detalle/' + ${videojuego.id}}" class="btn btn-primary btn-block">
+            Ver Detalle
+        </a>
+    </div>
+</div>

@@ -8,9 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Servicio de negocio para la gestión de Proveedores.
- */
+
 @Service
 public class ProveedorService {
 
@@ -34,6 +32,8 @@ public class ProveedorService {
         validar(razonSocial, cuit);
 
         String cuitLimpio = cuit.trim();
+
+        // Verificamos si existe el proveedor en la bbdd
         Optional<Proveedor> existente = proveedorRepository.findByCuitAndEliminadoFalse(cuitLimpio);
         if (existente.isPresent()) {
             throw new IllegalArgumentException("Ya existe un proveedor activo con el CUIT: " + cuitLimpio);

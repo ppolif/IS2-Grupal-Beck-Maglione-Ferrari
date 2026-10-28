@@ -1,5 +1,6 @@
 package com.example.zero.services.mail;
 
+import com.example.zero.entidades.compra.Factura;
 import com.example.zero.services.CompraProveedorService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -28,12 +29,7 @@ public class EmailService {
         this.compraProveedorService = compraProveedorService;
     }
 
-    /**     
-     * Envía un correo electrónico con el código de activación de 6 dígitos con formato HTML institucional ZERO.
-     *
-     * @param destinatario Dirección de correo del cliente receptor
-     * @param codigo       Código de 6 dígitos numéricos
-     */
+    ///correo del codigo de verificacion
     public void enviarCodigoConfirmacion(String destinatario, String codigo) {
         if (destinatario == null || destinatario.trim().isEmpty()) {
             throw new IllegalArgumentException("La dirección de correo destinataria no puede estar vacía");
@@ -88,14 +84,8 @@ public class EmailService {
         }   
     }
 
-    /**
-     * Envía un correo electrónico con el detalle y comprobante de compra con diseño HTML embebido institucional ZERO.
-     *
-     * @param factura      Entidad Factura con el detalle de la venta realizada
-     * @param destinatario Dirección de correo del cliente receptor
-     */
-    @org.springframework.scheduling.annotation.Async
-    public void enviarComprobanteCompra(com.example.zero.entidades.compra.Factura factura, String destinatario) {
+    ///enviar comrpobante
+    public void enviarComprobanteCompra(Factura factura, String destinatario) {
         if (factura == null) {
             throw new IllegalArgumentException("La factura de compra no puede ser nula");
         }
@@ -125,13 +115,8 @@ public class EmailService {
         }
     }
 
-    /**
-     * Construye la plantilla HTML embebida con los detalles de la venta, productos, totales y diseño ZERO.
-     *
-     * @param factura Factura a representar
-     * @return Código HTML con estilos CSS inline
-     */
-    public String construirHtmlComprobante(com.example.zero.entidades.compra.Factura factura) {
+    ///
+    public String construirHtmlComprobante(Factura factura) {
         if (factura == null) {
             return "";
         }

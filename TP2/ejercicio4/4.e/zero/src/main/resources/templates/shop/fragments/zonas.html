@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+  <!-- Fragmento de Opciones para Países -->
+  <th:block th:fragment="opcionesPaises">
+    <option value="">-- Seleccionar País --</option>
+    <option th:each="p : ${paises}" th:value="${p.id}" th:text="${p.nombre}">Argentina</option>
+  </th:block>
+
+  <!-- Fragmento de Opciones para Provincias -->
+  <th:block th:fragment="opcionesProvincias">
+    <option value="">-- Seleccionar Provincia --</option>
+    <option th:each="prov : ${provincias}" th:value="${prov.id}" th:text="${prov.nombre}">Córdoba</option>
+  </th:block>
+
+  <!-- Fragmento de Opciones para Departamentos -->
+  <th:block th:fragment="opcionesDepartamentos">
+    <option value="">-- Seleccionar Departamento --</option>
+    <option th:each="dep : ${departamentos}" th:value="${dep.id}" th:text="${dep.nombre}">Capital</option>
+  </th:block>
+
+  <!-- Fragmento de Opciones para Localidades -->
+  <th:block th:fragment="opcionesLocalidades">
+    <option value="">-- Seleccionar Localidad --</option>
+    <option th:each="loc : ${localidades}" th:value="${loc.id}"
+            th:text="${loc.nombre} + (${loc.codigoPostal} != null ? ' (CP: ' + ${loc.codigoPostal} + ')' : '')">
+      Córdoba
+    </option>
+  </th:block>
+
+</body>
+</html>

@@ -1,9 +1,11 @@
 package com.example.zero.controllers;
 
+import com.example.zero.dto.producto.ProductoDTO;
 import com.example.zero.entidades.compra.Detalle;
 import com.example.zero.entidades.compra.Factura;
 import com.example.zero.entidades.producto.Producto;
 import com.example.zero.enums.TipoDePago;
+import com.example.zero.services.ContactoService;
 import com.example.zero.services.producto.ProductoService;
 import com.example.zero.services.VentaService;
 import com.example.zero.services.persona.ClienteService;
@@ -24,9 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Controlador para la gestión y registro de ventas y órdenes en el panel de administración.
- */
+///controlador para registrar ventas en local
 @Controller
 public class AdminVentaController {
 
@@ -35,14 +35,8 @@ public class AdminVentaController {
     private final ClienteService clienteService;
     private final StockService stockService;
     private final EmpresaService empresaService;
-    private final com.example.zero.services.ContactoService contactoService;
+    private final ContactoService contactoService;
 
-    public AdminVentaController(VentaService ventaService,
-                                ProductoService productoService,
-                                ClienteService clienteService,
-                                StockService stockService) {
-        this(ventaService, productoService, clienteService, stockService, null, null);
-    }
 
     @Autowired
     public AdminVentaController(VentaService ventaService,
@@ -50,7 +44,7 @@ public class AdminVentaController {
                                 ClienteService clienteService,
                                 StockService stockService,
                                 @Autowired(required = false) EmpresaService empresaService,
-                                @Autowired(required = false) com.example.zero.services.ContactoService contactoService) {
+                                @Autowired(required = false) ContactoService contactoService) {
         this.ventaService = ventaService;
         this.productoService = productoService;
         this.clienteService = clienteService;
@@ -59,22 +53,20 @@ public class AdminVentaController {
         this.contactoService = contactoService;
     }
 
-    /**
-     * Muestra el formulario para registrar una nueva venta.
-     */
+    ///formulariooooooo
     @GetMapping({"/admin/registrar-venta", "/admin/ventas/nueva"})
     public String showRegistrarVentaForm(Model model,
                                          @RequestParam(name = "error", required = false) String error) {
         List<Producto> productos = productoService.listarActivos();
-        List<com.example.zero.dto.producto.ProductoDTO> dtos = new ArrayList<>();
+        List<ProductoDTO> dtos = new ArrayList<>();
         for (Producto p : productos) {
             double precio = 0.0;
             try {
                 precio = productoService.obtenerPrecioActual(p.getId());
             } catch (Exception ignored) {
             }
-            int stock = (stockService != null) ? stockService.calcularStockActual(p.getId()) : 0;
-            dtos.add(com.example.zero.dto.producto.ProductoDTO.de(p, precio, stock, stockService, productoService));
+            int stock = stockService.calcularStockActual(p.getId());
+            dtos.add(ProductoDTO.de(p, precio, stock, stockService, productoService));
         }
 
         model.addAttribute("productos", dtos);
@@ -88,9 +80,7 @@ public class AdminVentaController {
         return "admin/registrar-venta";
     }
 
-    /**
-     * Procesa y persiste la venta realizada desde el panel.
-     */
+    ///procesa y persiste la venta
     @PostMapping("/admin/ventas/guardar")
     public String procesarVenta(@RequestParam("clienteDni") String clienteDni,
                                 @RequestParam("clienteNombre") String clienteNombre,
@@ -112,15 +102,15 @@ public class AdminVentaController {
             model.addAttribute("formaDePagoSeleccionada", formaDePago);
 
             List<Producto> productos = productoService.listarActivos();
-            List<com.example.zero.dto.producto.ProductoDTO> dtos = new ArrayList<>();
+            List<ProductoDTO> dtos = new ArrayList<>();
             for (Producto p : productos) {
                 double precio = 0.0;
                 try {
                     precio = productoService.obtenerPrecioActual(p.getId());
                 } catch (Exception ignored) {
                 }
-                int stock = (stockService != null) ? stockService.calcularStockActual(p.getId()) : 0;
-                dtos.add(com.example.zero.dto.producto.ProductoDTO.de(p, precio, stock, stockService, productoService));
+                int stock = stockService.calcularStockActual(p.getId());
+                dtos.add(ProductoDTO.de(p, precio, stock, stockService, productoService));
             }
             model.addAttribute("productos", dtos);
             model.addAttribute("clientes", clienteService.listarActivos());
@@ -129,10 +119,8 @@ public class AdminVentaController {
         }
     }
 
-    /**
-     * Listado de órdenes de venta en tables-basic.
-     */
-    @GetMapping({"/admin/orders", "/admin/tables-basic"})
+    ///listado en tabla de ordenes
+    @GetMapping({"/admin/orders"})
     public String listOrders(Model model,
                              @RequestParam(name = "keyword", required = false) String keyword,
                              @RequestParam(name = "success", required = false) String success,
@@ -140,6 +128,7 @@ public class AdminVentaController {
         List<Factura> facturas = ventaService.listarVentas();
         List<Factura> orders = new ArrayList<>();
 
+        //este codigo es para buscar facturas (filtro)
         for (Factura f : facturas) {
             if (f == null) continue;
             if (keyword != null && !keyword.trim().isEmpty()) {
@@ -195,9 +184,7 @@ public class AdminVentaController {
         return "admin/tables-basic";
     }
 
-    /**
-     * Baja lógica de una orden de venta.
-     */
+
     @PostMapping("/admin/orders/delete")
     public String deleteOrder(@RequestParam("orderId") String orderId) {
         try {
@@ -208,9 +195,7 @@ public class AdminVentaController {
         }
     }
 
-    /**
-     * Detalle administrativo de una factura (venta a cliente o compra a proveedor).
-     */
+    ///detalle de una orden
     @GetMapping({"/admin/orders/{id}", "/admin/orders/detalle/{id}"})
     public String orderDetail(@PathVariable("id") String id, Model model, RedirectAttributes redirectAttributes) {
         Factura factura = ventaService.buscarFacturaPorIdentificador(id);
@@ -232,33 +217,16 @@ public class AdminVentaController {
         String customerPhone = "";
         String shippingAddress = "";
         if (cliente != null) {
-            if (contactoService != null) {
-                customerPhone = contactoService.obtenerTelefonoPrincipal(cliente).orElse("");
-            }
-            if (cliente.getDireccion() != null) {
-                for (var dir : cliente.getDireccion()) {
-                    if (dir != null && !dir.isEliminado() && dir.getCalle() != null && !dir.getCalle().isBlank()) {
-                        String calle = dir.getCalle().trim();
-                        String num = dir.getNumeracion() != null ? dir.getNumeracion().trim() : "";
-                        shippingAddress = (calle + " " + num).trim();
-                        if (dir.getLocalidad() != null && dir.getLocalidad().getNombre() != null) {
-                            shippingAddress += ", " + dir.getLocalidad().getNombre().trim();
-                        }
-                        break;
-                    }
-                }
-            }
+            customerPhone = contactoService.obtenerTelefonoPrincipal(cliente).orElse("");
         }
 
         String clienteFotoUrl = "/admin/assets/images/avatar.png";
-        if (ventaService != null) {
-            try {
-                String foto = ventaService.obtenerFotoComprobante(factura);
-                if (foto != null && !foto.isBlank()) {
-                    clienteFotoUrl = foto;
-                }
-            } catch (Exception ignored) {
+        try {
+            String foto = ventaService.obtenerFotoComprobante(factura);
+            if (foto != null && !foto.isBlank()) {
+                clienteFotoUrl = foto;
             }
+        } catch (Exception ignored) {
         }
 
         Map<String, String> imagenesPorOrder = new HashMap<>();
@@ -280,7 +248,9 @@ public class AdminVentaController {
             FacturaProveedor fp = (FacturaProveedor) factura;
             model.addAttribute("facturaProveedor", fp);
             model.addAttribute("proveedor", fp.getProveedor());
-            Empresa sucursal = (empresaService != null) ? empresaService.obtenerSucursalActiva() : null;
+            Empresa sucursal = empresaService.obtenerSucursalActiva();
+
+            //hardcodeamos la empresa porque no tenemos alta jaja
             if (sucursal == null) {
                 sucursal = new Empresa();
                 sucursal.setId("SUC-001");
@@ -289,7 +259,7 @@ public class AdminVentaController {
                 sucursal.setTipoSucursal(TipoEmpresa.SEDE_CENTRAL);
             }
             model.addAttribute("sucursal", sucursal);
-            String dirCompleta = (empresaService != null) ? empresaService.obtenerDireccionCompleta(sucursal) : "Av. Corrientes 1234, CABA";
+            String dirCompleta = empresaService.obtenerDireccionCompleta(sucursal);
             model.addAttribute("sucursalDireccion", dirCompleta);
         }
 

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<footer th:fragment="footer" class="bg-slate-900 text-slate-300 pt-16 pb-12 mt-20 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-10">
+            
+            <div class="space-y-4">
+                <div class="flex items-center space-x-2">
+                    <span class="w-8 h-8 rounded-full bg-bloom-500/20 text-bloom-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-spa"></i>
+                    </span>
+                    <span class="font-serif-title text-xl font-bold text-white tracking-wide">Bloom<span class="text-bloom-500">Shop</span></span>
+                </div>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    E-Commerce de flores, plantas y arreglos botánicos. Implementado con el patrón Template Method y arquitectura Spring Boot para Ingeniería de Software 2.
+                </p>
+            </div>
+
+            <div>
+                <h4 class="text-white text-xs font-bold uppercase tracking-wider mb-4">Navegación</h4>
+                <ul class="space-y-2 text-xs text-slate-400">
+                    <li><a th:href="@{/catalogo}" class="hover:text-bloom-400 transition">Catálogo de Artículos</a></li>
+                    <li><a th:href="@{/carrito}" class="hover:text-bloom-400 transition">Carrito de Compras</a></li>
+                    <li><a th:href="@{/historial}" class="hover:text-bloom-400 transition">Historial de Compras</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="text-white text-xs font-bold uppercase tracking-wider mb-4">Arquitectura & Patrones</h4>
+                <ul class="space-y-2 text-xs text-slate-400">
+                    <li><span class="text-bloom-400 font-semibold">• Template Method (GoF)</span></li>
+                    <li><span>• Spring Data JPA & Envers</span></li>
+                    <li><span>• Spring Security & BCrypt</span></li>
+                    <li><span>• Java 25 & Lombok</span></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="text-white text-xs font-bold uppercase tracking-wider mb-4">Usuarios de Prueba</h4>
+                <div class="bg-slate-800/60 p-3 rounded-lg text-xs space-y-1 text-slate-300 border border-slate-700/50">
+                    <p><strong>Admin:</strong> admin@bloomshop.com</p>
+                    <p><strong>Cliente:</strong> cliente@bloomshop.com</p>
+                    <p class="text-[11px] text-bloom-400">Claves: admin123 / cliente123</p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="border-t border-slate-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500">
+            <p>&copy; 2026 BloomShop - Trabajo Práctico N°2. Todos los derechos reservados.</p>
+            <p class="mt-2 md:mt-0">Basado en la plantilla BloomShop (ThemeWagon).</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>
+

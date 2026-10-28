@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Registro de Usuario')}"></head>
+<body class="bg-slate-50 min-h-screen flex flex-col justify-between">
+
+    <div>
+        <header th:replace="~{fragments/navbar :: navbar}"></header>
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <main class="max-w-md mx-auto px-4 py-12">
+            <div class="bg-white rounded-3xl border border-slate-200/80 shadow-md p-8 sm:p-10">
+                
+                <div class="text-center mb-8">
+                    <span class="w-12 h-12 bg-rose-50 text-bloom-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl shadow-inner">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </span>
+                    <h1 class="font-serif-title text-2xl font-bold text-slate-800">Crear Cuenta</h1>
+                    <p class="text-xs text-slate-500 mt-1">Regístrate para acceder al carrito y procesar compras (HU1)</p>
+                </div>
+
+                <form th:action="@{/registro}" method="post" th:object="${usuario}" class="space-y-4">
+                    <div>
+                        <label for="nombre" class="block text-xs font-semibold text-slate-700 mb-1">Nombre Completo *</label>
+                        <input type="text" id="nombre" th:field="*{nombre}" required placeholder="Ej. Ana García"
+                               class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-bloom-500 focus:outline-none">
+                        <p th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}" class="text-[11px] text-rose-500 mt-1"></p>
+                    </div>
+
+                    <div>
+                        <label for="email" class="block text-xs font-semibold text-slate-700 mb-1">Correo Electrónico *</label>
+                        <input type="email" id="email" th:field="*{email}" required placeholder="ana@ejemplo.com"
+                               class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-bloom-500 focus:outline-none">
+                        <p th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="text-[11px] text-rose-500 mt-1"></p>
+                    </div>
+
+                    <div>
+                        <label for="clave" class="block text-xs font-semibold text-slate-700 mb-1">Contraseña *</label>
+                        <input type="password" id="clave" th:field="*{clave}" required placeholder="Mínimo 4 caracteres"
+                               class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-bloom-500 focus:outline-none">
+                        <p th:if="${#fields.hasErrors('clave')}" th:errors="*{clave}" class="text-[11px] text-rose-500 mt-1"></p>
+                    </div>
+
+                    <div>
+                        <label for="confirmacionClave" class="block text-xs font-semibold text-slate-700 mb-1">Confirmar Contraseña *</label>
+                        <input type="password" id="confirmacionClave" th:field="*{confirmacionClave}" required placeholder="Repite tu contraseña"
+                               class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-bloom-500 focus:outline-none">
+                        <p th:if="${#fields.hasErrors('confirmacionClave')}" th:errors="*{confirmacionClave}" class="text-[11px] text-rose-500 mt-1"></p>
+                    </div>
+
+                    <button type="submit"
+                            class="w-full bg-bloom-600 hover:bg-bloom-700 text-white font-bold py-3 px-4 rounded-xl text-xs shadow-md shadow-rose-200 transition">
+                        Registrarme
+                    </button>
+                </form>
+
+                <div class="mt-6 pt-6 border-t border-slate-100 text-center">
+                    <p class="text-xs text-slate-500">
+                        ¿Ya tienes una cuenta?
+                        <a th:href="@{/login}" class="text-bloom-600 font-bold hover:underline">Inicia sesión</a>
+                    </p>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>
+
