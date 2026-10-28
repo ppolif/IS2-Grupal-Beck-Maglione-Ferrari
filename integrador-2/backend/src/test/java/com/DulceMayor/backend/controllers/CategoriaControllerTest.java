@@ -10,11 +10,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.DulceMayor.backend.config.JwtProvider;
-import com.DulceMayor.backend.dtos.CategoriaRequest;
+import com.DulceMayor.backend.controllers.producto.CategoriaController;
+import com.DulceMayor.backend.dtos.producto.CategoriaRequest;
 import com.DulceMayor.backend.entities.ProveedorAuth;
 import com.DulceMayor.backend.entities.RolUsuario;
 import com.DulceMayor.backend.entities.Usuario;
-import com.DulceMayor.backend.repositories.CategoriaRepository;
+import com.DulceMayor.backend.repositories.producto.*;
 import com.DulceMayor.backend.repositories.UsuarioRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,19 +49,19 @@ class CategoriaControllerTest {
     private CategoriaRepository categoriaRepository;
 
     @Autowired
-    private com.DulceMayor.backend.repositories.SubCategoriaRepository subCategoriaRepository;
+    private SubCategoriaRepository subCategoriaRepository;
 
     @Autowired
-    private com.DulceMayor.backend.repositories.ProductoRepository productoRepository;
+    private ProductoRepository productoRepository;
 
     @Autowired
-    private com.DulceMayor.backend.repositories.StockRepository stockRepository;
+    private StockRepository stockRepository;
 
     @Autowired
-    private com.DulceMayor.backend.repositories.VigenciaPrecioRepository vigenciaPrecioRepository;
+    private VigenciaPrecioRepository vigenciaPrecioRepository;
 
     @Autowired
-    private com.DulceMayor.backend.repositories.PromocionRepository promocionRepository;
+    private PromocionRepository promocionRepository;
 
     @Autowired
     private UsuarioRepository usuarioRepository;

@@ -9,16 +9,19 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.DulceMayor.backend.config.ConflictoException;
-import com.DulceMayor.backend.dtos.VigenciaPrecioMapper;
-import com.DulceMayor.backend.dtos.VigenciaPrecioRequest;
-import com.DulceMayor.backend.dtos.VigenciaPrecioResponse;
-import com.DulceMayor.backend.entities.Producto;
-import com.DulceMayor.backend.entities.VigenciaPrecio;
-import com.DulceMayor.backend.repositories.VigenciaPrecioRepository;
+import com.DulceMayor.backend.dtos.producto.VigenciaPrecioMapper;
+import com.DulceMayor.backend.dtos.producto.VigenciaPrecioRequest;
+import com.DulceMayor.backend.dtos.producto.VigenciaPrecioResponse;
+import com.DulceMayor.backend.entities.producto.Producto;
+import com.DulceMayor.backend.entities.producto.VigenciaPrecio;
+import com.DulceMayor.backend.repositories.producto.VigenciaPrecioRepository;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import com.DulceMayor.backend.services.producto.ProductoService;
+import com.DulceMayor.backend.services.producto.VigenciaPrecioService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

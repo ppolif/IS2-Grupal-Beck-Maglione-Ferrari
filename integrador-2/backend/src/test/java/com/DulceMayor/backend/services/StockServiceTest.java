@@ -10,16 +10,19 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.DulceMayor.backend.config.ConflictoException;
-import com.DulceMayor.backend.dtos.ProductoCreadoEvent;
-import com.DulceMayor.backend.dtos.StockAjusteRequest;
-import com.DulceMayor.backend.dtos.StockMapper;
-import com.DulceMayor.backend.dtos.StockReposicionRequest;
-import com.DulceMayor.backend.dtos.StockResponse;
-import com.DulceMayor.backend.entities.Producto;
-import com.DulceMayor.backend.entities.Stock;
-import com.DulceMayor.backend.repositories.StockRepository;
+import com.DulceMayor.backend.dtos.producto.ProductoCreadoEvent;
+import com.DulceMayor.backend.dtos.producto.StockAjusteRequest;
+import com.DulceMayor.backend.dtos.producto.StockMapper;
+import com.DulceMayor.backend.dtos.producto.StockReposicionRequest;
+import com.DulceMayor.backend.dtos.producto.StockResponse;
+import com.DulceMayor.backend.entities.producto.Producto;
+import com.DulceMayor.backend.entities.producto.Stock;
+import com.DulceMayor.backend.repositories.producto.StockRepository;
 import java.time.LocalDateTime;
 import java.util.Optional;
+
+import com.DulceMayor.backend.services.producto.ProductoService;
+import com.DulceMayor.backend.services.producto.StockService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

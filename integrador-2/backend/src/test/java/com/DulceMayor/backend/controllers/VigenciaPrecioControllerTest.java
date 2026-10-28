@@ -9,19 +9,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.DulceMayor.backend.config.JwtProvider;
-import com.DulceMayor.backend.dtos.VigenciaPrecioRequest;
-import com.DulceMayor.backend.entities.Categoria;
-import com.DulceMayor.backend.entities.Producto;
+import com.DulceMayor.backend.dtos.producto.VigenciaPrecioRequest;
+import com.DulceMayor.backend.entities.producto.Categoria;
+import com.DulceMayor.backend.entities.producto.Producto;
 import com.DulceMayor.backend.entities.ProveedorAuth;
 import com.DulceMayor.backend.entities.RolUsuario;
-import com.DulceMayor.backend.entities.SubCategoria;
+import com.DulceMayor.backend.entities.producto.SubCategoria;
 import com.DulceMayor.backend.entities.Usuario;
-import com.DulceMayor.backend.entities.VigenciaPrecio;
-import com.DulceMayor.backend.repositories.CategoriaRepository;
-import com.DulceMayor.backend.repositories.ProductoRepository;
-import com.DulceMayor.backend.repositories.SubCategoriaRepository;
+import com.DulceMayor.backend.entities.producto.VigenciaPrecio;
+import com.DulceMayor.backend.repositories.producto.CategoriaRepository;
+import com.DulceMayor.backend.repositories.producto.ProductoRepository;
+import com.DulceMayor.backend.repositories.producto.SubCategoriaRepository;
 import com.DulceMayor.backend.repositories.UsuarioRepository;
-import com.DulceMayor.backend.repositories.VigenciaPrecioRepository;
+import com.DulceMayor.backend.repositories.producto.VigenciaPrecioRepository;
+import com.DulceMayor.backend.repositories.producto.StockRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +50,7 @@ class VigenciaPrecioControllerTest {
     private VigenciaPrecioRepository vigenciaPrecioRepository;
 
     @Autowired
-    private com.DulceMayor.backend.repositories.StockRepository stockRepository;
+    private StockRepository stockRepository;
 
     @Autowired
     private ProductoRepository productoRepository;

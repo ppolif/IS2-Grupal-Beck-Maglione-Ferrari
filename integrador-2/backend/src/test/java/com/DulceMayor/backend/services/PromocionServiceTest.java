@@ -8,16 +8,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.DulceMayor.backend.config.ConflictoException;
 import com.DulceMayor.backend.config.RecursoNoEncontradoException;
 import com.DulceMayor.backend.config.ValidacionException;
-import com.DulceMayor.backend.dtos.PromocionMapper;
-import com.DulceMayor.backend.dtos.PromocionRequest;
-import com.DulceMayor.backend.dtos.PromocionResponse;
-import com.DulceMayor.backend.entities.Promocion;
-import com.DulceMayor.backend.repositories.PromocionRepository;
+import com.DulceMayor.backend.dtos.producto.PromocionMapper;
+import com.DulceMayor.backend.dtos.producto.PromocionRequest;
+import com.DulceMayor.backend.dtos.producto.PromocionResponse;
+import com.DulceMayor.backend.entities.producto.Promocion;
+import com.DulceMayor.backend.repositories.producto.PromocionRepository;
 import java.time.LocalDate;
 import java.util.Optional;
+
+import com.DulceMayor.backend.services.producto.ProductoService;
+import com.DulceMayor.backend.services.producto.PromocionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

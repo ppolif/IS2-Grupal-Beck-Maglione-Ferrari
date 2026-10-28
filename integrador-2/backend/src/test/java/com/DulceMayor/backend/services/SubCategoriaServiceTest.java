@@ -11,14 +11,16 @@ import static org.mockito.Mockito.when;
 
 import com.DulceMayor.backend.config.ConflictoException;
 import com.DulceMayor.backend.config.RecursoNoEncontradoException;
-import com.DulceMayor.backend.config.ValidacionException;
-import com.DulceMayor.backend.dtos.SubCategoriaMapper;
-import com.DulceMayor.backend.dtos.SubCategoriaRequest;
-import com.DulceMayor.backend.dtos.SubCategoriaResponse;
-import com.DulceMayor.backend.entities.Categoria;
-import com.DulceMayor.backend.entities.SubCategoria;
-import com.DulceMayor.backend.repositories.SubCategoriaRepository;
+import com.DulceMayor.backend.dtos.producto.SubCategoriaMapper;
+import com.DulceMayor.backend.dtos.producto.SubCategoriaRequest;
+import com.DulceMayor.backend.dtos.producto.SubCategoriaResponse;
+import com.DulceMayor.backend.entities.producto.Categoria;
+import com.DulceMayor.backend.entities.producto.SubCategoria;
+import com.DulceMayor.backend.repositories.producto.SubCategoriaRepository;
 import java.util.Optional;
+
+import com.DulceMayor.backend.services.producto.CategoriaService;
+import com.DulceMayor.backend.services.producto.SubCategoriaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

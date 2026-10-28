@@ -3,7 +3,8 @@ package com.DulceMayor.backend.repositories;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.DulceMayor.backend.entities.Categoria;
+import com.DulceMayor.backend.entities.producto.Categoria;
+import com.DulceMayor.backend.repositories.producto.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -9,19 +9,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.DulceMayor.backend.config.JwtProvider;
-import com.DulceMayor.backend.dtos.ProductoRequest;
-import com.DulceMayor.backend.entities.Categoria;
-import com.DulceMayor.backend.entities.Producto;
+import com.DulceMayor.backend.dtos.producto.ProductoRequest;
+import com.DulceMayor.backend.entities.producto.Categoria;
+import com.DulceMayor.backend.entities.producto.Producto;
 import com.DulceMayor.backend.entities.ProveedorAuth;
 import com.DulceMayor.backend.entities.RolUsuario;
-import com.DulceMayor.backend.entities.SubCategoria;
+import com.DulceMayor.backend.entities.producto.SubCategoria;
 import com.DulceMayor.backend.entities.Usuario;
-import com.DulceMayor.backend.repositories.CategoriaRepository;
-import com.DulceMayor.backend.repositories.ProductoRepository;
-import com.DulceMayor.backend.repositories.StockRepository;
-import com.DulceMayor.backend.repositories.SubCategoriaRepository;
+import com.DulceMayor.backend.repositories.producto.CategoriaRepository;
+import com.DulceMayor.backend.repositories.producto.ProductoRepository;
+import com.DulceMayor.backend.repositories.producto.StockRepository;
+import com.DulceMayor.backend.repositories.producto.SubCategoriaRepository;
 import com.DulceMayor.backend.repositories.UsuarioRepository;
-import com.DulceMayor.backend.repositories.VigenciaPrecioRepository;
+import com.DulceMayor.backend.repositories.producto.VigenciaPrecioRepository;
+import com.DulceMayor.backend.repositories.producto.PromocionRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -45,7 +46,7 @@ class ProductoControllerTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
-    private com.DulceMayor.backend.repositories.PromocionRepository promocionRepository;
+    private PromocionRepository promocionRepository;
 
     @Autowired
     private ProductoRepository productoRepository;

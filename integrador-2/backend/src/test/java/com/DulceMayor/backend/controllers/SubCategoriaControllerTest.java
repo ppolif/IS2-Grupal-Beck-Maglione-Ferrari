@@ -10,14 +10,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.DulceMayor.backend.config.JwtProvider;
-import com.DulceMayor.backend.dtos.SubCategoriaRequest;
-import com.DulceMayor.backend.entities.Categoria;
+import com.DulceMayor.backend.dtos.producto.SubCategoriaRequest;
+import com.DulceMayor.backend.entities.producto.Categoria;
 import com.DulceMayor.backend.entities.ProveedorAuth;
 import com.DulceMayor.backend.entities.RolUsuario;
-import com.DulceMayor.backend.entities.SubCategoria;
+import com.DulceMayor.backend.entities.producto.SubCategoria;
 import com.DulceMayor.backend.entities.Usuario;
-import com.DulceMayor.backend.repositories.CategoriaRepository;
-import com.DulceMayor.backend.repositories.SubCategoriaRepository;
+import com.DulceMayor.backend.repositories.producto.*;
 import com.DulceMayor.backend.repositories.UsuarioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,13 +41,13 @@ class SubCategoriaControllerTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
-    private com.DulceMayor.backend.repositories.VigenciaPrecioRepository vigenciaPrecioRepository;
+    private VigenciaPrecioRepository vigenciaPrecioRepository;
 
     @Autowired
-    private com.DulceMayor.backend.repositories.StockRepository stockRepository;
+    private StockRepository stockRepository;
 
     @Autowired
-    private com.DulceMayor.backend.repositories.ProductoRepository productoRepository;
+    private ProductoRepository productoRepository;
 
     @Autowired
     private CategoriaRepository categoriaRepository;

@@ -9,12 +9,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.DulceMayor.backend.config.JwtProvider;
-import com.DulceMayor.backend.dtos.PromocionRequest;
+import com.DulceMayor.backend.dtos.producto.PromocionRequest;
 import com.DulceMayor.backend.entities.ProveedorAuth;
 import com.DulceMayor.backend.entities.RolUsuario;
-import com.DulceMayor.backend.entities.Promocion;
+import com.DulceMayor.backend.entities.producto.Promocion;
 import com.DulceMayor.backend.entities.Usuario;
-import com.DulceMayor.backend.repositories.PromocionRepository;
+import com.DulceMayor.backend.repositories.producto.PromocionRepository;
 import com.DulceMayor.backend.repositories.UsuarioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
