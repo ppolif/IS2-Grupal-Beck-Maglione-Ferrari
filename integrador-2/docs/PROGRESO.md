@@ -126,5 +126,27 @@
   - Tests de integración MockMvc + Spring Security con JWT: `ImagenControllerTest`, `SubCategoriaControllerTest`, `ProductoControllerTest`, `VigenciaPrecioControllerTest`, `StockControllerTest`, `PromocionControllerTest`, `CategoriaControllerTest`.
   - Tests de arquitectura ArchUnit (`ArquitecturaTests`): 100% en verde, garantizando cero acoplamiento indebido y cero ciclos.
 
+---
+
+## Paso 4: Módulo Geografía y Direcciones (Pais, Provincia, Departamento, Localidad, Direccion)
+
+### 1. Qué se hizo
+- **Entidades de dominio (`com.DulceMayor.backend.entities`):**
+  - `Pais`: extiende `EntidadBase` con atributo `nombre`.
+  - `Provincia`: extiende `EntidadBase` con atributo `nombre` y relación unidireccional `@ManyToOne` hacia `Pais`.
+  - `Departamento`: extiende `EntidadBase` con atributo `nombre` y relación unidireccional `@ManyToOne` hacia `Provincia`.
+  - `Localidad`: extiende `EntidadBase` con atributos `nombre`, `codigoPostal` y relación unidireccional `@ManyToOne` hacia `Departamento`.
+  - `Direccion`: extiende `EntidadBase` con atributos obligatorios (`calle`, `numeracion`, `@ManyToOne Localidad localidad`) y opcionales (`barrio`, `manzanaPiso`, `casaDepartamento`, `referencia`, `latitud`, `longitud`).
+- **Repositorios (`com.DulceMayor.backend.repositories`):**
+  - `PaisRepository`, `ProvinciaRepository`, `DepartamentoRepository`, `LocalidadRepository`, `DireccionRepository`: todos extienden `BaseRepository<T>`, con consultas de unicidad case-insensitive por padre (`existsByNombreIgnoreCaseAnd<Padre>IdAndEliminadoFalse` y variante `...AndIdNot...`) y listados ordenados por nombre.
+- **DTOs y Mappers (`com.DulceMayor.backend.dtos`):**
+  - Records de entrada y salida: `PaisRequest`, `PaisResponse`, `ProvinciaRequest`, `ProvinciaResponse`, `DepartamentoRequest`, `DepartamentoResponse`, `LocalidadRequest`, `LocalidadResponse`, `DireccionRequest`, `DireccionResponse`.
+  - Mappers MapStruct (`@Mapper(componentModel = "spring")`): `PaisMapper`, `ProvinciaMapper`, `DepartamentoMapper`, `LocalidadMapper`, `DireccionMapper` (este último mapea `localidadId`, `localidadNombre`, `departamentoId`, `departamentoNombre` y `provinciaNombre`).
+- **Servicios de negocio (`com.DulceMayor.backend.services`):**
+  - `PaisService`, `ProvinciaService`, `DepartamentoService`, `LocalidadService`: todos extienden `BaseService<E, Req, Res>`, aplican el patrón Template Method y mantienen flujo de dependencia estrictamente descendente (`LocalidadService -> DepartamentoService -> ProvinciaService -> PaisService`) mediante `obtenerEntidad(id)`. No se creó `DireccionService` dado que `Direccion` se gestiona por composición desde las entidades que la poseen (`PuntoDeVenta`, `Mayorista`, etc.).
+- **Controladores REST (`com.DulceMayor.backend.controllers`):**
+  - `PaisController` (`/paises`, `/api/v1/paises`), `ProvinciaController` (`/provincias`, `/api/v1/provincias` con filtro `?paisId=`), `DepartamentoController` (`/departamentos`, `/api/v1/departamentos` con filtro `?provinciaId=`), `LocalidadController` (`/localidades`, `/api/v1/localidades` con filtro `?departamentoId=`). Todos extienden `BaseController<Req, Res>`, exponen `GET` públicos y protegen `POST`, `PUT` y `DELETE` con `@PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")`. No se creó `DireccionController`.
+
+
 
 
