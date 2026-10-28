@@ -48,7 +48,7 @@ public class Producto extends EntidadBase {
     private SubCategoria subCategoria;
 
     //many to one por borrado logico
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "imagen_id")
     private Imagen imagen;
 }

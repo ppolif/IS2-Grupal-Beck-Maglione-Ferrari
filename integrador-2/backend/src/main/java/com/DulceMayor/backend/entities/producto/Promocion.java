@@ -37,7 +37,7 @@ public class Promocion extends EntidadBase {
     @Column(name = "cantidad_minima")
     private Integer cantidadMinima;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producto_id")
     private Producto producto;
 

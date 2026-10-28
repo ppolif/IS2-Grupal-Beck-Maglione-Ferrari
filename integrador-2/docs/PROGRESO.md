@@ -147,6 +147,26 @@
 - **Controladores REST (`com.DulceMayor.backend.controllers`):**
   - `PaisController` (`/paises`, `/api/v1/paises`), `ProvinciaController` (`/provincias`, `/api/v1/provincias` con filtro `?paisId=`), `DepartamentoController` (`/departamentos`, `/api/v1/departamentos` con filtro `?provinciaId=`), `LocalidadController` (`/localidades`, `/api/v1/localidades` con filtro `?departamentoId=`). Todos extienden `BaseController<Req, Res>`, exponen `GET` públicos y protegen `POST`, `PUT` y `DELETE` con `@PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")`. No se creó `DireccionController`.
 
+---
+
+## Paso 5: Módulo Contactos (TipoContacto, TipoTelefono, Contacto, ContactoCorreoElectronico, ContactoTelefonico)
+
+### 1. Qué se hizo
+- **Enumeraciones y entidades de dominio (`com.DulceMayor.backend.entities`):**
+  - `TipoContacto`: enumeración con `PERSONAL`, `LABORAL`, `EMPRESA`.
+  - `TipoTelefono`: enumeración con `FIJO`, `CELULAR`.
+  - `Contacto`: entidad base abstracta que extiende `EntidadBase` con estrategia de herencia `@Inheritance(strategy = InheritanceType.SINGLE_TABLE)` y columna discriminadora `medio` (`"CORREO"` o `"TELEFONICO"`), más los atributos comunes `tipoContacto` (obligatorio) y `observacion` (opcional).
+  - `ContactoCorreoElectronico`: subclase concreta de `Contacto` (`@DiscriminatorValue("CORREO")`) con atributo `email`.
+  - `ContactoTelefonico`: subclase concreta de `Contacto` (`@DiscriminatorValue("TELEFONICO")`) con atributos `telefono` y `tipoTelefono`.
+- **Repositorio (`com.DulceMayor.backend.repositories`):**
+  - `ContactoRepository`: extiende `BaseRepository<Contacto>` para consultas polimórficas sobre toda la jerarquía y consultas específicas de activos por subclase (`findAllCorreosActivos`, `findAllTelefonosActivos`).
+- **DTOs y Mapper polimórfico (`com.DulceMayor.backend.dtos`):**
+  - `ContactoRequest` y `ContactoResponse`: records planos que unifican el contrato de entrada/salida con el discriminador `medio` conforme a `04-openapi.yaml`.
+  - `ContactoMapper`: mapper `@Mapper(componentModel = "spring")` que extiende `BaseMapper<Contacto, ContactoRequest, ContactoResponse>`, instanciando polimórficamente `ContactoCorreoElectronico` o `ContactoTelefonico` según `medio`, validando los campos obligatorios de cada subclase y proyectando el mapeo inverso a `ContactoResponse`.
+- **Servicio interno (`com.DulceMayor.backend.services`):**
+  - `ContactoService`: extiende `BaseService<Contacto, ContactoRequest, ContactoResponse>` para validaciones y operaciones internas reutilizables desde `Persona` y `Mayorista` respetando la regla ArchUnit de acceso a repositorios, sin exponer `ContactoController`.
+
+
 
 
 
