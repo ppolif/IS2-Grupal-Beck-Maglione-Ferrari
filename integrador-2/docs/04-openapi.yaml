@@ -3473,6 +3473,7 @@ components:
         productoNombre: {type: string}
         cantidadActual: {type: integer, format: int32}
         observacion: {type: string}
+        fechaHora: {type: string, format: date-time}
     StockAjusteRequest:
       type: object
       properties:

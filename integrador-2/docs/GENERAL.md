@@ -122,8 +122,8 @@ Resumen de las entidades:
 
 ### Decisiones de modelado ya tomadas (no las revirtas)
 - **No existe la clase `Envio`.** La trazabilidad del despacho y la entrega se resuelve con `HistorialEstadoPedido` y las rutas.
-- **Las flechas de dependencia apuntan siempre hacia la clase "referenciada"** para evitar ciclos: `Stock`, `VigenciaPrecio`, `Promocion`, `DetallePedido` y `DetalleFactura` apuntan a `Producto`; `Factura`, `HistorialEstadoPedido` y las rutas apuntan a `Pedido`; `Pago` apunta a `Factura`. **`Pedido` no referencia a `Factura` ni a ninguna ruta**: se consulta desde el otro lado.
-- `Producto` **no** depende de `Stock`: el catálogo con stock > 0 se resuelve con una consulta del repositorio.
+- **Las flechas de dependencia apuntan siempre hacia la clase "referenciada"** para evitar ciclos: `VigenciaPrecio`, `Promocion`, `DetallePedido` y `DetalleFactura` apuntan a `Producto`; `Stock` apunta únicamente a `DetalleFactura` (no posee atributo `producto`, sino que accede al producto a través de `DetalleFactura`; cada movimiento de stock es un registro inmutable con `fechaHora`, `cantidadActual` y `observacion`); `Factura`, `HistorialEstadoPedido` y las rutas apuntan a `Pedido`; `Pago` apunta a `Factura`. **`Pedido` no referencia a `Factura` ni a ninguna ruta**: se consulta desde el otro lado.
+- `Producto` **no** depende de `Stock`: el catálogo con stock > 0 se resuelve con una consulta del repositorio que evalúa el último registro de stock del producto.
 - El orquestador del proceso "facturar pedido" es un **servicio aparte** que llama en un solo sentido a `StockService`, `FacturaService` y `PedidoService`. **Evitá dependencias circulares entre servicios.**
 - `PuntoDeVenta` guarda el preventor asignado hoy; `Pedido` guarda el preventor que tomó ese pedido (dato histórico).
 
