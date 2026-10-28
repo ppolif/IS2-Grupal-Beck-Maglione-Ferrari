@@ -48,6 +48,21 @@ class CategoriaControllerTest {
     private CategoriaRepository categoriaRepository;
 
     @Autowired
+    private com.DulceMayor.backend.repositories.SubCategoriaRepository subCategoriaRepository;
+
+    @Autowired
+    private com.DulceMayor.backend.repositories.ProductoRepository productoRepository;
+
+    @Autowired
+    private com.DulceMayor.backend.repositories.StockRepository stockRepository;
+
+    @Autowired
+    private com.DulceMayor.backend.repositories.VigenciaPrecioRepository vigenciaPrecioRepository;
+
+    @Autowired
+    private com.DulceMayor.backend.repositories.PromocionRepository promocionRepository;
+
+    @Autowired
     private UsuarioRepository usuarioRepository;
 
     @Autowired
@@ -58,6 +73,11 @@ class CategoriaControllerTest {
 
     @BeforeEach
     void setUp() {
+        vigenciaPrecioRepository.deleteAll();
+        stockRepository.deleteAll();
+        promocionRepository.deleteAll();
+        productoRepository.deleteAll();
+        subCategoriaRepository.deleteAll();
         categoriaRepository.deleteAll();
         usuarioRepository.deleteAll();
     }

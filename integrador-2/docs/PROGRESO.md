@@ -83,6 +83,48 @@
   - `frontend-preventor`: app mobile-first/desktop para preventores (rutero, alta de comercios, catálogo y carrito con promociones) y distribuidores (reparto y tickets de entrega), desacoplados vía `RoleRouter.jsx`.
   - `frontend-admin`: interfaz unificada para administrativo (stock, productos, facturación de pedidos y pagos) y jefe (dashboard con Recharts, estadísticas, gestión de usuarios y reportes descargables en PDF/Excel).
 - **Sistema de diseño y responsividad:** tokens compartidos en `@theme` (colores, Poppins, isotipo `candy-mark`), navegación por rol sin menús filtrados, mapas con OpenStreetMap y compilación exitosa (`npm run build`).
+## Paso 3: Módulo Comercial / Producto (Imagen, SubCategoria, Producto, VigenciaPrecio, Stock, Promocion)
+
+### 1. Qué se hizo
+- **Entidades de dominio (`com.DulceMayor.backend.entities`):**
+  - `TipoImagen`: enumeración con `PRODUCTO`, `SUCURSAL`, `LOGO_EMPRESA`.
+  - `Imagen`: entidad JPA con `nombre`, `mime`, `contenido` (`@Lob`), `tipoImagen` y borrado lógico.
+  - `SubCategoria`: entidad JPA con `nombre` y relación `@ManyToOne` hacia `Categoria`.
+  - `Producto`: entidad JPA con `codigo`, `nombre`, `descripcion`, `presentacion`, `unidadesPorBulto`, `enOferta`, `@ManyToOne` a `SubCategoria` e `Imagen`.
+  - `VigenciaPrecio`: entidad JPA con `fechaDesde`, `fechaHasta` (nula para la vigencia actual abierta), `precio` y `@ManyToOne` hacia `Producto`.
+  - `Stock`: entidad JPA que modela el historial/ledger inmutable de movimientos de stock con `cantidadActual`, `fechaHora`, `observacion` (indicando si es ingreso o egreso). No tiene atributo `producto`; se relaciona únicamente con `DetalleFactura` (comentada en código hasta implementar dicha entidad), desde donde se accede al producto.
+  - `Promocion`: entidad JPA con `codigo`, `descripcion`, `porcentajeDescuento`, `cantidadMinima`, `fechaDesde`, `fechaHasta` y `@ManyToOne` opcional hacia `Producto`.
+- **Capa de acceso a datos (`com.DulceMayor.backend.repositories`):**
+  - `ImagenRepository`: extiende `BaseRepository<Imagen>` con búsqueda por tipo de imagen activa.
+  - `SubCategoriaRepository`: extiende `BaseRepository<SubCategoria>` con validación de unicidad de nombre por categoría y listado ordenado.
+  - `ProductoRepository`: extiende `BaseRepository<Producto>` con unicidad de código, búsqueda por subcategoría y consulta con filtros (`q`, `categoriaId`, `subCategoriaId`, `enOferta`).
+  - `VigenciaPrecioRepository`: extiende `BaseRepository<VigenciaPrecio>` con búsqueda de precio vigente (`fechaHasta == null`), historial y detección de solapamiento cronológico.
+  - `StockRepository`: extiende `BaseRepository<Stock>` con consulta del último movimiento registrado de un producto (`findFirstBy...OrderByFechaHoraDesc`) y consulta paginada con filtros (`q`, `soloSinStock`).
+  - `PromocionRepository`: extiende `BaseRepository<Promocion>` con unicidad de código case-insensitive y consulta de promociones vigentes por fecha.
+- **DTOs, mappers y eventos (`com.DulceMayor.backend.dtos`):**
+  - DTOs records según OpenAPI: `ImagenResponse`, `ImagenContenido`, `SubCategoriaRequest`, `SubCategoriaResponse`, `ProductoRequest`, `ProductoResponse`, `ProductoPage`, `VigenciaPrecioRequest`, `VigenciaPrecioResponse`, `StockResponse`, `StockAjusteRequest`, `StockReposicionRequest`, `StockPage`, `PromocionRequest`, `PromocionResponse`.
+  - Mappers MapStruct Spring: `SubCategoriaMapper`, `ProductoMapper`, `VigenciaPrecioMapper`, `StockMapper`, `PromocionMapper`.
+  - Evento `ProductoCreadoEvent` para desacoplar mediante el patrón Observer la creación de precio y stock inicial.
+- **Servicios de negocio (`com.DulceMayor.backend.services`):**
+  - `ImagenService`: validación de MIME (`image/jpeg`, `image/png`, `image/webp`), tamaño máximo (5 MB), persistencia, descarga binaria y borrado lógico.
+  - `SubCategoriaService`: Template Method (`BaseService`), normalización, verificación de categoría activa vía `CategoriaService.obtenerEntidad` y unicidad de nombre.
+  - `ProductoService`: Template Method (`BaseService`), unicidad de código, resolución de subcategoría e imagen, y emisión de `ProductoCreadoEvent`.
+  - `ProductoLecturaService`: servicio de lectura (conforme regla 6 de sección 10.1) que combina `ProductoRepository`, `StockRepository` y `VigenciaPrecioRepository` para responder consultas y catálogo paginado con stock y precio en tiempo real.
+  - `VigenciaPrecioService`: Template Method (`BaseService`), listener de precio inicial, cierre automático de la vigencia previa (`fechaHasta = fechaDesde - 1 día`), y control estricto de no solapamiento (409 Conflict).
+  - `StockService`: listener de stock inicial vía Observer, operaciones append-only (ajuste de inventario físico, reposición acumulativa e inserción de nuevos registros con `fechaHora` y `observacion`), consultas del stock actual y método transaccional `descontar` con validación de existencia suficiente (409 `STOCK_INSUFICIENTE`).
+  - `PromocionService`: Template Method (`BaseService`), código en mayúsculas, unicidad, validación de fechas cronológicas y búsqueda de código vigente por fecha del servidor.
+- **Controladores REST (`com.DulceMayor.backend.controllers`):**
+  - `ImagenController`: `POST /imagenes` (multipart, 201 + Location), `GET /imagenes/{id}/contenido` (público con Content-Type dinámico), `DELETE /imagenes/{id}` (204).
+  - `SubCategoriaController`: `GET /subcategorias` (público, con filtro opcional `categoriaId`), `GET /subcategorias/{id}` (público), `POST`, `PUT`, `DELETE` protegidos por roles (`JEFE`, `ADMINISTRATIVO`).
+  - `ProductoController`: endpoints `/productos` (paginado, búsqueda, ABM con roles correspondientes).
+  - `VigenciaPrecioController`: `GET` y `POST` sobre `/productos/{id}/vigencias-precio`, `PUT` y `DELETE` sobre `/vigencias-precio/{id}`.
+  - `StockController`: `GET` y `PUT` sobre `/productos/{id}/stock`, `POST /productos/{id}/stock/reposiciones`, `GET /stock` (paginado).
+  - `PromocionController`: ABM sobre `/promociones` y validación de código vigente en `GET /promociones/codigo/{codigo}` (habilitado para `PREVENTISTA`).
+- **Pruebas automatizadas (76 tests pasando en verde):**
+  - Unit tests de servicios con Mockito: `ImagenServiceTest`, `SubCategoriaServiceTest`, `ProductoServiceTest`, `VigenciaPrecioServiceTest`, `StockServiceTest`, `PromocionServiceTest`.
+  - Tests de repositorio H2: `SubCategoriaRepositoryTest`.
+  - Tests de integración MockMvc + Spring Security con JWT: `ImagenControllerTest`, `SubCategoriaControllerTest`, `ProductoControllerTest`, `VigenciaPrecioControllerTest`, `StockControllerTest`, `PromocionControllerTest`, `CategoriaControllerTest`.
+  - Tests de arquitectura ArchUnit (`ArquitecturaTests`): 100% en verde, garantizando cero acoplamiento indebido y cero ciclos.
 
 
 

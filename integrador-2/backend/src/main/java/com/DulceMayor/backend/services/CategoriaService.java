@@ -15,12 +15,19 @@ import org.springframework.stereotype.Service;
 /**
  * Servicio de negocio para la gestión de categorías del catálogo.
  *
- * <p><b>Patrón aplicado: Template Method (Método Plantilla) en el Servicio.</b></p>
- * <p><b>Por qué se aplica acá:</b> {@code CategoriaService} hereda de {@link BaseService} el flujo
- * transaccional completo para {@code crear}, {@code modificar}, {@code eliminar}, {@code buscar} y
- * {@code listar}, e implementa únicamente los pasos específicos de {@link Categoria}:
- * normalización del nombre (quita de espacios sobrantes) y validación de unicidad sin distinguir
- * mayúsculas/minúsculas (409 {@code DUPLICADO}).</p>
+ * <p><b>Patrón GoF aplicado: Template Method (Comportamiento)</b></p>
+ * <ul>
+ *   <li><b>Participante GoF:</b> ConcreteClass (Clase Concreta).</li>
+ *   <li><b>Clase Base / AbstractClass:</b> {@link BaseService}.</li>
+ *   <li><b>Operaciones primitivas y Hooks implementados:</b>
+ *     <ul>
+ *       <li>{@link #prepararRequest(CategoriaRequest)}: normaliza espacios y mayúsculas/minúsculas.</li>
+ *       <li>{@link #validarCrear(CategoriaRequest)}: valida unicidad de nombre de categoría.</li>
+ *       <li>{@link #validarModificar(String, CategoriaRequest, Categoria)}: valida unicidad excluyendo el propio ID.</li>
+ *       <li>{@link #actualizarEntidad(CategoriaRequest, Categoria)}: aplica los cambios en el modelo de persistencia.</li>
+ *     </ul>
+ *   </li>
+ * </ul>
  *
  * <p>Nota de arquitectura (sección 10.1 regla 4 de GENERAL.md): al eliminar una categoría NO se
  * consulta {@code SubCategoriaRepository} desde aquí porque la dependencia va de {@code SubCategoria}

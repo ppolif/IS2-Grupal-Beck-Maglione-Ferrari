@@ -100,19 +100,22 @@ El descuento se calcula al momento de guardar o actualizar el Pedido.
 
 ## 4. Gestión de Stock y Catálogo Público
 
-### 4.1. Visualización
+`Stock` opera como un **registro histórico (ledger inmutable) de cambios de inventario**. En el nuevo diseño UML, `Stock` **no contiene atributo directo `producto`**, sino que se relaciona únicamente con `DetalleFactura`, accediendo al producto a través de esta relación (`Stock` $\to$ `DetalleFactura` $\to$ `Producto`). En lugar de mutar un único registro por producto, cada evento que altera la cantidad disponible genera un nuevo registro que almacena la nueva cantidad disponible (`cantidadActual`), la marca temporal precisa (`fechaHora`) y una `observacion` descriptiva que clasifica la operación como un ingreso o egreso.
 
-* En el endpoint público del catálogo (`/api/v1/publico/catalogo`) y en el endpoint de productos para el preventor (con `soloConStock=true`), la consulta a la base de datos debe filtrar estrictamente `JOIN Stock s WHERE s.cantidadActual > 0`.
+### 4.1. Visualización y Determinación de Stock Actual
 
-* Si un producto queda en 0, desaparece automáticamente sin intervención humana.
+* El stock actual disponible de un producto corresponde siempre al registro de `Stock` más reciente (ordenado por `fechaHora DESC`).
+* En el endpoint público del catálogo (`/api/v1/publico/catalogo`) y en el endpoint de productos para el preventor (con `soloConStock=true`), la consulta a la base de datos filtra verificando que el último registro de stock del producto tenga `cantidadActual > 0`.
+* Si el stock de un producto llega a 0 en su último movimiento, desaparece automáticamente del catálogo con stock sin intervención humana.
 
 ### 4.2. Operaciones sobre el Stock
 
-* **Descuento automático:** Ocurre **exclusivamente** durante el paso de `CARGADO` a `FACTURADO`. Formula: `Stock.cantidadActual = Stock.cantidadActual - DetallePedido.cantidad`.
+Cada una de las siguientes operaciones inserta un nuevo registro inmutable en `Stock`:
 
-* **Reposición (`/reposiciones`):** Suma la cantidad indicada al stock actual. Idealmente, el servicio puede retornar o notificar (vía logs/eventos) qué pedidos en `SIN_STOCK` ya podrían procesarse.
-
-* **Ajuste de inventario (`/stock/ajuste`):** Sobreescribe la cantidad actual (usado tras un conteo físico o mermas/robos).
+* **Stock inicial:** Al crearse un `Producto`, se dispara un evento de dominio (`ProductoCreadoEvent` mediante el patrón Observer) que crea el primer registro de stock con la cantidad inicial, `fechaHora = now` y `observacion = "Ingreso - Stock inicial al crear el producto"`.
+* **Descuento automático (Egreso):** Ocurre **exclusivamente** durante el paso de `CARGADO` a `FACTURADO`. Se calcula `nuevaCantidad = ultimoStock - DetallePedido.cantidad`, se crea un nuevo registro con `observacion = "Egreso - Descuento por venta"` y se vincula a `DetalleFactura`. Si el stock disponible es insuficiente, la operación es rechazada con HTTP 409 (`STOCK_INSUFICIENTE`).
+* **Reposición (`/reposiciones`) (Ingreso):** Suma la cantidad indicada a la última cantidad disponible (`nuevaCantidad = ultimoStock + cantidad`) y persiste un nuevo registro con `observacion = "Ingreso - Reposición"`. Idealmente, el servicio puede retornar o notificar (vía logs/eventos) qué pedidos en `SIN_STOCK` ya podrían procesarse.
+* **Ajuste de inventario (`/stock/ajuste`):** Usado tras un conteo físico, mermas o roturas. Persiste un nuevo registro con la cantidad contada físicamente como `cantidadActual`, registrando en `observacion` si resultó un ingreso o egreso por ajuste de inventario.
 
 ## 5. Facturación y Pagos
 

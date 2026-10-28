@@ -24,8 +24,28 @@ class CategoriaRepositoryTest {
     @Autowired
     private CategoriaRepository categoriaRepository;
 
+    @Autowired
+    private SubCategoriaRepository subCategoriaRepository;
+
+    @Autowired
+    private ProductoRepository productoRepository;
+
+    @Autowired
+    private StockRepository stockRepository;
+
+    @Autowired
+    private VigenciaPrecioRepository vigenciaPrecioRepository;
+
+    @Autowired
+    private PromocionRepository promocionRepository;
+
     @BeforeEach
     void limpiar() {
+        promocionRepository.deleteAll();
+        vigenciaPrecioRepository.deleteAll();
+        stockRepository.deleteAll();
+        productoRepository.deleteAll();
+        subCategoriaRepository.deleteAll();
         categoriaRepository.deleteAll();
     }
 
@@ -48,4 +68,3 @@ class CategoriaRepositoryTest {
         assertTrue(categoriaRepository.existsByNombreIgnoreCaseAndIdNotAndEliminadoFalse("ALFAJORES", "otro-id-distinto"));
     }
 }
-

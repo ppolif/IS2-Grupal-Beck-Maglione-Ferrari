@@ -6,13 +6,19 @@ import org.mapstruct.MappingTarget;
 /**
  * Contrato genérico de mapeo entre Entidades de dominio y objetos de transferencia de datos (DTO).
  *
- * <p><b>Patrón aplicado: DTO (Data Transfer Object) + Mapper.</b></p>
- * <p><b>Por qué se aplica acá:</b> Desacopla el modelo de persistencia interna (entidades JPA,
- * banderas de borrado lógico como {@code eliminado}, relaciones perezosas y campos sensibles)
- * del contrato público de la API REST definido en {@code 04-openapi.yaml}. Al separar
- * {@code Request} (datos de entrada validados) y {@code Response} (datos de salida proyectados)
- * mediante MapStruct en tiempo de compilación, se evita la exposición accidental del modelo
- * de base de datos y vulnerabilidades de asignación masiva (Mass Assignment).</p>
+ * <p><b>Patrón GoF aplicado: Adapter (Estructural) / Objeto Adaptador</b></p>
+ * <ul>
+ *   <li><b>Participante GoF:</b> Target (interfaz objetivo) y Adapter (implementaciones MapStruct).</li>
+ *   <li><b>Target:</b> Contratos {@code Req} y {@code Res} requeridos por la capa web/OpenAPI.</li>
+ *   <li><b>Adaptee:</b> Entidades JPA (modelo de persistencia relacional con borrado lógico y relaciones perezosas).</li>
+ *   <li><b>Rol:</b> Adapta la estructura interna y compleja del modelo de persistencia (JPA) a los tipos
+ *       inmutables esperados por la capa de presentación (DTO Records), garantizando que las capas
+ *       controladoras nunca interactúen con entidades de persistencia.</li>
+ * </ul>
+ *
+ * <p><b>Patrón de diseño: DTO (Data Transfer Object)</b></p>
+ * Separa los datos de entrada validados ({@code Request}) de los datos proyectados para salida ({@code Response}),
+ * previniendo la exposición de datos sensibles y ataques de asignación masiva.
  *
  * @param <E>   Tipo de la entidad de dominio.
  * @param <Req> Tipo del DTO de entrada (Request).

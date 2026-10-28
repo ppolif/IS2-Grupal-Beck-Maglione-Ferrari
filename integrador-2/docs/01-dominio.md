@@ -55,7 +55,7 @@ Formato: **origen → destino** = el origen guarda la referencia al destino. Las
 | `SubCategoria` | → | `Categoria` | * — 1 |
 | `Producto` | → | `Imagen` | * — 0..1 | |
 | `VigenciaPrecio` | → | `Producto` | * — 1 |
-| `Stock` | → | `Producto` | 1 — 1 | |
+| `Stock` | → | `DetalleFactura` | * — 0..1 | Historial de movimientos de stock. Se asocia a DetalleFactura en caso de egreso por venta/facturación. |
 | `Promocion` | → | `Producto` | * — 0..1 | Producto destacado. |
 | `DetallePedido` | → | `Producto` | * — 1 |
 | `DetalleFactura` | → | `Producto` | * — 1 |
@@ -467,8 +467,9 @@ El comercio físico del minorista (kiosco, almacén, etc.): se visita, se le tom
 ```
 
 ### Stock
-Existencia actual de un producto (1 a 1 con `Producto`). Se descuenta al facturar el pedido.
-**Atributos:** `id:String`, `cantidadActual:int`, `observacion:String`, `eliminado:boolean`
+Registro histórico (ledger/auditoría) de movimientos de stock. En el nuevo diseño UML, `Stock` **ya no tiene el atributo `producto`**, sino que se relaciona únicamente con `DetalleFactura`, ya que a través de este se accede al producto (`Stock` $\to$ `DetalleFactura` $\to$ `Producto`).
+Cada cambio en el stock genera un nuevo registro inmutable donde se guarda la nueva cantidad disponible, la fecha y hora en la que ocurrió, y el atributo `observacion` que indica si se trata de un ingreso o egreso (stock inicial, reposición, ajuste o descuento por venta).
+**Atributos:** `id:String`, `cantidadActual:int`, `fechaHora:LocalDateTime`, `observacion:String`, `eliminado:boolean`, `detalleFactura:DetalleFactura`
 
 **Métodos:**
 

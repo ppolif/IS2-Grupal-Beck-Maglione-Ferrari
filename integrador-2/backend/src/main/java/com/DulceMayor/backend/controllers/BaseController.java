@@ -9,18 +9,28 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 /**
  * Clase base abstracta para los controladores REST de recursos CRUD.
  *
- * <p><b>Patrón aplicado: Template Method (Método Plantilla) en la capa de Controlador.</b></p>
- * <p><b>Por qué se aplica acá:</b> Estandariza la construcción de respuestas HTTP y códigos de
- * estado según el contrato OpenAPI ({@code 201 Created} con cabecera {@code Location},
- * {@code 200 OK} con cuerpo JSON y {@code 204 No Content} sin cuerpo) delegando la lógica de
- * negocio en {@link BaseService}. Los endpoints HTTP ({@code @GetMapping}, {@code @PostMapping},
- * {@code @PutMapping}, {@code @DeleteMapping}) y las reglas de autorización ({@code @PreAuthorize})
- * NO se declaran en esta clase base sino explícitamente en cada controlador concreto, para que la
- * matriz de permisos por rol ({@code x-roles}) sea auditable y específica en cada endpoint.</p>
+ * <p><b>Patrón GoF aplicado: Template Method (Comportamiento)</b></p>
+ * <ul>
+ *   <li><b>Participante GoF:</b> AbstractClass (Clase Base Abstracta).</li>
+ *   <li><b>Métodos Plantilla (Template Methods):</b>
+ *     <ul>
+ *       <li>{@link #ejecutarCrear(Object)}: define el flujo de creación HTTP (invoca servicio, construye URI y retorna {@code 201 Created}).</li>
+ *       <li>{@link #ejecutarModificar(String, Object)}: define el flujo de actualización HTTP (invoca servicio y retorna {@code 200 OK}).</li>
+ *       <li>{@link #ejecutarEliminar(String)}: define el flujo de baja lógica HTTP (invoca servicio y retorna {@code 204 No Content}).</li>
+ *       <li>{@link #ejecutarBuscar(String)}: define la búsqueda por ID y retorna {@code 200 OK}.</li>
+ *       <li>{@link #ejecutarListar()}: define la consulta de colección completa y retorna {@code 200 OK}.</li>
+ *     </ul>
+ *   </li>
+ *   <li><b>Operaciones primitivas abstractas:</b>
+ *     <ul>
+ *       <li>{@link #getService()}: hook abstracto donde cada controlador concreto provee su servicio correspondiente.</li>
+ *       <li>{@link #extraerId(Object)}: hook abstracto para extraer el identificador del DTO de respuesta y generar la cabecera {@code Location}.</li>
+ *     </ul>
+ *   </li>
+ * </ul>
  *
- * <p><b>Patrón aplicado: DTO (Data Transfer Object).</b></p>
- * <p><b>Por qué se aplica acá:</b> Ningún método de la capa controladora recibe ni devuelve
- * entidades de dominio; opera exclusivamente con los tipos {@code Req} y {@code Res}.</p>
+ * <p><b>Patrón GoF relacionado: DTO / Adapter</b></p>
+ * Los controladores nunca exponen entidades JPA; operan exclusivamente con contratos DTO ({@code Req} y {@code Res}).
  *
  * @param <Req> Tipo del DTO de entrada (Request).
  * @param <Res> Tipo del DTO de salida (Response).
