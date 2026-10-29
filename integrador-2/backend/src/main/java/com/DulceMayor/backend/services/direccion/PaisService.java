@@ -24,28 +24,12 @@ public class PaisService extends BaseService<Pais, PaisRequest, PaisResponse> {
     private static final int LONGITUD_MAXIMA_NOMBRE = 100;
 
     private final PaisRepository paisRepository;
-    private final PaisMapper paisMapper;
 
     public PaisService(
             PaisRepository paisRepository,
             PaisMapper paisMapper) {
+        super(paisRepository, paisMapper, "País");
         this.paisRepository = paisRepository;
-        this.paisMapper = paisMapper;
-    }
-
-    @Override
-    protected BaseRepository<Pais> getRepository() {
-        return paisRepository;
-    }
-
-    @Override
-    protected BaseMapper<Pais, PaisRequest, PaisResponse> getMapper() {
-        return paisMapper;
-    }
-
-    @Override
-    protected String getNombreRecurso() {
-        return "País";
     }
 
     @Override

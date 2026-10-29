@@ -1,5 +1,6 @@
 package com.DulceMayor.backend.dtos.producto;
 
+import com.DulceMayor.backend.dtos.Identificable;
 import java.time.LocalDate;
 
 /**
@@ -15,6 +16,6 @@ public record PromocionResponse(
         String productoNombre,
         LocalDate fechaDesde,
         LocalDate fechaHasta
-) {
+) implements Identificable {
 }
 

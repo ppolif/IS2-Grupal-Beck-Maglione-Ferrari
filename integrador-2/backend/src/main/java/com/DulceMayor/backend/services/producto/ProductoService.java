@@ -61,7 +61,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductoService extends BaseService<Producto, ProductoRequest, ProductoResponse> {
 
     private final ProductoRepository productoRepository;
-    private final ProductoMapper productoMapper;
     private final SubCategoriaService subCategoriaService;
     private final ImagenService imagenService;
     private final ApplicationEventPublisher eventPublisher;
@@ -74,27 +73,12 @@ public class ProductoService extends BaseService<Producto, ProductoRequest, Prod
             ImagenService imagenService,
             ApplicationEventPublisher eventPublisher,
             ProductoLecturaService productoLecturaService) {
+        super(productoRepository, productoMapper, "Producto");
         this.productoRepository = productoRepository;
-        this.productoMapper = productoMapper;
         this.subCategoriaService = subCategoriaService;
         this.imagenService = imagenService;
         this.eventPublisher = eventPublisher;
         this.productoLecturaService = productoLecturaService;
-    }
-
-    @Override
-    protected BaseRepository<Producto> getRepository() {
-        return productoRepository;
-    }
-
-    @Override
-    protected BaseMapper<Producto, ProductoRequest, ProductoResponse> getMapper() {
-        return productoMapper;
-    }
-
-    @Override
-    protected String getNombreRecurso() {
-        return "Producto";
     }
 
     @Override

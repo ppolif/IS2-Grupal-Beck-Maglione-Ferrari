@@ -8,6 +8,7 @@ import com.DulceMayor.backend.dtos.producto.StockMapper;
 import com.DulceMayor.backend.dtos.producto.StockPage;
 import com.DulceMayor.backend.dtos.producto.StockReposicionRequest;
 import com.DulceMayor.backend.dtos.producto.StockResponse;
+import com.DulceMayor.backend.entities.facturacion.DetalleFactura;
 import com.DulceMayor.backend.entities.producto.Stock;
 import com.DulceMayor.backend.repositories.producto.StockRepository;
 import java.time.LocalDateTime;
@@ -177,10 +178,18 @@ public class StockService {
     /**
      * Registra un egreso de stock por venta (descuento atómico).
      * Valida que la existencia sea suficiente e inserta el nuevo movimiento en el historial indicando el egreso.
-     * En el modelo UML, este movimiento se asocia a {@code DetalleFactura}.
+     * En el modelo UML, este movimiento se asocia a {@link DetalleFactura}.
      */
     @Transactional
     public void descontar(String productoId, int cantidad) {
+        descontar(productoId, cantidad, null);
+    }
+
+    /**
+     * Registra un egreso de stock por venta vinculándolo explícitamente a la línea {@link DetalleFactura}.
+     */
+    @Transactional
+    public void descontar(String productoId, int cantidad, DetalleFactura detalleFactura) {
         Stock ultimoStock = obtenerEntidadPorProducto(productoId);
         if (ultimoStock.getCantidadActual() < cantidad) {
             throw new ConflictoException(
@@ -194,8 +203,8 @@ public class StockService {
                 .cantidadActual(nuevaCantidad)
                 .fechaHora(LocalDateTime.now())
                 .observacion("Egreso - Descuento por venta")
+                .detalleFactura(detalleFactura)
                 .eliminado(false)
-                // .detalleFactura(detalleFactura) // Relación UML comentada hasta implementar DetalleFactura
                 .build();
 
         stockRepository.save(egreso);

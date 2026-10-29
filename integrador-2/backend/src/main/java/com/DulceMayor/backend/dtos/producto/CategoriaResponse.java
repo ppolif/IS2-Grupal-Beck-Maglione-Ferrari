@@ -1,5 +1,7 @@
 package com.DulceMayor.backend.dtos.producto;
 
+import com.DulceMayor.backend.dtos.Identificable;
+
 /**
  * DTO de salida que representa una categoría activa del catálogo, conforme al schema
  * {@code CategoriaResponse} de {@code 04-openapi.yaml}.
@@ -12,6 +14,6 @@ package com.DulceMayor.backend.dtos.producto;
 public record CategoriaResponse(
         String id,
         String nombre
-) {
+) implements Identificable {
 }
 

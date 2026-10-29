@@ -1,5 +1,6 @@
 package com.DulceMayor.backend.dtos.producto;
 
+import com.DulceMayor.backend.dtos.Identificable;
 import java.time.LocalDate;
 
 /**
@@ -11,6 +12,6 @@ public record VigenciaPrecioResponse(
         LocalDate fechaDesde,
         LocalDate fechaHasta,
         Double precio
-) {
+) implements Identificable {
 }
 

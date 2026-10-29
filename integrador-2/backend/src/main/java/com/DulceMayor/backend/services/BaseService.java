@@ -34,20 +34,36 @@ import org.springframework.transaction.annotation.Transactional;
  */
 public abstract class BaseService<E extends EntidadBase, Req, Res> {
 
+    protected final BaseRepository<E> repository;
+    protected final BaseMapper<E, Req, Res> mapper;
+    protected final String nombreRecurso;
+
+    protected BaseService(BaseRepository<E> repository, BaseMapper<E, Req, Res> mapper, String nombreRecurso) {
+        this.repository = repository;
+        this.mapper = mapper;
+        this.nombreRecurso = nombreRecurso;
+    }
+
     /**
      * Devuelve el repositorio específico de la entidad administrada por este servicio.
      */
-    protected abstract BaseRepository<E> getRepository();
+    public BaseRepository<E> getRepository() {
+        return repository;
+    }
 
     /**
      * Devuelve el mapper MapStruct responsable de convertir entre la entidad y sus DTOs.
      */
-    protected abstract BaseMapper<E, Req, Res> getMapper();
+    public BaseMapper<E, Req, Res> getMapper() {
+        return mapper;
+    }
 
     /**
      * Nombre legible del recurso para construir mensajes de error uniformes (ej. "Categoría").
      */
-    protected abstract String getNombreRecurso();
+    public String getNombreRecurso() {
+        return nombreRecurso;
+    }
 
     /**
      * Método Plantilla (Template Method) para la creación de un nuevo registro.

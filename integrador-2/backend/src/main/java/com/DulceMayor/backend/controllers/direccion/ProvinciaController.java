@@ -25,22 +25,10 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping({"/provincias", "/api/v1/provincias"})
-public class ProvinciaController extends BaseController<ProvinciaRequest, ProvinciaResponse> {
-
-    private final ProvinciaService provinciaService;
+public class ProvinciaController extends BaseController<ProvinciaService, ProvinciaRequest, ProvinciaResponse> {
 
     public ProvinciaController(ProvinciaService provinciaService) {
-        this.provinciaService = provinciaService;
-    }
-
-    @Override
-    protected BaseService<?, ProvinciaRequest, ProvinciaResponse> getService() {
-        return provinciaService;
-    }
-
-    @Override
-    protected String extraerId(ProvinciaResponse response) {
-        return response.id();
+        super(provinciaService);
     }
 
     @GetMapping
@@ -49,7 +37,7 @@ public class ProvinciaController extends BaseController<ProvinciaRequest, Provin
         if (paisId == null || paisId.isBlank()) {
             return ejecutarListar();
         }
-        return ResponseEntity.ok(provinciaService.listar(paisId));
+        return ResponseEntity.ok(service.listar(paisId));
     }
 
     @PostMapping

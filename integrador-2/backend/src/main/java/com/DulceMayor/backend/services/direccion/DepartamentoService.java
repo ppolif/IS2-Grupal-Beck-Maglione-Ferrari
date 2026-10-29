@@ -26,31 +26,15 @@ public class DepartamentoService extends BaseService<Departamento, DepartamentoR
     private static final int LONGITUD_MAXIMA_NOMBRE = 100;
 
     private final DepartamentoRepository departamentoRepository;
-    private final DepartamentoMapper departamentoMapper;
     private final ProvinciaService provinciaService;
 
     public DepartamentoService(
             DepartamentoRepository departamentoRepository,
             DepartamentoMapper departamentoMapper,
             ProvinciaService provinciaService) {
+        super(departamentoRepository, departamentoMapper, "Departamento");
         this.departamentoRepository = departamentoRepository;
-        this.departamentoMapper = departamentoMapper;
         this.provinciaService = provinciaService;
-    }
-
-    @Override
-    protected BaseRepository<Departamento> getRepository() {
-        return departamentoRepository;
-    }
-
-    @Override
-    protected BaseMapper<Departamento, DepartamentoRequest, DepartamentoResponse> getMapper() {
-        return departamentoMapper;
-    }
-
-    @Override
-    protected String getNombreRecurso() {
-        return "Departamento";
     }
 
     @Override
@@ -106,7 +90,7 @@ public class DepartamentoService extends BaseService<Departamento, DepartamentoR
         }
         List<Departamento> entidades =
                 departamentoRepository.findAllByProvinciaIdAndEliminadoFalseOrderByNombreAsc(provinciaId);
-        return departamentoMapper.aResponseList(entidades);
+        return mapper.aResponseList(entidades);
     }
 
     private void validarFormato(DepartamentoRequest request) {

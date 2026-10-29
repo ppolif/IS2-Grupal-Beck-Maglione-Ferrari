@@ -26,31 +26,15 @@ public class ProvinciaService extends BaseService<Provincia, ProvinciaRequest, P
     private static final int LONGITUD_MAXIMA_NOMBRE = 100;
 
     private final ProvinciaRepository provinciaRepository;
-    private final ProvinciaMapper provinciaMapper;
     private final PaisService paisService;
 
     public ProvinciaService(
             ProvinciaRepository provinciaRepository,
             ProvinciaMapper provinciaMapper,
             PaisService paisService) {
+        super(provinciaRepository, provinciaMapper, "Provincia");
         this.provinciaRepository = provinciaRepository;
-        this.provinciaMapper = provinciaMapper;
         this.paisService = paisService;
-    }
-
-    @Override
-    protected BaseRepository<Provincia> getRepository() {
-        return provinciaRepository;
-    }
-
-    @Override
-    protected BaseMapper<Provincia, ProvinciaRequest, ProvinciaResponse> getMapper() {
-        return provinciaMapper;
-    }
-
-    @Override
-    protected String getNombreRecurso() {
-        return "Provincia";
     }
 
     @Override
@@ -105,7 +89,7 @@ public class ProvinciaService extends BaseService<Provincia, ProvinciaRequest, P
             return listar();
         }
         List<Provincia> entidades = provinciaRepository.findAllByPaisIdAndEliminadoFalseOrderByNombreAsc(paisId);
-        return provinciaMapper.aResponseList(entidades);
+        return mapper.aResponseList(entidades);
     }
 
     private void validarFormato(ProvinciaRequest request) {

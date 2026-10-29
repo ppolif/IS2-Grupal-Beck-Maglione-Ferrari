@@ -24,29 +24,17 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping({"/promociones", "/api/v1/promociones"})
-public class PromocionController extends BaseController<PromocionRequest, PromocionResponse> {
-
-    private final PromocionService promocionService;
+public class PromocionController extends BaseController<PromocionService, PromocionRequest, PromocionResponse> {
 
     public PromocionController(PromocionService promocionService) {
-        this.promocionService = promocionService;
-    }
-
-    @Override
-    protected BaseService<?, PromocionRequest, PromocionResponse> getService() {
-        return promocionService;
-    }
-
-    @Override
-    protected String extraerId(PromocionResponse response) {
-        return response.id();
+        super(promocionService);
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
     public ResponseEntity<List<PromocionResponse>> listarPromocion(
             @RequestParam(required = false) Boolean soloVigentes) {
-        return ResponseEntity.ok(promocionService.listar(soloVigentes));
+        return ResponseEntity.ok(service.listar(soloVigentes));
     }
 
     @PostMapping
@@ -58,7 +46,7 @@ public class PromocionController extends BaseController<PromocionRequest, Promoc
     @GetMapping("/codigo/{codigo}")
     @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO', 'PREVENTISTA')")
     public ResponseEntity<PromocionResponse> buscarPromocionVigentePorCodigo(@PathVariable String codigo) {
-        return ResponseEntity.ok(promocionService.buscarVigentePorCodigo(codigo));
+        return ResponseEntity.ok(service.buscarVigentePorCodigo(codigo));
     }
 
     @GetMapping("/{id}")

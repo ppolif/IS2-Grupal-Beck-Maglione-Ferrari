@@ -23,13 +23,11 @@ public interface StockRepository extends BaseRepository<Stock> {
      */
     Optional<Stock> findFirstByEliminadoFalseOrderByFechaHoraDescIdDesc();
 
-    /*
-     * Búsqueda de stock por producto a través de DetalleFactura según el nuevo modelo UML:
-     * (Stock no tiene atributo directo 'producto', se accede a través de DetalleFactura.
-     * Se descomentará al implementar DetalleFactura):
-     *
-     * Optional<Stock> findFirstByDetalleFacturaProductoIdAndEliminadoFalseOrderByFechaHoraDescIdDesc(String productoId);
+    /**
+     * Búsqueda de stock por producto a través de DetalleFactura según el diseño UML
+     * (Stock -> DetalleFactura -> Producto).
      */
+    Optional<Stock> findFirstByDetalleFacturaProductoIdAndEliminadoFalseOrderByFechaHoraDescIdDesc(String productoId);
 
     /**
      * Consulta paginada del histórico de movimientos de stock, permitiendo filtrar

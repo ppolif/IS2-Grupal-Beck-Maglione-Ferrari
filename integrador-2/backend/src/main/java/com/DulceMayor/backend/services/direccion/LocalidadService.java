@@ -27,31 +27,15 @@ public class LocalidadService extends BaseService<Localidad, LocalidadRequest, L
     private static final int LONGITUD_MAXIMA_CODIGO_POSTAL = 20;
 
     private final LocalidadRepository localidadRepository;
-    private final LocalidadMapper localidadMapper;
     private final DepartamentoService departamentoService;
 
     public LocalidadService(
             LocalidadRepository localidadRepository,
             LocalidadMapper localidadMapper,
             DepartamentoService departamentoService) {
+        super(localidadRepository, localidadMapper, "Localidad");
         this.localidadRepository = localidadRepository;
-        this.localidadMapper = localidadMapper;
         this.departamentoService = departamentoService;
-    }
-
-    @Override
-    protected BaseRepository<Localidad> getRepository() {
-        return localidadRepository;
-    }
-
-    @Override
-    protected BaseMapper<Localidad, LocalidadRequest, LocalidadResponse> getMapper() {
-        return localidadMapper;
-    }
-
-    @Override
-    protected String getNombreRecurso() {
-        return "Localidad";
     }
 
     @Override
@@ -108,7 +92,7 @@ public class LocalidadService extends BaseService<Localidad, LocalidadRequest, L
         }
         List<Localidad> entidades =
                 localidadRepository.findAllByDepartamentoIdAndEliminadoFalseOrderByNombreAsc(departamentoId);
-        return localidadMapper.aResponseList(entidades);
+        return mapper.aResponseList(entidades);
     }
 
     private void validarFormato(LocalidadRequest request) {

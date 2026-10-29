@@ -25,22 +25,10 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping({"/productos", "/api/v1/productos"})
-public class ProductoController extends BaseController<ProductoRequest, ProductoResponse> {
-
-    private final ProductoService productoService;
+public class ProductoController extends BaseController<ProductoService, ProductoRequest, ProductoResponse> {
 
     public ProductoController(ProductoService productoService) {
-        this.productoService = productoService;
-    }
-
-    @Override
-    protected BaseService<?, ProductoRequest, ProductoResponse> getService() {
-        return productoService;
-    }
-
-    @Override
-    protected String extraerId(ProductoResponse response) {
-        return response.id();
+        super(productoService);
     }
 
     @GetMapping
@@ -52,7 +40,7 @@ public class ProductoController extends BaseController<ProductoRequest, Producto
             @RequestParam(required = false) Boolean enOferta,
             @RequestParam(required = false) Boolean soloConStock,
             Pageable pageable) {
-        return ResponseEntity.ok(productoService.listarPaginado(
+        return ResponseEntity.ok(service.listarPaginado(
                 q, categoriaId, subCategoriaId, enOferta, soloConStock, pageable
         ));
     }

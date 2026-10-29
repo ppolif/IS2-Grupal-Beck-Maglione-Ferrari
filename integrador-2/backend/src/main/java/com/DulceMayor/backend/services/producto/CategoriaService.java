@@ -41,28 +41,12 @@ public class CategoriaService extends BaseService<Categoria, CategoriaRequest, C
     private static final int LONGITUD_MAXIMA_NOMBRE = 100;
 
     private final CategoriaRepository categoriaRepository;
-    private final CategoriaMapper categoriaMapper;
 
     public CategoriaService(
             CategoriaRepository categoriaRepository,
             CategoriaMapper categoriaMapper) {
+        super(categoriaRepository, categoriaMapper, "Categoría");
         this.categoriaRepository = categoriaRepository;
-        this.categoriaMapper = categoriaMapper;
-    }
-
-    @Override
-    protected BaseRepository<Categoria> getRepository() {
-        return categoriaRepository;
-    }
-
-    @Override
-    protected BaseMapper<Categoria, CategoriaRequest, CategoriaResponse> getMapper() {
-        return categoriaMapper;
-    }
-
-    @Override
-    protected String getNombreRecurso() {
-        return "Categoría";
     }
 
     @Override

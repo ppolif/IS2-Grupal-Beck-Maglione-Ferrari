@@ -166,7 +166,26 @@
 - **Servicio interno (`com.DulceMayor.backend.services`):**
   - `ContactoService`: extiende `BaseService<Contacto, ContactoRequest, ContactoResponse>` para validaciones y operaciones internas reutilizables desde `Persona` y `Mayorista` respetando la regla ArchUnit de acceso a repositorios, sin exponer `ContactoController`.
 
+---
 
+## Paso 6: Módulo Facturación y Pagos (EstadoFactura, TipoPago, FormaDePago, DetalleFactura, Factura, Pago)
 
-
+### 1. Qué se hizo
+- **Refinamiento del patrón Template Method en clases base:**
+  - `Identificable`: interfaz en `com.DulceMayor.backend.dtos` implementada por todos los DTOs `*Response` para proveer `String id()`.
+  - `BaseController<S extends BaseService<?, Req, Res>, Req, Res extends Identificable>` y `BaseService<E extends EntidadBase, Req, Res>`: inyección por constructor en la superclase para eliminar la sobreescritura redundante de `extraerId`, `getService`, `getRepository`, `getMapper` y `getNombreRecurso` en todas las subclases concretas.
+- **Enumeraciones y entidades de dominio (`com.DulceMayor.backend.entities.facturacion`):**
+  - `EstadoFactura` (`PENDIENTE_PAGO`, `PAGADA`, `ANULADA`) y `TipoPago` (`EFECTIVO`, `TRANSFERENCIA`, `BILLETERA_VIRTUAL`).
+  - `FormaDePago`: extiende `EntidadBase` con `tipoPago` (obligatorio) y `observacion` (opcional).
+  - `DetalleFactura`: extiende `EntidadBase` con `cantidad`, `precioUnitario`, `subtotal` y relación `@ManyToOne` hacia `Producto`. Se completó además la asociación `@ManyToOne DetalleFactura detalleFactura` en `Stock`.
+  - `Factura`: extiende `EntidadBase` con `numeroFactura` (único correlativo), `fechaFactura`, `total`, `estado`, `pedidoId` y composición `@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)` de `List<DetalleFactura> detalles`.
+  - `Pago`: extiende `EntidadBase` con `monto`, `fechaPago`, `referencia`, `observacion`, `@ManyToOne FormaDePago` y `@ManyToOne Factura`.
+- **Repositorios, DTOs y Mappers (`com.DulceMayor.backend.repositories.facturacion`, `com.DulceMayor.backend.dtos.facturacion`):**
+  - `FormaDePagoRepository`, `DetalleFacturaRepository`, `FacturaRepository` (búsqueda por pedido, numeración correlativa y filtro paginado por estado y rango de fechas) y `PagoRepository` (listado por factura, verificación de pagos activos y suma `COALESCE(SUM(p.monto), 0.0)`).
+  - Records DTOs y mappers MapStruct (`injectionStrategy = InjectionStrategy.CONSTRUCTOR`): `FormaDePagoRequest/Response/Mapper`, `DetalleFacturaRequest/Response/Mapper`, `PagoRequest/Response/Mapper`, `FacturaRequest/Response/Page/MiCuentaPage/Mapper`.
+- **Servicios y Controladores REST (`com.DulceMayor.backend.services.facturacion`, `com.DulceMayor.backend.controllers.facturacion`):**
+  - `FormaDePagoService` y `FormaDePagoController` (`/formas-de-pago`, `/api/v1/formas-de-pago`).
+  - `FacturaLecturaService`: servicio de solo lectura que combina `FacturaRepository` y `PagoRepository` para enriquecer `FacturaResponse` con `totalPagado`, `saldo` y `pagos` sin violar las reglas de acoplamiento ArchUnit.
+  - `FacturaService` y `FacturaController`: generación transaccional con descuento de stock vinculado a `DetalleFactura`, anulación (409 si tiene pagos activos), descarga de comprobante PDF (`application/pdf`), generación de QR de pago simulado (`image/png`, 409 si no está en `PENDIENTE_PAGO`), reenvío por correo y consulta paginada (`/facturas` y `/mi-cuenta/facturas`).
+  - `PagoService` y `PagoController`: registro de pagos parciales o totales (`POST /facturas/{id}/pagos`), transición automática a `PAGADA` al cubrir el saldo, bloqueo de sobrepagos (409) y reversión de estado al eliminar un pago (`DELETE /pagos/{id}`).
 

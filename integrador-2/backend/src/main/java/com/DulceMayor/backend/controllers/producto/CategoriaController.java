@@ -34,22 +34,10 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping({"/categorias", "/api/v1/categorias"})
-public class CategoriaController extends BaseController<CategoriaRequest, CategoriaResponse> {
-
-    private final CategoriaService categoriaService;
+public class CategoriaController extends BaseController<CategoriaService, CategoriaRequest, CategoriaResponse> {
 
     public CategoriaController(CategoriaService categoriaService) {
-        this.categoriaService = categoriaService;
-    }
-
-    @Override
-    protected BaseService<?, CategoriaRequest, CategoriaResponse> getService() {
-        return categoriaService;
-    }
-
-    @Override
-    protected String extraerId(CategoriaResponse response) {
-        return response.id();
+        super(categoriaService);
     }
 
     @GetMapping

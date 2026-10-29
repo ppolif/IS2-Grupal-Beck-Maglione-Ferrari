@@ -22,29 +22,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class ContactoService extends BaseService<Contacto, ContactoRequest, ContactoResponse> {
 
-    private final ContactoRepository contactoRepository;
     private final ContactoMapper contactoMapper;
 
     public ContactoService(
             ContactoRepository contactoRepository,
             ContactoMapper contactoMapper) {
-        this.contactoRepository = contactoRepository;
+        super(contactoRepository, contactoMapper, "Contacto");
         this.contactoMapper = contactoMapper;
-    }
-
-    @Override
-    protected BaseRepository<Contacto> getRepository() {
-        return contactoRepository;
-    }
-
-    @Override
-    protected BaseMapper<Contacto, ContactoRequest, ContactoResponse> getMapper() {
-        return contactoMapper;
-    }
-
-    @Override
-    protected String getNombreRecurso() {
-        return "Contacto";
     }
 
     @Override

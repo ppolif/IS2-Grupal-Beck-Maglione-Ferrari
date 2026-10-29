@@ -40,31 +40,15 @@ public class SubCategoriaService extends BaseService<SubCategoria, SubCategoriaR
     private static final int LONGITUD_MAXIMA_NOMBRE = 100;
 
     private final SubCategoriaRepository subCategoriaRepository;
-    private final SubCategoriaMapper subCategoriaMapper;
     private final CategoriaService categoriaService;
 
     public SubCategoriaService(
             SubCategoriaRepository subCategoriaRepository,
             SubCategoriaMapper subCategoriaMapper,
             CategoriaService categoriaService) {
+        super(subCategoriaRepository, subCategoriaMapper, "Subcategoría");
         this.subCategoriaRepository = subCategoriaRepository;
-        this.subCategoriaMapper = subCategoriaMapper;
         this.categoriaService = categoriaService;
-    }
-
-    @Override
-    protected BaseRepository<SubCategoria> getRepository() {
-        return subCategoriaRepository;
-    }
-
-    @Override
-    protected BaseMapper<SubCategoria, SubCategoriaRequest, SubCategoriaResponse> getMapper() {
-        return subCategoriaMapper;
-    }
-
-    @Override
-    protected String getNombreRecurso() {
-        return "Subcategoría";
     }
 
     @Override
@@ -119,7 +103,7 @@ public class SubCategoriaService extends BaseService<SubCategoria, SubCategoriaR
             return listar();
         }
         List<SubCategoria> entidades = subCategoriaRepository.findAllByCategoriaIdAndEliminadoFalseOrderByNombreAsc(categoriaId);
-        return subCategoriaMapper.aResponseList(entidades);
+        return mapper.aResponseList(entidades);
     }
 
     private void validarFormato(SubCategoriaRequest request) {

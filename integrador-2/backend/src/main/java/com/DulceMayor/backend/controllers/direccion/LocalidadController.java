@@ -25,22 +25,10 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping({"/localidades", "/api/v1/localidades"})
-public class LocalidadController extends BaseController<LocalidadRequest, LocalidadResponse> {
-
-    private final LocalidadService localidadService;
+public class LocalidadController extends BaseController<LocalidadService, LocalidadRequest, LocalidadResponse> {
 
     public LocalidadController(LocalidadService localidadService) {
-        this.localidadService = localidadService;
-    }
-
-    @Override
-    protected BaseService<?, LocalidadRequest, LocalidadResponse> getService() {
-        return localidadService;
-    }
-
-    @Override
-    protected String extraerId(LocalidadResponse response) {
-        return response.id();
+        super(localidadService);
     }
 
     @GetMapping
@@ -49,7 +37,7 @@ public class LocalidadController extends BaseController<LocalidadRequest, Locali
         if (departamentoId == null || departamentoId.isBlank()) {
             return ejecutarListar();
         }
-        return ResponseEntity.ok(localidadService.listar(departamentoId));
+        return ResponseEntity.ok(service.listar(departamentoId));
     }
 
     @PostMapping

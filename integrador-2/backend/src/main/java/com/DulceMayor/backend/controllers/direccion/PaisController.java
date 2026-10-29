@@ -24,22 +24,10 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping({"/paises", "/api/v1/paises"})
-public class PaisController extends BaseController<PaisRequest, PaisResponse> {
-
-    private final PaisService paisService;
+public class PaisController extends BaseController<PaisService, PaisRequest, PaisResponse> {
 
     public PaisController(PaisService paisService) {
-        this.paisService = paisService;
-    }
-
-    @Override
-    protected BaseService<?, PaisRequest, PaisResponse> getService() {
-        return paisService;
-    }
-
-    @Override
-    protected String extraerId(PaisResponse response) {
-        return response.id();
+        super(paisService);
     }
 
     @GetMapping

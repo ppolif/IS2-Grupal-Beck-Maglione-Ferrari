@@ -21,13 +21,12 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface StockMapper {
 
-    /*
-     * Mapeo hacia el producto a través de DetalleFactura según el nuevo diseño UML:
-     * @Mapping(target = "productoId", source = "detalleFactura.producto.id")
-     * @Mapping(target = "productoNombre", source = "detalleFactura.producto.nombre")
+    /**
+     * Mapeo hacia el producto a través de DetalleFactura según el diseño UML
+     * (Stock -> DetalleFactura -> Producto).
      */
-    @Mapping(target = "productoId", ignore = true)
-    @Mapping(target = "productoNombre", ignore = true)
+    @Mapping(target = "productoId", source = "detalleFactura.producto.id")
+    @Mapping(target = "productoNombre", source = "detalleFactura.producto.nombre")
     StockResponse aResponse(Stock stock);
 
     List<StockResponse> aResponseList(List<Stock> stocks);

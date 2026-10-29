@@ -24,28 +24,16 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping({"/subcategorias", "/api/v1/subcategorias"})
-public class SubCategoriaController extends BaseController<SubCategoriaRequest, SubCategoriaResponse> {
-
-    private final SubCategoriaService subCategoriaService;
+public class SubCategoriaController extends BaseController<SubCategoriaService, SubCategoriaRequest, SubCategoriaResponse> {
 
     public SubCategoriaController(SubCategoriaService subCategoriaService) {
-        this.subCategoriaService = subCategoriaService;
-    }
-
-    @Override
-    protected BaseService<?, SubCategoriaRequest, SubCategoriaResponse> getService() {
-        return subCategoriaService;
-    }
-
-    @Override
-    protected String extraerId(SubCategoriaResponse response) {
-        return response.id();
+        super(subCategoriaService);
     }
 
     @GetMapping
     public ResponseEntity<List<SubCategoriaResponse>> listarSubCategoria(
             @RequestParam(required = false) String categoriaId) {
-        return ResponseEntity.ok(subCategoriaService.listar(categoriaId));
+        return ResponseEntity.ok(service.listar(categoriaId));
     }
 
     @PostMapping

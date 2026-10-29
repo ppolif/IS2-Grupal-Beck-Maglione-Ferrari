@@ -40,31 +40,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class PromocionService extends BaseService<Promocion, PromocionRequest, PromocionResponse> {
 
     private final PromocionRepository promocionRepository;
-    private final PromocionMapper promocionMapper;
     private final ProductoService productoService;
 
     public PromocionService(
             PromocionRepository promocionRepository,
             PromocionMapper promocionMapper,
             ProductoService productoService) {
+        super(promocionRepository, promocionMapper, "Promoción");
         this.promocionRepository = promocionRepository;
-        this.promocionMapper = promocionMapper;
         this.productoService = productoService;
-    }
-
-    @Override
-    protected BaseRepository<Promocion> getRepository() {
-        return promocionRepository;
-    }
-
-    @Override
-    protected BaseMapper<Promocion, PromocionRequest, PromocionResponse> getMapper() {
-        return promocionMapper;
-    }
-
-    @Override
-    protected String getNombreRecurso() {
-        return "Promoción";
     }
 
     @Override
@@ -145,7 +129,7 @@ public class PromocionService extends BaseService<Promocion, PromocionRequest, P
             );
         }
 
-        return promocionMapper.aResponse(promocion);
+        return mapper.aResponse(promocion);
     }
 
     @Transactional(readOnly = true)
@@ -153,7 +137,7 @@ public class PromocionService extends BaseService<Promocion, PromocionRequest, P
         //si hay filtro se aplica
         if (Boolean.TRUE.equals(soloVigentes)) {
             List<Promocion> vigentes = promocionRepository.findAllVigentes(LocalDate.now());
-            return promocionMapper.aResponseList(vigentes);
+            return mapper.aResponseList(vigentes);
         }
         //sino se lista todo
         return listar();

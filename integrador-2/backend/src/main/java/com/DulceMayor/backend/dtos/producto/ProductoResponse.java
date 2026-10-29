@@ -1,5 +1,7 @@
 package com.DulceMayor.backend.dtos.producto;
 
+import com.DulceMayor.backend.dtos.Identificable;
+
 /**
  * DTO de salida que representa un producto del catálogo mayorista según 04-openapi.yaml.
  */
@@ -18,6 +20,6 @@ public record ProductoResponse(
         String categoriaNombre,
         Double precioVigente,
         Integer stockActual
-) {
+) implements Identificable {
 }
 

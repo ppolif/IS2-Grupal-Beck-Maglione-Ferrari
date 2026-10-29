@@ -53,31 +53,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class VigenciaPrecioService extends BaseService<VigenciaPrecio, VigenciaPrecioRequest, VigenciaPrecioResponse> {
 
     private final VigenciaPrecioRepository vigenciaPrecioRepository;
-    private final VigenciaPrecioMapper vigenciaPrecioMapper;
     private final ProductoService productoService;
 
     public VigenciaPrecioService(
             VigenciaPrecioRepository vigenciaPrecioRepository,
             VigenciaPrecioMapper vigenciaPrecioMapper,
             ProductoService productoService) {
+        super(vigenciaPrecioRepository, vigenciaPrecioMapper, "Vigencia de precio");
         this.vigenciaPrecioRepository = vigenciaPrecioRepository;
-        this.vigenciaPrecioMapper = vigenciaPrecioMapper;
         this.productoService = productoService;
-    }
-
-    @Override
-    protected BaseRepository<VigenciaPrecio> getRepository() {
-        return vigenciaPrecioRepository;
-    }
-
-    @Override
-    protected BaseMapper<VigenciaPrecio, VigenciaPrecioRequest, VigenciaPrecioResponse> getMapper() {
-        return vigenciaPrecioMapper;
-    }
-
-    @Override
-    protected String getNombreRecurso() {
-        return "Vigencia de precio";
     }
 
     @EventListener
@@ -138,14 +122,14 @@ public class VigenciaPrecioService extends BaseService<VigenciaPrecio, VigenciaP
                 .build();
 
         VigenciaPrecio guardada = vigenciaPrecioRepository.save(nueva);
-        return vigenciaPrecioMapper.aResponse(guardada);
+        return mapper.aResponse(guardada);
     }
 
     @Transactional(readOnly = true)
     public List<VigenciaPrecioResponse> listarPorProducto(String productoId) {
         productoService.obtenerEntidad(productoId);
         List<VigenciaPrecio> lista = vigenciaPrecioRepository.findAllByProductoIdAndEliminadoFalseOrderByFechaDesdeDesc(productoId);
-        return vigenciaPrecioMapper.aResponseList(lista);
+        return mapper.aResponseList(lista);
     }
 
     @Transactional(readOnly = true)
@@ -153,7 +137,7 @@ public class VigenciaPrecioService extends BaseService<VigenciaPrecio, VigenciaP
         productoService.obtenerEntidad(productoId);
         VigenciaPrecio vigente = vigenciaPrecioRepository.findByProductoIdAndFechaHastaIsNullAndEliminadoFalse(productoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró precio vigente para el producto"));
-        return vigenciaPrecioMapper.aResponse(vigente);
+        return mapper.aResponse(vigente);
     }
 
     @Override
@@ -180,7 +164,7 @@ public class VigenciaPrecioService extends BaseService<VigenciaPrecio, VigenciaP
         existente.setPrecio(request.precio());
 
         VigenciaPrecio guardada = vigenciaPrecioRepository.save(existente);
-        return vigenciaPrecioMapper.aResponse(guardada);
+        return mapper.aResponse(guardada);
     }
 
     private void validarRequest(VigenciaPrecioRequest request) {

@@ -15,6 +15,6 @@ public record ContactoResponse(
         String email,
         String telefono,
         TipoTelefono tipoTelefono
-) {
+) implements Identificable {
 }
 

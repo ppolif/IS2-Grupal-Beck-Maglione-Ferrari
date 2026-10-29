@@ -1,6 +1,7 @@
 package com.DulceMayor.backend.entities.producto;
 
 import com.DulceMayor.backend.entities.EntidadBase;
+import com.DulceMayor.backend.entities.facturacion.DetalleFactura;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -45,19 +46,17 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@ToString(callSuper = true)
+@ToString(callSuper = true, exclude = "detalleFactura")
 public class Stock extends EntidadBase {
 
-    /*
-     * Relación con DetalleFactura según el nuevo diseño UML:
-     * Stock no tiene atributo 'producto' directo; únicamente se relaciona con DetalleFactura,
+    /**
+     * Relación con DetalleFactura según el diseño UML:
+     * Stock no tiene atributo 'producto' directo; se relaciona con DetalleFactura,
      * y desde allí navega al Producto correspondiente (Stock -> DetalleFactura -> Producto).
-     * Como DetalleFactura todavía no existe en el sistema, esta relación queda comentada:
-     *
-     * @ManyToOne(fetch = FetchType.LAZY)
-     * @JoinColumn(name = "detalle_factura_id")
-     * private DetalleFactura detalleFactura;
      */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "detalle_factura_id")
+    private DetalleFactura detalleFactura;
 
     /**
      * Nueva cantidad disponible resultante tras registrar este movimiento.
