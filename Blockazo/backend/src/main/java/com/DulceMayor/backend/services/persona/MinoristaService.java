@@ -4,37 +4,30 @@ import com.DulceMayor.backend.config.ConflictoException;
 import com.DulceMayor.backend.config.RecursoNoEncontradoException;
 import com.DulceMayor.backend.config.ValidacionException;
 import com.DulceMayor.backend.dtos.AuthResponse;
-import com.DulceMayor.backend.dtos.ContactoRequest;
 import com.DulceMayor.backend.dtos.direccion.DireccionRequest;
+import com.DulceMayor.backend.dtos.persona.ActualizarPerfilMinoristaRequest;
+import com.DulceMayor.backend.dtos.persona.MinoristaEliminadoEvent;
 import com.DulceMayor.backend.dtos.persona.MinoristaMapper;
 import com.DulceMayor.backend.dtos.persona.MinoristaPage;
 import com.DulceMayor.backend.dtos.persona.MinoristaRequest;
 import com.DulceMayor.backend.dtos.persona.MinoristaResponse;
 import com.DulceMayor.backend.dtos.persona.RegistroMinoristaRequest;
-import com.DulceMayor.backend.entities.RolUsuario;
+import com.DulceMayor.backend.entities.ProveedorAuth;
 import com.DulceMayor.backend.entities.Usuario;
 import com.DulceMayor.backend.entities.direccion.Direccion;
-import com.DulceMayor.backend.entities.contacto.Contacto;
-import com.DulceMayor.backend.entities.contacto.ContactoCorreoElectronico;
-import com.DulceMayor.backend.entities.contacto.ContactoTelefonico;
-import com.DulceMayor.backend.entities.contacto.TipoContacto;
-import com.DulceMayor.backend.entities.contacto.TipoTelefono;
+import com.DulceMayor.backend.entities.direccion.Localidad;
 import com.DulceMayor.backend.entities.persona.Minorista;
-import com.DulceMayor.backend.dtos.persona.ActualizarPerfilMinoristaRequest;
-import com.DulceMayor.backend.dtos.persona.MinoristaEliminadoEvent;
-import org.springframework.context.ApplicationEventPublisher;
+import com.DulceMayor.backend.services.direccion.LocalidadService;
 import com.DulceMayor.backend.repositories.persona.MinoristaRepository;
 import com.DulceMayor.backend.services.BaseService;
-import com.DulceMayor.backend.services.ContactoService;
 import com.DulceMayor.backend.services.UsuarioService;
 import com.DulceMayor.backend.services.direccion.DireccionService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,7 +42,7 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
     private final PersonaService personaService;
     private final UsuarioService usuarioService;
     private final DireccionService direccionService;
-    private final ContactoService contactoService;
+    private final LocalidadService localidadService;
     private final ApplicationEventPublisher eventPublisher;
 
     public MinoristaService(
@@ -58,7 +51,7 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
             PersonaService personaService,
             UsuarioService usuarioService,
             DireccionService direccionService,
-            ContactoService contactoService,
+            LocalidadService localidadService,
             ApplicationEventPublisher eventPublisher) {
         super(minoristaRepository, minoristaMapper, "Minorista");
         this.minoristaRepository = minoristaRepository;
@@ -66,7 +59,7 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         this.personaService = personaService;
         this.usuarioService = usuarioService;
         this.direccionService = direccionService;
-        this.contactoService = contactoService;
+        this.localidadService = localidadService;
         this.eventPublisher = eventPublisher;
     }
 
@@ -79,56 +72,33 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
                 request.nombre() != null ? request.nombre().trim() : null,
                 request.apellido() != null ? request.apellido().trim() : null,
                 request.fechaNacimiento(),
-                request.tipoDocumento(),
                 request.numeroDocumento() != null ? request.numeroDocumento().trim() : null,
-                request.direcciones(),
-                request.contactos()
+                request.direcciones()
         );
     }
 
     @Override
     protected void validarCrear(MinoristaRequest request) {
         validarFormato(request);
-        personaService.validarDocumentoUnico(request.tipoDocumento(), request.numeroDocumento());
+        personaService.validarDocumentoUnico(request.numeroDocumento());
     }
 
     @Override
     protected void validarModificar(String id, MinoristaRequest request, Minorista existente) {
         validarFormato(request);
-        personaService.validarDocumentoUnicoExcluyendoId(request.tipoDocumento(), request.numeroDocumento(), id);
+        personaService.validarDocumentoUnicoExcluyendoId(request.numeroDocumento(), id);
     }
 
     @Override
     protected void antesDePersistir(Minorista entidad, MinoristaRequest request) {
-        // Si lo da de alta un preventor en terreno y no tiene usuario aún, se crea con claveTemporal = true
-        if (entidad.getUsuario() == null && esPreventistaAutenticado()) {
-            String username = resolverNombreUsuario(request);
-            if (!usuarioService.existeNombreUsuario(username)) {
-                Usuario usuario = usuarioService.crearUsuario(
-                        username,
-                        UsuarioService.CLAVE_POR_DEFECTO,
-                        RolUsuario.MINORISTA,
-                        true
-                );
-                entidad.setUsuario(usuario);
-            }
-        }
-
         if (request.direcciones() != null) {
             entidad.getDirecciones().clear();
             for (DireccionRequest dReq : request.direcciones()) {
                 entidad.getDirecciones().add(direccionService.construirEntidad(dReq));
             }
         }
-        if (request.contactos() != null) {
-            entidad.getContactos().clear();
-            for (ContactoRequest cReq : request.contactos()) {
-                entidad.getContactos().add(contactoService.construirEntidad(cReq));
-            }
-        }
     }
 
-    ///Este metodo es para que el preventor registre minoristas
     @Transactional
     public AuthResponse registrarEnPortal(RegistroMinoristaRequest request) {
         validarRegistro(request);
@@ -138,101 +108,30 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
             throw new ConflictoException("DUPLICADO", "El correo ya posee un usuario registrado");
         }
 
-        // Buscar si ya existía el minorista cargado previamente
-        Optional<Minorista> minoristaOpt = minoristaRepository.findActivoByEmail(emailLimpio);
-        if (minoristaOpt.isEmpty()) {
-            minoristaOpt = minoristaRepository.findByTipoDocumentoAndNumeroDocumentoAndEliminadoFalse(
-                    request.tipoDocumento(), request.numeroDocumento().trim());
-        }
-
-        if (minoristaOpt.isPresent()) {
-            Minorista existente = minoristaOpt.get();
-            if (existente.getUsuario() != null) {
-                // Caso A: Ya existía y ya tiene usuario asignado
-                throw new ConflictoException(
-                        "DUPLICADO",
-                        "El cliente ya posee una cuenta de usuario asignada. Inicie sesión directamente."
-                );
-            }
-            // Caso B: Minorista precargado con usuario == null. Se le asigna claveTemporal = true
-            Usuario usuario = usuarioService.crearUsuario(
-                    emailLimpio,
-                    request.clave(),
-                    RolUsuario.MINORISTA,
-                    true
-            );
-            existente.setUsuario(usuario);
-            if (request.fechaNacimiento() != null && existente.getFechaNacimiento() == null) {
-                existente.setFechaNacimiento(request.fechaNacimiento());
-            }
-            if (request.telefono() != null && !request.telefono().isBlank()) {
-                boolean tieneTelefono = existente.getContactos().stream()
-                        .anyMatch(c -> c instanceof ContactoTelefonico && !c.isEliminado());
-                if (!tieneTelefono) {
-                    existente.getContactos().add(ContactoTelefonico.builder()
-                            .tipoContacto(TipoContacto.PERSONAL)
-                            .telefono(request.telefono().trim())
-                            .tipoTelefono(TipoTelefono.CELULAR)
-                            .eliminado(false)
-                            .build());
-                }
-            }
-            if ((request.calle() != null && !request.calle().isBlank()) ||
-                    (request.numero() != null && !request.numero().isBlank())) {
-                String c = request.calle() != null ? request.calle().trim() : "";
-                String n = request.numero() != null ? request.numero().trim() : "";
-                Optional<Direccion> dirOpt = existente.getDirecciones().stream()
-                        .filter(d -> !d.isEliminado())
-                        .findFirst();
-                if (dirOpt.isPresent()) {
-                    dirOpt.get().setCalle(c);
-                    dirOpt.get().setNumero(n);
-                } else {
-                    existente.getDirecciones().add(Direccion.builder()
-                            .calle(c)
-                            .numero(n)
-                            .eliminado(false)
-                            .build());
-                }
-            }
-            minoristaRepository.save(existente);
-            return usuarioService.generarAuthResponse(usuario);
-        }
-
-        // Caso C: Auto-registro de un nuevo minorista desde cero
-        personaService.validarDocumentoUnico(request.tipoDocumento(), request.numeroDocumento().trim());
+        personaService.validarDocumentoUnico(request.numeroDocumento().trim());
 
         Usuario usuario = usuarioService.crearUsuario(
                 emailLimpio,
                 request.clave(),
-                RolUsuario.MINORISTA,
                 false
         );
-
-        List<Contacto> contactos = new ArrayList<>();
-        ContactoCorreoElectronico contactoCorreo = ContactoCorreoElectronico.builder()
-                .tipoContacto(TipoContacto.PERSONAL)
-                .email(emailLimpio)
-                .eliminado(false)
-                .build();
-        contactos.add(contactoCorreo);
-
-        if (request.telefono() != null && !request.telefono().isBlank()) {
-            ContactoTelefonico contactoTel = ContactoTelefonico.builder()
-                    .tipoContacto(TipoContacto.PERSONAL)
-                    .telefono(request.telefono().trim())
-                    .tipoTelefono(TipoTelefono.CELULAR)
-                    .eliminado(false)
-                    .build();
-            contactos.add(contactoTel);
-        }
 
         List<Direccion> direcciones = new ArrayList<>();
         if ((request.calle() != null && !request.calle().isBlank()) ||
                 (request.numero() != null && !request.numero().isBlank())) {
+            Localidad localidad = null;
+            if (request.localidadId() != null && !request.localidadId().isBlank()) {
+                try {
+                    localidad = localidadService.obtenerEntidad(request.localidadId().trim());
+                } catch (Exception ignored) {
+                    localidad = null;
+                }
+            }
+
             Direccion dir = Direccion.builder()
                     .calle(request.calle() != null ? request.calle().trim() : "")
                     .numero(request.numero() != null ? request.numero().trim() : "")
+                    .localidad(localidad)
                     .eliminado(false)
                     .build();
             direcciones.add(dir);
@@ -242,15 +141,40 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
                 .nombre(request.nombre().trim())
                 .apellido(request.apellido().trim())
                 .fechaNacimiento(request.fechaNacimiento())
-                .tipoDocumento(request.tipoDocumento())
                 .numeroDocumento(request.numeroDocumento().trim())
                 .usuario(usuario)
-                .contactos(contactos)
                 .direcciones(direcciones)
                 .eliminado(false)
                 .build();
 
         minoristaRepository.save(nuevo);
+        return usuarioService.generarAuthResponse(usuario);
+    }
+
+    @Transactional
+    public AuthResponse autenticarORegistrarSocial(String email, String nombre, String apellido) {
+        String emailLimpio = email.trim().toLowerCase();
+        Optional<Usuario> usuarioOpt = usuarioService.buscarPorNombreUsuario(emailLimpio);
+
+        Usuario usuario;
+        if (usuarioOpt.isPresent()) {
+            usuario = usuarioOpt.get();
+        } else {
+            usuario = usuarioService.crearUsuarioSocial(emailLimpio, ProveedorAuth.GOOGLE);
+
+            String nom = (nombre != null && !nombre.isBlank()) ? nombre.trim() : "Usuario";
+            String ape = (apellido != null && !apellido.isBlank()) ? apellido.trim() : "Social";
+
+            Minorista nuevo = Minorista.builder()
+                    .nombre(nom)
+                    .apellido(ape)
+                    .numeroDocumento("DOC-" + System.currentTimeMillis())
+                    .usuario(usuario)
+                    .eliminado(false)
+                    .build();
+            minoristaRepository.save(nuevo);
+        }
+
         return usuarioService.generarAuthResponse(usuario);
     }
 
@@ -295,7 +219,7 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         }
         Minorista minorista = obtenerPorUsuarioId(usuarioId);
 
-        personaService.validarDocumentoUnicoExcluyendoId(request.tipoDocumento(), request.numeroDocumento().trim(), minorista.getId());
+        personaService.validarDocumentoUnicoExcluyendoId(request.numeroDocumento().trim(), minorista.getId());
 
         String nuevoEmail = request.email().trim().toLowerCase();
         Usuario usuario = minorista.getUsuario();
@@ -311,44 +235,7 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         minorista.setNombre(request.nombre().trim());
         minorista.setApellido(request.apellido().trim());
         minorista.setFechaNacimiento(request.fechaNacimiento());
-        minorista.setTipoDocumento(request.tipoDocumento());
         minorista.setNumeroDocumento(request.numeroDocumento().trim());
-
-        // Actualizar o agregar ContactoCorreoElectronico
-        Optional<ContactoCorreoElectronico> correoOpt = minorista.getContactos().stream()
-                .filter(c -> c instanceof ContactoCorreoElectronico && !c.isEliminado())
-                .map(c -> (ContactoCorreoElectronico) c)
-                .findFirst();
-        if (correoOpt.isPresent()) {
-            correoOpt.get().setEmail(nuevoEmail);
-        } else {
-            minorista.getContactos().add(ContactoCorreoElectronico.builder()
-                    .tipoContacto(TipoContacto.PERSONAL)
-                    .email(nuevoEmail)
-                    .eliminado(false)
-                    .build());
-        }
-
-        // Actualizar o agregar ContactoTelefonico
-        Optional<ContactoTelefonico> telOpt = minorista.getContactos().stream()
-                .filter(c -> c instanceof ContactoTelefonico && !c.isEliminado())
-                .map(c -> (ContactoTelefonico) c)
-                .findFirst();
-        if (request.telefono() != null && !request.telefono().isBlank()) {
-            String telLimpio = request.telefono().trim();
-            if (telOpt.isPresent()) {
-                telOpt.get().setTelefono(telLimpio);
-            } else {
-                minorista.getContactos().add(ContactoTelefonico.builder()
-                        .tipoContacto(TipoContacto.PERSONAL)
-                        .telefono(telLimpio)
-                        .tipoTelefono(TipoTelefono.CELULAR)
-                        .eliminado(false)
-                        .build());
-            }
-        } else {
-            telOpt.ifPresent(c -> c.setEliminado(true));
-        }
 
         // Actualizar o agregar Dirección (calle y número)
         if (request.calle() != null || request.numero() != null) {
@@ -390,9 +277,6 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         if (existente.getUsuario() != null) {
             usuarioService.eliminarUsuario(existente.getUsuario().getId());
         }
-        if (existente.getContactos() != null) {
-            existente.getContactos().forEach(c -> c.setEliminado(true));
-        }
         if (existente.getDirecciones() != null) {
             existente.getDirecciones().forEach(d -> d.setEliminado(true));
         }
@@ -405,26 +289,6 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         }
     }
 
-    private boolean esPreventistaAutenticado() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth.getAuthorities() == null) {
-            return false;
-        }
-        return auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_PREVENTISTA") || a.getAuthority().equals("PREVENTISTA"));
-    }
-
-    private String resolverNombreUsuario(MinoristaRequest request) {
-        if (request.contactos() != null) {
-            for (ContactoRequest c : request.contactos()) {
-                if ("CORREO".equalsIgnoreCase(c.medio()) && c.email() != null && !c.email().isBlank()) {
-                    return c.email().trim().toLowerCase();
-                }
-            }
-        }
-        return request.numeroDocumento().trim();
-    }
-
     private void validarFormato(MinoristaRequest request) {
         if (request == null) {
             throw new ValidacionException("Los datos del minorista son obligatorios");
@@ -434,9 +298,6 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         }
         if (request.apellido() == null || request.apellido().isBlank()) {
             throw new ValidacionException("El apellido es obligatorio");
-        }
-        if (request.tipoDocumento() == null) {
-            throw new ValidacionException("El tipo de documento es obligatorio");
         }
         if (request.numeroDocumento() == null || request.numeroDocumento().isBlank()) {
             throw new ValidacionException("El número de documento es obligatorio");
@@ -453,9 +314,6 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         if (request.apellido() == null || request.apellido().isBlank()) {
             throw new ValidacionException("El apellido es obligatorio");
         }
-        if (request.tipoDocumento() == null) {
-            throw new ValidacionException("El tipo de documento es obligatorio");
-        }
         if (request.numeroDocumento() == null || request.numeroDocumento().isBlank()) {
             throw new ValidacionException("El número de documento es obligatorio");
         }
@@ -470,4 +328,3 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         }
     }
 }
-

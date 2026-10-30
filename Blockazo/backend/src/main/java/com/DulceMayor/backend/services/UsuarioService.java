@@ -11,10 +11,10 @@ import com.DulceMayor.backend.dtos.LoginRequest;
 import com.DulceMayor.backend.dtos.PerfilResponse;
 import com.DulceMayor.backend.dtos.UsuarioResponse;
 import com.DulceMayor.backend.entities.ProveedorAuth;
-import com.DulceMayor.backend.entities.RolUsuario;
 import com.DulceMayor.backend.entities.Usuario;
 import com.DulceMayor.backend.repositories.UsuarioRepository;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -66,12 +66,19 @@ public class UsuarioService implements UserDetailsService {
         return usuarioRepository.findByIdAndEliminadoFalse(id);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<Usuario> buscarPorNombreUsuario(String nombreUsuario) {
+        if (nombreUsuario == null) {
+            return Optional.empty();
+        }
+        return usuarioRepository.findByNombreUsuarioAndEliminadoFalse(nombreUsuario.trim().toLowerCase());
+    }
+
     @Transactional
-    public Usuario crearUsuarioConClavePorDefecto(String nombreUsuario, RolUsuario rol) {
+    public Usuario crearUsuarioConClavePorDefecto(String nombreUsuario) {
         Usuario usuario = Usuario.builder()
                 .nombreUsuario(nombreUsuario)
                 .clave(passwordEncoder.encode(CLAVE_POR_DEFECTO))
-                .rol(rol)
                 .claveTemporal(true)
                 .proveedorAuth(ProveedorAuth.LOCAL)
                 .eliminado(false)
@@ -80,23 +87,16 @@ public class UsuarioService implements UserDetailsService {
     }
 
     @Transactional
-    public void crearUsuarioSemillaSiNoExiste(String nombreUsuario, RolUsuario rol) {
+    public void crearUsuarioSemillaSiNoExiste(String nombreUsuario) {
         if (!usuarioRepository.existsByNombreUsuario(nombreUsuario)) {
-            crearUsuarioConClavePorDefecto(nombreUsuario, rol);
+            crearUsuarioConClavePorDefecto(nombreUsuario);
         }
     }
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
         Usuario usuario = login(request.nombreUsuario(), request.clave());
-        String token = jwtProvider.generarToken(usuario);
-        return new AuthResponse(
-                token,
-                "Bearer",
-                jwtProvider.getExpiraEnSegundos(),
-                usuario.isClaveTemporal(),
-                toResponse(usuario)
-        );
+        return generarAuthResponse(usuario);
     }
 
     @Transactional(readOnly = true)
@@ -163,7 +163,6 @@ public class UsuarioService implements UserDetailsService {
         return new UsuarioResponse(
                 usuario.getId(),
                 usuario.getNombreUsuario(),
-                usuario.getRol(),
                 usuario.isClaveTemporal(),
                 usuario.getProveedorAuth()
         );
@@ -180,13 +179,24 @@ public class UsuarioService implements UserDetailsService {
     }
 
     @Transactional
-    public Usuario crearUsuario(String nombreUsuario, String clave, RolUsuario rol, boolean claveTemporal) {
+    public Usuario crearUsuario(String nombreUsuario, String clave, boolean claveTemporal) {
         Usuario usuario = Usuario.builder()
                 .nombreUsuario(nombreUsuario)
                 .clave(passwordEncoder.encode(clave))
-                .rol(rol)
                 .claveTemporal(claveTemporal)
                 .proveedorAuth(ProveedorAuth.LOCAL)
+                .eliminado(false)
+                .build();
+        return usuarioRepository.save(usuario);
+    }
+
+    @Transactional
+    public Usuario crearUsuarioSocial(String nombreUsuario, ProveedorAuth proveedor) {
+        Usuario usuario = Usuario.builder()
+                .nombreUsuario(nombreUsuario)
+                .clave(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .claveTemporal(false)
+                .proveedorAuth(proveedor != null ? proveedor : ProveedorAuth.GOOGLE)
                 .eliminado(false)
                 .build();
         return usuarioRepository.save(usuario);
@@ -202,13 +212,6 @@ public class UsuarioService implements UserDetailsService {
                 usuario.isClaveTemporal(),
                 toResponse(usuario)
         );
-    }
-
-    @Transactional
-    public void actualizarUsuarioEmpleado(Usuario usuario, String nuevoNombreUsuario, RolUsuario nuevoRol) {
-        usuario.setNombreUsuario(nuevoNombreUsuario);
-        usuario.setRol(nuevoRol);
-        usuarioRepository.save(usuario);
     }
 
     @Transactional

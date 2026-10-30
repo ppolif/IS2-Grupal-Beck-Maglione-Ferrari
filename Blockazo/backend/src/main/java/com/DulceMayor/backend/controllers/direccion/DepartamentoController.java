@@ -41,7 +41,7 @@ public class DepartamentoController extends BaseController<DepartamentoService, 
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<DepartamentoResponse> crearDepartamento(@Valid @RequestBody DepartamentoRequest request) {
         return ejecutarCrear(request);
     }
@@ -52,7 +52,7 @@ public class DepartamentoController extends BaseController<DepartamentoService, 
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<DepartamentoResponse> modificarDepartamento(
             @PathVariable String id,
             @Valid @RequestBody DepartamentoRequest request) {
@@ -60,7 +60,7 @@ public class DepartamentoController extends BaseController<DepartamentoService, 
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> eliminarDepartamento(@PathVariable String id) {
         return ejecutarEliminar(id);
     }

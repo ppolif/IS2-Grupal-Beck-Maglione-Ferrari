@@ -41,7 +41,7 @@ public class LocalidadController extends BaseController<LocalidadService, Locali
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<LocalidadResponse> crearLocalidad(@Valid @RequestBody LocalidadRequest request) {
         return ejecutarCrear(request);
     }
@@ -52,7 +52,7 @@ public class LocalidadController extends BaseController<LocalidadService, Locali
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<LocalidadResponse> modificarLocalidad(
             @PathVariable String id,
             @Valid @RequestBody LocalidadRequest request) {
@@ -60,7 +60,7 @@ public class LocalidadController extends BaseController<LocalidadService, Locali
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> eliminarLocalidad(@PathVariable String id) {
         return ejecutarEliminar(id);
     }

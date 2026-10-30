@@ -1,9 +1,7 @@
 package com.DulceMayor.backend.dtos.persona;
 
 import com.DulceMayor.backend.dtos.BaseMapper;
-import com.DulceMayor.backend.dtos.ContactoMapper;
 import com.DulceMayor.backend.dtos.direccion.DireccionMapper;
-import com.DulceMayor.backend.entities.contacto.ContactoCorreoElectronico;
 import com.DulceMayor.backend.entities.persona.Minorista;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
@@ -16,7 +14,7 @@ import org.mapstruct.Named;
  */
 @Mapper(
         componentModel = "spring",
-        uses = {DireccionMapper.class, ContactoMapper.class},
+        uses = {DireccionMapper.class},
         injectionStrategy = InjectionStrategy.CONSTRUCTOR
 )
 public interface MinoristaMapper extends BaseMapper<Minorista, MinoristaRequest, MinoristaResponse> {
@@ -26,7 +24,6 @@ public interface MinoristaMapper extends BaseMapper<Minorista, MinoristaRequest,
     @Mapping(target = "eliminado", ignore = true)
     @Mapping(target = "usuario", ignore = true)
     @Mapping(target = "direcciones", ignore = true)
-    @Mapping(target = "contactos", ignore = true)
     Minorista aEntidad(MinoristaRequest request);
 
     @Override
@@ -34,7 +31,6 @@ public interface MinoristaMapper extends BaseMapper<Minorista, MinoristaRequest,
     @Mapping(target = "eliminado", ignore = true)
     @Mapping(target = "usuario", ignore = true)
     @Mapping(target = "direcciones", ignore = true)
-    @Mapping(target = "contactos", ignore = true)
     void actualizarEntidad(MinoristaRequest request, @MappingTarget Minorista entidad);
 
     @Override
@@ -50,14 +46,7 @@ public interface MinoristaMapper extends BaseMapper<Minorista, MinoristaRequest,
         if (minorista == null) {
             return null;
         }
-        String email = null;
-        if (minorista.getContactos() != null) {
-            email = minorista.getContactos().stream()
-                    .filter(c -> c instanceof ContactoCorreoElectronico)
-                    .map(c -> ((ContactoCorreoElectronico) c).getEmail())
-                    .findFirst()
-                    .orElse(null);
-        }
+        String email = minorista.getUsuario() != null ? minorista.getUsuario().getNombreUsuario() : null;
         return new MinoristaResumen(
                 minorista.getId(),
                 minorista.getNombre(),
@@ -66,4 +55,3 @@ public interface MinoristaMapper extends BaseMapper<Minorista, MinoristaRequest,
         );
     }
 }
-

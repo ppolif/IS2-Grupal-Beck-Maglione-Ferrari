@@ -2,9 +2,15 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
+# Argumentos de construcción para Auth0 (Vite incrusta variables VITE_* en tiempo de build)
+ARG VITE_AUTH0_DOMAIN
+ARG VITE_AUTH0_CLIENT_ID
+ENV VITE_AUTH0_DOMAIN=$VITE_AUTH0_DOMAIN
+ENV VITE_AUTH0_CLIENT_ID=$VITE_AUTH0_CLIENT_ID
+
 # Copiamos primero los archivos de dependencias para aprovechar el caché de Docker
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 # Copiamos el resto del código y construimos el proyecto Vite
 COPY . .
@@ -22,4 +28,3 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
-

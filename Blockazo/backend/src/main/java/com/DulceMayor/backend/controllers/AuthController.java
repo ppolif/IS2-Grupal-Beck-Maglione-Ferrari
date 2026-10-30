@@ -1,10 +1,12 @@
 package com.DulceMayor.backend.controllers;
 
+import com.DulceMayor.backend.config.Auth0TokenValidatorService;
 import com.DulceMayor.backend.config.UsuarioPrincipal;
 import com.DulceMayor.backend.dtos.AuthResponse;
 import com.DulceMayor.backend.dtos.CambiarClaveRequest;
 import com.DulceMayor.backend.dtos.LoginRequest;
 import com.DulceMayor.backend.dtos.PerfilResponse;
+import com.DulceMayor.backend.dtos.SocialLoginRequest;
 import com.DulceMayor.backend.dtos.persona.RegistroMinoristaRequest;
 import com.DulceMayor.backend.services.UsuarioService;
 import com.DulceMayor.backend.services.persona.MinoristaService;
@@ -30,20 +32,33 @@ public class AuthController {
     private final UsuarioService usuarioService;
     private final PersonaService personaService;
     private final MinoristaService minoristaService;
+    private final Auth0TokenValidatorService auth0TokenValidatorService;
 
     public AuthController(
             UsuarioService usuarioService,
             PersonaService personaService,
-            MinoristaService minoristaService) {
+            MinoristaService minoristaService,
+            Auth0TokenValidatorService auth0TokenValidatorService) {
         this.usuarioService = usuarioService;
-        ///Averiguar si el unico uso de personaService se puede reemlpazar por usuarioService
         this.personaService = personaService;
         this.minoristaService = minoristaService;
+        this.auth0TokenValidatorService = auth0TokenValidatorService;
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(usuarioService.login(request));
+    }
+
+    @PostMapping("/social")
+    public ResponseEntity<AuthResponse> loginSocial(@Valid @RequestBody SocialLoginRequest request) {
+        Auth0TokenValidatorService.Auth0UserInfo userInfo = auth0TokenValidatorService.validarYExtraerUsuario(request.token());
+        AuthResponse response = minoristaService.autenticarORegistrarSocial(
+                userInfo.email(),
+                userInfo.nombre(),
+                userInfo.apellido()
+        );
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/registro")
@@ -60,8 +75,6 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-
-    /// obtenerPerfil se podria llamar con usuario service
     @GetMapping("/perfil")
     public ResponseEntity<PerfilResponse> perfil(
             @AuthenticationPrincipal UsuarioPrincipal principal) {

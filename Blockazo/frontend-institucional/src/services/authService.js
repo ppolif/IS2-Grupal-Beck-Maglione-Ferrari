@@ -15,6 +15,13 @@ export const authService = {
     });
   },
 
+  async loginSocial(token) {
+    return apiFetch('/auth/social', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+
   async obtenerMiPerfil() {
     return apiFetch('/mi-cuenta/perfil', {
       method: 'GET',
@@ -40,5 +47,20 @@ export const authService = {
       method: 'DELETE',
     });
   },
-};
 
+  async obtenerPaises() {
+    return apiFetch('/paises', { method: 'GET' });
+  },
+
+  async obtenerProvincias(paisId) {
+    return apiFetch(`/provincias?paisId=${encodeURIComponent(paisId)}`, { method: 'GET' });
+  },
+
+  async obtenerDepartamentos(provinciaId) {
+    return apiFetch(`/departamentos?provinciaId=${encodeURIComponent(provinciaId)}`, { method: 'GET' });
+  },
+
+  async obtenerLocalidades(departamentoId) {
+    return apiFetch(`/localidades?departamentoId=${encodeURIComponent(departamentoId)}`, { method: 'GET' });
+  },
+};

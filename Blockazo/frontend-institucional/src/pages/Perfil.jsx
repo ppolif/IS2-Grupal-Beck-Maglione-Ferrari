@@ -21,11 +21,9 @@ export default function Perfil() {
   const [datosForm, setDatosForm] = useState({
     nombre: '',
     apellido: '',
-    tipoDocumento: 'DNI',
     numeroDocumento: '',
     fechaNacimiento: '',
     email: '',
-    telefono: '',
     calle: '',
     numero: '',
   });
@@ -48,18 +46,14 @@ export default function Perfil() {
   // Inicializar formulario de datos al cargar el perfil
   useEffect(() => {
     if (perfil) {
-      const correoContacto = perfil.contactos?.find((c) => c.medio === 'CORREO')?.email;
-      const telContacto = perfil.contactos?.find((c) => c.medio === 'TELEFONICO')?.telefono;
       const dirPrincipal = perfil.direcciones?.[0];
 
       setDatosForm({
         nombre: perfil.nombre || '',
         apellido: perfil.apellido || '',
-        tipoDocumento: perfil.tipoDocumento || 'DNI',
         numeroDocumento: perfil.numeroDocumento || '',
         fechaNacimiento: perfil.fechaNacimiento || '',
-        email: usuario?.nombreUsuario || correoContacto || '',
-        telefono: telContacto || '',
+        email: usuario?.nombreUsuario || '',
         calle: dirPrincipal?.calle || '',
         numero: dirPrincipal?.numero || dirPrincipal?.numeracion || '',
       });
@@ -80,11 +74,9 @@ export default function Perfil() {
       const resp = await authService.actualizarMiPerfil({
         nombre: datosForm.nombre.trim(),
         apellido: datosForm.apellido.trim(),
-        tipoDocumento: datosForm.tipoDocumento,
         numeroDocumento: datosForm.numeroDocumento.trim(),
         fechaNacimiento: datosForm.fechaNacimiento || null,
         email: datosForm.email.trim().toLowerCase(),
-        telefono: datosForm.telefono.trim() || null,
         calle: datosForm.calle.trim() || null,
         numero: datosForm.numero.trim() || null,
       });
@@ -193,7 +185,7 @@ export default function Perfil() {
             </div>
           </div>
           <p className="text-[12px] text-[#6b6b80] pt-1">
-            {perfil?.tipoDocumento || 'Doc'}: {perfil?.numeroDocumento || 'Sin registrar'}
+            Doc: {perfil?.numeroDocumento || 'Sin registrar'}
           </p>
         </div>
       </div>
@@ -261,7 +253,7 @@ export default function Perfil() {
               <div className="p-4 rounded-[14px] bg-[#f8f9fc] border border-[#ececf2]">
                 <span className="text-[10px] uppercase font-bold text-[#6b6b80] block mb-1">Documento de Identidad</span>
                 <strong className="text-[#2b2b3a] text-[13px] font-semibold">
-                  {perfil?.tipoDocumento} {perfil?.numeroDocumento}
+                  {perfil?.numeroDocumento || 'Sin registrar'}
                 </strong>
               </div>
               <div className="p-4 rounded-[14px] bg-[#f8f9fc] border border-[#ececf2]">
@@ -269,12 +261,6 @@ export default function Perfil() {
                   Correo Electrónico (Mail de Ingreso)
                 </span>
                 <strong className="text-[#2b2b3a] text-[13px] font-semibold">{emailLogin}</strong>
-              </div>
-              <div className="p-4 rounded-[14px] bg-[#f8f9fc] border border-[#ececf2]">
-                <span className="text-[10px] uppercase font-bold text-[#6b6b80] block mb-1">Teléfono Móvil</span>
-                <strong className="text-[#2b2b3a] text-[13px] font-semibold">
-                  {datosForm.telefono || 'Sin teléfono informado'}
-                </strong>
               </div>
               <div className="p-4 rounded-[14px] bg-[#f8f9fc] border border-[#ececf2]">
                 <span className="text-[10px] uppercase font-bold text-[#6b6b80] block mb-1">Dirección</span>
@@ -324,73 +310,39 @@ export default function Perfil() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label htmlFor="edit-tipoDoc" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
-                    Tipo Doc. *
-                  </label>
-                  <select
-                    id="edit-tipoDoc"
-                    value={datosForm.tipoDocumento}
-                    onChange={(e) => setDatosForm({ ...datosForm, tipoDocumento: e.target.value })}
-                    disabled={guardandoDatos}
-                    className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
-                  >
-                    <option value="DNI">DNI</option>
-                    <option value="CUIT">CUIT</option>
-                    <option value="PASAPORTE">Pasaporte</option>
-                  </select>
-                </div>
-                <div className="sm:col-span-2">
-                  <label htmlFor="edit-numDoc" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
-                    Número de Documento *
-                  </label>
-                  <input
-                    type="text"
-                    id="edit-numDoc"
-                    required
-                    value={datosForm.numeroDocumento}
-                    onChange={(e) => setDatosForm({ ...datosForm, numeroDocumento: e.target.value })}
-                    disabled={guardandoDatos}
-                    className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
-                  />
-                </div>
+              <div>
+                <label htmlFor="edit-numDoc" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
+                  Número de Documento *
+                </label>
+                <input
+                  type="text"
+                  id="edit-numDoc"
+                  required
+                  value={datosForm.numeroDocumento}
+                  onChange={(e) => setDatosForm({ ...datosForm, numeroDocumento: e.target.value })}
+                  disabled={guardandoDatos}
+                  className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="edit-email" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
-                    Correo Electrónico (Mail de Ingreso) *
-                  </label>
-                  <input
-                    type="email"
-                    id="edit-email"
-                    required
-                    value={datosForm.email}
-                    onChange={(e) => setDatosForm({ ...datosForm, email: e.target.value })}
-                    autoComplete="username"
-                    spellCheck={false}
-                    disabled={guardandoDatos}
-                    className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
-                  />
-                  <span className="text-[10px] text-[#6b6b80] mt-1 block">
-                    Al modificar este mail, se actualizará tu usuario para iniciar sesión.
-                  </span>
-                </div>
-                <div>
-                  <label htmlFor="edit-tel" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
-                    Teléfono Móvil
-                  </label>
-                  <input
-                    type="tel"
-                    id="edit-tel"
-                    value={datosForm.telefono}
-                    onChange={(e) => setDatosForm({ ...datosForm, telefono: e.target.value })}
-                    placeholder="261 456 7890"
-                    disabled={guardandoDatos}
-                    className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
-                  />
-                </div>
+              <div>
+                <label htmlFor="edit-email" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
+                  Correo Electrónico (Mail de Ingreso) *
+                </label>
+                <input
+                  type="email"
+                  id="edit-email"
+                  required
+                  value={datosForm.email}
+                  onChange={(e) => setDatosForm({ ...datosForm, email: e.target.value })}
+                  autoComplete="username"
+                  spellCheck={false}
+                  disabled={guardandoDatos}
+                  className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                />
+                <span className="text-[10px] text-[#6b6b80] mt-1 block">
+                  Al modificar este mail, se actualizará tu usuario para iniciar sesión.
+                </span>
               </div>
 
               {/* Dirección: Calle y Número */}

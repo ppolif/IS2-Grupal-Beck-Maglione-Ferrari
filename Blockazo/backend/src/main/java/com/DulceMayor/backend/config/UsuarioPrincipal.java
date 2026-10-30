@@ -1,6 +1,5 @@
 package com.DulceMayor.backend.config;
 
-import com.DulceMayor.backend.entities.RolUsuario;
 import com.DulceMayor.backend.entities.Usuario;
 import java.util.Collection;
 import java.util.List;
@@ -16,7 +15,6 @@ public class UsuarioPrincipal implements UserDetails {
     private final String id;
     private final String nombreUsuario;
     private final String clave;
-    private final RolUsuario rol;
     private final boolean claveTemporal;
     private final boolean eliminado;
 
@@ -24,7 +22,6 @@ public class UsuarioPrincipal implements UserDetails {
         this.id = usuario.getId();
         this.nombreUsuario = usuario.getNombreUsuario();
         this.clave = usuario.getClave();
-        this.rol = usuario.getRol();
         this.claveTemporal = usuario.isClaveTemporal();
         this.eliminado = usuario.isEliminado();
     }
@@ -33,17 +30,13 @@ public class UsuarioPrincipal implements UserDetails {
         return id;
     }
 
-    public RolUsuario getRol() {
-        return rol;
-    }
-
     public boolean isClaveTemporal() {
         return claveTemporal;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + rol.name()));
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
     @Override
@@ -58,7 +51,7 @@ public class UsuarioPrincipal implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return !eliminado;
+        return true;
     }
 
     @Override
@@ -76,4 +69,3 @@ public class UsuarioPrincipal implements UserDetails {
         return !eliminado;
     }
 }
-

@@ -40,10 +40,6 @@ public class Usuario extends EntidadBase {
     @Column(nullable = false)
     private String clave;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
-    private RolUsuario rol;
-
     @Builder.Default
     @Column(name = "clave_temporal", nullable = false)
     private boolean claveTemporal = true;

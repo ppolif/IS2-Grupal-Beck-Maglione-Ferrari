@@ -6,7 +6,6 @@ import com.DulceMayor.backend.dtos.PerfilResponse;
 import com.DulceMayor.backend.dtos.UsuarioResponse;
 import com.DulceMayor.backend.entities.Usuario;
 import com.DulceMayor.backend.entities.persona.Persona;
-import com.DulceMayor.backend.entities.persona.TipoDocumento;
 import com.DulceMayor.backend.repositories.persona.PersonaRepository;
 import com.DulceMayor.backend.services.UsuarioService;
 import java.util.Optional;
@@ -29,22 +28,21 @@ public class PersonaService {
     }
 
     @Transactional(readOnly = true)
-    public void validarDocumentoUnico(TipoDocumento tipoDocumento, String numeroDocumento) {
-        if (personaRepository.existsByTipoDocumentoAndNumeroDocumentoAndEliminadoFalse(tipoDocumento, numeroDocumento)) {
+    public void validarDocumentoUnico(String numeroDocumento) {
+        if (personaRepository.existsByNumeroDocumentoAndEliminadoFalse(numeroDocumento)) {
             throw new ConflictoException(
                     "DUPLICADO",
-                    "Ya existe una persona registrada con " + tipoDocumento + " " + numeroDocumento
+                    "Ya existe una persona registrada con el documento " + numeroDocumento
             );
         }
     }
 
     @Transactional(readOnly = true)
-    public void validarDocumentoUnicoExcluyendoId(TipoDocumento tipoDocumento, String numeroDocumento, String id) {
-        if (personaRepository.existsByTipoDocumentoAndNumeroDocumentoAndIdNotAndEliminadoFalse(
-                tipoDocumento, numeroDocumento, id)) {
+    public void validarDocumentoUnicoExcluyendoId(String numeroDocumento, String id) {
+        if (personaRepository.existsByNumeroDocumentoAndIdNotAndEliminadoFalse(numeroDocumento, id)) {
             throw new ConflictoException(
                     "DUPLICADO",
-                    "Ya existe otra persona registrada con " + tipoDocumento + " " + numeroDocumento
+                    "Ya existe otra persona registrada con el documento " + numeroDocumento
             );
         }
     }
@@ -79,4 +77,3 @@ public class PersonaService {
         return new PerfilResponse(usuarioResponse, null, null, null);
     }
 }
-

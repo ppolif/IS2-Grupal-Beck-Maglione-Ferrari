@@ -9,23 +9,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Controlador exclusivo de pruebas para validar autorización por roles (@PreAuthorize),
+ * Controlador exclusivo de pruebas para validar autorización (@PreAuthorize),
  * rutas públicas y respuestas uniformes del manejador global de errores.
  */
 @RestController
 public class SeguridadTestController {
-
-    @GetMapping("/test/solo-jefe")
-    @PreAuthorize("hasRole('JEFE')")
-    public ResponseEntity<Map<String, String>> soloJefe() {
-        return ResponseEntity.ok(Map.of("acceso", "JEFE"));
-    }
-
-    @GetMapping("/test/jefe-o-admin")
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
-    public ResponseEntity<Map<String, String>> jefeOAdministrativo() {
-        return ResponseEntity.ok(Map.of("acceso", "JEFE_O_ADMINISTRATIVO"));
-    }
 
     @GetMapping("/test/autenticado")
     @PreAuthorize("isAuthenticated()")
@@ -53,4 +41,3 @@ public class SeguridadTestController {
         return ResponseEntity.ok(Map.of("publico", "ok"));
     }
 }
-

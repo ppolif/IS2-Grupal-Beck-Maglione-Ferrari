@@ -41,7 +41,7 @@ public class ProvinciaController extends BaseController<ProvinciaService, Provin
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ProvinciaResponse> crearProvincia(@Valid @RequestBody ProvinciaRequest request) {
         return ejecutarCrear(request);
     }
@@ -52,7 +52,7 @@ public class ProvinciaController extends BaseController<ProvinciaService, Provin
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ProvinciaResponse> modificarProvincia(
             @PathVariable String id,
             @Valid @RequestBody ProvinciaRequest request) {
@@ -60,7 +60,7 @@ public class ProvinciaController extends BaseController<ProvinciaService, Provin
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> eliminarProvincia(@PathVariable String id) {
         return ejecutarEliminar(id);
     }

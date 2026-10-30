@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.DulceMayor.backend.dtos.persona.ActualizarPerfilMinoristaRequest;
 import com.DulceMayor.backend.dtos.persona.RegistroMinoristaRequest;
-import com.DulceMayor.backend.entities.persona.TipoDocumento;
 import com.DulceMayor.backend.repositories.UsuarioRepository;
 import com.DulceMayor.backend.repositories.persona.MinoristaRepository;
 import com.DulceMayor.backend.repositories.persona.PersonaRepository;
@@ -70,7 +69,6 @@ class MinoristaControllerTest {
         RegistroMinoristaRequest regReq = new RegistroMinoristaRequest(
                 "Laura",
                 "Fernandez",
-                TipoDocumento.DNI,
                 "37888999",
                 "laura@portal.com",
                 "ClaveLaura123",
@@ -105,10 +103,8 @@ class MinoristaControllerTest {
                 "Laura Beatriz",
                 "Fernandez",
                 null,
-                TipoDocumento.DNI,
                 "37888999",
                 "laura.nueva@portal.com",
-                "2615559988",
                 "San Martin",
                 "123"
         );
@@ -131,4 +127,3 @@ class MinoristaControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 }
-

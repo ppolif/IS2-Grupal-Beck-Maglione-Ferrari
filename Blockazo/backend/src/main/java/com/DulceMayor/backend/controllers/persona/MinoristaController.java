@@ -38,7 +38,7 @@ public class MinoristaController {
     }
 
     @GetMapping({"/minoristas", "/api/v1/minoristas"})
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO', 'PREVENTISTA')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MinoristaPage> listarMinorista(
             @RequestParam(required = false) String numeroDocumento,
             @RequestParam(required = false) String q,
@@ -47,20 +47,20 @@ public class MinoristaController {
     }
 
     @PostMapping({"/minoristas", "/api/v1/minoristas"})
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO', 'PREVENTISTA')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MinoristaResponse> crearMinorista(@Valid @RequestBody MinoristaRequest request) {
         MinoristaResponse creado = minoristaService.crear(request);
         return ResponseEntity.created(URI.create("/minoristas/" + creado.id())).body(creado);
     }
 
     @GetMapping({"/minoristas/{id}", "/api/v1/minoristas/{id}"})
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO', 'PREVENTISTA')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MinoristaResponse> buscarMinorista(@PathVariable String id) {
         return ResponseEntity.ok(minoristaService.buscar(id));
     }
 
     @PutMapping({"/minoristas/{id}", "/api/v1/minoristas/{id}"})
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO', 'PREVENTISTA')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MinoristaResponse> modificarMinorista(
             @PathVariable String id,
             @Valid @RequestBody MinoristaRequest request) {
@@ -68,21 +68,21 @@ public class MinoristaController {
     }
 
     @DeleteMapping({"/minoristas/{id}", "/api/v1/minoristas/{id}"})
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
+    @PreAuthorize("isAuthenticated()")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void eliminarMinorista(@PathVariable String id) {
         minoristaService.eliminar(id);
     }
 
     @GetMapping({"/mi-cuenta/perfil", "/api/v1/mi-cuenta/perfil"})
-    @PreAuthorize("hasRole('MINORISTA')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MinoristaResponse> obtenerMiPerfil(
             @AuthenticationPrincipal UsuarioPrincipal principal) {
         return ResponseEntity.ok(minoristaService.obtenerMiPerfil(principal.getId()));
     }
 
     @PutMapping({"/mi-cuenta/perfil", "/api/v1/mi-cuenta/perfil"})
-    @PreAuthorize("hasRole('MINORISTA')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MinoristaResponse> actualizarMiPerfil(
             @AuthenticationPrincipal UsuarioPrincipal principal,
             @Valid @RequestBody ActualizarPerfilMinoristaRequest request) {
@@ -90,11 +90,10 @@ public class MinoristaController {
     }
 
     @DeleteMapping({"/mi-cuenta/perfil", "/api/v1/mi-cuenta/perfil"})
-    @PreAuthorize("hasRole('MINORISTA')")
+    @PreAuthorize("isAuthenticated()")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void eliminarMiCuenta(
             @AuthenticationPrincipal UsuarioPrincipal principal) {
         minoristaService.eliminarMiCuenta(principal.getId());
     }
 }
-

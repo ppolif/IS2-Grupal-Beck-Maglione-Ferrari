@@ -36,7 +36,7 @@ public class PaisController extends BaseController<PaisService, PaisRequest, Pai
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<PaisResponse> crearPais(@Valid @RequestBody PaisRequest request) {
         return ejecutarCrear(request);
     }
@@ -47,7 +47,7 @@ public class PaisController extends BaseController<PaisService, PaisRequest, Pai
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<PaisResponse> modificarPais(
             @PathVariable String id,
             @Valid @RequestBody PaisRequest request) {
@@ -55,7 +55,7 @@ public class PaisController extends BaseController<PaisService, PaisRequest, Pai
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> eliminarPais(@PathVariable String id) {
         return ejecutarEliminar(id);
     }

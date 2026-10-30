@@ -1,9 +1,7 @@
 package com.DulceMayor.backend.dtos.persona;
 
-import com.DulceMayor.backend.entities.persona.TipoDocumento;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
@@ -24,9 +22,6 @@ public record ActualizarPerfilMinoristaRequest(
         @Past(message = "La fecha de nacimiento debe ser anterior a la actual")
         LocalDate fechaNacimiento,
 
-        @NotNull(message = "El tipo de documento es obligatorio")
-        TipoDocumento tipoDocumento,
-
         @NotBlank(message = "El número de documento es obligatorio")
         @Size(max = 30, message = "El número de documento no puede superar los 30 caracteres")
         String numeroDocumento,
@@ -35,7 +30,6 @@ public record ActualizarPerfilMinoristaRequest(
         @Email(message = "El formato del correo electrónico no es válido")
         @Size(max = 150, message = "El correo no puede superar los 150 caracteres")
         String email,
-
 
         @Size(max = 150, message = "La calle no puede superar los 150 caracteres")
         String calle,
@@ -47,11 +41,8 @@ public record ActualizarPerfilMinoristaRequest(
             String nombre,
             String apellido,
             LocalDate fechaNacimiento,
-            TipoDocumento tipoDocumento,
             String numeroDocumento,
-            String email,
-            String telefono) {
-        this(nombre, apellido, fechaNacimiento, tipoDocumento, numeroDocumento, email, telefono, null, null);
+            String email) {
+        this(nombre, apellido, fechaNacimiento, numeroDocumento, email, null, null);
     }
 }
-

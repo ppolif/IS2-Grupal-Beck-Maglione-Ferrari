@@ -1,7 +1,6 @@
 package com.DulceMayor.backend.repositories.persona;
 
 import com.DulceMayor.backend.entities.persona.Minorista;
-import com.DulceMayor.backend.entities.persona.TipoDocumento;
 import com.DulceMayor.backend.repositories.BaseRepository;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -20,15 +19,11 @@ public interface MinoristaRepository extends BaseRepository<Minorista> {
 
     Optional<Minorista> findByNumeroDocumentoAndEliminadoFalse(String numeroDocumento);
 
-    Optional<Minorista> findByTipoDocumentoAndNumeroDocumentoAndEliminadoFalse(
-            TipoDocumento tipoDocumento, String numeroDocumento);
-
     @Query("""
-        SELECT DISTINCT m FROM Minorista m
-        JOIN m.contactos c
+        SELECT m FROM Minorista m
         WHERE m.eliminado = false
-          AND TYPE(c) = com.DulceMayor.backend.entities.contacto.ContactoCorreoElectronico
-          AND LOWER(TREAT(c AS com.DulceMayor.backend.entities.contacto.ContactoCorreoElectronico).email) = LOWER(:email)
+          AND m.usuario IS NOT NULL
+          AND LOWER(m.usuario.nombreUsuario) = LOWER(:email)
     """)
     Optional<Minorista> findActivoByEmail(@Param("email") String email);
 
@@ -48,4 +43,3 @@ public interface MinoristaRepository extends BaseRepository<Minorista> {
             @Param("q") String q,
             Pageable pageable);
 }
-

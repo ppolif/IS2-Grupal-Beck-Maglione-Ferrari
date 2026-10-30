@@ -2,13 +2,10 @@ package com.DulceMayor.backend.entities.persona;
 
 import com.DulceMayor.backend.entities.EntidadBase;
 import com.DulceMayor.backend.entities.Usuario;
-import com.DulceMayor.backend.entities.contacto.Contacto;
 import com.DulceMayor.backend.entities.direccion.Direccion;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
@@ -28,8 +25,7 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 /**
- * Entidad base abstracta que representa a una persona física en el sistema,
- * ya sea un cliente {@link Minorista} o un {@link Empleado}.
+ * Entidad base abstracta que representa a una persona física en el sistema.
  * Aplica estrategia de herencia JPA {@link InheritanceType#JOINED}.
  */
 @Entity
@@ -40,7 +36,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@ToString(callSuper = true, exclude = {"usuario", "direcciones", "contactos"})
+@ToString(callSuper = true, exclude = {"usuario", "direcciones"})
 public abstract class Persona extends EntidadBase {
 
     @Column(nullable = false, length = 100)
@@ -51,10 +47,6 @@ public abstract class Persona extends EntidadBase {
 
     @Column(name = "fecha_nacimiento")
     private LocalDate fechaNacimiento;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_documento", nullable = false, length = 20)
-    private TipoDocumento tipoDocumento;
 
     @Column(name = "numero_documento", nullable = false, length = 30)
     private String numeroDocumento;
@@ -67,10 +59,4 @@ public abstract class Persona extends EntidadBase {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "persona_id")
     private List<Direccion> direcciones = new ArrayList<>();
-
-    @Builder.Default
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "persona_id")
-    private List<Contacto> contactos = new ArrayList<>();
 }
-

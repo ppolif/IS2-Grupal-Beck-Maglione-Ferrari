@@ -1,15 +1,13 @@
 package com.DulceMayor.backend.dtos.persona;
 
-import com.DulceMayor.backend.entities.persona.TipoDocumento;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 /**
- * DTO de entrada para el auto-registro público de un cliente minorista en el portal
+ * DTO de entrada para el auto-registro público de un usuario en el portal
  * vía {@code POST /auth/registro}.
  */
 public record RegistroMinoristaRequest(
@@ -20,9 +18,6 @@ public record RegistroMinoristaRequest(
         @NotBlank(message = "El apellido es obligatorio")
         @Size(max = 100, message = "El apellido no puede superar los 100 caracteres")
         String apellido,
-
-        @NotNull(message = "El tipo de documento es obligatorio")
-        TipoDocumento tipoDocumento,
 
         @NotBlank(message = "El número de documento es obligatorio")
         @Size(max = 30, message = "El número de documento no puede superar los 30 caracteres")
@@ -43,36 +38,21 @@ public record RegistroMinoristaRequest(
         @Past(message = "La fecha de nacimiento debe ser anterior a la actual")
         LocalDate fechaNacimiento,
 
-        @Size(max = 30, message = "El teléfono no puede superar los 30 caracteres")
-        String telefono,
-
         @Size(max = 150, message = "La calle no puede superar los 150 caracteres")
         String calle,
 
         @Size(max = 50, message = "El número no puede superar los 50 caracteres")
-        String numero
+        String numero,
+
+        String localidadId
 ) {
     public RegistroMinoristaRequest(
             String nombre,
             String apellido,
-            TipoDocumento tipoDocumento,
             String numeroDocumento,
             String email,
             String clave,
             String nombreComercio) {
-        this(nombre, apellido, tipoDocumento, numeroDocumento, email, clave, nombreComercio, null, null, null, null);
-    }
-
-    public RegistroMinoristaRequest(
-            String nombre,
-            String apellido,
-            TipoDocumento tipoDocumento,
-            String numeroDocumento,
-            String email,
-            String clave,
-            String nombreComercio,
-            LocalDate fechaNacimiento,
-            String telefono) {
-        this(nombre, apellido, tipoDocumento, numeroDocumento, email, clave, nombreComercio, fechaNacimiento, telefono, null, null);
+        this(nombre, apellido, numeroDocumento, email, clave, nombreComercio, null, null, null, null);
     }
 }
