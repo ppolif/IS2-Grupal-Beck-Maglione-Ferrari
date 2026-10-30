@@ -41,13 +41,9 @@ public class DireccionService extends BaseService<Direccion, DireccionRequest, D
         }
         return new DireccionRequest(
                 request.calle() != null ? request.calle().trim() : null,
-                request.numeracion() != null ? request.numeracion().trim() : null,
-                request.barrio() != null ? request.barrio().trim() : null,
+                request.numero() != null ? request.numero().trim() : null,
                 request.manzanaPiso() != null ? request.manzanaPiso().trim() : null,
                 request.casaDepartamento() != null ? request.casaDepartamento().trim() : null,
-                request.referencia() != null ? request.referencia().trim() : null,
-                request.latitud(),
-                request.longitud(),
                 request.localidadId() != null ? request.localidadId().trim() : null
         );
     }
@@ -64,8 +60,12 @@ public class DireccionService extends BaseService<Direccion, DireccionRequest, D
 
     @Override
     protected void antesDePersistir(Direccion entidad, DireccionRequest request) {
-        Localidad localidad = localidadService.obtenerEntidad(request.localidadId());
-        entidad.setLocalidad(localidad);
+        if (request.localidadId() != null && !request.localidadId().isBlank()) {
+            Localidad localidad = localidadService.obtenerEntidad(request.localidadId());
+            entidad.setLocalidad(localidad);
+        } else {
+            entidad.setLocalidad(null);
+        }
     }
 
     /**
@@ -78,8 +78,10 @@ public class DireccionService extends BaseService<Direccion, DireccionRequest, D
         DireccionRequest normalizado = prepararRequest(request);
         validarCrear(normalizado);
         Direccion entidad = direccionMapper.aEntidad(normalizado);
-        Localidad localidad = localidadService.obtenerEntidad(normalizado.localidadId());
-        entidad.setLocalidad(localidad);
+        if (normalizado.localidadId() != null && !normalizado.localidadId().isBlank()) {
+            Localidad localidad = localidadService.obtenerEntidad(normalizado.localidadId());
+            entidad.setLocalidad(localidad);
+        }
         return entidad;
     }
 
@@ -93,8 +95,12 @@ public class DireccionService extends BaseService<Direccion, DireccionRequest, D
         DireccionRequest normalizado = prepararRequest(request);
         validarModificar(entidad.getId(), normalizado, entidad);
         direccionMapper.actualizarEntidad(normalizado, entidad);
-        Localidad localidad = localidadService.obtenerEntidad(normalizado.localidadId());
-        entidad.setLocalidad(localidad);
+        if (normalizado.localidadId() != null && !normalizado.localidadId().isBlank()) {
+            Localidad localidad = localidadService.obtenerEntidad(normalizado.localidadId());
+            entidad.setLocalidad(localidad);
+        } else {
+            entidad.setLocalidad(null);
+        }
     }
 
     private void validarFormato(DireccionRequest request) {
@@ -104,17 +110,8 @@ public class DireccionService extends BaseService<Direccion, DireccionRequest, D
         if (request.calle() == null || request.calle().isBlank()) {
             throw new ValidacionException("La calle es obligatoria");
         }
-        if (request.numeracion() == null || request.numeracion().isBlank()) {
-            throw new ValidacionException("La numeración es obligatoria");
-        }
-        if (request.localidadId() == null || request.localidadId().isBlank()) {
-            throw new ValidacionException("El id de la localidad es obligatorio");
-        }
-        if (request.latitud() != null && (request.latitud() < -90.0 || request.latitud() > 90.0)) {
-            throw new ValidacionException("La latitud debe estar comprendida entre -90 y 90");
-        }
-        if (request.longitud() != null && (request.longitud() < -180.0 || request.longitud() > 180.0)) {
-            throw new ValidacionException("La longitud debe estar comprendida entre -180 y 180");
+        if (request.numero() == null || request.numero().isBlank()) {
+            throw new ValidacionException("El número de dirección es obligatorio");
         }
     }
 }

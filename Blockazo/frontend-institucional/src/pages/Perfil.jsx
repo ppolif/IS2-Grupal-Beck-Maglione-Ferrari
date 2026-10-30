@@ -16,7 +16,7 @@ export default function Perfil() {
   );
   const [toastMessage, setToastMessage] = useState('');
 
-  // Estados de edición de datos personales (incluye email de ingreso)
+  // Estados de edición de datos personales (incluye email de ingreso y dirección)
   const [isEditingDatos, setIsEditingDatos] = useState(false);
   const [datosForm, setDatosForm] = useState({
     nombre: '',
@@ -26,6 +26,8 @@ export default function Perfil() {
     fechaNacimiento: '',
     email: '',
     telefono: '',
+    calle: '',
+    numero: '',
   });
   const [guardandoDatos, setGuardandoDatos] = useState(false);
   const [errorDatos, setErrorDatos] = useState('');
@@ -48,6 +50,7 @@ export default function Perfil() {
     if (perfil) {
       const correoContacto = perfil.contactos?.find((c) => c.medio === 'CORREO')?.email;
       const telContacto = perfil.contactos?.find((c) => c.medio === 'TELEFONICO')?.telefono;
+      const dirPrincipal = perfil.direcciones?.[0];
 
       setDatosForm({
         nombre: perfil.nombre || '',
@@ -57,6 +60,8 @@ export default function Perfil() {
         fechaNacimiento: perfil.fechaNacimiento || '',
         email: usuario?.nombreUsuario || correoContacto || '',
         telefono: telContacto || '',
+        calle: dirPrincipal?.calle || '',
+        numero: dirPrincipal?.numero || dirPrincipal?.numeracion || '',
       });
     }
   }, [perfil, usuario]);
@@ -80,6 +85,8 @@ export default function Perfil() {
         fechaNacimiento: datosForm.fechaNacimiento || null,
         email: datosForm.email.trim().toLowerCase(),
         telefono: datosForm.telefono.trim() || null,
+        calle: datosForm.calle.trim() || null,
+        numero: datosForm.numero.trim() || null,
       });
 
       sincronizarPerfilActualizado(resp, datosForm.email.trim().toLowerCase());
@@ -173,18 +180,6 @@ export default function Perfil() {
         </p>
       </div>
 
-      {debeCambiarClave && (
-        <div className="p-4 rounded-[16px] bg-[#fff6e0] border border-[#ffd98a] text-[#8a6519] text-[12px] flex items-center gap-3">
-          <span className="text-lg font-bold">⚠️</span>
-          <div>
-            <p className="font-bold">Debe cambiar su contraseña temporal</p>
-            <p className="text-[11px] opacity-90">
-              Por motivos de seguridad, debe actualizar su clave en la pestaña "Seguridad y Clave".
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Profile Overview Card */}
       <div className="bg-white rounded-[22px] p-6 sm:p-8 border border-[#ececf2] shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#ffcef3] to-[#a1eafb] text-[#2b2b3a] font-bold text-2xl flex items-center justify-center shadow-md shrink-0">
@@ -196,12 +191,9 @@ export default function Perfil() {
               <h2 className="text-2xl font-bold text-[#2b2b3a]">{nombreCompleto}</h2>
               <p className="text-[13px] font-semibold text-[#e86bc4]">{emailLogin}</p>
             </div>
-            <span className="inline-block bg-[#dff8e9] text-[#39855b] text-[11px] font-semibold px-3 py-1 rounded-full self-center sm:self-auto">
-              Cliente Mayorista Activo
-            </span>
           </div>
           <p className="text-[12px] text-[#6b6b80] pt-1">
-            {perfil?.tipoDocumento || 'Doc'}: {perfil?.numeroDocumento || 'Sin registrar'} · Zona Mendoza
+            {perfil?.tipoDocumento || 'Doc'}: {perfil?.numeroDocumento || 'Sin registrar'}
           </p>
         </div>
       </div>
@@ -235,7 +227,7 @@ export default function Perfil() {
         <div className="bg-white rounded-[22px] p-6 sm:p-8 border border-[#ececf2] shadow-sm space-y-6">
           <div className="flex justify-between items-center pb-2 border-b border-[#f0f0f4]">
             <div>
-              <h3 className="text-[16px] font-bold text-[#2b2b3a]">Información del Cliente Minorista</h3>
+              <h3 className="text-[16px] font-bold text-[#2b2b3a]">Información del Cliente</h3>
               <p className="text-[11px] text-[#6b6b80]">
                 Podés modificar tus datos personales y tu correo electrónico de ingreso.
               </p>
@@ -282,6 +274,14 @@ export default function Perfil() {
                 <span className="text-[10px] uppercase font-bold text-[#6b6b80] block mb-1">Teléfono Móvil</span>
                 <strong className="text-[#2b2b3a] text-[13px] font-semibold">
                   {datosForm.telefono || 'Sin teléfono informado'}
+                </strong>
+              </div>
+              <div className="p-4 rounded-[14px] bg-[#f8f9fc] border border-[#ececf2]">
+                <span className="text-[10px] uppercase font-bold text-[#6b6b80] block mb-1">Dirección</span>
+                <strong className="text-[#2b2b3a] text-[13px] font-semibold">
+                  {datosForm.calle
+                    ? `${datosForm.calle} ${datosForm.numero || ''}`.trim()
+                    : 'Sin dirección informada'}
                 </strong>
               </div>
               <div className="p-4 rounded-[14px] bg-[#f8f9fc] border border-[#ececf2]">
@@ -387,6 +387,38 @@ export default function Perfil() {
                     value={datosForm.telefono}
                     onChange={(e) => setDatosForm({ ...datosForm, telefono: e.target.value })}
                     placeholder="261 456 7890"
+                    disabled={guardandoDatos}
+                    className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                  />
+                </div>
+              </div>
+
+              {/* Dirección: Calle y Número */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="sm:col-span-2">
+                  <label htmlFor="edit-calle" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
+                    Calle
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-calle"
+                    value={datosForm.calle}
+                    onChange={(e) => setDatosForm({ ...datosForm, calle: e.target.value })}
+                    placeholder="Av. San Martín"
+                    disabled={guardandoDatos}
+                    className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="edit-numero" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
+                    Número
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-numero"
+                    value={datosForm.numero}
+                    onChange={(e) => setDatosForm({ ...datosForm, numero: e.target.value })}
+                    placeholder="1234"
                     disabled={guardandoDatos}
                     className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
                   />

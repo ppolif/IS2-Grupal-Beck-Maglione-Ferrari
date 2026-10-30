@@ -15,7 +15,7 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 /**
- * Entidad de dominio que representa una dirección física geolocalizada asociada a una {@link Localidad}.
+ * Entidad de dominio que representa una dirección física asociada a una {@link Localidad}.
  * Hereda id (UUID) y eliminado (borrado lógico) de {@link EntidadBase}.
  */
 @Entity
@@ -31,11 +31,8 @@ public class Direccion extends EntidadBase {
     @Column(nullable = false, length = 150)
     private String calle;
 
-    @Column(nullable = false, length = 50)
-    private String numeracion;
-
-    @Column(length = 100)
-    private String barrio;
+    @Column(name = "numero", nullable = false, length = 50)
+    private String numero;
 
     @Column(name = "manzana_piso", length = 50)
     private String manzanaPiso;
@@ -43,17 +40,8 @@ public class Direccion extends EntidadBase {
     @Column(name = "casa_departamento", length = 50)
     private String casaDepartamento;
 
-    @Column(length = 255)
-    private String referencia;
-
-    @Column
-    private Double latitud;
-
-    @Column
-    private Double longitud;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "localidad_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "localidad_id")
     private Localidad localidad;
 }
 

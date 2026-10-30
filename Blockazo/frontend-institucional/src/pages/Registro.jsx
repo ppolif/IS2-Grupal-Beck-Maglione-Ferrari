@@ -13,6 +13,8 @@ export default function Registro() {
     numeroDocumento: '',
     fechaNacimiento: '1995-05-15',
     telefono: '',
+    calle: '',
+    numero: '',
     nombreComercio: '',
     email: '',
     password: '',
@@ -55,6 +57,8 @@ export default function Registro() {
         numeroDocumento: formData.numeroDocumento.trim(),
         fechaNacimiento: formData.fechaNacimiento || null,
         telefono: formData.telefono.trim() || null,
+        calle: formData.calle.trim() || null,
+        numero: formData.numero.trim() || null,
         nombreComercio: formData.nombreComercio.trim() || null,
         email: formData.email.trim().toLowerCase(),
         clave: formData.password,
@@ -83,13 +87,13 @@ export default function Registro() {
             <Logo />
           </div>
           <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#e86bc4]">
-            Portal Clientes Minoristas
+            Registro de comedores de blockazo
           </span>
           <h1 className="text-2xl font-bold text-[#2b2b3a] mt-1">
             Creá tu Cuenta de Usuario
           </h1>
           <p className="text-[12px] text-[#6b6b80] mt-1">
-            Completá tus datos personales para acceder a la plataforma mayorista de Dulce Mayor.
+            Completá tus datos personales para INTENTAR comerte el blockazo.
           </p>
         </div>
 
@@ -140,23 +144,6 @@ export default function Registro() {
 
           {/* Documento y Tipo */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label htmlFor="reg-tipoDoc" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
-                Tipo Doc. *
-              </label>
-              <select
-                id="reg-tipoDoc"
-                name="tipoDocumento"
-                value={formData.tipoDocumento}
-                onChange={handleChange}
-                disabled={loading}
-                className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4] cursor-pointer"
-              >
-                <option value="DNI">DNI</option>
-                <option value="CUIT">CUIT</option>
-                <option value="PASAPORTE">Pasaporte</option>
-              </select>
-            </div>
             <div className="sm:col-span-2">
               <label htmlFor="reg-numDoc" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
                 Número de Documento *
@@ -191,41 +178,41 @@ export default function Registro() {
                 className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
               />
             </div>
-            <div>
-              <label htmlFor="reg-tel" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
-                Teléfono / Celular
+          </div>
+
+          {/* Dirección: Calle y Número */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="sm:col-span-2">
+              <label htmlFor="reg-calle" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
+                Calle
               </label>
               <input
-                type="tel"
-                id="reg-tel"
-                name="telefono"
-                value={formData.telefono}
+                type="text"
+                id="reg-calle"
+                name="calle"
+                value={formData.calle}
                 onChange={handleChange}
-                placeholder="261 456 7890"
-                autoComplete="tel"
+                placeholder="Av. San Martín"
+                disabled={loading}
+                className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+              />
+            </div>
+            <div>
+              <label htmlFor="reg-numero" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
+                Número
+              </label>
+              <input
+                type="text"
+                id="reg-numero"
+                name="numero"
+                value={formData.numero}
+                onChange={handleChange}
+                placeholder="1234"
                 disabled={loading}
                 className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
               />
             </div>
           </div>
-
-          {/* Nombre de Comercio (opcional) */}
-          <div>
-            <label htmlFor="reg-comercio" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
-              Nombre de Fantasía o Comercio (Opcional)
-            </label>
-            <input
-              type="text"
-              id="reg-comercio"
-              name="nombreComercio"
-              value={formData.nombreComercio}
-              onChange={handleChange}
-              placeholder="Ej. Kiosco San Martín"
-              disabled={loading}
-              className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
-            />
-          </div>
-
           {/* Email (Nombre de usuario) */}
           <div>
             <label htmlFor="reg-email" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">

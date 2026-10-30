@@ -13,6 +13,7 @@ import com.DulceMayor.backend.dtos.persona.MinoristaResponse;
 import com.DulceMayor.backend.dtos.persona.RegistroMinoristaRequest;
 import com.DulceMayor.backend.entities.RolUsuario;
 import com.DulceMayor.backend.entities.Usuario;
+import com.DulceMayor.backend.entities.direccion.Direccion;
 import com.DulceMayor.backend.entities.contacto.Contacto;
 import com.DulceMayor.backend.entities.contacto.ContactoCorreoElectronico;
 import com.DulceMayor.backend.entities.contacto.ContactoTelefonico;
@@ -176,6 +177,24 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
                             .build());
                 }
             }
+            if ((request.calle() != null && !request.calle().isBlank()) ||
+                    (request.numero() != null && !request.numero().isBlank())) {
+                String c = request.calle() != null ? request.calle().trim() : "";
+                String n = request.numero() != null ? request.numero().trim() : "";
+                Optional<Direccion> dirOpt = existente.getDirecciones().stream()
+                        .filter(d -> !d.isEliminado())
+                        .findFirst();
+                if (dirOpt.isPresent()) {
+                    dirOpt.get().setCalle(c);
+                    dirOpt.get().setNumero(n);
+                } else {
+                    existente.getDirecciones().add(Direccion.builder()
+                            .calle(c)
+                            .numero(n)
+                            .eliminado(false)
+                            .build());
+                }
+            }
             minoristaRepository.save(existente);
             return usuarioService.generarAuthResponse(usuario);
         }
@@ -208,6 +227,17 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
             contactos.add(contactoTel);
         }
 
+        List<Direccion> direcciones = new ArrayList<>();
+        if ((request.calle() != null && !request.calle().isBlank()) ||
+                (request.numero() != null && !request.numero().isBlank())) {
+            Direccion dir = Direccion.builder()
+                    .calle(request.calle() != null ? request.calle().trim() : "")
+                    .numero(request.numero() != null ? request.numero().trim() : "")
+                    .eliminado(false)
+                    .build();
+            direcciones.add(dir);
+        }
+
         Minorista nuevo = Minorista.builder()
                 .nombre(request.nombre().trim())
                 .apellido(request.apellido().trim())
@@ -216,6 +246,7 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
                 .numeroDocumento(request.numeroDocumento().trim())
                 .usuario(usuario)
                 .contactos(contactos)
+                .direcciones(direcciones)
                 .eliminado(false)
                 .build();
 
@@ -317,6 +348,31 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
             }
         } else {
             telOpt.ifPresent(c -> c.setEliminado(true));
+        }
+
+        // Actualizar o agregar Dirección (calle y número)
+        if (request.calle() != null || request.numero() != null) {
+            String c = request.calle() != null ? request.calle().trim() : "";
+            String n = request.numero() != null ? request.numero().trim() : "";
+
+            Optional<Direccion> dirOpt = minorista.getDirecciones().stream()
+                    .filter(d -> !d.isEliminado())
+                    .findFirst();
+
+            if (!c.isBlank() || !n.isBlank()) {
+                if (dirOpt.isPresent()) {
+                    dirOpt.get().setCalle(c);
+                    dirOpt.get().setNumero(n);
+                } else {
+                    minorista.getDirecciones().add(Direccion.builder()
+                            .calle(c)
+                            .numero(n)
+                            .eliminado(false)
+                            .build());
+                }
+            } else {
+                dirOpt.ifPresent(d -> d.setEliminado(true));
+            }
         }
 
         Minorista guardado = minoristaRepository.save(minorista);

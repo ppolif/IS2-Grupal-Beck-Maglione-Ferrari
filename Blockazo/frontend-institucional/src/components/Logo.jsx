@@ -7,7 +7,7 @@ export default function Logo({ light = false }) {
         <i />
         <b />
       </span>
-      <span className="font-bold">Dulce Mayor</span>
+      <span className="font-bold">Blo Kazo</span>
     </Link>
   );
 }

@@ -56,14 +56,11 @@ export default function Login() {
           <div className="flex justify-center mb-3">
             <Logo />
           </div>
-          <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#e86bc4]">
-            Portal Clientes Mayoristas
-          </span>
           <h1 className="text-2xl font-bold text-[#2b2b3a] mt-1">
             Iniciar Sesión
           </h1>
           <p className="text-[12px] text-[#6b6b80] mt-1">
-            Accedé a tus listas de precios exclusivas y pedidos en curso.
+            ¿Estás listo para comerte el blockazo?
           </p>
         </div>
 

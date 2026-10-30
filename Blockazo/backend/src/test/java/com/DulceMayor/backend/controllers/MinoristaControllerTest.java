@@ -108,7 +108,9 @@ class MinoristaControllerTest {
                 TipoDocumento.DNI,
                 "37888999",
                 "laura.nueva@portal.com",
-                "2615559988"
+                "2615559988",
+                "San Martin",
+                "123"
         );
 
         mockMvc.perform(put("/api/v1/mi-cuenta/perfil")
@@ -116,7 +118,9 @@ class MinoristaControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(actReq)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nombre").value("Laura Beatriz"));
+                .andExpect(jsonPath("$.nombre").value("Laura Beatriz"))
+                .andExpect(jsonPath("$.direcciones[0].calle").value("San Martin"))
+                .andExpect(jsonPath("$.direcciones[0].numero").value("123"));
 
         mockMvc.perform(delete("/api/v1/mi-cuenta/perfil")
                         .header("Authorization", "Bearer " + tokenLaura))
