@@ -4,10 +4,11 @@ export default function Button({
   variant = "default",
   className = "",
   onClick,
-  type = "button"
+  type = "button",
+  disabled = false,
 }) {
   const baseClasses =
-    "inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[13px] font-semibold text-[13px] transition-all cursor-pointer select-none active:scale-[0.98]";
+    "inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[13px] font-semibold text-[13px] transition-all cursor-pointer select-none active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100";
 
   let styleClasses = "";
 
@@ -27,10 +28,10 @@ export default function Button({
     <button
       type={type}
       onClick={onClick}
+      disabled={disabled}
       className={`${baseClasses} ${styleClasses} ${className}`}
     >
       {children}
     </button>
   );
 }
-

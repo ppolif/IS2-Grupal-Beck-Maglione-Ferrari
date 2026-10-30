@@ -90,7 +90,7 @@ class ProcesamientoPedidoServiceTest {
         );
         when(pedidoService.marcarSinStock(eq(pedido), any(String.class))).thenReturn(
                 new PedidoResponse("ped-1", 1L, LocalDateTime.now(), EstadoPedido.SIN_STOCK,
-                        "pdv-1", "prev-1", null, null, 5000.0, 0.0, 5000.0, List.of(), null)
+                        null, null, null, null, 5000.0, 0.0, 5000.0, List.of(), null)
         );
 
         ProcesamientoPedidoResponse res = procesamientoPedidoService.procesarPedido("ped-1");
@@ -139,7 +139,7 @@ class ProcesamientoPedidoServiceTest {
         when(facturaService.generarDesdePedido(pedido)).thenReturn(facturaGenerada);
         when(pedidoService.marcarFacturado(eq(pedido), any(String.class))).thenReturn(
                 new PedidoResponse("ped-1", 2L, LocalDateTime.now(), EstadoPedido.FACTURADO,
-                        "pdv-1", "prev-1", null, null, 2000.0, 0.0, 2000.0, List.of(), "fac-1")
+                        null, null, null, null, 2000.0, 0.0, 2000.0, List.of(), "fac-1")
         );
 
         ProcesamientoPedidoResponse res = procesamientoPedidoService.procesarPedido("ped-1");

@@ -19,10 +19,17 @@ import com.DulceMayor.backend.entities.RolUsuario;
 import com.DulceMayor.backend.entities.pedido.DetallePedido;
 import com.DulceMayor.backend.entities.pedido.EstadoPedido;
 import com.DulceMayor.backend.entities.pedido.Pedido;
+import com.DulceMayor.backend.entities.persona.Distribuidor;
+import com.DulceMayor.backend.entities.persona.Minorista;
+import com.DulceMayor.backend.entities.persona.Preventor;
+import com.DulceMayor.backend.entities.persona.PuntoDeVenta;
 import com.DulceMayor.backend.entities.producto.Producto;
 import com.DulceMayor.backend.entities.producto.Promocion;
 import com.DulceMayor.backend.repositories.pedido.PedidoRepository;
 import com.DulceMayor.backend.services.BaseService;
+import com.DulceMayor.backend.services.persona.EmpleadoService;
+import com.DulceMayor.backend.services.persona.MinoristaService;
+import com.DulceMayor.backend.services.persona.PuntoDeVentaService;
 import com.DulceMayor.backend.services.producto.ProductoService;
 import com.DulceMayor.backend.services.producto.PromocionService;
 import com.DulceMayor.backend.services.producto.VigenciaPrecioService;
@@ -41,20 +48,6 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Servicio de negocio central para la gestión del ciclo de vida de {@link Pedido}
  * según {@code 01-dominio.md}, {@code 02-reglas-negocio.md} y {@code 04-openapi.yaml}.
- *
- * <p><b>Patrón GoF aplicado: Template Method (Comportamiento)</b></p>
- * <ul>
- *   <li><b>Participante GoF:</b> ConcreteClass (Subclase Concreta) que extiende {@link BaseService}.</li>
- *   <li><b>Hooks redefinidos:</b> {@link #aResponse(Pedido)} y {@link #buscarEntidadesActivas()}.</li>
- * </ul>
- *
- * <p><b>Patrón GoF aplicado: Observer (Comportamiento)</b></p>
- * <ul>
- *   <li><b>Participante GoF:</b> Subject / Publisher.</li>
- *   <li><b>Implementación:</b> Publica {@link PedidoEstadoCambiadoEvent} mediante {@link ApplicationEventPublisher}
- *       al transicionar estados clave (como {@link EstadoPedido#FACTURADO} o {@link EstadoPedido#ENTREGADO}),
- *       desacoplando el módulo de pedidos del despacho de notificaciones.</li>
- * </ul>
  */
 @Service
 public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResponse> {
@@ -65,6 +58,9 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     private final ProductoService productoService;
     private final VigenciaPrecioService vigenciaPrecioService;
     private final PromocionService promocionService;
+    private final PuntoDeVentaService puntoDeVentaService;
+    private final EmpleadoService empleadoService;
+    private final MinoristaService minoristaService;
     private final ApplicationEventPublisher eventPublisher;
 
     public PedidoService(
@@ -75,6 +71,9 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
             ProductoService productoService,
             VigenciaPrecioService vigenciaPrecioService,
             PromocionService promocionService,
+            PuntoDeVentaService puntoDeVentaService,
+            EmpleadoService empleadoService,
+            MinoristaService minoristaService,
             ApplicationEventPublisher eventPublisher) {
         super(pedidoRepository, pedidoMapper, "Pedido");
         this.pedidoRepository = pedidoRepository;
@@ -83,12 +82,15 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         this.productoService = productoService;
         this.vigenciaPrecioService = vigenciaPrecioService;
         this.promocionService = promocionService;
+        this.puntoDeVentaService = puntoDeVentaService;
+        this.empleadoService = empleadoService;
+        this.minoristaService = minoristaService;
         this.eventPublisher = eventPublisher;
     }
 
     /**
-     * Carga un nuevo pedido en estado {@link EstadoPedido#CARGADO}, resolviendo precios vigentes,
-     * aplicando promoción opcional y registrando su primer {@code HistorialEstadoPedido}.
+     * Carga un nuevo pedido en estado {@link EstadoPedido#CARGADO}, vinculando el punto de venta,
+     * el preventor asignado, resolviendo precios vigentes y registrando su primer historial.
      */
     @Override
     @Transactional
@@ -103,7 +105,8 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
             throw new ValidacionException("El pedido debe contener al menos un detalle");
         }
 
-        String preventorId = resolverPreventorIdParaCreacion(request.preventorId());
+        PuntoDeVenta puntoDeVenta = puntoDeVentaService.obtenerEntidad(request.puntoDeVentaId().trim());
+        Preventor preventor = resolverPreventorParaCreacion(request.preventorId(), puntoDeVenta);
         CalculoPedido calculo = calcularLineasYTotales(request.detalles(), request.codigoPromocion());
 
         Long siguienteNumero = pedidoRepository.findFirstByOrderByNumeroPedidoDesc()
@@ -113,9 +116,9 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         Pedido pedido = Pedido.builder()
                 .numeroPedido(siguienteNumero)
                 .fechaHoraCarga(LocalDateTime.now())
-                .puntoDeVentaId(request.puntoDeVentaId().trim())
-                .preventorId(preventorId)
-                .distribuidorId(null)
+                .puntoDeVenta(puntoDeVenta)
+                .preventor(preventor)
+                .distribuidor(null)
                 .promocion(calculo.promocion())
                 .subtotal(calculo.subtotal())
                 .descuento(calculo.descuento())
@@ -139,7 +142,7 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
 
     /**
      * Modifica los ítems y/o el código de promoción de un pedido.
-     * Solo está permitido mientras el pedido permanece en estado {@link EstadoPedido#CARGADO} (regla 1.1).
+     * Solo está permitido mientras el pedido permanece en estado {@link EstadoPedido#CARGADO}.
      */
     @Transactional
     public PedidoResponse modificarPedido(String id, PedidoUpdateRequest request) {
@@ -148,7 +151,7 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         }
 
         Pedido existente = obtenerEntidad(id);
-        verificarAccesoPreventista(existente);
+        verificarAcceso(existente);
 
         if (existente.getEstado() != EstadoPedido.CARGADO) {
             throw new ConflictoException(
@@ -172,7 +175,7 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
 
     /**
      * Anula administrativamente un pedido siempre que se encuentre en {@link EstadoPedido#CARGADO}
-     * o {@link EstadoPedido#SIN_STOCK} (regla 1.1 de {@code 02-reglas-negocio.md}).
+     * o {@link EstadoPedido#SIN_STOCK}.
      */
     @Transactional
     public PedidoResponse anularPedido(String id, AnularPedidoRequest request) {
@@ -214,8 +217,7 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     }
 
     /**
-     * Marca el pedido en {@link EstadoPedido#FACTURADO} una vez emitida su factura y descontado el stock,
-     * publicando el evento de dominio para notificar al cliente.
+     * Marca el pedido en {@link EstadoPedido#FACTURADO} una vez emitida su factura y descontado el stock.
      */
     @Transactional
     public PedidoResponse marcarFacturado(Pedido pedido, String observacion) {
@@ -245,12 +247,13 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
             );
         }
 
+        Distribuidor distribuidor = empleadoService.obtenerDistribuidor(distribuidorId.trim());
         String usuarioActual = obtenerNombreUsuarioActual();
         String obs = (observacion != null && !observacion.isBlank())
                 ? observacion.trim()
-                : "Asignado a reparto del distribuidor " + distribuidorId.trim();
+                : "Asignado a reparto del distribuidor " + distribuidor.getLegajo();
 
-        pedido.setDistribuidorId(distribuidorId.trim());
+        pedido.setDistribuidor(distribuidor);
         pedido.setEstado(EstadoPedido.EN_REPARTO);
         Pedido guardado = pedidoRepository.save(pedido);
 
@@ -288,12 +291,12 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     }
 
     /**
-     * Busca un pedido individual aplicando validación de visibilidad si el usuario autenticado es {@code PREVENTISTA}.
+     * Busca un pedido individual aplicando validación de visibilidad si el usuario es {@code PREVENTISTA} o {@code MINORISTA}.
      */
     @Transactional(readOnly = true)
     public PedidoResponse buscarPedido(String id) {
         Pedido pedido = obtenerEntidad(id);
-        verificarAccesoPreventista(pedido);
+        verificarAcceso(pedido);
         return aResponse(pedido);
     }
 
@@ -303,7 +306,7 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     @Transactional(readOnly = true)
     public List<HistorialEstadoPedidoResponse> listarHistorialPorPedido(String id) {
         Pedido pedido = obtenerEntidad(id);
-        verificarAccesoPreventista(pedido);
+        verificarAcceso(pedido);
         return historialEstadoPedidoService.listarHistorialPorPedido(id);
     }
 
@@ -325,7 +328,8 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         String filtroPreventor = preventorId;
         UsuarioPrincipal principal = obtenerPrincipalActual();
         if (principal != null && principal.getRol() == RolUsuario.PREVENTISTA) {
-            filtroPreventor = principal.getId();
+            Preventor miPreventor = empleadoService.obtenerPreventorPorUsuarioId(principal.getId());
+            filtroPreventor = miPreventor.getId();
         }
 
         return pedidoLecturaService.listarPaginado(
@@ -333,6 +337,7 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
                 filtroPreventor,
                 distribuidorId,
                 puntoDeVentaId,
+                minoristaId,
                 desde,
                 hasta,
                 pageable
@@ -345,7 +350,14 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     @Transactional(readOnly = true)
     public PedidoMiCuentaPage listarMiCuenta(String estadoStr, Pageable pageable) {
         EstadoPedido estado = parsearEstado(estadoStr);
-        return pedidoLecturaService.listarMiCuenta(estado, pageable);
+        UsuarioPrincipal principal = obtenerPrincipalActual();
+        String minoristaId = null;
+        if (principal != null && principal.getRol() == RolUsuario.MINORISTA) {
+            minoristaId = minoristaService.buscarPorUsuarioId(principal.getId())
+                    .map(Minorista::getId)
+                    .orElse(null);
+        }
+        return pedidoLecturaService.listarMiCuenta(estado, minoristaId, pageable);
     }
 
     @Override
@@ -438,27 +450,41 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         return new CalculoPedido(detalles, promocion, subtotalPedido, descuento, total);
     }
 
-    private String resolverPreventorIdParaCreacion(String preventorIdRequest) {
+    private Preventor resolverPreventorParaCreacion(String preventorIdRequest, PuntoDeVenta puntoDeVenta) {
         UsuarioPrincipal principal = obtenerPrincipalActual();
         if (principal != null && principal.getRol() == RolUsuario.PREVENTISTA) {
-            return principal.getId();
+            return empleadoService.obtenerPreventorPorUsuarioId(principal.getId());
         }
         if (preventorIdRequest != null && !preventorIdRequest.isBlank()) {
-            return preventorIdRequest.trim();
+            return empleadoService.obtenerPreventor(preventorIdRequest.trim());
         }
-        if (principal != null && principal.getId() != null) {
-            return principal.getId();
+        if (puntoDeVenta.getPreventor() != null) {
+            return puntoDeVenta.getPreventor();
         }
-        return "preventor-sistema";
+        throw new ValidacionException("Debe especificar un preventor para el pedido o asignarlo al punto de venta");
     }
 
-    private void verificarAccesoPreventista(Pedido pedido) {
+    private void verificarAcceso(Pedido pedido) {
         UsuarioPrincipal principal = obtenerPrincipalActual();
-        if (principal != null
-                && principal.getRol() == RolUsuario.PREVENTISTA
-                && principal.getId() != null
-                && !principal.getId().equals(pedido.getPreventorId())) {
-            throw new AccesoDenegadoException("No tiene permisos para acceder a un pedido cargado por otro preventista");
+        if (principal == null) {
+            return;
+        }
+        if (principal.getRol() == RolUsuario.PREVENTISTA) {
+            Preventor miPreventor = empleadoService.obtenerPreventorPorUsuarioId(principal.getId());
+            if (pedido.getPreventor() == null || !pedido.getPreventor().getId().equals(miPreventor.getId())) {
+                throw new AccesoDenegadoException("No tiene permisos para acceder a un pedido asignado a otro preventista");
+            }
+        }
+        if (principal.getRol() == RolUsuario.MINORISTA) {
+            java.util.Optional<Minorista> minoristaOpt = minoristaService.buscarPorUsuarioId(principal.getId());
+            if (minoristaOpt.isPresent()) {
+                Minorista miMinorista = minoristaOpt.get();
+                if (pedido.getPuntoDeVenta() == null
+                        || pedido.getPuntoDeVenta().getMinorista() == null
+                        || !pedido.getPuntoDeVenta().getMinorista().getId().equals(miMinorista.getId())) {
+                    throw new AccesoDenegadoException("No tiene permisos para acceder a un pedido de otro cliente");
+                }
+            }
         }
     }
 
@@ -512,4 +538,3 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     ) {
     }
 }
-

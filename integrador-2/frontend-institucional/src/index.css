@@ -41,6 +41,16 @@
   color: #2b2b3a;
 }
 
+/* Reglas para contención de scroll en diálogos nativos según Modern Web Guidance */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
 /* Candy Mark icon from prototype */
 .candy-mark {
   width: 34px;

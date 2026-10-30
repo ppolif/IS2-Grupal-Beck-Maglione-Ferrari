@@ -45,5 +45,16 @@ public class ContactoService extends BaseService<Contacto, ContactoRequest, Cont
     protected void validarModificar(String id, ContactoRequest request, Contacto existente) {
         contactoMapper.normalizarYValidar(request);
     }
+
+    /**
+     * Construye y valida una entidad {@link Contacto} concreta a partir de su DTO polimórfico.
+     *
+     * @param request datos del contacto (correo o teléfono)
+     * @return entidad construida y validada
+     */
+    public Contacto construirEntidad(ContactoRequest request) {
+        ContactoRequest normalizado = contactoMapper.normalizarYValidar(request);
+        return contactoMapper.aEntidad(normalizado);
+    }
 }
 

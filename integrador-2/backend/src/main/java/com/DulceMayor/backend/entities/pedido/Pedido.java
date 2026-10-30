@@ -1,6 +1,9 @@
 package com.DulceMayor.backend.entities.pedido;
 
 import com.DulceMayor.backend.entities.EntidadBase;
+import com.DulceMayor.backend.entities.persona.Distribuidor;
+import com.DulceMayor.backend.entities.persona.Preventor;
+import com.DulceMayor.backend.entities.persona.PuntoDeVenta;
 import com.DulceMayor.backend.entities.producto.Promocion;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -46,7 +49,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@ToString(callSuper = true, exclude = {"promocion", "detalles"})
+@ToString(callSuper = true, exclude = {"promocion", "detalles", "puntoDeVenta", "preventor", "distribuidor"})
 public class Pedido extends EntidadBase {
 
     @Column(name = "numero_pedido", nullable = false, unique = true)
@@ -70,30 +73,17 @@ public class Pedido extends EntidadBase {
     @Column(nullable = false, length = 30)
     private EstadoPedido estado = EstadoPedido.CARGADO;
 
-    /*
-     * Referencias provisorias hacia PuntoDeVenta, Preventor y Distribuidor mientras se integran
-     * los módulos de Personas y Puntos de Venta. Al incorporar dichas entidades se mapearán como:
-     *
-     * @ManyToOne(fetch = FetchType.LAZY, optional = false)
-     * @JoinColumn(name = "punto_de_venta_id", nullable = false)
-     * private PuntoDeVenta puntoDeVenta;
-     *
-     * @ManyToOne(fetch = FetchType.LAZY, optional = false)
-     * @JoinColumn(name = "preventor_id", nullable = false)
-     * private Preventor preventor;
-     *
-     * @ManyToOne(fetch = FetchType.LAZY)
-     * @JoinColumn(name = "distribuidor_id")
-     * private Distribuidor distribuidor;
-     */
-    @Column(name = "punto_de_venta_id", nullable = false, length = 36)
-    private String puntoDeVentaId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "punto_de_venta_id", nullable = false)
+    private PuntoDeVenta puntoDeVenta;
 
-    @Column(name = "preventor_id", nullable = false, length = 36)
-    private String preventorId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "preventor_id", nullable = false)
+    private Preventor preventor;
 
-    @Column(name = "distribuidor_id", length = 36)
-    private String distribuidorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "distribuidor_id")
+    private Distribuidor distribuidor;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "promocion_id")

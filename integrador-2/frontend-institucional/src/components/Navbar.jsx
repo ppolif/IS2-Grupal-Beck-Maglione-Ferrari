@@ -3,11 +3,11 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import Logo from './Logo';
 import Button from './Button';
 import Icon from './Icon';
-import { usuarioMock } from '../mocks/session';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isLogged, setIsLogged] = useState(usuarioMock.logueado);
+  const { isLogged, perfil, usuario, logout } = useAuth();
   const navigate = useNavigate();
 
   const cartCount = 3; // Mock de cantidad de productos en carrito
@@ -18,6 +18,17 @@ export default function Navbar() {
     { to: '/sucursales', label: 'Sucursales' },
     { to: '/contacto', label: 'Contacto' },
   ];
+
+  // Resolver nombre de visualización e iniciales
+  const nombreDisplay = perfil ? `${perfil.nombre} ${perfil.apellido}` : (usuario?.nombreUsuario || 'Mi Cuenta');
+  const iniciales = perfil
+    ? `${perfil.nombre?.[0] || ''}${perfil.apellido?.[0] || ''}`.toUpperCase()
+    : (usuario?.nombreUsuario?.[0] || 'U').toUpperCase();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-[#ececf2]">
@@ -66,22 +77,22 @@ export default function Navbar() {
                 title="Mi perfil"
               >
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#ffcef3] to-[#a1eafb] text-[#2b2b3a] font-bold text-[12px] flex items-center justify-center shadow-sm">
-                  {usuarioMock.avatar}
+                  {iniciales}
                 </div>
                 <div className="hidden lg:flex flex-col text-left">
-                  <span className="text-[12px] font-bold text-[#2b2b3a] leading-tight">
-                    {usuarioMock.nombre}
+                  <span className="text-[12px] font-bold text-[#2b2b3a] leading-tight max-w-[150px] truncate">
+                    {nombreDisplay}
                   </span>
-                  <span className="text-[10px] text-[#6b6b80]">
-                    {usuarioMock.comercio}
+                  <span className="text-[10px] text-[#6b6b80] max-w-[150px] truncate">
+                    {usuario?.nombreUsuario}
                   </span>
                 </div>
               </Link>
               <button
                 type="button"
-                onClick={() => setIsLogged(false)}
-                className="text-[11px] text-[#6b6b80] hover:text-[#ff8fa3] ml-2 px-2 py-1 rounded transition-colors"
-                title="Simular cerrar sesión"
+                onClick={handleLogout}
+                className="text-[11px] text-[#6b6b80] hover:text-[#ff8fa3] ml-2 px-2 py-1 rounded transition-colors cursor-pointer"
+                title="Cerrar sesión"
               >
                 Salir
               </button>
@@ -163,7 +174,7 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-[#6b6b80] hover:text-[#e86bc4] text-[15px] py-1"
               >
-                Mi Perfil ({usuarioMock.nombre})
+                Mi Perfil ({nombreDisplay})
               </NavLink>
             )}
           </nav>
@@ -173,12 +184,12 @@ export default function Navbar() {
               <Button
                 secondary
                 onClick={() => {
-                  setIsLogged(false);
                   setMobileMenuOpen(false);
+                  handleLogout();
                 }}
                 className="w-full justify-center"
               >
-                Cerrar sesión (Simulada)
+                Cerrar sesión
               </Button>
             ) : (
               <>
@@ -209,4 +220,3 @@ export default function Navbar() {
     </header>
   );
 }
-

@@ -22,15 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Servicio de solo lectura para proyectar pedidos resolviendo {@code facturaId} desde {@link FacturaRepository}
  * y ejecutar consultas paginadas.
- * <p>
- * Conforme a {@code GENERAL.md} (§7 y §10.1 regla 6), {@link Pedido} no referencia a {@link Factura} y
- * {@code PedidoService} no depende de {@code FacturaService}; las clases {@code *LecturaService} pueden
- * consultar ambos repositorios en modo solo lectura sin generar acoplamiento circular entre agregados.
- * </p>
- *
- * <p><b>Patrón GoF aplicado: DTO / Adapter (Estructural)</b></p>
- * Ensambla {@link PedidoResponse} enriqueciendo la entidad {@link Pedido} con la referencia calculada
- * de su {@link Factura} activa si fue facturado.
  */
 @Service
 @Transactional(readOnly = true)
@@ -65,9 +56,9 @@ public class PedidoLecturaService {
                 base.numeroPedido(),
                 base.fechaHoraCarga(),
                 base.estado(),
-                base.puntoDeVentaId(),
-                base.preventorId(),
-                base.distribuidorId(),
+                base.puntoDeVenta(),
+                base.preventor(),
+                base.distribuidor(),
                 base.codigoPromocion(),
                 base.subtotal(),
                 base.descuento(),
@@ -85,6 +76,7 @@ public class PedidoLecturaService {
             String preventorId,
             String distribuidorId,
             String puntoDeVentaId,
+            String minoristaId,
             LocalDate desde,
             LocalDate hasta,
             Pageable pageable) {
@@ -97,6 +89,7 @@ public class PedidoLecturaService {
                 limpiarFiltro(preventorId),
                 limpiarFiltro(distribuidorId),
                 limpiarFiltro(puntoDeVentaId),
+                limpiarFiltro(minoristaId),
                 fechaDesde,
                 fechaHasta,
                 pageable
@@ -119,12 +112,13 @@ public class PedidoLecturaService {
     /**
      * Consulta paginada de pedidos para el portal "Mi cuenta" del cliente minorista.
      */
-    public PedidoMiCuentaPage listarMiCuenta(EstadoPedido estado, Pageable pageable) {
+    public PedidoMiCuentaPage listarMiCuenta(EstadoPedido estado, String minoristaId, Pageable pageable) {
         Page<Pedido> pagina = pedidoRepository.buscarConFiltros(
                 estado,
                 null,
                 null,
                 null,
+                limpiarFiltro(minoristaId),
                 null,
                 null,
                 pageable
@@ -148,4 +142,3 @@ public class PedidoLecturaService {
         return (valor != null && !valor.isBlank()) ? valor.trim() : null;
     }
 }
-

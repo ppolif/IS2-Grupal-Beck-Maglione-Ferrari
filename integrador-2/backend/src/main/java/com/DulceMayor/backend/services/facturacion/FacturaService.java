@@ -1,7 +1,9 @@
 package com.DulceMayor.backend.services.facturacion;
 
+import com.DulceMayor.backend.config.AccesoDenegadoException;
 import com.DulceMayor.backend.config.ConflictoException;
 import com.DulceMayor.backend.config.RecursoNoEncontradoException;
+import com.DulceMayor.backend.config.UsuarioPrincipal;
 import com.DulceMayor.backend.config.ValidacionException;
 import com.DulceMayor.backend.dtos.facturacion.DetalleFacturaRequest;
 import com.DulceMayor.backend.dtos.facturacion.DetalleFacturaResponse;
@@ -11,16 +13,21 @@ import com.DulceMayor.backend.dtos.facturacion.FacturaPage;
 import com.DulceMayor.backend.dtos.facturacion.FacturaRequest;
 import com.DulceMayor.backend.dtos.facturacion.FacturaResponse;
 import com.DulceMayor.backend.dtos.producto.ProductoResponse;
+import com.DulceMayor.backend.entities.RolUsuario;
 import com.DulceMayor.backend.entities.facturacion.DetalleFactura;
 import com.DulceMayor.backend.entities.facturacion.EstadoFactura;
 import com.DulceMayor.backend.entities.facturacion.Factura;
 import com.DulceMayor.backend.entities.pedido.DetallePedido;
 import com.DulceMayor.backend.entities.pedido.Pedido;
+import com.DulceMayor.backend.entities.persona.Minorista;
 import com.DulceMayor.backend.entities.producto.Producto;
 import com.DulceMayor.backend.repositories.facturacion.FacturaRepository;
 import com.DulceMayor.backend.services.BaseService;
+import com.DulceMayor.backend.services.persona.MinoristaService;
 import com.DulceMayor.backend.services.producto.ProductoService;
 import com.DulceMayor.backend.services.producto.StockService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -56,18 +63,21 @@ public class FacturaService extends BaseService<Factura, FacturaRequest, Factura
     private final FacturaLecturaService facturaLecturaService;
     private final ProductoService productoService;
     private final StockService stockService;
+    private final MinoristaService minoristaService;
 
     public FacturaService(
             FacturaRepository facturaRepository,
             FacturaMapper facturaMapper,
             FacturaLecturaService facturaLecturaService,
             ProductoService productoService,
-            StockService stockService) {
+            StockService stockService,
+            MinoristaService minoristaService) {
         super(facturaRepository, facturaMapper, "Factura");
         this.facturaRepository = facturaRepository;
         this.facturaLecturaService = facturaLecturaService;
         this.productoService = productoService;
         this.stockService = stockService;
+        this.minoristaService = minoristaService;
     }
 
     /**
@@ -311,6 +321,14 @@ public class FacturaService extends BaseService<Factura, FacturaRequest, Factura
         // En el entorno local sin servidor SMTP externo se valida la existencia de la factura y se completa la operación.
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public FacturaResponse buscar(String id) {
+        Factura factura = obtenerEntidad(id);
+        verificarAccesoMinorista(factura);
+        return aResponse(factura);
+    }
+
     /**
      * Consulta paginada de facturas con filtros opcionales.
      */
@@ -331,7 +349,38 @@ public class FacturaService extends BaseService<Factura, FacturaRequest, Factura
     @Transactional(readOnly = true)
     public FacturaMiCuentaPage listarMiCuenta(String estadoStr, Pageable pageable) {
         EstadoFactura estado = parsearEstado(estadoStr);
-        return facturaLecturaService.listarMiCuenta(estado, pageable);
+        UsuarioPrincipal principal = obtenerPrincipalActual();
+        String minoristaId = null;
+        if (principal != null && principal.getRol() == RolUsuario.MINORISTA) {
+            minoristaId = minoristaService.buscarPorUsuarioId(principal.getId())
+                    .map(Minorista::getId)
+                    .orElse(null);
+        }
+        return facturaLecturaService.listarMiCuenta(estado, minoristaId, pageable);
+    }
+
+    private void verificarAccesoMinorista(Factura factura) {
+        UsuarioPrincipal principal = obtenerPrincipalActual();
+        if (principal != null && principal.getRol() == RolUsuario.MINORISTA) {
+            java.util.Optional<Minorista> minoristaOpt = minoristaService.buscarPorUsuarioId(principal.getId());
+            if (minoristaOpt.isPresent()) {
+                Minorista minorista = minoristaOpt.get();
+                if (factura.getPedido() != null
+                        && factura.getPedido().getPuntoDeVenta() != null
+                        && factura.getPedido().getPuntoDeVenta().getMinorista() != null
+                        && !factura.getPedido().getPuntoDeVenta().getMinorista().getId().equals(minorista.getId())) {
+                    throw new AccesoDenegadoException("No tiene permisos para acceder a una factura de otro cliente");
+                }
+            }
+        }
+    }
+
+    private UsuarioPrincipal obtenerPrincipalActual() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof UsuarioPrincipal up) {
+            return up;
+        }
+        return null;
     }
 
     private EstadoFactura parsearEstado(String estadoStr) {

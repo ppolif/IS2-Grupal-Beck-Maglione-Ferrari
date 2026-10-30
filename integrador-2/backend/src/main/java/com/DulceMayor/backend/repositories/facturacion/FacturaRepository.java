@@ -28,17 +28,21 @@ public interface FacturaRepository extends BaseRepository<Factura> {
 
     @Query("""
             SELECT f FROM Factura f
+            LEFT JOIN f.pedido p
+            LEFT JOIN p.puntoDeVenta pdv
+            LEFT JOIN pdv.minorista m
             WHERE f.eliminado = false
               AND (:estado IS NULL OR f.estado = :estado)
+              AND (:minoristaId IS NULL OR (m IS NOT NULL AND m.id = :minoristaId))
               AND (:desde IS NULL OR f.fechaFactura >= :desde)
               AND (:hasta IS NULL OR f.fechaFactura <= :hasta)
             ORDER BY f.fechaFactura DESC, f.numeroFactura DESC
             """)
     Page<Factura> buscarConFiltros(
             @Param("estado") EstadoFactura estado,
+            @Param("minoristaId") String minoristaId,
             @Param("desde") LocalDateTime desde,
             @Param("hasta") LocalDateTime hasta,
             Pageable pageable
     );
 }
-

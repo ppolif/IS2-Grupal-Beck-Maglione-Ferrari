@@ -60,6 +60,9 @@ class FacturaServiceTest {
     @Mock
     private StockService stockService;
 
+    @Mock
+    private com.DulceMayor.backend.services.persona.MinoristaService minoristaService;
+
     private FacturaService facturaService;
 
     @BeforeEach
@@ -69,7 +72,8 @@ class FacturaServiceTest {
                 facturaMapper,
                 facturaLecturaService,
                 productoService,
-                stockService
+                stockService,
+                minoristaService
         );
     }
 

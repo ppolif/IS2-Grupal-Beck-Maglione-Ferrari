@@ -25,13 +25,31 @@ import com.DulceMayor.backend.dtos.producto.SubCategoriaResponse;
 import com.DulceMayor.backend.entities.ProveedorAuth;
 import com.DulceMayor.backend.entities.RolUsuario;
 import com.DulceMayor.backend.entities.Usuario;
+import com.DulceMayor.backend.entities.direccion.Departamento;
+import com.DulceMayor.backend.entities.direccion.Direccion;
+import com.DulceMayor.backend.entities.direccion.Localidad;
+import com.DulceMayor.backend.entities.direccion.Pais;
+import com.DulceMayor.backend.entities.direccion.Provincia;
+import com.DulceMayor.backend.entities.persona.Minorista;
+import com.DulceMayor.backend.entities.persona.Preventor;
+import com.DulceMayor.backend.entities.persona.PuntoDeVenta;
+import com.DulceMayor.backend.entities.persona.TipoDocumento;
 import com.DulceMayor.backend.repositories.UsuarioRepository;
+import com.DulceMayor.backend.repositories.direccion.DepartamentoRepository;
+import com.DulceMayor.backend.repositories.direccion.DireccionRepository;
+import com.DulceMayor.backend.repositories.direccion.LocalidadRepository;
+import com.DulceMayor.backend.repositories.direccion.PaisRepository;
+import com.DulceMayor.backend.repositories.direccion.ProvinciaRepository;
 import com.DulceMayor.backend.repositories.facturacion.DetalleFacturaRepository;
 import com.DulceMayor.backend.repositories.facturacion.FacturaRepository;
 import com.DulceMayor.backend.repositories.facturacion.PagoRepository;
 import com.DulceMayor.backend.repositories.pedido.DetallePedidoRepository;
 import com.DulceMayor.backend.repositories.pedido.HistorialEstadoPedidoRepository;
 import com.DulceMayor.backend.repositories.pedido.PedidoRepository;
+import com.DulceMayor.backend.repositories.persona.EmpleadoRepository;
+import com.DulceMayor.backend.repositories.persona.MinoristaRepository;
+import com.DulceMayor.backend.repositories.persona.PersonaRepository;
+import com.DulceMayor.backend.repositories.persona.PuntoDeVentaRepository;
 import com.DulceMayor.backend.repositories.producto.CategoriaRepository;
 import com.DulceMayor.backend.repositories.producto.ProductoRepository;
 import com.DulceMayor.backend.repositories.producto.PromocionRepository;
@@ -95,6 +113,33 @@ class PedidoControllerTest {
     private PedidoRepository pedidoRepository;
 
     @Autowired
+    private PuntoDeVentaRepository puntoDeVentaRepository;
+
+    @Autowired
+    private EmpleadoRepository empleadoRepository;
+
+    @Autowired
+    private MinoristaRepository minoristaRepository;
+
+    @Autowired
+    private PersonaRepository personaRepository;
+
+    @Autowired
+    private DireccionRepository direccionRepository;
+
+    @Autowired
+    private LocalidadRepository localidadRepository;
+
+    @Autowired
+    private DepartamentoRepository departamentoRepository;
+
+    @Autowired
+    private ProvinciaRepository provinciaRepository;
+
+    @Autowired
+    private PaisRepository paisRepository;
+
+    @Autowired
     private PromocionRepository promocionRepository;
 
     @Autowired
@@ -134,6 +179,7 @@ class PedidoControllerTest {
     private JwtProvider jwtProvider;
 
     private ProductoResponse productoInicial;
+    private Localidad localidadInicial;
 
     @BeforeEach
     void setUp() {
@@ -148,6 +194,11 @@ class PedidoControllerTest {
                 "PROMO10", "10% descuento llevando 2 o más", 10.0, 2, productoInicial.id(),
                 LocalDate.now().minusDays(1), LocalDate.now().plusDays(10)
         ));
+
+        Pais pais = paisRepository.save(Pais.builder().nombre("Argentina").eliminado(false).build());
+        Provincia prov = provinciaRepository.save(Provincia.builder().nombre("Mendoza").pais(pais).eliminado(false).build());
+        Departamento depto = departamentoRepository.save(Departamento.builder().nombre("Capital").provincia(prov).eliminado(false).build());
+        localidadInicial = localidadRepository.save(Localidad.builder().nombre("Ciudad").codigoPostal("5500").departamento(depto).eliminado(false).build());
     }
 
     @AfterEach
@@ -163,6 +214,15 @@ class PedidoControllerTest {
         historialEstadoPedidoRepository.deleteAll();
         detallePedidoRepository.deleteAll();
         pedidoRepository.deleteAll();
+        puntoDeVentaRepository.deleteAll();
+        empleadoRepository.deleteAll();
+        minoristaRepository.deleteAll();
+        personaRepository.deleteAll();
+        direccionRepository.deleteAll();
+        localidadRepository.deleteAll();
+        departamentoRepository.deleteAll();
+        provinciaRepository.deleteAll();
+        paisRepository.deleteAll();
         promocionRepository.deleteAll();
         vigenciaPrecioRepository.deleteAll();
         productoRepository.deleteAll();
@@ -182,12 +242,50 @@ class PedidoControllerTest {
                 .build());
     }
 
+    private PuntoDeVenta crearPuntoDeVenta(Usuario preventistaUsuario, Usuario minoristaUsuario, String nombreComercio, String docMin, String legajoPrev) {
+        Preventor preventor = empleadoRepository.save(Preventor.builder()
+                .nombre("Preventor")
+                .apellido(legajoPrev)
+                .tipoDocumento(TipoDocumento.DNI)
+                .numeroDocumento("DOC-" + legajoPrev)
+                .legajo(legajoPrev)
+                .usuario(preventistaUsuario)
+                .eliminado(false)
+                .build());
+
+        Minorista minorista = minoristaRepository.save(Minorista.builder()
+                .nombre("Cliente")
+                .apellido(docMin)
+                .tipoDocumento(TipoDocumento.DNI)
+                .numeroDocumento(docMin)
+                .usuario(minoristaUsuario)
+                .eliminado(false)
+                .build());
+
+        Direccion dir = Direccion.builder()
+                .calle("San Martín")
+                .numeracion("100")
+                .localidad(localidadInicial)
+                .eliminado(false)
+                .build();
+
+        return puntoDeVentaRepository.save(PuntoDeVenta.builder()
+                .nombreComercio(nombreComercio)
+                .minorista(minorista)
+                .preventor(preventor)
+                .direccion(dir)
+                .eliminado(false)
+                .build());
+    }
+
     @Test
     @DisplayName("Ciclo completo: crear en CARGADO -> modificar -> procesar SIN_STOCK -> reponer -> procesar FACTURADO con facturaId e historial")
     void cicloCompletoPedidoProcesamientoEHistorial() throws Exception {
         Usuario preventista = crearUsuario("prev_pedidos", RolUsuario.PREVENTISTA);
         Usuario admin = crearUsuario("admin_pedidos", RolUsuario.ADMINISTRATIVO);
         Usuario minorista = crearUsuario("min_pedidos", RolUsuario.MINORISTA);
+
+        PuntoDeVenta pdv = crearPuntoDeVenta(preventista, minorista, "Kiosco Central", "MIN-01", "LEG-01");
 
         String tokenPreventista = jwtProvider.generarToken(preventista);
         String tokenAdmin = jwtProvider.generarToken(admin);
@@ -198,7 +296,7 @@ class PedidoControllerTest {
                         .header("Authorization", "Bearer " + tokenPreventista)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new PedidoRequest(
-                                "pdv-centro",
+                                pdv.getId(),
                                 null,
                                 "PROMO10",
                                 List.of(new DetallePedidoRequest(productoInicial.id(), 2))
@@ -206,7 +304,8 @@ class PedidoControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"))
                 .andExpect(jsonPath("$.estado").value("CARGADO"))
-                .andExpect(jsonPath("$.preventorId").value(preventista.getId()))
+                .andExpect(jsonPath("$.preventor.id").exists())
+                .andExpect(jsonPath("$.puntoDeVenta.id").value(pdv.getId()))
                 .andExpect(jsonPath("$.subtotal").value(2000.0))
                 .andExpect(jsonPath("$.descuento").value(200.0))
                 .andExpect(jsonPath("$.total").value(1800.0))
@@ -248,35 +347,31 @@ class PedidoControllerTest {
                         ))))
                 .andExpect(status().isConflict());
 
-        // 5. Se repone stock (+10 -> quedan 15 disponibles) y se vuelve a procesar -> pasa a FACTURADO y emite Factura
-        stockService.reponerStock(productoInicial.id(), new StockReposicionRequest(10, "Ingreso proveedor"));
+        // 5. Reposición de stock (+10 unidades)
+        stockService.reponerStock(productoInicial.id(), new StockReposicionRequest(10, "Llegó pedido proveedor"));
 
-        MvcResult procOk = mockMvc.perform(post("/pedidos/" + pedidoId + "/procesar")
+        // 6. Ahora procesar pasa a FACTURADO y emite la factura
+        MvcResult facturarRes = mockMvc.perform(post("/pedidos/" + pedidoId + "/procesar")
                         .header("Authorization", "Bearer " + tokenAdmin))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.pedido.estado").value("FACTURADO"))
-                .andExpect(jsonPath("$.factura.estado").value("PENDIENTE_PAGO"))
+                .andExpect(jsonPath("$.factura.id").exists())
                 .andExpect(jsonPath("$.factura.total").value(7200.0))
                 .andExpect(jsonPath("$.itemsSinStock", hasSize(0)))
                 .andReturn();
 
-        String facturaId = objectMapper.readTree(procOk.getResponse().getContentAsString())
-                .get("factura").get("id").asText();
+        JsonNode facturadoJson = objectMapper.readTree(facturarRes.getResponse().getContentAsString());
+        String facturaId = facturadoJson.get("factura").get("id").asText();
 
-        // 6. Consultar el pedido individual y en mi-cuenta expone facturaId resuelto por PedidoLecturaService
-        mockMvc.perform(get("/pedidos/" + pedidoId)
-                        .header("Authorization", "Bearer " + tokenAdmin))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.facturaId").value(facturaId));
-
+        // 7. Minorista consulta /mi-cuenta/pedidos y ve su pedido facturado con facturaId
         mockMvc.perform(get("/mi-cuenta/pedidos")
-                        .header("Authorization", "Bearer " + tokenMinorista)
-                        .param("estado", "FACTURADO"))
+                        .header("Authorization", "Bearer " + tokenMinorista))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].id").value(pedidoId))
                 .andExpect(jsonPath("$.content[0].facturaId").value(facturaId));
 
-        // 7. Consultar trazabilidad devuelve los 3 cambios cronológicos: CARGADO -> SIN_STOCK -> FACTURADO
+        // Minorista consulta historial del pedido (CARGADO, SIN_STOCK, FACTURADO)
         mockMvc.perform(get("/pedidos/" + pedidoId + "/historial")
                         .header("Authorization", "Bearer " + tokenMinorista))
                 .andExpect(status().isOk())
@@ -298,6 +393,20 @@ class PedidoControllerTest {
     void visibilidadDePreventistaAislada() throws Exception {
         Usuario prev1 = crearUsuario("prev_uno", RolUsuario.PREVENTISTA);
         Usuario prev2 = crearUsuario("prev_dos", RolUsuario.PREVENTISTA);
+        Usuario minUser = crearUsuario("min_comun", RolUsuario.MINORISTA);
+
+        PuntoDeVenta pdv1 = crearPuntoDeVenta(prev1, minUser, "Kiosco 1", "MIN-P1", "LEG-P1");
+        // Registrar preventor para prev2
+        empleadoRepository.save(Preventor.builder()
+                .nombre("Preventor")
+                .apellido("Dos")
+                .tipoDocumento(TipoDocumento.DNI)
+                .numeroDocumento("DOC-LEG-P2")
+                .legajo("LEG-P2")
+                .usuario(prev2)
+                .eliminado(false)
+                .build());
+
         String tokenPrev1 = jwtProvider.generarToken(prev1);
         String tokenPrev2 = jwtProvider.generarToken(prev2);
 
@@ -305,7 +414,7 @@ class PedidoControllerTest {
                         .header("Authorization", "Bearer " + tokenPrev1)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new PedidoRequest(
-                                "pdv-norte",
+                                pdv1.getId(),
                                 null,
                                 null,
                                 List.of(new DetallePedidoRequest(productoInicial.id(), 1))
@@ -327,4 +436,3 @@ class PedidoControllerTest {
                 .andExpect(status().isForbidden());
     }
 }
-

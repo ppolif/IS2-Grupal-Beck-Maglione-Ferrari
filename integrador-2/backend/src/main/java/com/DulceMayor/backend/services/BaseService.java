@@ -153,6 +153,8 @@ public abstract class BaseService<E extends EntidadBase, Req, Res> {
      * Permite normalizar o limpiar los datos de entrada (por ejemplo, quitar espacios sobrantes)
      * antes de ejecutar las validaciones y el mapeo.
      */
+    /// Garantiza que tanto las validaciones posteriores como la persistencia
+    /// operen siempre sobre la misma version limpia y normalizada del DTO
     protected Req prepararRequest(Req request) {
         return request;
     }

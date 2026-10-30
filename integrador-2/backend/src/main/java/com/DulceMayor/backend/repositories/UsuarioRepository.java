@@ -12,4 +12,6 @@ public interface UsuarioRepository extends BaseRepository<Usuario> {
     Optional<Usuario> findByNombreUsuarioAndEliminadoFalse(String nombreUsuario);
 
     boolean existsByNombreUsuario(String nombreUsuario);
+
+    boolean existsByNombreUsuarioAndIdNot(String nombreUsuario, String id);
 }

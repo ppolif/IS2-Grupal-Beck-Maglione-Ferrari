@@ -22,12 +22,17 @@ import com.DulceMayor.backend.dtos.producto.VigenciaPrecioResponse;
 import com.DulceMayor.backend.entities.pedido.DetallePedido;
 import com.DulceMayor.backend.entities.pedido.EstadoPedido;
 import com.DulceMayor.backend.entities.pedido.Pedido;
+import com.DulceMayor.backend.entities.persona.Preventor;
+import com.DulceMayor.backend.entities.persona.PuntoDeVenta;
 import com.DulceMayor.backend.entities.producto.Producto;
 import com.DulceMayor.backend.entities.producto.Promocion;
 import com.DulceMayor.backend.repositories.pedido.PedidoRepository;
 import com.DulceMayor.backend.services.pedido.HistorialEstadoPedidoService;
 import com.DulceMayor.backend.services.pedido.PedidoLecturaService;
 import com.DulceMayor.backend.services.pedido.PedidoService;
+import com.DulceMayor.backend.services.persona.EmpleadoService;
+import com.DulceMayor.backend.services.persona.MinoristaService;
+import com.DulceMayor.backend.services.persona.PuntoDeVentaService;
 import com.DulceMayor.backend.services.producto.ProductoService;
 import com.DulceMayor.backend.services.producto.PromocionService;
 import com.DulceMayor.backend.services.producto.VigenciaPrecioService;
@@ -45,7 +50,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 /**
- * Tests unitarios de {@link PedidoService} con Mockito.
+ * Tests unitarios para {@link PedidoService} con Mockito.
  */
 @ExtendWith(MockitoExtension.class)
 class PedidoServiceTest {
@@ -72,6 +77,15 @@ class PedidoServiceTest {
     private PromocionService promocionService;
 
     @Mock
+    private PuntoDeVentaService puntoDeVentaService;
+
+    @Mock
+    private EmpleadoService empleadoService;
+
+    @Mock
+    private MinoristaService minoristaService;
+
+    @Mock
     private ApplicationEventPublisher eventPublisher;
 
     private PedidoService pedidoService;
@@ -86,6 +100,9 @@ class PedidoServiceTest {
                 productoService,
                 vigenciaPrecioService,
                 promocionService,
+                puntoDeVentaService,
+                empleadoService,
+                minoristaService,
                 eventPublisher
         );
     }
@@ -112,6 +129,11 @@ class PedidoServiceTest {
                 .eliminado(false)
                 .build();
 
+        PuntoDeVenta pdv = PuntoDeVenta.builder().id("pdv-1").build();
+        Preventor prev = Preventor.builder().id("prev-1").build();
+
+        when(puntoDeVentaService.obtenerEntidad("pdv-1")).thenReturn(pdv);
+        when(empleadoService.obtenerPreventor("prev-1")).thenReturn(prev);
         when(productoService.obtenerEntidad("prod-1")).thenReturn(prod);
         when(vigenciaPrecioService.buscarVigente("prod-1")).thenReturn(
                 new VigenciaPrecioResponse("vp-1", "prod-1", LocalDate.now(), null, 1000.0)
@@ -130,9 +152,9 @@ class PedidoServiceTest {
                     p.getNumeroPedido(),
                     p.getFechaHoraCarga(),
                     p.getEstado(),
-                    p.getPuntoDeVentaId(),
-                    p.getPreventorId(),
-                    p.getDistribuidorId(),
+                    null,
+                    null,
+                    null,
                     p.getPromocion() != null ? p.getPromocion().getCodigo() : null,
                     p.getSubtotal(),
                     p.getDescuento(),
@@ -183,6 +205,11 @@ class PedidoServiceTest {
                 .eliminado(false)
                 .build();
 
+        PuntoDeVenta pdv = PuntoDeVenta.builder().id("pdv-1").build();
+        Preventor prev = Preventor.builder().id("prev-1").build();
+
+        when(puntoDeVentaService.obtenerEntidad("pdv-1")).thenReturn(pdv);
+        when(empleadoService.obtenerPreventor("prev-1")).thenReturn(prev);
         when(productoService.obtenerEntidad("prod-1")).thenReturn(prod);
         when(vigenciaPrecioService.buscarVigente("prod-1")).thenReturn(
                 new VigenciaPrecioResponse("vp-1", "prod-1", LocalDate.now(), null, 500.0)
@@ -206,8 +233,8 @@ class PedidoServiceTest {
                 .id("ped-1")
                 .numeroPedido(1L)
                 .estado(EstadoPedido.FACTURADO)
-                .puntoDeVentaId("pdv-1")
-                .preventorId("prev-1")
+                .puntoDeVenta(PuntoDeVenta.builder().id("pdv-1").build())
+                .preventor(Preventor.builder().id("prev-1").build())
                 .detalles(new ArrayList<>())
                 .eliminado(false)
                 .build();
@@ -226,8 +253,8 @@ class PedidoServiceTest {
                 .numeroPedido(5L)
                 .fechaHoraCarga(LocalDateTime.now())
                 .estado(EstadoPedido.SIN_STOCK)
-                .puntoDeVentaId("pdv-1")
-                .preventorId("prev-1")
+                .puntoDeVenta(PuntoDeVenta.builder().id("pdv-1").build())
+                .preventor(Preventor.builder().id("prev-1").build())
                 .detalles(List.of(DetallePedido.builder().cantidad(2).precioUnitario(500.0).subtotal(1000.0).build()))
                 .eliminado(false)
                 .build();
@@ -237,7 +264,7 @@ class PedidoServiceTest {
         when(pedidoLecturaService.enriquecerResponse(any(Pedido.class))).thenAnswer(inv -> {
             Pedido p = inv.getArgument(0);
             return new PedidoResponse(p.getId(), p.getNumeroPedido(), p.getFechaHoraCarga(), p.getEstado(),
-                    p.getPuntoDeVentaId(), p.getPreventorId(), null, null, 1000.0, 0.0, 1000.0, List.of(), null);
+                    null, null, null, null, 1000.0, 0.0, 1000.0, List.of(), null);
         });
 
         PedidoResponse anulado = pedidoService.anularPedido("ped-1", new AnularPedidoRequest("Cancelado por cliente"));

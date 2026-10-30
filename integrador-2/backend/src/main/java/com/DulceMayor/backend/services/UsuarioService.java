@@ -58,6 +58,14 @@ public class UsuarioService implements UserDetailsService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
     }
 
+    @Transactional(readOnly = true)
+    public Optional<Usuario> buscarUsuarioActivo(String id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return usuarioRepository.findByIdAndEliminadoFalse(id);
+    }
+
     @Transactional
     public Usuario crearUsuarioConClavePorDefecto(String nombreUsuario, RolUsuario rol) {
         Usuario usuario = Usuario.builder()
@@ -93,7 +101,11 @@ public class UsuarioService implements UserDetailsService {
 
     @Transactional(readOnly = true)
     public Usuario login(String nombreUsuario, String clave) {
-        Optional<Usuario> candidato = usuarioRepository.findByNombreUsuario(nombreUsuario);
+        String usernameLimpio = nombreUsuario != null ? nombreUsuario.trim().toLowerCase() : "";
+        Optional<Usuario> candidato = usuarioRepository.findByNombreUsuario(usernameLimpio);
+        if (candidato.isEmpty()) {
+            candidato = usuarioRepository.findByNombreUsuario(nombreUsuario != null ? nombreUsuario.trim() : "");
+        }
         if (candidato.isEmpty()) {
             throw new CredencialesInvalidasException();
         }
@@ -155,5 +167,64 @@ public class UsuarioService implements UserDetailsService {
                 usuario.isClaveTemporal(),
                 usuario.getProveedorAuth()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existeNombreUsuario(String nombreUsuario) {
+        return usuarioRepository.existsByNombreUsuario(nombreUsuario);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existeNombreUsuarioExcluyendoId(String nombreUsuario, String id) {
+        return usuarioRepository.existsByNombreUsuarioAndIdNot(nombreUsuario, id);
+    }
+
+    @Transactional
+    public Usuario crearUsuario(String nombreUsuario, String clave, RolUsuario rol, boolean claveTemporal) {
+        Usuario usuario = Usuario.builder()
+                .nombreUsuario(nombreUsuario)
+                .clave(passwordEncoder.encode(clave))
+                .rol(rol)
+                .claveTemporal(claveTemporal)
+                .proveedorAuth(ProveedorAuth.LOCAL)
+                .eliminado(false)
+                .build();
+        return usuarioRepository.save(usuario);
+    }
+
+    @Transactional(readOnly = true)
+    public AuthResponse generarAuthResponse(Usuario usuario) {
+        String token = jwtProvider.generarToken(usuario);
+        return new AuthResponse(
+                token,
+                "Bearer",
+                jwtProvider.getExpiraEnSegundos(),
+                usuario.isClaveTemporal(),
+                toResponse(usuario)
+        );
+    }
+
+    @Transactional
+    public void actualizarUsuarioEmpleado(Usuario usuario, String nuevoNombreUsuario, RolUsuario nuevoRol) {
+        usuario.setNombreUsuario(nuevoNombreUsuario);
+        usuario.setRol(nuevoRol);
+        usuarioRepository.save(usuario);
+    }
+
+    @Transactional
+    public void actualizarNombreUsuario(Usuario usuario, String nuevoNombreUsuario) {
+        if (usuario != null && nuevoNombreUsuario != null) {
+            usuario.setNombreUsuario(nuevoNombreUsuario.trim().toLowerCase());
+            usuarioRepository.save(usuario);
+        }
+    }
+
+    @Transactional
+    public void eliminarUsuario(String id) {
+        if (id == null) return;
+        usuarioRepository.findById(id).ifPresent(u -> {
+            u.setEliminado(true);
+            usuarioRepository.save(u);
+        });
     }
 }

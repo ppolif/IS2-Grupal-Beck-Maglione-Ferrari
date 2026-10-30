@@ -5,8 +5,12 @@ import com.DulceMayor.backend.dtos.AuthResponse;
 import com.DulceMayor.backend.dtos.CambiarClaveRequest;
 import com.DulceMayor.backend.dtos.LoginRequest;
 import com.DulceMayor.backend.dtos.PerfilResponse;
+import com.DulceMayor.backend.dtos.persona.RegistroMinoristaRequest;
 import com.DulceMayor.backend.services.UsuarioService;
+import com.DulceMayor.backend.services.persona.MinoristaService;
+import com.DulceMayor.backend.services.persona.PersonaService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,22 +20,36 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Controlador REST de autenticación.
- * Expone únicamente DTOs (Patrón DTO) y delega toda lógica de negocio a UsuarioService.
+ * Controlador REST de autenticación y auto-registro público.
+ * Expone únicamente DTOs (Patrón DTO) y delega toda lógica de negocio a los servicios de dominio.
  */
 @RestController
 @RequestMapping({"/auth", "/api/v1/auth"})
 public class AuthController {
 
     private final UsuarioService usuarioService;
+    private final PersonaService personaService;
+    private final MinoristaService minoristaService;
 
-    public AuthController(UsuarioService usuarioService) {
+    public AuthController(
+            UsuarioService usuarioService,
+            PersonaService personaService,
+            MinoristaService minoristaService) {
         this.usuarioService = usuarioService;
+        ///Averiguar si el unico uso de personaService se puede reemlpazar por usuarioService
+        this.personaService = personaService;
+        this.minoristaService = minoristaService;
     }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(usuarioService.login(request));
+    }
+
+    @PostMapping("/registro")
+    public ResponseEntity<AuthResponse> registrarMinorista(@Valid @RequestBody RegistroMinoristaRequest request) {
+        AuthResponse response = minoristaService.registrarEnPortal(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/cambiar-clave")
@@ -42,10 +60,11 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+
+    /// obtenerPerfil se podria llamar con usuario service
     @GetMapping("/perfil")
     public ResponseEntity<PerfilResponse> perfil(
             @AuthenticationPrincipal UsuarioPrincipal principal) {
-        return ResponseEntity.ok(usuarioService.obtenerPerfil(principal.getId()));
+        return ResponseEntity.ok(personaService.obtenerPerfilPorUsuario(principal.getId()));
     }
 }
-

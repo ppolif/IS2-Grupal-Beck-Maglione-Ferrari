@@ -120,6 +120,7 @@ public class FacturaLecturaService {
 
         Page<Factura> pagina = facturaRepository.buscarConFiltros(
                 estado,
+                minoristaId,
                 fechaDesde,
                 fechaHasta,
                 pageable
@@ -142,9 +143,10 @@ public class FacturaLecturaService {
     /**
      * Listado paginado de facturas para la sección "Mi cuenta" del cliente minorista.
      */
-    public FacturaMiCuentaPage listarMiCuenta(EstadoFactura estado, Pageable pageable) {
+    public FacturaMiCuentaPage listarMiCuenta(EstadoFactura estado, String minoristaId, Pageable pageable) {
         Page<Factura> pagina = facturaRepository.buscarConFiltros(
                 estado,
+                minoristaId,
                 null,
                 null,
                 pageable
