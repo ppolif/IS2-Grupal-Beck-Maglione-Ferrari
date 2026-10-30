@@ -1,0 +1,6 @@
+.env
+backend/target/
+frontend-institucional/node_modules/
+frontend-institucional/dist/
+.idea/
+
