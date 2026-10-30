@@ -189,3 +189,26 @@
   - `FacturaService` y `FacturaController`: generación transaccional con descuento de stock vinculado a `DetalleFactura`, anulación (409 si tiene pagos activos), descarga de comprobante PDF (`application/pdf`), generación de QR de pago simulado (`image/png`, 409 si no está en `PENDIENTE_PAGO`), reenvío por correo y consulta paginada (`/facturas` y `/mi-cuenta/facturas`).
   - `PagoService` y `PagoController`: registro de pagos parciales o totales (`POST /facturas/{id}/pagos`), transición automática a `PAGADA` al cubrir el saldo, bloqueo de sobrepagos (409) y reversión de estado al eliminar un pago (`DELETE /pagos/{id}`).
 
+---
+
+## Paso 7: Módulo Pedidos y Trazabilidad (EstadoPedido, DetallePedido, HistorialEstadoPedido, Pedido, ProcesamientoPedidoService)
+
+### 1. Qué se hizo
+- **Enumeración y entidades de dominio (`com.DulceMayor.backend.entities.pedido`):**
+  - `EstadoPedido`: enumeración con `CARGADO`, `SIN_STOCK`, `FACTURADO`, `EN_REPARTO`, `ENTREGADO` y `ANULADO`.
+  - `DetallePedido`: extiende `EntidadBase` con `cantidad`, `precioUnitario` (copiado de la `VigenciaPrecio` abierta al cargar/modificar), `subtotal` y asociación `@ManyToOne` hacia `Producto`.
+  - `HistorialEstadoPedido`: extiende `EntidadBase` con `estado`, `fechaHora`, `usuario`, `observacion` y asociación `@ManyToOne` hacia `Pedido` para trazabilidad completa sin clase `Envio` (conforme a `GENERAL.md` §7).
+  - `Pedido`: extiende `EntidadBase` con `numeroPedido` correlativo, `fechaHoraCarga`, `subtotal`, `descuento`, `total`, `estado`, referencias provisorias `puntoDeVentaId`, `preventorId`, `distribuidorId`, `@ManyToOne Promocion` y composición `@OneToMany` de `List<DetallePedido> detalles`.
+  - **Vínculo con Facturación:** se actualizó `Factura` reemplazando el campo provisorio `pedidoId` por la asociación `@ManyToOne Pedido pedido` (`1 — 0..1` del UML) y ajustando `FacturaMapper` y `FacturaService.generarDesdePedido(Pedido)`.
+- **Repositorios, DTOs, Eventos y Mappers (`com.DulceMayor.backend.repositories.pedido`, `com.DulceMayor.backend.dtos.pedido`):**
+  - `DetallePedidoRepository`, `HistorialEstadoPedidoRepository` y `PedidoRepository` (numeración correlativa y consulta paginada con filtros dinámicos).
+  - Records DTOs alineados con `04-openapi.yaml`: `DetallePedidoRequest/Response`, `PedidoRequest`, `PedidoUpdateRequest`, `AnularPedidoRequest`, `PedidoResponse`, `PedidoPage`, `PedidoMiCuentaPage`, `HistorialEstadoPedidoResponse`, `ItemSinStock`, `ProcesamientoPedidoResponse` y el evento `PedidoEstadoCambiadoEvent`.
+  - Mappers MapStruct (`injectionStrategy = InjectionStrategy.CONSTRUCTOR`): `DetallePedidoMapper`, `HistorialEstadoPedidoMapper` y `PedidoMapper`.
+- **Servicios, Orquestador, Observer y Controlador REST (`com.DulceMayor.backend.services.pedido`, `com.DulceMayor.backend.controllers.pedido`):**
+  - `HistorialEstadoPedidoService`: registro y consulta cronológica de transiciones de estado.
+  - `PedidoLecturaService`: servicio de solo lectura que resuelve `facturaId` desde `FacturaRepository` y construye las páginas `PedidoPage` y `PedidoMiCuentaPage` respetando las reglas ArchUnit.
+  - `PedidoService`: máquina de estados completa (`CARGADO`, `SIN_STOCK`, `FACTURADO`, `EN_REPARTO`, `ENTREGADO`, `ANULADO`), fijación de `VigenciaPrecio`, validación condicional de `Promocion` (`producto` y `cantidadMinima`), visibilidad aislada para rol `PREVENTISTA` y emisión de `PedidoEstadoCambiadoEvent`.
+  - `ProcesamientoPedidoService`: orquestador transaccional para `POST /pedidos/{id}/procesar` que coordina `PedidoService`, `StockService` y `FacturaService` sin acoplamiento cruzado.
+  - `NotificacionPedidoListener`: observador Spring Events (`@EventListener`) sobre cambios de estado clave (`FACTURADO`, `ENTREGADO`).
+  - `PedidoController`: endpoints `/pedidos`, `/pedidos/{id}`, `/pedidos/{id}/anular`, `/pedidos/{id}/historial`, `/pedidos/{id}/procesar` y `/mi-cuenta/pedidos` (con variantes `/api/v1/...`).
+

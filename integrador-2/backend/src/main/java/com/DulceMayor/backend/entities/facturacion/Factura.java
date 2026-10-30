@@ -1,6 +1,7 @@
 package com.DulceMayor.backend.entities.facturacion;
 
 import com.DulceMayor.backend.entities.EntidadBase;
+import com.DulceMayor.backend.entities.pedido.Pedido;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,6 +9,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
@@ -40,7 +42,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@ToString(callSuper = true, exclude = "detalles")
+@ToString(callSuper = true, exclude = {"pedido", "detalles"})
 public class Factura extends EntidadBase {
 
     @Column(name = "numero_factura", nullable = false, unique = true)
@@ -58,17 +60,12 @@ public class Factura extends EntidadBase {
     @Column(nullable = false, length = 30)
     private EstadoFactura estado = EstadoFactura.PENDIENTE_PAGO;
 
-    /*
-     * Relación con Pedido según 01-dominio.md (Factura -> Pedido, 1 — 0..1):
-     * Mientras la entidad Pedido no esté implementada en el sistema, se almacena el identificador
-     * pedidoId directamente en la columna pedido_id. Al incorporar Pedido se podrá mapear como:
-     *
-     * @ManyToOne(fetch = FetchType.LAZY)
-     * @JoinColumn(name = "pedido_id")
-     * private Pedido pedido;
+    /**
+     * Asociación unidireccional hacia {@link Pedido} según {@code 01-dominio.md} ({@code Factura -> Pedido}, 1 — 0..1).
      */
-    @Column(name = "pedido_id", length = 36)
-    private String pedidoId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pedido_id")
+    private Pedido pedido;
 
     /**
      * Composición 1 — 1..* hacia {@link DetalleFactura}: la factura es dueña de sus líneas de detalle.

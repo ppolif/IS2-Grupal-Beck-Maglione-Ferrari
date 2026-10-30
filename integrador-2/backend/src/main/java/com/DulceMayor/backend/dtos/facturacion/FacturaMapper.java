@@ -24,6 +24,7 @@ public interface FacturaMapper extends BaseMapper<Factura, FacturaRequest, Factu
     @Mapping(target = "fechaFactura", ignore = true)
     @Mapping(target = "total", ignore = true)
     @Mapping(target = "estado", ignore = true)
+    @Mapping(target = "pedido", ignore = true)
     @Mapping(target = "detalles", ignore = true)
     Factura aEntidad(FacturaRequest request);
 
@@ -34,10 +35,12 @@ public interface FacturaMapper extends BaseMapper<Factura, FacturaRequest, Factu
     @Mapping(target = "fechaFactura", ignore = true)
     @Mapping(target = "total", ignore = true)
     @Mapping(target = "estado", ignore = true)
+    @Mapping(target = "pedido", ignore = true)
     @Mapping(target = "detalles", ignore = true)
     void actualizarEntidad(FacturaRequest request, @MappingTarget Factura entidad);
 
     @Override
+    @Mapping(target = "pedidoId", source = "pedido.id")
     @Mapping(target = "totalPagado", ignore = true)
     @Mapping(target = "saldo", ignore = true)
     @Mapping(target = "pagos", ignore = true)

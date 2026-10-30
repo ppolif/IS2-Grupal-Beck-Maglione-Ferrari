@@ -14,6 +14,8 @@ import com.DulceMayor.backend.dtos.producto.ProductoResponse;
 import com.DulceMayor.backend.entities.facturacion.DetalleFactura;
 import com.DulceMayor.backend.entities.facturacion.EstadoFactura;
 import com.DulceMayor.backend.entities.facturacion.Factura;
+import com.DulceMayor.backend.entities.pedido.DetallePedido;
+import com.DulceMayor.backend.entities.pedido.Pedido;
 import com.DulceMayor.backend.entities.producto.Producto;
 import com.DulceMayor.backend.repositories.facturacion.FacturaRepository;
 import com.DulceMayor.backend.services.BaseService;
@@ -126,10 +128,67 @@ public class FacturaService extends BaseService<Factura, FacturaRequest, Factura
         Factura factura = Factura.builder()
                 .numeroFactura(siguienteNumero)
                 .fechaFactura(LocalDateTime.now())
-                .pedidoId(request.pedidoId() != null && !request.pedidoId().isBlank() ? request.pedidoId().trim() : null)
+                .pedido(null)
                 .estado(EstadoFactura.PENDIENTE_PAGO)
                 .total(total)
                 .detalles(detalles)
+                .eliminado(false)
+                .build();
+
+        Factura guardada = facturaRepository.save(factura);
+
+        for (DetalleFactura detalleGuardado : guardada.getDetalles()) {
+            stockService.descontar(
+                    detalleGuardado.getProducto().getId(),
+                    detalleGuardado.getCantidad(),
+                    detalleGuardado
+            );
+        }
+
+        return aResponse(guardada);
+    }
+
+    /**
+     * Genera transaccionalmente la {@link Factura} asociada a un {@link Pedido} durante su procesamiento,
+     * clonando sus detalles, heredando su total y descontando el stock de cada producto vinculándolo
+     * al {@link DetalleFactura} creado (sección 5.1 de {@code 02-reglas-negocio.md}).
+     */
+    @Transactional
+    public FacturaResponse generarDesdePedido(Pedido pedido) {
+        if (pedido == null || pedido.getDetalles() == null || pedido.getDetalles().isEmpty()) {
+            throw new ValidacionException("El pedido a facturar debe contener al menos un detalle");
+        }
+        if (pedido.getId() != null
+                && facturaRepository.findByPedidoIdAndEliminadoFalse(pedido.getId()).isPresent()) {
+            throw new ConflictoException(
+                    "DUPLICADO",
+                    "Ya existe una factura activa para el pedido: " + pedido.getId()
+            );
+        }
+
+        List<DetalleFactura> detallesFactura = new ArrayList<>();
+        for (DetallePedido detPedido : pedido.getDetalles()) {
+            DetalleFactura detalle = DetalleFactura.builder()
+                    .producto(detPedido.getProducto())
+                    .cantidad(detPedido.getCantidad())
+                    .precioUnitario(detPedido.getPrecioUnitario())
+                    .subtotal(detPedido.getSubtotal())
+                    .eliminado(false)
+                    .build();
+            detallesFactura.add(detalle);
+        }
+
+        Long siguienteNumero = facturaRepository.findFirstByOrderByNumeroFacturaDesc()
+                .map(f -> f.getNumeroFactura() + 1L)
+                .orElse(1L);
+
+        Factura factura = Factura.builder()
+                .numeroFactura(siguienteNumero)
+                .fechaFactura(LocalDateTime.now())
+                .pedido(pedido)
+                .estado(EstadoFactura.PENDIENTE_PAGO)
+                .total(pedido.getTotal())
+                .detalles(detallesFactura)
                 .eliminado(false)
                 .build();
 

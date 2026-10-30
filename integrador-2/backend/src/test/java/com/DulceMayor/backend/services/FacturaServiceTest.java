@@ -19,6 +19,9 @@ import com.DulceMayor.backend.dtos.facturacion.FacturaResponse;
 import com.DulceMayor.backend.entities.facturacion.DetalleFactura;
 import com.DulceMayor.backend.entities.facturacion.EstadoFactura;
 import com.DulceMayor.backend.entities.facturacion.Factura;
+import com.DulceMayor.backend.entities.pedido.DetallePedido;
+import com.DulceMayor.backend.entities.pedido.EstadoPedido;
+import com.DulceMayor.backend.entities.pedido.Pedido;
 import com.DulceMayor.backend.entities.producto.Producto;
 import com.DulceMayor.backend.repositories.facturacion.FacturaRepository;
 import com.DulceMayor.backend.services.facturacion.FacturaLecturaService;
@@ -178,5 +181,63 @@ class FacturaServiceTest {
 
         pendiente.setEstado(EstadoFactura.PAGADA);
         assertThrows(ConflictoException.class, () -> facturaService.generarQrPago("fac-1"));
+    }
+
+    @Test
+    @DisplayName("generarDesdePedido: clona DetallePedido, vincula Pedido con @ManyToOne y descuenta stock")
+    void generarDesdePedidoExitoso() {
+        Producto prod = Producto.builder()
+                .id("prod-1")
+                .nombre("Alfajor Simple")
+                .eliminado(false)
+                .build();
+
+        Pedido pedido = Pedido.builder()
+                .id("ped-10")
+                .numeroPedido(10L)
+                .estado(EstadoPedido.CARGADO)
+                .subtotal(2000.0)
+                .descuento(200.0)
+                .total(1800.0)
+                .detalles(List.of(DetallePedido.builder()
+                        .id("dp-1")
+                        .producto(prod)
+                        .cantidad(2)
+                        .precioUnitario(1000.0)
+                        .subtotal(2000.0)
+                        .build()))
+                .eliminado(false)
+                .build();
+
+        when(facturaRepository.findByPedidoIdAndEliminadoFalse("ped-10")).thenReturn(Optional.empty());
+        when(facturaRepository.findFirstByOrderByNumeroFacturaDesc()).thenReturn(Optional.empty());
+        when(facturaRepository.save(any(Factura.class))).thenAnswer(inv -> {
+            Factura f = inv.getArgument(0);
+            f.setId("fac-10");
+            f.getDetalles().get(0).setId("df-10");
+            return f;
+        });
+        when(facturaLecturaService.enriquecerResponse(any(Factura.class))).thenAnswer(inv -> {
+            Factura f = inv.getArgument(0);
+            return new FacturaResponse(
+                    f.getId(),
+                    f.getNumeroFactura(),
+                    f.getFechaFactura(),
+                    f.getPedido() != null ? f.getPedido().getId() : null,
+                    f.getEstado(),
+                    f.getTotal(),
+                    0.0,
+                    f.getTotal(),
+                    List.of(),
+                    List.of()
+            );
+        });
+
+        FacturaResponse res = facturaService.generarDesdePedido(pedido);
+
+        assertEquals("fac-10", res.id());
+        assertEquals("ped-10", res.pedidoId());
+        assertEquals(1800.0, res.total());
+        verify(stockService).descontar(eq("prod-1"), eq(2), any(DetalleFactura.class));
     }
 }

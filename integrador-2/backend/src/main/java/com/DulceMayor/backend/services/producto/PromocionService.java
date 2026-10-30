@@ -132,6 +132,31 @@ public class PromocionService extends BaseService<Promocion, PromocionRequest, P
         return mapper.aResponse(promocion);
     }
 
+    /**
+     * Obtiene la entidad {@link Promocion} vigente para aplicar a un pedido.
+     * Lanza {@link ValidacionException} (HTTP 400) si el código no existe, fue eliminado o está fuera de vigencia,
+     * conforme a {@code 02-reglas-negocio.md} (§3) y {@code 04-openapi.yaml}.
+     */
+    @Transactional(readOnly = true)
+    public Promocion obtenerVigentePorCodigoParaPedido(String codigo) {
+        if (codigo == null || codigo.isBlank()) {
+            throw new ValidacionException("El código de promoción no puede estar vacío");
+        }
+        String codigoNormalizado = codigo.trim().toUpperCase();
+        Promocion promocion = promocionRepository.findByCodigoIgnoreCaseAndEliminadoFalse(codigoNormalizado)
+                .orElseThrow(() -> new ValidacionException(
+                        "El código de promoción '" + codigoNormalizado + "' no existe o fue eliminado"
+                ));
+
+        LocalDate hoy = LocalDate.now();
+        if (hoy.isBefore(promocion.getFechaDesde()) || hoy.isAfter(promocion.getFechaHasta())) {
+            throw new ValidacionException(
+                    "La promoción con código '" + codigoNormalizado + "' no se encuentra vigente a la fecha actual"
+            );
+        }
+        return promocion;
+    }
+
     @Transactional(readOnly = true)
     public List<PromocionResponse> listar(Boolean soloVigentes) {
         //si hay filtro se aplica
