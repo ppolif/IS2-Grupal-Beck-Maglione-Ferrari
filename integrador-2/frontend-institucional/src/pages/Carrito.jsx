@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
 import { cartMock } from '../mocks/products';
 
 export default function Carrito() {
+  const navigate = useNavigate();
   const [items, setItems] = useState(cartMock);
   const [promoCodeInput, setPromoCodeInput] = useState('');
   const [appliedPromo, setAppliedPromo] = useState({
@@ -290,10 +291,10 @@ export default function Carrito() {
               </div>
 
               <Button
-                onClick={() => alert('¡Pedido confirmado con éxito! Nuestro preventor se comunicará para coordinar la entrega.')}
+                onClick={() => navigate('/checkout')}
                 className="w-full py-3.5 text-[14px] justify-center cursor-pointer"
               >
-                Confirmar pedido
+                Continuar al Pago y Entrega
               </Button>
 
               <Link to="/tienda" className="block text-center text-[12px] text-[#6b6b80] hover:text-[#e86bc4] pt-2">

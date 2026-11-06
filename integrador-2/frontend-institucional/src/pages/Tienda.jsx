@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import ProductCard from '../components/ProductCard';
+import ProductDetailModal from '../components/ProductDetailModal';
 import Icon from '../components/Icon';
 import { productsMock } from '../mocks/products';
 
 export default function Tienda() {
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchTerm, setSearchTerm] = useState('');
+  const [detailProduct, setDetailProduct] = useState(null);
 
   const categories = ['Todos', 'Alfajores', 'Golosinas', 'Chupetines', 'Chocolates'];
 
@@ -100,12 +102,29 @@ export default function Tienda() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {filteredProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
+              <ProductCard
+                key={p.id}
+                product={p}
+                onClick={(prod) => setDetailProduct(prod)}
+                onAddToCart={(prod) => {
+                  alert(`Agregado 1 bulto de "${prod.nombre}" al carrito.`);
+                }}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {/* Modal Ficha Detalle de Producto */}
+      {detailProduct && (
+        <ProductDetailModal
+          product={detailProduct}
+          onClose={() => setDetailProduct(null)}
+          onAddToCart={(item) => {
+            console.log('Agregado al carrito:', item);
+          }}
+        />
+      )}
     </div>
   );
 }
-

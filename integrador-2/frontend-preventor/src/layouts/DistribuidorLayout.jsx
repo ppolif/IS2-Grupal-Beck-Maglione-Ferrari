@@ -3,7 +3,7 @@ import Logo from '../components/Logo';
 import Icon from '../components/Icon';
 import { usuarioMock } from '../mocks/session';
 
-export default function DistribuidorLayout() {
+export default function DistribuidorLayout({ onSwitchRole, onLogout }) {
   const navItems = [
     { to: '/pedidos', label: 'Pedidos', icon: 'box' },
     { to: '/recorrido', label: 'Recorrido', icon: 'route' },
@@ -20,6 +20,18 @@ export default function DistribuidorLayout() {
             <span className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-wider text-[#3fb8d9] bg-[#d9f7ff] px-2.5 py-0.5 rounded-full">
               Distribuidor
             </span>
+
+            {/* Selector rápido de rol para demo */}
+            {onSwitchRole && (
+              <button
+                type="button"
+                onClick={() => onSwitchRole('preventor')}
+                className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-[#e86bc4] bg-[#ffe2f7] border border-[#ffcef3] px-2.5 py-1 rounded-full hover:bg-[#ffd5f4] transition-colors cursor-pointer"
+                title="Cambiar a vista de Preventor"
+              >
+                <span>💼 Ir a Preventas</span>
+              </button>
+            )}
           </div>
 
           {/* Desktop/Tablet Navigation Links */}
@@ -42,24 +54,37 @@ export default function DistribuidorLayout() {
             ))}
           </nav>
 
-          {/* User Avatar */}
-          <Link
-            to="/perfil"
-            className="flex items-center gap-2.5 p-1 rounded-full hover:opacity-85 transition-opacity"
-            title="Mi cuenta"
-          >
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#ffcef3] to-[#a1eafb] text-[#2b2b3a] font-bold text-[12px] flex items-center justify-center shadow-sm">
-              {usuarioMock.avatar}
-            </div>
-            <div className="hidden lg:flex flex-col text-left">
-              <span className="text-[12px] font-bold text-[#2b2b3a] leading-tight">
-                {usuarioMock.nombre}
-              </span>
-              <span className="text-[10px] text-[#6b6b80]">
-                {usuarioMock.unidad}
-              </span>
-            </div>
-          </Link>
+          {/* User Avatar & Logout */}
+          <div className="flex items-center gap-2">
+            <Link
+              to="/perfil"
+              className="flex items-center gap-2.5 p-1 rounded-full hover:opacity-85 transition-opacity"
+              title="Mi cuenta"
+            >
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#ffcef3] to-[#a1eafb] text-[#2b2b3a] font-bold text-[12px] flex items-center justify-center shadow-sm">
+                {usuarioMock.avatar}
+              </div>
+              <div className="hidden lg:flex flex-col text-left">
+                <span className="text-[12px] font-bold text-[#2b2b3a] leading-tight">
+                  {usuarioMock.nombre}
+                </span>
+                <span className="text-[10px] text-[#6b6b80]">
+                  {usuarioMock.unidad}
+                </span>
+              </div>
+            </Link>
+
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="text-[11px] font-bold text-[#aaa9ba] hover:text-[#ff8fa3] p-1.5 rounded-lg transition-colors cursor-pointer"
+                title="Cerrar sesión"
+              >
+                Salir
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -69,13 +94,13 @@ export default function DistribuidorLayout() {
       </main>
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[72px] bg-white border-t border-[#ececf2] flex items-center justify-around px-4 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[72px] bg-white border-t border-[#ececf2] flex items-center justify-around px-2 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center gap-1 flex-1 py-1 px-2 rounded-[12px] text-[10px] font-semibold transition-colors ${
+              `flex flex-col items-center justify-center gap-1 flex-1 py-1 px-1 rounded-[12px] text-[10px] font-semibold transition-colors ${
                 isActive
                   ? 'text-[#247f99] bg-[#d9f7ff]'
                   : 'text-[#9b9aaa] hover:text-[#2b2b3a]'
@@ -90,4 +115,3 @@ export default function DistribuidorLayout() {
     </div>
   );
 }
-

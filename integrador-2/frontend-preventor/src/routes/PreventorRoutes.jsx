@@ -4,15 +4,19 @@ import Recorrido from '../pages/preventor/Recorrido';
 import RegistroComercio from '../pages/preventor/RegistroComercio';
 import Tienda from '../pages/preventor/Tienda';
 import Carrito from '../pages/preventor/Carrito';
+import Pedidos from '../pages/preventor/Pedidos';
+import Comercios from '../pages/preventor/Comercios';
 import Perfil from '../pages/compartidas/Perfil';
 import CambiarPassword from '../pages/compartidas/CambiarPassword';
 
-export default function PreventorRoutes() {
+export default function PreventorRoutes({ onSwitchRole, onLogout }) {
   return (
     <Routes>
-      <Route element={<PreventorLayout />}>
+      <Route element={<PreventorLayout onSwitchRole={onSwitchRole} onLogout={onLogout} />}>
         <Route path="/" element={<Navigate to="/recorrido" replace />} />
         <Route path="/recorrido" element={<Recorrido />} />
+        <Route path="/pedidos" element={<Pedidos />} />
+        <Route path="/comercios" element={<Comercios />} />
         <Route path="/registro-comercio" element={<RegistroComercio />} />
         <Route path="/tienda" element={<Tienda />} />
         <Route path="/carrito" element={<Carrito />} />
@@ -23,4 +27,3 @@ export default function PreventorRoutes() {
     </Routes>
   );
 }
-

@@ -1,0 +1,72 @@
+export const minoristasMock = [
+  {
+    id: "min-1",
+    razonSocial: "Kiosco El Sol de Gómez Roberto",
+    nombreFantasia: "Kiosco El Sol",
+    cuit: "20-28491823-4",
+    email: "roberto.gomez@gmail.com",
+    telefono: "261 456 7890",
+    direccion: "Av. San Martín 1842",
+    departamento: "Godoy Cruz",
+    preventorAsignado: "Lucía Martínez",
+    pedidosHistoricos: 24,
+    saldoDeudor: 45200,
+    estado: "Activo"
+  },
+  {
+    id: "min-2",
+    razonSocial: "Almacén Don Pepe S.H.",
+    nombreFantasia: "Almacén Don Pepe",
+    cuit: "20-22948172-8",
+    email: "donpepe.mendoza@yahoo.com",
+    telefono: "261 498 1234",
+    direccion: "Belgrano 450",
+    departamento: "Godoy Cruz",
+    preventorAsignado: "Lucía Martínez",
+    pedidosHistoricos: 41,
+    saldoDeudor: 0,
+    estado: "Activo"
+  },
+  {
+    id: "min-3",
+    razonSocial: "López Mariana - Kiosco Avenida",
+    nombreFantasia: "Kiosco Avenida",
+    cuit: "27-31298451-2",
+    email: "mariana.lopez@hotmail.com",
+    telefono: "261 512 8840",
+    direccion: "Av. San Martín 1120",
+    departamento: "Godoy Cruz",
+    preventorAsignado: "Lucía Martínez",
+    pedidosHistoricos: 18,
+    saldoDeudor: 0,
+    estado: "Activo"
+  },
+  {
+    id: "min-4",
+    razonSocial: "Comercial Central S.R.L.",
+    nombreFantasia: "Kiosco Central",
+    cuit: "30-71829481-2",
+    email: "compras@kioscocentral.com.ar",
+    telefono: "261 420 5511",
+    direccion: "Garibaldi 180",
+    departamento: "Capital",
+    preventorAsignado: "Javier Pereyra",
+    pedidosHistoricos: 56,
+    saldoDeudor: 34120,
+    estado: "Activo"
+  },
+  {
+    id: "min-5",
+    razonSocial: "Drugstore Mitre de Carlos Mitre",
+    nombreFantasia: "Drugstore Mitre",
+    cuit: "20-33491820-9",
+    email: "carlos.mitre@gmail.com",
+    telefono: "261 678 9912",
+    direccion: "Mitre 920",
+    departamento: "Godoy Cruz",
+    preventorAsignado: "Lucía Martínez",
+    pedidosHistoricos: 12,
+    saldoDeudor: 0,
+    estado: "Activo"
+  }
+];

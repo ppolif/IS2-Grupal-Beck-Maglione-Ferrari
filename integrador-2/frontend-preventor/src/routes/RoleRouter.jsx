@@ -1,28 +1,38 @@
+import { useState } from 'react';
 import { usuarioMock } from '../mocks/session';
 import PreventorRoutes from './PreventorRoutes';
 import DistribuidorRoutes from './DistribuidorRoutes';
+import Login from '../pages/compartidas/Login';
 
-// TODO: conectar con autenticación real
-// Selector de interfaz según el rol del usuario autenticado
 export default function RoleRouter() {
-  const { rol } = usuarioMock;
+  // Manejo de estado de rol local interactivo para demos
+  const [activeRole, setActiveRole] = useState(usuarioMock.rol);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
 
-  switch (rol) {
+  if (!isAuthenticated) {
+    return (
+      <Login
+        onLoginSuccess={(role) => {
+          setActiveRole(role);
+          setIsAuthenticated(true);
+        }}
+      />
+    );
+  }
+
+  switch (activeRole) {
     case 'preventor':
-      return <PreventorRoutes />;
+      return <PreventorRoutes onSwitchRole={(r) => setActiveRole(r)} onLogout={() => setIsAuthenticated(false)} />;
     case 'distribuidor':
-      return <DistribuidorRoutes />;
+      return <DistribuidorRoutes onSwitchRole={(r) => setActiveRole(r)} onLogout={() => setIsAuthenticated(false)} />;
     default:
       return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-[#edf0f8]">
-          <div className="bg-white p-8 rounded-[20px] shadow-sm border border-[#ececf2] max-w-md text-center">
-            <h2 className="text-xl font-bold text-[#ff8fa3]">Rol no autorizado</h2>
-            <p className="text-[13px] text-[#6b6b80] mt-2">
-              El rol "{rol}" no tiene acceso a esta aplicación. Configurá "preventor" o "distribuidor" en <code>src/mocks/session.js</code>.
-            </p>
-          </div>
-        </div>
+        <Login
+          onLoginSuccess={(role) => {
+            setActiveRole(role);
+            setIsAuthenticated(true);
+          }}
+        />
       );
   }
 }
-
