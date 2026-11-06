@@ -16,7 +16,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface MinoristaRepository extends BaseRepository<Minorista> {
 
-    Optional<Minorista> findByUsuarioIdAndEliminadoFalse(String usuarioId);
+    @Query("SELECT m FROM Minorista m JOIN m.usuarios u WHERE u.id = :usuarioId AND m.eliminado = false")
+    Optional<Minorista> findByUsuarioIdAndEliminadoFalse(@Param("usuarioId") String usuarioId);
 
     Optional<Minorista> findByNumeroDocumentoAndEliminadoFalse(String numeroDocumento);
 

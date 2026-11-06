@@ -86,7 +86,7 @@ public class PuntoDeVentaService extends BaseService<PuntoDeVenta, PuntoDeVentaR
         entidad.setMinorista(minorista);
 
         if (entidad.getDireccion() == null) {
-            Direccion dir = direccionService.construirEntidad(request.direccion());
+            Direccion dir = direccionService.crearEntidad(request.direccion());
             entidad.setDireccion(dir);
         } else {
             direccionService.actualizarEntidad(entidad.getDireccion(), request.direccion());
@@ -101,12 +101,34 @@ public class PuntoDeVentaService extends BaseService<PuntoDeVenta, PuntoDeVentaR
                 Preventor preventor = empleadoService.obtenerPreventorPorUsuarioId(principal.getId());
                 entidad.setPreventor(preventor);
             }
+        } else if (entidad.getPreventor() == null) {
+            // Alta desde portal web por minorista: asignación automática por cercanía geodésica a sucursales
+            Direccion dir = entidad.getDireccion();
+            if (dir != null && dir.getLatitud() != null && dir.getLongitud() != null
+                    && (dir.getLatitud() != 0.0 || dir.getLongitud() != 0.0)) {
+                Preventor masCercano = empleadoService.buscarPreventorMasCercano(dir.getLatitud(), dir.getLongitud());
+                entidad.setPreventor(masCercano);
+            }
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<PuntoDeVenta> listarPorPreventor(String preventorId) {
+        if (preventorId == null || preventorId.isBlank()) {
+            return List.of();
+        }
+        return puntoDeVentaRepository.findAllByPreventorIdAndEliminadoFalse(preventorId.trim());
     }
 
     @Transactional(readOnly = true)
     public PuntoDeVentaPage buscarPaginado(String minoristaId, String preventorId, String q, Pageable pageable) {
         String preventorFiltro = preventorId != null && !preventorId.isBlank() ? preventorId.trim() : null;
+
+        /// Si quien consulta es un PREVENTISTA:
+        ///
+        /// El sistema ignora cualquier preventorId que venga en los parámetros de la URL.
+        /// Obtiene automáticamente el ID del preventista autenticado (miPreventor.getId()) y fuerza el filtro con ese valor.
+        /// De esta manera, un preventista solo puede listar y ver su propia cartera de puntos de venta/clientes y no la de sus colegas.
         if (esPreventistaAutenticado()) {
             UsuarioPrincipal principal = obtenerPrincipalAutenticado();
             if (principal != null) {
@@ -130,6 +152,7 @@ public class PuntoDeVentaService extends BaseService<PuntoDeVenta, PuntoDeVentaR
         );
     }
 
+    /// subscriptor del patron observer, si se elimina el mayorista se eliminan todos sus puntos de venta
     @EventListener
     @Transactional
     public void onMinoristaEliminado(MinoristaEliminadoEvent event) {
@@ -137,9 +160,6 @@ public class PuntoDeVentaService extends BaseService<PuntoDeVenta, PuntoDeVentaR
         List<PuntoDeVenta> puntos = puntoDeVentaRepository.findAllByMinoristaIdAndEliminadoFalse(event.minoristaId());
         for (PuntoDeVenta pv : puntos) {
             pv.setEliminado(true);
-            if (pv.getDireccion() != null) {
-                pv.getDireccion().setEliminado(true);
-            }
         }
         puntoDeVentaRepository.saveAll(puntos);
     }
@@ -169,7 +189,7 @@ public class PuntoDeVentaService extends BaseService<PuntoDeVenta, PuntoDeVentaR
             throw new ValidacionException("El nombre del comercio es obligatorio");
         }
         if (request.minoristaId() == null || request.minoristaId().isBlank()) {
-            throw new ValidacionException("El id del minorista es obligatorio");
+            throw new ValidacionException("El minorista es obligatorio");
         }
         if (request.direccion() == null) {
             throw new ValidacionException("La dirección es obligatoria");

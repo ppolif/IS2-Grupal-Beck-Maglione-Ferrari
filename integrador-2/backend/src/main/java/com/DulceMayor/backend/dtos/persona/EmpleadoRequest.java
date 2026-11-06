@@ -44,7 +44,10 @@ public record EmpleadoRequest(
         String nombreUsuario,
 
         @NotNull(message = "El rol es obligatorio")
-        RolEmpleado rol
+        RolEmpleado rol,
+
+        @NotNull(message = "La sucursal o sede central (mayorista) es obligatoria")
+        String mayoristaId
 ) {
 }
 

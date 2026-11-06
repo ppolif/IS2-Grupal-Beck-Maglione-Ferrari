@@ -4,13 +4,10 @@ import com.DulceMayor.backend.dtos.producto.ProductoMapper;
 import com.DulceMayor.backend.dtos.producto.ProductoPage;
 import com.DulceMayor.backend.dtos.producto.ProductoResponse;
 import com.DulceMayor.backend.entities.producto.Producto;
-import com.DulceMayor.backend.entities.producto.Stock;
-import com.DulceMayor.backend.entities.producto.VigenciaPrecio;
 import com.DulceMayor.backend.repositories.producto.ProductoRepository;
-import com.DulceMayor.backend.repositories.producto.StockRepository;
-import com.DulceMayor.backend.repositories.producto.VigenciaPrecioRepository;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,9 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Servicio de lectura para el catálogo y productos.
  * <p>
- * Conforme a la sección 10.1 (regla 6) de GENERAL.md y la exención en ArquitecturaTests,
- * las clases {@code *LecturaService} son de solo lectura y pueden consultar múltiples repositorios
- * para optimizar proyecciones con stock y precios en tiempo real.
+ * Conforme a la sección 10.1 de {@code GENERAL.md}, delega las consultas de stock en {@link StockService}
+ * y las de precios vigentes en {@link VigenciaPrecioService}, desacoplándose de los repositorios foráneos.
  * </p>
  */
 @Service
@@ -29,33 +25,27 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductoLecturaService {
 
     private final ProductoRepository productoRepository;
-    private final StockRepository stockRepository;
-    private final VigenciaPrecioRepository vigenciaPrecioRepository;
+    private final StockService stockService;
+    private final VigenciaPrecioService vigenciaPrecioService;
     private final ProductoMapper productoMapper;
 
     public ProductoLecturaService(
             ProductoRepository productoRepository,
-            StockRepository stockRepository,
-            VigenciaPrecioRepository vigenciaPrecioRepository,
+            @Lazy StockService stockService,
+            @Lazy VigenciaPrecioService vigenciaPrecioService,
             ProductoMapper productoMapper) {
         this.productoRepository = productoRepository;
-        this.stockRepository = stockRepository;
-        this.vigenciaPrecioRepository = vigenciaPrecioRepository;
+        this.stockService = stockService;
+        this.vigenciaPrecioService = vigenciaPrecioService;
         this.productoMapper = productoMapper;
     }
 
     public Integer obtenerStockActual(String productoId) {
-        // En el nuevo modelo UML, Stock navega al producto a través de DetalleFactura.
-        // Dado que DetalleFactura aún no está implementada, se consulta el último registro disponible:
-        return stockRepository.findFirstByEliminadoFalseOrderByFechaHoraDescIdDesc()
-                .map(Stock::getCantidadActual)
-                .orElse(0);
+        return stockService.obtenerStockActual(productoId);
     }
 
     public Double obtenerPrecioVigente(String productoId) {
-        return vigenciaPrecioRepository.findByProductoIdAndFechaHastaIsNullAndEliminadoFalse(productoId)
-                .map(VigenciaPrecio::getPrecio)
-                .orElse(null);
+        return vigenciaPrecioService.obtenerPrecioVigente(productoId);
     }
 
     public ProductoResponse enriquecerResponse(Producto producto) {

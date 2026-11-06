@@ -81,12 +81,12 @@ public class FacturaService extends BaseService<Factura, FacturaRequest, Factura
     }
 
     /**
-     * Genera transaccionalmente una nueva factura con sus líneas de detalle y descuenta el stock
-     * de cada producto asociando el movimiento al {@link DetalleFactura} creado (regla 7.1 de {@code 02-reglas-negocio.md}).
+     * Valida las reglas de negocio para el alta de factura según el Template Method de {@link BaseService}.
      */
+    /// actualmente estos metodos no se llaman nunca porque no se llama el crear, pero sirven por si implementamos
+    /// que los jefes puedan hacer algo con las facturas no sé
     @Override
-    @Transactional
-    public FacturaResponse crear(FacturaRequest request) {
+    protected void validarCrear(FacturaRequest request) {
         if (request == null || request.detalles() == null || request.detalles().isEmpty()) {
             throw new ValidacionException("La factura debe contener al menos un detalle");
         }
@@ -97,13 +97,28 @@ public class FacturaService extends BaseService<Factura, FacturaRequest, Factura
             }
         }
 
-        List<DetalleFactura> detalles = new ArrayList<>();
-        double sumaSubtotales = 0.0;
-
         for (DetalleFacturaRequest item : request.detalles()) {
             if (item.cantidad() == null || item.cantidad() < 1) {
                 throw new ValidacionException("La cantidad de cada detalle debe ser al menos 1");
             }
+            if (item.productoId() == null || item.productoId().isBlank()) {
+                throw new ValidacionException("El id del producto es obligatorio en cada detalle");
+            }
+            productoService.obtenerEntidad(item.productoId());
+        }
+    }
+
+    /**
+     * Hook del Template Method previo a persistir la factura.
+     * Resuelve los renglones {@link DetalleFactura}, calcula subtotales, asigna número de factura correlativo,
+     * fecha/hora actual y estado inicial {@link EstadoFactura#PENDIENTE_PAGO}.
+     */
+    @Override
+    protected void antesDePersistir(Factura entidad, FacturaRequest request) {
+        List<DetalleFactura> detalles = new ArrayList<>();
+        double sumaSubtotales = 0.0;
+
+        for (DetalleFacturaRequest item : request.detalles()) {
             Producto producto = productoService.obtenerEntidad(item.productoId());
 
             Double precioUnitario = item.precioUnitario();
@@ -135,27 +150,29 @@ public class FacturaService extends BaseService<Factura, FacturaRequest, Factura
                 .map(f -> f.getNumeroFactura() + 1L)
                 .orElse(1L);
 
-        Factura factura = Factura.builder()
-                .numeroFactura(siguienteNumero)
-                .fechaFactura(LocalDateTime.now())
-                .pedido(null)
-                .estado(EstadoFactura.PENDIENTE_PAGO)
-                .total(total)
-                .detalles(detalles)
-                .eliminado(false)
-                .build();
+        entidad.setNumeroFactura(siguienteNumero);
+        entidad.setFechaFactura(LocalDateTime.now());
+        entidad.setEstado(EstadoFactura.PENDIENTE_PAGO);
+        entidad.setTotal(total);
+        entidad.setDetalles(detalles);
+        entidad.setPedido(null);
+    }
 
-        Factura guardada = facturaRepository.save(factura);
-
-        for (DetalleFactura detalleGuardado : guardada.getDetalles()) {
-            stockService.descontar(
-                    detalleGuardado.getProducto().getId(),
-                    detalleGuardado.getCantidad(),
-                    detalleGuardado
-            );
+    /**
+     * Hook del Template Method posterior a la creación y persistencia de la factura.
+     * Descuenta atómicamente el stock de cada producto vinculando el movimiento al {@link DetalleFactura}.
+     */
+    @Override
+    protected void despuesDeCrear(Factura guardada, FacturaRequest request) {
+        if (guardada.getDetalles() != null) {
+            for (DetalleFactura detalleGuardado : guardada.getDetalles()) {
+                stockService.descontar(
+                        detalleGuardado.getProducto().getId(),
+                        detalleGuardado.getCantidad(),
+                        detalleGuardado
+                );
+            }
         }
-
-        return aResponse(guardada);
     }
 
     /**
@@ -234,6 +251,21 @@ public class FacturaService extends BaseService<Factura, FacturaRequest, Factura
             resultado.add(aResponse(f));
         }
         return resultado;
+    }
+
+    /**
+     * Busca la factura activa asociada a un pedido específico retornando un {@link Optional}.
+     *
+     * @param pedidoId Identificador único del pedido.
+     * @return {@link Optional} con el {@link FacturaResponse} si existe factura activa asociada, o vacío en caso contrario.
+     */
+    @Transactional(readOnly = true)
+    public java.util.Optional<FacturaResponse> buscarPorPedidoId(String pedidoId) {
+        if (pedidoId == null || pedidoId.isBlank()) {
+            return java.util.Optional.empty();
+        }
+        return facturaRepository.findByPedidoIdAndEliminadoFalse(pedidoId.trim())
+                .map(this::aResponse);
     }
 
     /**

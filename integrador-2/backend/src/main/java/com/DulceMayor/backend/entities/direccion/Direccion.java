@@ -43,6 +43,7 @@ public class Direccion extends EntidadBase {
     @Column(name = "casa_departamento", length = 50)
     private String casaDepartamento;
 
+    /// indicaciones descriptivas para ayudar al repartidor / distribuidor a encontrar el lugar físico
     @Column(length = 255)
     private String referencia;
 

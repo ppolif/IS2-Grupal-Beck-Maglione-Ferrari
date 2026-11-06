@@ -1,4 +1,4 @@
-package com.DulceMayor.backend.services.producto;
+    package com.DulceMayor.backend.services.producto;
 
 import com.DulceMayor.backend.config.ConflictoException;
 import com.DulceMayor.backend.config.RecursoNoEncontradoException;
@@ -61,6 +61,7 @@ public class PromocionService extends BaseService<Promocion, PromocionRequest, P
                 request.descripcion() != null ? request.descripcion().trim() : null,
                 request.porcentajeDescuento(),
                 request.cantidadMinima(),
+                /// si la request no trae producto lo pone null pero va a dar error dsp
                 request.productoId() != null && !request.productoId().isBlank() ? request.productoId().trim() : null,
                 request.fechaDesde(),
                 request.fechaHasta()
@@ -76,6 +77,7 @@ public class PromocionService extends BaseService<Promocion, PromocionRequest, P
                     "Ya existe una promoción con el código '" + request.codigo() + "'"
             );
         }
+        /// si o si debe haber un producto
         if (request.productoId() != null) {
             productoService.obtenerEntidad(request.productoId());
         }
@@ -97,7 +99,7 @@ public class PromocionService extends BaseService<Promocion, PromocionRequest, P
 
     @Override
     protected void antesDePersistir(Promocion entidad, PromocionRequest request) {
-        if (request.productoId() != null) {
+        if (request.productoId() != null && !request.productoId().isBlank()) {
             Producto producto = productoService.obtenerEntidad(request.productoId());
             entidad.setProducto(producto);
         } else {
@@ -111,25 +113,16 @@ public class PromocionService extends BaseService<Promocion, PromocionRequest, P
     }
 
     ///metodo para verificar si un codigo ingresado es valido
+    /// Es un endpoint HTTP GET: GET /promociones/codigo/{codigo} (usado por el frontend para consultar si un cupón existe)
+    /// Resultado HTTP: Devuelve un 404 Not Found
+    /// Retorna: Un DTO PromocionResponse para pintar los datos en la pantalla.
     @Transactional(readOnly = true)
     public PromocionResponse buscarVigentePorCodigo(String codigo) {
-        if (codigo == null || codigo.isBlank()) {
-            throw new ValidacionException("El código de promoción es obligatorio");
+        Promocion promo = buscarEntidadVigente(codigo);
+        if (promo == null) {
+            throw new RecursoNoEncontradoException("Promoción no encontrada o vencida: " + codigo);
         }
-        String codigoNormalizado = codigo.trim().toUpperCase();
-        Promocion promocion = promocionRepository.findByCodigoIgnoreCaseAndEliminadoFalse(codigoNormalizado)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Promoción no encontrada o inexistente con código: " + codigoNormalizado
-                ));
-
-        LocalDate hoy = LocalDate.now();
-        if (hoy.isBefore(promocion.getFechaDesde()) || hoy.isAfter(promocion.getFechaHasta())) {
-            throw new RecursoNoEncontradoException(
-                    "La promoción con código '" + codigoNormalizado + "' no se encuentra vigente a la fecha actual"
-            );
-        }
-
-        return mapper.aResponse(promocion);
+        return mapper.aResponse(promo);
     }
 
     /**
@@ -137,25 +130,37 @@ public class PromocionService extends BaseService<Promocion, PromocionRequest, P
      * Lanza {@link ValidacionException} (HTTP 400) si el código no existe, fue eliminado o está fuera de vigencia,
      * conforme a {@code 02-reglas-negocio.md} (§3) y {@code 04-openapi.yaml}.
      */
+    /// Es un método interno de validación al crear un pedido: POST /pedidos
+    /// Retorna: La entidad de persistencia Promocion para que PedidoService la vincule al pedido y calcule los importes.
     @Transactional(readOnly = true)
     public Promocion obtenerVigentePorCodigoParaPedido(String codigo) {
+        Promocion promo = buscarEntidadVigente(codigo);
+        if (promo == null) {
+            throw new ValidacionException("El código de promoción es inválido o vencido: " + codigo);
+        }
+        return promo;
+    }
+
+
+    // Método privado centralizado para no repetir codigo en obtenerVigentePorCodigoParaPedido y buscarVigentePorCodigo:
+    private Promocion buscarEntidadVigente(String codigo) {
         if (codigo == null || codigo.isBlank()) {
-            throw new ValidacionException("El código de promoción no puede estar vacío");
+            return null;
         }
         String codigoNormalizado = codigo.trim().toUpperCase();
         Promocion promocion = promocionRepository.findByCodigoIgnoreCaseAndEliminadoFalse(codigoNormalizado)
-                .orElseThrow(() -> new ValidacionException(
-                        "El código de promoción '" + codigoNormalizado + "' no existe o fue eliminado"
-                ));
+                .orElse(null);
 
+        if (promocion == null) {
+            return null;
+        }
         LocalDate hoy = LocalDate.now();
         if (hoy.isBefore(promocion.getFechaDesde()) || hoy.isAfter(promocion.getFechaHasta())) {
-            throw new ValidacionException(
-                    "La promoción con código '" + codigoNormalizado + "' no se encuentra vigente a la fecha actual"
-            );
+            return null;
         }
         return promocion;
     }
+
 
     @Transactional(readOnly = true)
     public List<PromocionResponse> listar(Boolean soloVigentes) {
@@ -175,8 +180,8 @@ public class PromocionService extends BaseService<Promocion, PromocionRequest, P
         if (request.codigo() == null || request.codigo().isBlank()) {
             throw new ValidacionException("El código de la promoción es obligatorio");
         }
-        if (request.porcentajeDescuento() == null || request.porcentajeDescuento() < 0 || request.porcentajeDescuento() > 100) {
-            throw new ValidacionException("El porcentaje de descuento debe estar comprendido entre 0 y 100");
+        if (request.porcentajeDescuento() == null || request.porcentajeDescuento() < 1 || request.porcentajeDescuento() > 100) {
+            throw new ValidacionException("El porcentaje de descuento debe estar comprendido entre 1 y 100");
         }
         if (request.cantidadMinima() != null && request.cantidadMinima() < 0) {
             throw new ValidacionException("La cantidad mínima no puede ser negativa");

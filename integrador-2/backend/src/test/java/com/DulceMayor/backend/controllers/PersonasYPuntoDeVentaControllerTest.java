@@ -29,6 +29,8 @@ import com.DulceMayor.backend.entities.direccion.Departamento;
 import com.DulceMayor.backend.entities.direccion.Localidad;
 import com.DulceMayor.backend.entities.direccion.Pais;
 import com.DulceMayor.backend.entities.direccion.Provincia;
+import com.DulceMayor.backend.entities.mayorista.Mayorista;
+import com.DulceMayor.backend.entities.mayorista.TipoEmpresa;
 import com.DulceMayor.backend.entities.persona.TipoDocumento;
 import com.DulceMayor.backend.repositories.UsuarioRepository;
 import com.DulceMayor.backend.repositories.direccion.DepartamentoRepository;
@@ -36,6 +38,7 @@ import com.DulceMayor.backend.repositories.direccion.DireccionRepository;
 import com.DulceMayor.backend.repositories.direccion.LocalidadRepository;
 import com.DulceMayor.backend.repositories.direccion.PaisRepository;
 import com.DulceMayor.backend.repositories.direccion.ProvinciaRepository;
+import com.DulceMayor.backend.repositories.mayorista.MayoristaRepository;
 import com.DulceMayor.backend.repositories.persona.EmpleadoRepository;
 import com.DulceMayor.backend.repositories.persona.MinoristaRepository;
 import com.DulceMayor.backend.repositories.persona.PersonaRepository;
@@ -100,6 +103,9 @@ class PersonasYPuntoDeVentaControllerTest {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
+    private MayoristaRepository mayoristaRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -127,6 +133,7 @@ class PersonasYPuntoDeVentaControllerTest {
         empleadoRepository.deleteAll();
         minoristaRepository.deleteAll();
         personaRepository.deleteAll();
+        mayoristaRepository.deleteAll();
         direccionRepository.deleteAll();
         localidadRepository.deleteAll();
         departamentoRepository.deleteAll();
@@ -149,6 +156,13 @@ class PersonasYPuntoDeVentaControllerTest {
     @Test
     @DisplayName("Flujo completo: crear Empleado PREVENTISTA -> alta de Minorista por preventor -> PuntoDeVenta -> auto-registro en portal y perfil")
     void flujoCompletoPersonasYPuntosDeVenta() throws Exception {
+        Mayorista sucursal = mayoristaRepository.save(Mayorista.builder()
+                .razonSocial("Dulce Mayor Sede Central")
+                .cuit("30-11223344-5")
+                .tipoEmpresa(TipoEmpresa.SEDE_CENTRAL)
+                .eliminado(false)
+                .build());
+
         Usuario jefe = crearUsuario("jefe_general", RolUsuario.JEFE);
         String tokenJefe = jwtProvider.generarToken(jefe);
 
@@ -163,7 +177,8 @@ class PersonasYPuntoDeVentaControllerTest {
                 List.of(),
                 "LEG-PREV-88",
                 "equito",
-                RolEmpleado.PREVENTISTA
+                RolEmpleado.PREVENTISTA,
+                sucursal.getId()
         );
 
         MvcResult empRes = mockMvc.perform(post("/empleados")
@@ -277,9 +292,6 @@ class PersonasYPuntoDeVentaControllerTest {
         ActualizarPerfilMinoristaRequest actReq = new ActualizarPerfilMinoristaRequest(
                 "Laura Beatriz",
                 "Fernandez",
-                null,
-                TipoDocumento.DNI,
-                "37888999",
                 "laura.nueva@portal.com",
                 "2615559988"
         );

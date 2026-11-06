@@ -262,12 +262,12 @@ class PedidoControllerTest {
                 .eliminado(false)
                 .build());
 
-        Direccion dir = Direccion.builder()
+        Direccion dir = direccionRepository.save(Direccion.builder()
                 .calle("San Martín")
                 .numeracion("100")
                 .localidad(localidadInicial)
                 .eliminado(false)
-                .build();
+                .build());
 
         return puntoDeVentaRepository.save(PuntoDeVenta.builder()
                 .nombreComercio(nombreComercio)

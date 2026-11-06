@@ -21,7 +21,9 @@ public record EmpleadoResponse(
         String numeroDocumento,
         List<DireccionResponse> direcciones,
         List<ContactoResponse> contactos,
-        UsuarioResponse usuario
+        UsuarioResponse usuario,
+        String mayoristaId,
+        String mayoristaRazonSocial
 ) implements Identificable {
 }
 

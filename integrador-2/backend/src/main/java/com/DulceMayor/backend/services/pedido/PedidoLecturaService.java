@@ -1,14 +1,14 @@
 package com.DulceMayor.backend.services.pedido;
 
+import com.DulceMayor.backend.dtos.facturacion.FacturaResponse;
 import com.DulceMayor.backend.dtos.pedido.PedidoMapper;
 import com.DulceMayor.backend.dtos.pedido.PedidoMiCuentaPage;
 import com.DulceMayor.backend.dtos.pedido.PedidoPage;
 import com.DulceMayor.backend.dtos.pedido.PedidoResponse;
-import com.DulceMayor.backend.entities.facturacion.Factura;
 import com.DulceMayor.backend.entities.pedido.EstadoPedido;
 import com.DulceMayor.backend.entities.pedido.Pedido;
-import com.DulceMayor.backend.repositories.facturacion.FacturaRepository;
 import com.DulceMayor.backend.repositories.pedido.PedidoRepository;
+import com.DulceMayor.backend.services.facturacion.FacturaService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Servicio de solo lectura para proyectar pedidos resolviendo {@code facturaId} desde {@link FacturaRepository}
+ * Servicio de solo lectura para proyectar pedidos resolviendo {@code facturaId} desde {@link FacturaService}
  * y ejecutar consultas paginadas.
  */
 @Service
@@ -28,26 +28,33 @@ import org.springframework.transaction.annotation.Transactional;
 public class PedidoLecturaService {
 
     private final PedidoRepository pedidoRepository;
-    private final FacturaRepository facturaRepository;
+    private final FacturaService facturaService;
     private final PedidoMapper pedidoMapper;
 
     public PedidoLecturaService(
             PedidoRepository pedidoRepository,
-            FacturaRepository facturaRepository,
+            FacturaService facturaService,
             PedidoMapper pedidoMapper) {
         this.pedidoRepository = pedidoRepository;
-        this.facturaRepository = facturaRepository;
+        this.facturaService = facturaService;
         this.pedidoMapper = pedidoMapper;
     }
 
     /**
-     * Proyecta un {@link Pedido} a {@link PedidoResponse} resolviendo {@code facturaId} si posee factura activa.
+     * Proyecta y enriquece una entidad {@link Pedido} en su DTO de salida {@link PedidoResponse},
+     * mapeando sus campos base y resolviendo si posee una {@code Factura} activa vinculada mediante {@link FacturaService}.
+     *
+     * <p><b>Cuándo se usa:</b> Cada vez que un pedido necesita ser presentado o devuelto hacia las capas superiores (controladores/APIs),
+     * tanto en consultas puntuales (ej: {@code PedidoService.aResponse}, {@code buscarPedido}) como en el armado de páginas de resultados.</p>
+     *
+     * @param pedido Entidad del pedido a transformar.
+     * @return {@link PedidoResponse} completo con importes, líneas y el identificador de la factura si existe.
      */
     public PedidoResponse enriquecerResponse(Pedido pedido) {
         PedidoResponse base = pedidoMapper.aResponse(pedido);
         String facturaId = pedido.getId() != null
-                ? facturaRepository.findByPedidoIdAndEliminadoFalse(pedido.getId())
-                        .map(Factura::getId)
+                ? facturaService.buscarPorPedidoId(pedido.getId())
+                        .map(FacturaResponse::id)
                         .orElse(null)
                 : null;
 
@@ -69,7 +76,22 @@ public class PedidoLecturaService {
     }
 
     /**
-     * Consulta paginada de pedidos con filtros opcionales de estado, preventor, distribuidor, punto de venta y fechas.
+     * Ejecuta una consulta paginada de pedidos en la base de datos aplicando filtros dinámicos opcionales
+     * (estado del pedido, preventista asignado, repartidor/distribuidor, punto de venta de destino,
+     * minorista titular y rango de fechas de carga). Cada registro obtenido es proyectado y enriquecido con su factura.
+     *
+     * <p><b>Cuándo se usa:</b> Es invocado por {@code PedidoService.listarPaginado} cuando un administrador o preventista
+     * accede al listado general de pedidos desde la interfaz de gestión (endpoint {@code GET /pedidos}).</p>
+     *
+     * @param estado Estado del pedido por el cual filtrar (opcional).
+     * @param preventorId Identificador del preventista asignado (opcional).
+     * @param distribuidorId Identificador del distribuidor a cargo del reparto (opcional).
+     * @param puntoDeVentaId Identificador del punto de venta destinatario (opcional).
+     * @param minoristaId Identificador del cliente minorista (opcional).
+     * @param desde Fecha inicial del período de carga (opcional).
+     * @param hasta Fecha final del período de carga (opcional).
+     * @param pageable Configuración de paginado y ordenamiento (número de página, tamaño, dirección).
+     * @return {@link PedidoPage} con la lista de pedidos enriquecidos y metadatos de paginación.
      */
     public PedidoPage listarPaginado(
             EstadoPedido estado,
@@ -110,7 +132,16 @@ public class PedidoLecturaService {
     }
 
     /**
-     * Consulta paginada de pedidos para el portal "Mi cuenta" del cliente minorista.
+     * Consulta y pagina de forma segura los pedidos pertenecientes exclusivamente al cliente minorista provisto,
+     * permitiendo filtrar opcionalmente por estado.
+     *
+     * <p><b>Cuándo se usa:</b> Es invocado por {@code PedidoService.listarMiCuenta} cuando un cliente autenticado con rol
+     * {@code MINORISTA} ingresa a la sección "Mi Cuenta" para seguir el estado de sus pedidos (endpoint {@code GET /pedidos/mi-cuenta}).</p>
+     *
+     * @param estado Estado del pedido a filtrar (opcional).
+     * @param minoristaId Identificador único del minorista dueño de los pedidos.
+     * @param pageable Configuración de paginación solicitada por el cliente.
+     * @return {@link PedidoMiCuentaPage} con los pedidos enriquecidos y metadatos de paginación.
      */
     public PedidoMiCuentaPage listarMiCuenta(EstadoPedido estado, String minoristaId, Pageable pageable) {
         Page<Pedido> pagina = pedidoRepository.buscarConFiltros(
@@ -138,6 +169,17 @@ public class PedidoLecturaService {
         );
     }
 
+    /**
+     * Normaliza un parámetro de búsqueda textual, recortando espacios en blanco innecesarios
+     * y convirtiendo cadenas vacías o compuestas únicamente por espacios en {@code null}.
+     *
+     * <p><b>Cuándo se usa:</b> Es un método auxiliar privado utilizado internamente en {@link #listarPaginado}
+     * y {@link #listarMiCuenta} antes de enviar los argumentos a la consulta JPQL en {@link PedidoRepository},
+     * evitando que filtros en blanco interfieran en las condiciones SQL.</p>
+     *
+     * @param valor Cadena de texto recibida desde la capa de entrada.
+     * @return Cadena normalizada sin espacios en los extremos, o {@code null} si estaba vacía o en blanco.
+     */
     private String limpiarFiltro(String valor) {
         return (valor != null && !valor.isBlank()) ? valor.trim() : null;
     }

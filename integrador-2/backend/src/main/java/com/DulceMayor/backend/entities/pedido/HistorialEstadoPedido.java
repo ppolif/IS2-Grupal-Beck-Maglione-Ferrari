@@ -50,6 +50,7 @@ public class HistorialEstadoPedido extends EntidadBase {
     @Column(name = "fecha_hora", nullable = false)
     private LocalDateTime fechaHora = LocalDateTime.now();
 
+    /// usuario que causó el cambio de estado, en lugar de Usuario decidimos guardarlo como string
     @Column(nullable = false, length = 120)
     private String usuario;
 

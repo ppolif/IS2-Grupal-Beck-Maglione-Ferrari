@@ -35,6 +35,9 @@ public interface MinoristaMapper extends BaseMapper<Minorista, MinoristaRequest,
     @Mapping(target = "usuario", ignore = true)
     @Mapping(target = "direcciones", ignore = true)
     @Mapping(target = "contactos", ignore = true)
+    @Mapping(target = "tipoDocumento", ignore = true)
+    @Mapping(target = "numeroDocumento", ignore = true)
+    @Mapping(target = "fechaNacimiento", ignore = true)
     void actualizarEntidad(MinoristaRequest request, @MappingTarget Minorista entidad);
 
     @Override

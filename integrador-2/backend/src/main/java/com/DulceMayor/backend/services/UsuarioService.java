@@ -44,6 +44,7 @@ public class UsuarioService implements UserDetailsService {
         this.jwtProvider = jwtProvider;
     }
 
+    /// metodo de UserDetailsService
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -86,19 +87,14 @@ public class UsuarioService implements UserDetailsService {
         }
     }
 
+    /// recibe request
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
         Usuario usuario = login(request.nombreUsuario(), request.clave());
-        String token = jwtProvider.generarToken(usuario);
-        return new AuthResponse(
-                token,
-                "Bearer",
-                jwtProvider.getExpiraEnSegundos(),
-                usuario.isClaveTemporal(),
-                toResponse(usuario)
-        );
+        return generarAuthResponse(usuario);
     }
 
+    /// procesa request y encuentra al usuario
     @Transactional(readOnly = true)
     public Usuario login(String nombreUsuario, String clave) {
         String usernameLimpio = nombreUsuario != null ? nombreUsuario.trim().toLowerCase() : "";
@@ -121,11 +117,13 @@ public class UsuarioService implements UserDetailsService {
         return buscarUsuario(id).isClaveTemporal();
     }
 
+    /// metodo que recibe la request
     @Transactional
     public void modificarClave(String id, CambiarClaveRequest request) {
         modificarClave(id, request.claveActual(), request.nuevaClave(), request.confirmarClave());
     }
 
+    /// metodo que valida y hace el cambio efectivo de contraseña
     @Transactional
     public void modificarClave(String id, String claveActual, String nuevaClave, String confirmarClave) {
         Usuario usuario = buscarUsuario(id);

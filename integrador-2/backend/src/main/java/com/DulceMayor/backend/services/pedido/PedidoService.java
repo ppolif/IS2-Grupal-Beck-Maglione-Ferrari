@@ -89,22 +89,37 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     }
 
     /**
-     * Carga un nuevo pedido en estado {@link EstadoPedido#CARGADO}, vinculando el punto de venta,
-     * el preventor asignado, resolviendo precios vigentes y registrando su primer historial.
+     * Valida la presencia de datos obligatorios al dar de alta un pedido:
+     * que el request no sea nulo, que se haya provisto el punto de venta y que contenga al menos un detalle.
+     *
+     * <p><b>Cuándo se usa:</b> Durante {@code crear(request)} como hook de validación previo a mapear y persistir.</p>
      */
     @Override
-    @Transactional
-    public PedidoResponse crear(PedidoRequest request) {
+    protected void validarCrear(PedidoRequest request) {
         if (request == null) {
             throw new ValidacionException("Los datos del pedido son obligatorios");
         }
         if (request.puntoDeVentaId() == null || request.puntoDeVentaId().isBlank()) {
-            throw new ValidacionException("El identificador del punto de venta es obligatorio");
+            throw new ValidacionException("El punto de venta es obligatorio");
         }
         if (request.detalles() == null || request.detalles().isEmpty()) {
             throw new ValidacionException("El pedido debe contener al menos un detalle");
         }
+    }
 
+    /**
+     * Hook del Template Method ejecutado antes de persistir la entidad en base de datos.
+     * Se encarga de:
+     * 1. Resolver la entidad {@link PuntoDeVenta}.
+     * 2. Determinar el {@link Preventor} responsable (si es preventista autenticado, asigna el suyo).
+     * 3. Calcular precios vigentes, promociones aplicables, subtotales, descuentos y total.
+     * 4. Asignar el siguiente número de pedido autoincremental correlativo.
+     * 5. Establecer la fecha/hora de carga y el estado inicial {@link EstadoPedido#CARGADO}.
+     *
+     * <p><b>Cuándo se usa:</b> Durante {@code crear(request)}, justo antes de llamar a {@code repository.save}.</p>
+     */
+    @Override
+    protected void antesDePersistir(Pedido entidad, PedidoRequest request) {
         PuntoDeVenta puntoDeVenta = puntoDeVentaService.obtenerEntidad(request.puntoDeVentaId().trim());
         Preventor preventor = resolverPreventorParaCreacion(request.preventorId(), puntoDeVenta);
         CalculoPedido calculo = calcularLineasYTotales(request.detalles(), request.codigoPromocion());
@@ -113,22 +128,38 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
                 .map(p -> p.getNumeroPedido() + 1L)
                 .orElse(1L);
 
-        Pedido pedido = Pedido.builder()
-                .numeroPedido(siguienteNumero)
-                .fechaHoraCarga(LocalDateTime.now())
-                .puntoDeVenta(puntoDeVenta)
-                .preventor(preventor)
-                .distribuidor(null)
-                .promocion(calculo.promocion())
-                .subtotal(calculo.subtotal())
-                .descuento(calculo.descuento())
-                .total(calculo.total())
-                .estado(EstadoPedido.CARGADO)
-                .detalles(calculo.detalles())
-                .eliminado(false)
-                .build();
+        entidad.setNumeroPedido(siguienteNumero);
+        entidad.setFechaHoraCarga(LocalDateTime.now());
+        entidad.setPuntoDeVenta(puntoDeVenta);
+        entidad.setPreventor(preventor);
+        entidad.setDistribuidor(null);
+        entidad.setPromocion(calculo.promocion());
+        entidad.setSubtotal(calculo.subtotal());
+        entidad.setDescuento(calculo.descuento());
+        entidad.setTotal(calculo.total());
+        entidad.setEstado(EstadoPedido.CARGADO);
+        entidad.setDetalles(calculo.detalles());
+    }
 
-        Pedido guardado = pedidoRepository.save(pedido);
+    /**
+     * Lista todos los pedidos en estado {@link EstadoPedido#FACTURADO} que están pendientes
+     * de asignación y armado de hoja de ruta logística.
+     *
+     * @return Lista de {@link Pedido} facturados no eliminados ordenados por fecha de carga ascendente.
+     */
+    @Transactional(readOnly = true)
+    public List<Pedido> listarFacturadosPendientes() {
+        return pedidoRepository.findAllByEstadoAndEliminadoFalseOrderByFechaHoraCargaAsc(EstadoPedido.FACTURADO);
+    }
+
+    /**
+     * Hook del Template Method ejecutado con posterioridad a la persistencia del pedido.
+     * Registra en la bitácora histórica de estados el primer registro: estado {@link EstadoPedido#CARGADO}.
+     *
+     * <p><b>Cuándo se usa:</b> Durante {@code crear(request)}, una vez que el pedido ya fue insertado en la base de datos.</p>
+     */
+    @Override
+    protected void despuesDeCrear(Pedido guardado, PedidoRequest request) {
         String usuarioActual = obtenerNombreUsuarioActual();
         historialEstadoPedidoService.registrarEstado(
                 guardado,
@@ -136,13 +167,19 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
                 usuarioActual,
                 "Pedido cargado"
         );
-
-        return aResponse(guardado);
     }
 
     /**
-     * Modifica los ítems y/o el código de promoción de un pedido.
-     * Solo está permitido mientras el pedido permanece en estado {@link EstadoPedido#CARGADO}.
+     * Modifica los ítems y/o el código de promoción de un pedido existente.
+     * Recalcula los precios unitarios vigentes, subtotales, descuentos y el total general.
+     * Solo se permite la modificación si el pedido se encuentra estrictamente en estado {@link EstadoPedido#CARGADO}.
+     *
+     * <p><b>Cuándo se usa:</b> Es invocado por el endpoint {@code PUT /pedidos/{id}} cuando el cliente o el preventista
+     * necesita ajustar las cantidades, agregar/quitar productos o cambiar el cupón de descuento antes de que el pedido sea procesado.</p>
+     *
+     * @param id Identificador único del pedido a modificar.
+     * @param request Datos de los nuevos ítems y código de promoción.
+     * @return {@link PedidoResponse} con la información del pedido actualizada.
      */
     @Transactional
     public PedidoResponse modificarPedido(String id, PedidoUpdateRequest request) {
@@ -174,8 +211,16 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     }
 
     /**
-     * Anula administrativamente un pedido siempre que se encuentre en {@link EstadoPedido#CARGADO}
-     * o {@link EstadoPedido#SIN_STOCK}.
+     * Anula administrativamente un pedido, transicionándolo a {@link EstadoPedido#ANULADO}.
+     * Solo es válido para pedidos en estado {@link EstadoPedido#CARGADO} o {@link EstadoPedido#SIN_STOCK}.
+     * Registra el cambio en la bitácora de auditoría histórica y emite un evento de dominio.
+     *
+     * <p><b>Cuándo se usa:</b> Es invocado por el endpoint {@code POST /pedidos/{id}/anular} cuando un administrador
+     * o usuario autorizado decide cancelar un pedido que no ha sido facturado ni enviado a reparto.</p>
+     *
+     * @param id Identificador único del pedido a anular.
+     * @param request Motivo u observación de la anulación.
+     * @return {@link PedidoResponse} con el pedido actualizado a estado ANULADO.
      */
     @Transactional
     public PedidoResponse anularPedido(String id, AnularPedidoRequest request) {
@@ -187,6 +232,7 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
             );
         }
 
+        /// si el pedido es anulado, se registra
         String observacion = (request != null && request.observacion() != null && !request.observacion().isBlank())
                 ? request.observacion().trim()
                 : "Pedido anulado administrativamente";
@@ -202,7 +248,15 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     }
 
     /**
-     * Marca el pedido en {@link EstadoPedido#SIN_STOCK} durante el procesamiento cuando algún ítem carece de stock.
+     * Marca un pedido en estado {@link EstadoPedido#SIN_STOCK}, registrando la auditoría correspondiente
+     * y emitiendo el evento de cambio de estado.
+     *
+     * <p><b>Cuándo se usa:</b> Es invocado internamente por {@code ProcesamientoPedidoService} durante la ejecución del proceso
+     * de facturación/procesamiento cuando detecta que no hay existencias suficientes de stock en inventario para cubrir los ítems del pedido.</p>
+     *
+     * @param pedido Entidad del pedido a transicionar.
+     * @param observacion Detalle de los productos faltantes o motivo del quiebre de stock.
+     * @return {@link PedidoResponse} actualizado.
      */
     @Transactional
     public PedidoResponse marcarSinStock(Pedido pedido, String observacion) {
@@ -217,7 +271,15 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     }
 
     /**
-     * Marca el pedido en {@link EstadoPedido#FACTURADO} una vez emitida su factura y descontado el stock.
+     * Marca un pedido en estado {@link EstadoPedido#FACTURADO}, registrando la auditoría correspondiente
+     * y emitiendo el evento de cambio de estado.
+     *
+     * <p><b>Cuándo se usa:</b> Es invocado internamente por {@code ProcesamientoPedidoService} una vez que se emitió
+     * exitosamente la Factura asociada y se descontó el stock de los productos involucrados.</p>
+     *
+     * @param pedido Entidad del pedido a transicionar.
+     * @param observacion Detalle u observación de la facturación.
+     * @return {@link PedidoResponse} actualizado.
      */
     @Transactional
     public PedidoResponse marcarFacturado(Pedido pedido, String observacion) {
@@ -232,7 +294,16 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     }
 
     /**
-     * Transiciona un pedido {@link EstadoPedido#FACTURADO} a {@link EstadoPedido#EN_REPARTO} asignándole el distribuidor.
+     * Transiciona un pedido desde {@link EstadoPedido#FACTURADO} hacia {@link EstadoPedido#EN_REPARTO},
+     * asignando el {@link Distribuidor} responsable del flete físico y registrando el evento en el historial.
+     *
+     * <p><b>Cuándo se usa:</b> Es invocado por el endpoint {@code POST /pedidos/{id}/asignar-reparto} cuando el área
+     * de logística y expedición arma la carga y asigna el repartidor que llevará el pedido al punto de venta.</p>
+     *
+     * @param id Identificador único del pedido.
+     * @param distribuidorId Identificador del empleado distribuidor.
+     * @param observacion Notas adicionales de entrega o de hoja de ruta.
+     * @return {@link PedidoResponse} con el pedido en estado EN_REPARTO y distribuidor asignado.
      */
     @Transactional
     public PedidoResponse asignarAReparto(String id, String distribuidorId, String observacion) {
@@ -264,7 +335,15 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     }
 
     /**
-     * Transiciona un pedido {@link EstadoPedido#EN_REPARTO} a {@link EstadoPedido#ENTREGADO} al completarse la entrega.
+     * Transiciona un pedido desde {@link EstadoPedido#EN_REPARTO} a su estado final {@link EstadoPedido#ENTREGADO},
+     * registrando el evento en el historial de estados.
+     *
+     * <p><b>Cuándo se usa:</b> Es invocado por el endpoint {@code POST /pedidos/{id}/entregar} una vez que el distribuidor
+     * confirma la entrega física y conformidad de la mercadería en el punto de venta del minorista.</p>
+     *
+     * @param id Identificador único del pedido entregado.
+     * @param observacion Constancia de entrega o comentarios del receptor.
+     * @return {@link PedidoResponse} con el pedido en estado ENTREGADO.
      */
     @Transactional
     public PedidoResponse marcarEntregado(String id, String observacion) {
@@ -291,7 +370,13 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     }
 
     /**
-     * Busca un pedido individual aplicando validación de visibilidad si el usuario es {@code PREVENTISTA} o {@code MINORISTA}.
+     * Recupera el detalle completo de un pedido por su ID, aplicando control de acceso según el rol autenticado.
+     *
+     * <p><b>Cuándo se usa:</b> Es invocado por el endpoint {@code GET /pedidos/{id}} al abrir el detalle de un pedido
+     * en el panel administrativo, preventa o consulta de cliente.</p>
+     *
+     * @param id Identificador único del pedido.
+     * @return {@link PedidoResponse} con la cabecera, líneas, importes y estado.
      */
     @Transactional(readOnly = true)
     public PedidoResponse buscarPedido(String id) {
@@ -301,7 +386,13 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     }
 
     /**
-     * Devuelve el historial cronológico de estados de un pedido.
+     * Recupera la línea de tiempo completa y cronológica de cambios de estado que atravesó un pedido.
+     *
+     * <p><b>Cuándo se usa:</b> Es invocado por el endpoint {@code GET /pedidos/{id}/historial} para auditoría,
+     * trazabilidad y seguimiento del pedido en el frontend.</p>
+     *
+     * @param id Identificador único del pedido.
+     * @return Lista de {@link HistorialEstadoPedidoResponse} ordenados cronológicamente.
      */
     @Transactional(readOnly = true)
     public List<HistorialEstadoPedidoResponse> listarHistorialPorPedido(String id) {
@@ -311,7 +402,22 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     }
 
     /**
-     * Listado paginado de pedidos con filtros. Si quien consulta es {@code PREVENTISTA}, solo visualiza sus propios pedidos.
+     * Realiza un listado paginado y multicriterio de pedidos (por estado, preventor, distribuidor, punto de venta,
+     * minorista y rango de fechas de carga). Si el usuario autenticado tiene rol {@code PREVENTISTA}, fuerza el filtrado
+     * para que solo acceda a los pedidos que tiene a su cargo.
+     *
+     * <p><b>Cuándo se usa:</b> Es invocado por el endpoint {@code GET /pedidos} en las pantallas de gestión y bandejas
+     * de pedidos de administración y preventistas.</p>
+     *
+     * @param estadoStr Estado del pedido como texto (opcional).
+     * @param preventorId ID del preventor a filtrar (opcional).
+     * @param distribuidorId ID del distribuidor asignado (opcional).
+     * @param puntoDeVentaId ID del punto de venta de destino (opcional).
+     * @param minoristaId ID del minorista dueño del punto de venta (opcional).
+     * @param desde Fecha mínima de carga (opcional).
+     * @param hasta Fecha máxima de carga (opcional).
+     * @param pageable Parámetros de paginación y ordenamiento.
+     * @return {@link PedidoPage} con la página de resultados y metadatos.
      */
     @Transactional(readOnly = true)
     public PedidoPage listarPaginado(
@@ -345,7 +451,14 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     }
 
     /**
-     * Listado paginado de pedidos para el portal "Mi cuenta" del minorista autenticado.
+     * Lista de manera paginada y resumida los pedidos pertenecientes exclusivamente al minorista logueado.
+     *
+     * <p><b>Cuándo se usa:</b> Es invocado por el endpoint {@code GET /pedidos/mi-cuenta} en el portal de autogestión
+     * del cliente minorista para consultar el estado de sus compras históricas.</p>
+     *
+     * @param estadoStr Filtro por estado de pedido (opcional).
+     * @param pageable Parámetros de paginación.
+     * @return {@link PedidoMiCuentaPage} con los pedidos pertenecientes a los puntos de venta del minorista actual.
      */
     @Transactional(readOnly = true)
     public PedidoMiCuentaPage listarMiCuenta(String estadoStr, Pageable pageable) {
@@ -360,16 +473,42 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         return pedidoLecturaService.listarMiCuenta(estado, minoristaId, pageable);
     }
 
+    /**
+     * Transforma una entidad {@link Pedido} a su DTO de salida {@link PedidoResponse}, enriqueciéndolo
+     * con datos calculados y nombres representativos mediante {@link PedidoLecturaService}.
+     *
+     * <p><b>Cuándo se usa:</b> Es utilizado internamente por los métodos de {@link BaseService} y de esta clase
+     * cada vez que se debe enviar un pedido como respuesta a la capa de controladores.</p>
+     *
+     * @param entidad Instancia de {@link Pedido}.
+     * @return DTO {@link PedidoResponse} enriquecido.
+     */
     @Override
     protected PedidoResponse aResponse(Pedido entidad) {
         return pedidoLecturaService.enriquecerResponse(entidad);
     }
 
+    /**
+     * Consulta y recupera todas las entidades de pedidos activas (que no hayan sido eliminadas lógicamente),
+     * ordenadas cronológicamente de forma descendente por fecha de carga.
+     *
+     * <p><b>Cuándo se usa:</b> Es invocado por {@link #listar()} del Template Method de {@link BaseService}.</p>
+     *
+     * @return Lista de entidades {@link Pedido} activas.
+     */
     @Override
     protected List<Pedido> buscarEntidadesActivas() {
         return pedidoRepository.findAllByEliminadoFalseOrderByFechaHoraCargaDesc();
     }
 
+    /**
+     * Lista completa sin paginación de todos los pedidos activos en el sistema, convertidos a DTO de respuesta.
+     *
+     * <p><b>Cuándo se usa:</b> Es la implementación concreta del método de lectura total definido en {@link BaseService},
+     * utilizado cuando se requiere la colección global de pedidos sin filtros ni paginado.</p>
+     *
+     * @return Lista completa de {@link PedidoResponse}.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<PedidoResponse> listar() {
@@ -381,14 +520,26 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         return resultado;
     }
 
+    /**
+     * Valida la existencia y precio vigente de cada producto solicitado, calcula los subtotales de cada línea
+     * y aplica las reglas de negocio de la promoción provista (descuentos por producto específico o por volumen general).
+     *
+     * <p><b>Cuándo se usa:</b> Método auxiliar privado invocado al crear un nuevo pedido ({@link #antesDePersistir})
+     * o al editarlo ({@link #modificarPedido}), garantizando consistencia en las fórmulas de cálculo de importes.</p>
+     *
+     * @param items Lista de ítems solicitados con su producto y cantidad.
+     * @param codigoPromocion Código de cupón o promoción ingresado (opcional).
+     * @return {@link CalculoPedido} con los detalles instanciados, subtotales, descuento y total neto.
+     */
     private CalculoPedido calcularLineasYTotales(List<DetallePedidoRequest> items, String codigoPromocion) {
         List<DetallePedido> detalles = new ArrayList<>();
         double subtotalPedido = 0.0;
         int totalUnidadesPedido = 0;
 
+        /// primero creamos todos los detalles y registramos el subtotal
         for (DetallePedidoRequest item : items) {
             if (item == null || item.productoId() == null || item.productoId().isBlank()) {
-                throw new ValidacionException("El identificador del producto en cada detalle es obligatorio");
+                throw new ValidacionException("El producto en cada detalle es obligatorio");
             }
             if (item.cantidad() == null || item.cantidad() < 1) {
                 throw new ValidacionException("La cantidad de cada detalle debe ser al menos 1");
@@ -412,12 +563,14 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
             totalUnidadesPedido += item.cantidad();
         }
 
+        /// verificamos la aplicacion de una promo
         Promocion promocion = null;
         double descuento = 0.0;
 
         if (codigoPromocion != null && !codigoPromocion.isBlank()) {
             promocion = promocionService.obtenerVigentePorCodigoParaPedido(codigoPromocion);
 
+            /// promo por producto especifico
             if (promocion.getProducto() != null) {
                 String prodPromoId = promocion.getProducto().getId();
                 int unidadesProductoPromocionado = detalles.stream()
@@ -436,6 +589,7 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
                                     + ") del producto promocionado para el código '" + promocion.getCodigo() + "'"
                     );
                 }
+                /// promo por cant total de producots
             } else if (promocion.getCantidadMinima() > 0 && totalUnidadesPedido < promocion.getCantidadMinima()) {
                 throw new ValidacionException(
                         "No se alcanza la cantidad mínima total de unidades (" + promocion.getCantidadMinima()
@@ -447,9 +601,23 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         }
 
         double total = Math.max(0.0, subtotalPedido - descuento);
+        /// guardamos en el registro los datos
         return new CalculoPedido(detalles, promocion, subtotalPedido, descuento, total);
     }
 
+    /**
+     * Resuelve cuál preventor debe quedar asociado al pedido:
+     * 1. Si quien carga es un preventista autenticado, se asocia obligatoriamente a él mismo.
+     * 2. Si se especificó un preventor explícito en el request (ej. por un Admin), se busca dicho preventor.
+     * 3. Si no se especificó, hereda el preventor que tiene asignado el punto de venta de destino.
+     * 4. En su defecto, queda nulo (pedido autogestionado en el portal minorista).
+     *
+     * <p><b>Cuándo se usa:</b> Durante {@link #antesDePersistir} al dar de alta un pedido nuevo.</p>
+     *
+     * @param preventorIdRequest ID del preventor enviado en el cuerpo de la petición (opcional).
+     * @param puntoDeVenta Entidad del punto de venta receptor.
+     * @return Entidad {@link Preventor} asignada o {@code null}.
+     */
     private Preventor resolverPreventorParaCreacion(String preventorIdRequest, PuntoDeVenta puntoDeVenta) {
         UsuarioPrincipal principal = obtenerPrincipalActual();
         if (principal != null && principal.getRol() == RolUsuario.PREVENTISTA) {
@@ -458,12 +626,25 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         if (preventorIdRequest != null && !preventorIdRequest.isBlank()) {
             return empleadoService.obtenerPreventor(preventorIdRequest.trim());
         }
-        if (puntoDeVenta.getPreventor() != null) {
+        if (puntoDeVenta != null && puntoDeVenta.getPreventor() != null) {
             return puntoDeVenta.getPreventor();
         }
-        throw new ValidacionException("Debe especificar un preventor para el pedido o asignarlo al punto de venta");
+        // Si no se especificó y no hay preventor asignado al punto de venta (ej: pedido autogestionado web por Minorista o Admin)
+        return null;
     }
 
+    /**
+     * Valida que el usuario autenticado tenga permisos legítimos sobre el pedido en cuestión:
+     * - Un {@code PREVENTISTA} solo puede ver o modificar pedidos asignados a su legajo.
+     * - Un {@code MINORISTA} solo puede acceder a pedidos cuyos puntos de venta le pertenezcan.
+     * - Un {@code ADMIN} tiene visibilidad irrestricta.
+     *
+     * <p><b>Cuándo se usa:</b> Es llamado en {@link #buscarPedido}, {@link #modificarPedido} y {@link #listarHistorialPorPedido}
+     * para aplicar aislamiento de datos por rol y prevenir accesos no autorizados.</p>
+     *
+     * @param pedido Pedido a evaluar.
+     * @throws AccesoDenegadoException Si el usuario no tiene privilegios para acceder al pedido.
+     */
     private void verificarAcceso(Pedido pedido) {
         UsuarioPrincipal principal = obtenerPrincipalActual();
         if (principal == null) {
@@ -488,6 +669,17 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         }
     }
 
+    /**
+     * Convierte una cadena de texto en un valor de la enumeración {@link EstadoPedido},
+     * ignorando diferencias entre mayúsculas y minúsculas y recortando espacios en blanco.
+     *
+     * <p><b>Cuándo se usa:</b> En los métodos de filtrado y consulta ({@link #listarPaginado} y {@link #listarMiCuenta})
+     * para convertir los parámetros de consulta HTTP (query params) a valores del enum del dominio.</p>
+     *
+     * @param estadoStr Texto con el nombre del estado (puede ser nulo o vacío).
+     * @return Valor {@link EstadoPedido} parseado o {@code null} si el parámetro estaba en blanco.
+     * @throws ValidacionException Si el texto recibido no coincide con ningún estado válido.
+     */
     private EstadoPedido parsearEstado(String estadoStr) {
         if (estadoStr == null || estadoStr.isBlank()) {
             return null;
@@ -499,6 +691,17 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         }
     }
 
+    /**
+     * Publica un evento de dominio {@link PedidoEstadoCambiadoEvent} a través del bus de eventos de Spring.
+     *
+     * <p><b>Cuándo se usa:</b> Se invoca cada vez que un pedido realiza una transición de estado
+     * ({@link #anularPedido}, {@link #marcarSinStock}, {@link #marcarFacturado}, {@link #asignarAReparto}, {@link #marcarEntregado})
+     * para que otros componentes del sistema (como WebSocket o notificaciones) reaccionen desacopladamente.</p>
+     *
+     * @param pedido Instancia del pedido en su nuevo estado.
+     * @param usuario Nombre de usuario que ejecutó la acción.
+     * @param observacion Motivo o nota aclaratoria del cambio.
+     */
     private void publicarEventoEstado(Pedido pedido, String usuario, String observacion) {
         eventPublisher.publishEvent(new PedidoEstadoCambiadoEvent(
                 pedido.getId(),
@@ -509,6 +712,14 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         ));
     }
 
+    /**
+     * Extrae el objeto {@link UsuarioPrincipal} a partir del contexto de seguridad de Spring Security.
+     *
+     * <p><b>Cuándo se usa:</b> Es un método utilitario invocado en verificaciones de autorización, filtros personalizados
+     * por rol y resolución de identidades de preventistas o minoristas logueados.</p>
+     *
+     * @return El {@link UsuarioPrincipal} de la sesión actual, o {@code null} si es una llamada no autenticada.
+     */
     private UsuarioPrincipal obtenerPrincipalActual() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof UsuarioPrincipal up) {
@@ -517,6 +728,15 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         return null;
     }
 
+    /**
+     * Obtiene el nombre de usuario (username) del actor autenticado en el contexto de seguridad.
+     * Si no hay un usuario autenticado explícito o se trata de una tarea programada interna, retorna {@code "sistema"}.
+     *
+     * <p><b>Cuándo se usa:</b> Al registrar entradas de auditoría en {@link HistorialEstadoPedidoService}
+     * y al emitir eventos de cambio de estado de pedidos.</p>
+     *
+     * @return Nombre de usuario del operador actual o {@code "sistema"}.
+     */
     private String obtenerNombreUsuarioActual() {
         UsuarioPrincipal principal = obtenerPrincipalActual();
         if (principal != null) {
@@ -529,6 +749,19 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         return "sistema";
     }
 
+    /**
+     * Objeto de transferencia interno e inmutable utilizado para consolidar el resultado
+     * de los cálculos financieros y validaciones de promociones de un pedido.
+     *
+     * <p><b>Cuándo se usa:</b> Retornado por {@link #calcularLineasYTotales} y consumido por
+     * {@link #antesDePersistir} y {@link #modificarPedido}.</p>
+     *
+     * @param detalles Colección de entidades de detalle calculadas con sus precios vigentes.
+     * @param promocion Promoción aplicada o {@code null}.
+     * @param subtotal Suma algebraica de cantidades por precios unitarios vigentes.
+     * @param descuento Importe monetario descontado según la promoción.
+     * @param total Monto final resultante (subtotal menos descuento).
+     */
     private record CalculoPedido(
             List<DetallePedido> detalles,
             Promocion promocion,

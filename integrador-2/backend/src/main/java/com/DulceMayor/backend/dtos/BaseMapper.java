@@ -28,6 +28,12 @@ public interface BaseMapper<E, Req, Res> {
 
     E aEntidad(Req request);
 
+    /// aEntidad(...) crea una instancia totalmente NUEVA en memoria
+    /// Esa instancia nueva viene con id = null, eliminado = false, y sin los datos que no venían en el request
+    /// Si le haces .save(), la base de datos interpretaría que quieres crear una fila nueva (hace un INSERT) en
+    /// lugar de actualizar la que ya existía (un UPDATE).
+    /// La anotación @MappingTarget le indica a MapStruct:
+    /// "No crees un objeto nuevo con new. Toma el objeto entidad que ya existe y písale los valores con los datos nuevos que vienen en el request"
     void actualizarEntidad(Req request, @MappingTarget E entidad);
 
     Res aResponse(E entidad);

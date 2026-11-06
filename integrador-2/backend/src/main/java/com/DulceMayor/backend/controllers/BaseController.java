@@ -55,6 +55,9 @@ public abstract class BaseController<S extends BaseService<?, Req, Res>, Req, Re
 
     /**
      * Método plantilla protegido para el listado de recursos activos ({@code 200 OK}).
+     * En Spring Framework, ResponseEntity representa la respuesta HTTP completa: código
+     * de estado (status code), cabeceras (headers) y el cuerpo (body)
+     * .ok crea el response entity con codigo 200 (ok) y su cuerpo es el response que devuelve service.listar
      */
     protected ResponseEntity<List<Res>> ejecutarListar() {
         return ResponseEntity.ok(service.listar());
@@ -69,11 +72,14 @@ public abstract class BaseController<S extends BaseService<?, Req, Res>, Req, Re
 
     /**
      * Método plantilla protegido para la creación de un recurso ({@code 201 Created} + header {@code Location}).
+     * Por especificación HTTP, el método .created(...) de Spring te obliga a pasarle la URI que se pondrá automáticamente
+     * en la cabecera Location
      */
     protected ResponseEntity<Res> ejecutarCrear(Req request) {
         Res creado = service.crear(request);
         URI location = construirLocation(extraerId(creado));
         return ResponseEntity.created(location).body(creado);
+        //Devuelve HTTP 201 + Header "Location" + JSON del objeto
     }
 
     /**
@@ -93,6 +99,11 @@ public abstract class BaseController<S extends BaseService<?, Req, Res>, Req, Re
 
     /**
      * Construye la URI absoluta del recurso recién creado a partir de la petición HTTP actual.
+     * 1) ServletUriComponentsBuilder.fromCurrentRequest(): Detecta cuál fue la URL que usó el cliente para hacer el POST
+     * (por ejemplo: http://localhost:8080/api/productos).
+     * 2) .path("/{id}"): Le concatena una barra y un parámetro comodín al final (.../productos/{id}).
+     * 3) .buildAndExpand(id): Reemplaza {id} con el ID real que le devolvió extraerId (por ejemplo: .../productos/45).
+     * 4) .toUri(): Convierte ese texto en un objeto URI
      */
     protected URI construirLocation(String id) {
         return ServletUriComponentsBuilder.fromCurrentRequest()

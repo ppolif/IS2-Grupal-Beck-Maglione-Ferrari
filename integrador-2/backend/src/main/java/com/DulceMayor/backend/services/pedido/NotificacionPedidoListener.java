@@ -20,6 +20,11 @@ import org.springframework.stereotype.Component;
  *       transaccional de pedidos a la infraestructura de correo electrónico.</li>
  * </ul>
  */
+/// Hoy en día: Funciona como un mock / simulación desacoplada que registra en el log (log.info) cuando
+/// el pedido pasa a FACTURADO o ENTREGADO.
+///
+/// Propósito final: Es el punto exacto donde se enchufaría un servicio de correo (JavaMailSender / EmailService) para
+/// despachar el mail al minorista con el detalle o adjuntando la factura PDF generada por FacturaService.
 @Component
 public class NotificacionPedidoListener {
 

@@ -69,11 +69,17 @@ public class DireccionService extends BaseService<Direccion, DireccionRequest, D
     }
 
     /**
-     * Construye y valida una instancia desacoplada de {@link Direccion} a partir de su DTO de entrada.
-     *
+     * Construye, valida y persiste una entidad {@link Direccion} a partir de su DTO de entrada.
+     * esto y construirEntidad se usa cuando se va a hacer el alta de algunas entidades, que si o si tienen que tener
+     * una dirección, para que no sea necesario dar el alta a la direccion antes
      * @param request datos de la dirección
-     * @return entidad construida con su {@link Localidad} asociada
+     * @return entidad persistida en base de datos
      */
+    public Direccion crearEntidad(DireccionRequest request) {
+        Direccion entidad = construirEntidad(request);
+        entidad.setEliminado(false);
+        return direccionRepository.save(entidad);
+    }
     public Direccion construirEntidad(DireccionRequest request) {
         DireccionRequest normalizado = prepararRequest(request);
         validarCrear(normalizado);

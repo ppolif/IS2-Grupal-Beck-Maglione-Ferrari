@@ -3193,7 +3193,8 @@ components:
         legajo: {type: string}
         nombreUsuario: {type: string}
         rol: {$ref: '#/components/schemas/RolEmpleado'}
-      required: [nombre, apellido, tipoDocumento, numeroDocumento, legajo, nombreUsuario, rol]
+        mayoristaId: {type: string, format: uuid, description: 'ID de la sede central o sucursal mayorista'}
+      required: [nombre, apellido, tipoDocumento, numeroDocumento, legajo, nombreUsuario, rol, mayoristaId]
       description: 'Crea al empleado y su Usuario. El Usuario nace con la clave por defecto y claveTemporal=true. Según el rol el backend instancia la clase: PREVENTISTA -> Preventor, DISTRIBUIDOR -> Distribuidor,
         ADMINISTRATIVO y JEFE -> Empleado.'
     EmpleadoResponse:
@@ -3213,6 +3214,8 @@ components:
           type: array
           items: {$ref: '#/components/schemas/ContactoResponse'}
         usuario: {$ref: '#/components/schemas/UsuarioResponse'}
+        mayoristaId: {type: string, format: uuid}
+        mayoristaRazonSocial: {type: string}
     EmpleadoResumen:
       type: object
       properties:
@@ -3220,6 +3223,8 @@ components:
         nombre: {type: string}
         apellido: {type: string}
         rol: {$ref: '#/components/schemas/RolUsuario'}
+        mayoristaId: {type: string, format: uuid}
+        mayoristaRazonSocial: {type: string}
     MinoristaRequest:
       type: object
       properties:

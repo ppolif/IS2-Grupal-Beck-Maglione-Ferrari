@@ -2,17 +2,13 @@ package com.DulceMayor.backend.dtos.producto;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import java.time.LocalDate;
 
 /**
- * DTO de entrada para crear o modificar una vigencia de precio según 04-openapi.yaml.
+ * DTO de entrada para registrar o actualizar el precio de un producto.
+ * La fecha desde se fija automáticamente a la fecha actual y la fecha hasta se cierra
+ * cuando se registra una nueva vigencia.
  */
 public record VigenciaPrecioRequest(
-        @NotNull(message = "La fecha desde es obligatoria")
-        LocalDate fechaDesde,
-
-        LocalDate fechaHasta,
-
         @NotNull(message = "El precio es obligatorio")
         @Positive(message = "El precio debe ser un número positivo mayor a cero")
         Double precio

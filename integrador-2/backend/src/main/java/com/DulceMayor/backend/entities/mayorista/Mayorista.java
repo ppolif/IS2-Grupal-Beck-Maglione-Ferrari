@@ -48,6 +48,7 @@ public class Mayorista extends EntidadBase {
     @Column(name = "tipo_empresa", nullable = false, length = 20)
     private TipoEmpresa tipoEmpresa;
 
+    /// por si una sucursal se cambia de direccion
     @Builder.Default
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "mayorista_id")

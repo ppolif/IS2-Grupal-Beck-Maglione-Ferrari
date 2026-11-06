@@ -38,7 +38,8 @@ public class PuntoDeVenta extends EntidadBase {
     @JoinColumn(name = "minorista_id", nullable = false)
     private Minorista minorista;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, optional = false)
+    ///many to one por borrado logico
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "direccion_id", nullable = false)
     private Direccion direccion;
 

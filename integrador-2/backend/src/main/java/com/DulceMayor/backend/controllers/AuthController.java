@@ -37,6 +37,7 @@ public class AuthController {
             MinoristaService minoristaService) {
         this.usuarioService = usuarioService;
         ///Averiguar si el unico uso de personaService se puede reemlpazar por usuarioService
+        /// no se puede reemplazar porque los datos como el nombre y apellido estan en persona, no usuario
         this.personaService = personaService;
         this.minoristaService = minoristaService;
     }

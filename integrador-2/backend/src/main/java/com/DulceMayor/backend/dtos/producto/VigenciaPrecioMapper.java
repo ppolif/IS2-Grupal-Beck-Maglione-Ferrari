@@ -16,12 +16,16 @@ public interface VigenciaPrecioMapper extends BaseMapper<VigenciaPrecio, Vigenci
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "eliminado", ignore = true)
     @Mapping(target = "producto", ignore = true)
+    @Mapping(target = "fechaDesde", expression = "java(java.time.LocalDate.now())")
+    @Mapping(target = "fechaHasta", ignore = true)
     VigenciaPrecio aEntidad(VigenciaPrecioRequest request);
 
     @Override
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "eliminado", ignore = true)
     @Mapping(target = "producto", ignore = true)
+    @Mapping(target = "fechaDesde", ignore = true)
+    @Mapping(target = "fechaHasta", ignore = true)
     void actualizarEntidad(VigenciaPrecioRequest request, @MappingTarget VigenciaPrecio entidad);
 
     @Override

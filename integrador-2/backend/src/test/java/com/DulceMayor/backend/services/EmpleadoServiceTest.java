@@ -19,12 +19,15 @@ import com.DulceMayor.backend.dtos.persona.RolEmpleado;
 import com.DulceMayor.backend.entities.ProveedorAuth;
 import com.DulceMayor.backend.entities.RolUsuario;
 import com.DulceMayor.backend.entities.Usuario;
+import com.DulceMayor.backend.entities.mayorista.Mayorista;
+import com.DulceMayor.backend.entities.mayorista.TipoEmpresa;
 import com.DulceMayor.backend.entities.persona.Distribuidor;
 import com.DulceMayor.backend.entities.persona.Empleado;
 import com.DulceMayor.backend.entities.persona.Preventor;
 import com.DulceMayor.backend.entities.persona.TipoDocumento;
 import com.DulceMayor.backend.repositories.persona.EmpleadoRepository;
 import com.DulceMayor.backend.services.direccion.DireccionService;
+import com.DulceMayor.backend.services.mayorista.MayoristaService;
 import com.DulceMayor.backend.services.persona.EmpleadoService;
 import com.DulceMayor.backend.services.persona.PersonaService;
 import java.util.List;
@@ -60,6 +63,9 @@ class EmpleadoServiceTest {
     @Mock
     private ContactoService contactoService;
 
+    @Mock
+    private MayoristaService mayoristaService;
+
     private EmpleadoService empleadoService;
 
     @BeforeEach
@@ -70,7 +76,8 @@ class EmpleadoServiceTest {
                 personaService,
                 usuarioService,
                 direccionService,
-                contactoService
+                contactoService,
+                mayoristaService
         );
     }
 
@@ -87,11 +94,15 @@ class EmpleadoServiceTest {
                 List.of(),
                 "LEG-PREV-01",
                 "clopez",
-                RolEmpleado.PREVENTISTA
+                RolEmpleado.PREVENTISTA,
+                "may-1"
         );
 
         when(empleadoRepository.existsByLegajoAndEliminadoFalse("LEG-PREV-01")).thenReturn(false);
         when(usuarioService.existeNombreUsuario("clopez")).thenReturn(false);
+
+        Mayorista mockMayorista = Mayorista.builder().id("may-1").razonSocial("Dulce Mayor Sede").tipoEmpresa(TipoEmpresa.SEDE_CENTRAL).build();
+        when(mayoristaService.obtenerEntidad("may-1")).thenReturn(mockMayorista);
 
         Usuario user = Usuario.builder()
                 .id("user-1")
@@ -111,7 +122,8 @@ class EmpleadoServiceTest {
         EmpleadoResponse mockRes = new EmpleadoResponse(
                 "emp-1", "LEG-PREV-01", "Carlos", "Lopez", null,
                 TipoDocumento.DNI, "35111222", List.of(), List.of(),
-                new UsuarioResponse("user-1", "clopez", RolUsuario.PREVENTISTA, true, ProveedorAuth.LOCAL)
+                new UsuarioResponse("user-1", "clopez", RolUsuario.PREVENTISTA, true, ProveedorAuth.LOCAL),
+                "may-1", "Dulce Mayor Sede"
         );
         when(empleadoMapper.aResponse(any(Empleado.class))).thenReturn(mockRes);
 
@@ -119,8 +131,10 @@ class EmpleadoServiceTest {
 
         assertNotNull(res);
         assertEquals("LEG-PREV-01", res.legajo());
+        assertEquals("may-1", res.mayoristaId());
         assertTrue(res.usuario().claveTemporal());
         verify(personaService).validarDocumentoUnico(TipoDocumento.DNI, "35111222");
+        verify(mayoristaService).obtenerEntidad("may-1");
     }
 
     @Test
@@ -128,11 +142,30 @@ class EmpleadoServiceTest {
     void crearEmpleadoLegajoDuplicadoLanza409() {
         EmpleadoRequest req = new EmpleadoRequest(
                 "Mario", "Perez", null, TipoDocumento.DNI, "30999888",
-                List.of(), List.of(), "LEG-01", "mperez", RolEmpleado.ADMINISTRATIVO
+                List.of(), List.of(), "LEG-01", "mperez", RolEmpleado.ADMINISTRATIVO, "may-1"
         );
         when(empleadoRepository.existsByLegajoAndEliminadoFalse("LEG-01")).thenReturn(true);
 
         assertThrows(ConflictoException.class, () -> empleadoService.crear(req));
+    }
+
+    @Test
+    @DisplayName("crear: rechaza si se intenta asignar un Distribuidor a una sucursal que no sea la Sede Central")
+    void crearDistribuidorEnSucursalRechazaConValidacionException() {
+        EmpleadoRequest req = new EmpleadoRequest(
+                "Lucas", "Gomez", null, TipoDocumento.DNI, "32111222",
+                List.of(), List.of(), "LEG-DIST-01", "lgomez", RolEmpleado.DISTRIBUIDOR, "suc-2"
+        );
+        Mayorista sucursal = Mayorista.builder().id("suc-2").tipoEmpresa(TipoEmpresa.SUCURSAL).build();
+        when(empleadoRepository.existsByLegajoAndEliminadoFalse("LEG-DIST-01")).thenReturn(false);
+        when(usuarioService.existeNombreUsuario("lgomez")).thenReturn(false);
+        when(mayoristaService.obtenerEntidad("suc-2")).thenReturn(sucursal);
+
+        com.DulceMayor.backend.config.ValidacionException ex = assertThrows(
+                com.DulceMayor.backend.config.ValidacionException.class,
+                () -> empleadoService.crear(req)
+        );
+        assertEquals("Los distribuidores solo pueden ser asignados a la sede central", ex.getMessage());
     }
 
     @Test

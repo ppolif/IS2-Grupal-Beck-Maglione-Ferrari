@@ -41,6 +41,7 @@ public class Pago extends EntidadBase {
     @Column(name = "fecha_pago", nullable = false)
     private LocalDateTime fechaPago = LocalDateTime.now();
 
+    /// alias o qr
     @Column(length = 255)
     private String referencia;
 

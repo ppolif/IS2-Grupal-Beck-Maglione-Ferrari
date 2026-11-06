@@ -137,6 +137,10 @@ Cada una de las siguientes operaciones inserta un nuevo registro inmutable en `S
 
 ## 6. Lógica de Enrutamiento y Mapas (Logística)
 
+### 6.0. Pertenencia de Empleados y Sucursales
+* Todo empleado se vincula a una entidad `Mayorista` (sede central o sucursal).
+* **Restricción de Distribuidores:** Los empleados con rol `DISTRIBUIDOR` solo pueden estar asignados a la **Sede Central** (`TipoEmpresa.SEDE_CENTRAL`), dado que operan desde el centro de distribución logístico principal. Si se intenta asignar un distribuidor a una sucursal secundaria, el backend rechaza la operación con una excepción de validación (HTTP 400).
+
 El sistema optimiza los recorridos usando el algoritmo del **Vecino Más Cercano (Nearest Neighbor)** basado en la fórmula de **Distancia Haversine** (cálculo de distancia geodésica entre dos puntos de latitud/longitud). *Se utiliza la libreria OpenStreetMap para esto.*
 
 ### 6.1. Ruta del Preventor
