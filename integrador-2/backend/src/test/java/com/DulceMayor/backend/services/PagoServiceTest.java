@@ -43,9 +43,6 @@ class PagoServiceTest {
     private FacturaService facturaService;
 
     @Mock
-    private FacturaLecturaService facturaLecturaService;
-
-    @Mock
     private FormaDePagoService formaDePagoService;
 
     private final PagoMapper pagoMapper = Mappers.getMapper(PagoMapper.class);
@@ -58,7 +55,6 @@ class PagoServiceTest {
                 pagoRepository,
                 pagoMapper,
                 facturaService,
-                facturaLecturaService,
                 formaDePagoService
         );
     }
@@ -82,7 +78,7 @@ class PagoServiceTest {
 
         when(facturaService.obtenerEntidad("fac-1")).thenReturn(factura);
         when(formaDePagoService.obtenerEntidad("fp-1")).thenReturn(forma);
-        when(facturaLecturaService.obtenerTotalPagado("fac-1")).thenReturn(400.0);
+        when(pagoRepository.sumarPagosActivosPorFactura("fac-1")).thenReturn(400.0);
         when(pagoRepository.save(any(Pago.class))).thenAnswer(inv -> {
             Pago p = inv.getArgument(0);
             p.setId("pago-1");
@@ -117,7 +113,7 @@ class PagoServiceTest {
 
         when(facturaService.obtenerEntidad("fac-1")).thenReturn(factura);
         when(formaDePagoService.obtenerEntidad("fp-1")).thenReturn(forma);
-        when(facturaLecturaService.obtenerTotalPagado("fac-1")).thenReturn(700.0);
+        when(pagoRepository.sumarPagosActivosPorFactura("fac-1")).thenReturn(700.0);
 
         ConflictoException ex = assertThrows(
                 ConflictoException.class,
@@ -146,7 +142,7 @@ class PagoServiceTest {
 
         when(pagoRepository.findByIdAndEliminadoFalse("pago-1")).thenReturn(Optional.of(pago));
         when(pagoRepository.save(any(Pago.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(facturaLecturaService.obtenerTotalPagado("fac-1")).thenReturn(0.0);
+        when(pagoRepository.sumarPagosActivosPorFactura("fac-1")).thenReturn(0.0);
 
         pagoService.eliminar("pago-1");
 

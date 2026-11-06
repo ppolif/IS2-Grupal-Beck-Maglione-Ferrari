@@ -4,19 +4,16 @@ import com.DulceMayor.backend.dtos.facturacion.FacturaMapper;
 import com.DulceMayor.backend.dtos.facturacion.FacturaMiCuentaPage;
 import com.DulceMayor.backend.dtos.facturacion.FacturaPage;
 import com.DulceMayor.backend.dtos.facturacion.FacturaResponse;
-import com.DulceMayor.backend.dtos.facturacion.PagoMapper;
 import com.DulceMayor.backend.dtos.facturacion.PagoResponse;
 import com.DulceMayor.backend.entities.facturacion.EstadoFactura;
 import com.DulceMayor.backend.entities.facturacion.Factura;
-import com.DulceMayor.backend.entities.facturacion.Pago;
 import com.DulceMayor.backend.repositories.facturacion.FacturaRepository;
-import com.DulceMayor.backend.repositories.facturacion.PagoRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,57 +22,50 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Servicio de solo lectura para la proyección y consulta de facturas con su estado de pagos.
  * <p>
- * Conforme a la sección 10.1 (regla 6) de {@code GENERAL.md} y la exención en {@code ArquitecturaTests},
- * las clases {@code *LecturaService} son de solo lectura ({@code @Transactional(readOnly = true)}) y
- * pueden consultar múltiples repositorios ({@link FacturaRepository} y {@link PagoRepository}) para
- * ensamblar proyecciones con {@code totalPagado}, {@code saldo}, {@code detalles} y {@code pagos}.
+ * Conforme a la sección 10.1 de {@code GENERAL.md}, las consultas sobre pagos de una factura
+ * se delegan en {@link PagoService}, desacoplando {@link FacturaLecturaService} de {@code PagoRepository}.
  * </p>
  *
  * <p><b>Patrón GoF aplicado: DTO / Adapter (Estructural)</b></p>
  * Ensambla un {@link FacturaResponse} enriquecido combinando la entidad {@link Factura} con la suma
- * y el listado de sus {@link Pago} activos sin acoplar {@link FacturaService} con {@link PagoRepository}.
+ * y el listado de sus pagos activos obtenidos desde {@link PagoService}.
  */
 @Service
 @Transactional(readOnly = true)
 public class FacturaLecturaService {
 
     private final FacturaRepository facturaRepository;
-    private final PagoRepository pagoRepository;
     private final FacturaMapper facturaMapper;
-    private final PagoMapper pagoMapper;
+    private final PagoService pagoService;
 
     public FacturaLecturaService(
             FacturaRepository facturaRepository,
-            PagoRepository pagoRepository,
             FacturaMapper facturaMapper,
-            PagoMapper pagoMapper) {
+            @Lazy PagoService pagoService) {
         this.facturaRepository = facturaRepository;
-        this.pagoRepository = pagoRepository;
         this.facturaMapper = facturaMapper;
-        this.pagoMapper = pagoMapper;
+        this.pagoService = pagoService;
     }
 
     /**
-     * Calcula la suma total de los pagos activos registrados para una factura.
+     * Calcula la suma total de los pagos activos registrados para una factura delegando en {@link PagoService}.
      */
     public double obtenerTotalPagado(String facturaId) {
-        return Optional.ofNullable(pagoRepository.sumarPagosActivosPorFactura(facturaId))
-                .orElse(0.0);
+        return pagoService.obtenerTotalPagado(facturaId);
     }
 
     /**
-     * Verifica si una factura posee al menos un pago activo (no eliminado).
+     * Verifica si una factura posee al menos un pago activo delegando en {@link PagoService}.
      */
     public boolean tienePagosActivos(String facturaId) {
-        return pagoRepository.existsByFacturaIdAndEliminadoFalse(facturaId);
+        return pagoService.tienePagosActivos(facturaId);
     }
 
     /**
-     * Lista los pagos activos de una factura ordenados cronológicamente.
+     * Lista los pagos activos de una factura ordenados cronológicamente delegando en {@link PagoService}.
      */
     public List<PagoResponse> listarPagosPorFactura(String facturaId) {
-        List<Pago> pagos = pagoRepository.findAllByFacturaIdAndEliminadoFalseOrderByFechaPagoAsc(facturaId);
-        return pagoMapper.aResponseList(pagos);
+        return pagoService.listarPorFactura(facturaId);
     }
 
     /**
@@ -106,7 +96,7 @@ public class FacturaLecturaService {
     }
 
     /**
-     * Listado paginado de facturas con filtros opcionales de estado y rango de fechas.
+     * Listado paginado de facturas con filtros opcionales de estado y rango de fechas, para admins.
      */
     public FacturaPage listarPaginado(
             EstadoFactura estado,
@@ -115,6 +105,7 @@ public class FacturaLecturaService {
             LocalDate hasta,
             Pageable pageable) {
 
+        /// si se quiere usar el filtro de fechas se elige el horario (todo el dia)
         LocalDateTime fechaDesde = desde != null ? desde.atStartOfDay() : null;
         LocalDateTime fechaHasta = hasta != null ? hasta.atTime(LocalTime.MAX) : null;
 

@@ -76,63 +76,8 @@ class MinoristaServiceTest {
     }
 
     @Test
-    @DisplayName("registrarEnPortal Caso B: vincula Minorista precargado con usuario=null y asigna claveTemporal=true")
-    void registrarEnPortalCasoBAsignaClaveTemporalTrue() {
-        RegistroMinoristaRequest req = new RegistroMinoristaRequest(
-                "Pedro",
-                "Gomez",
-                TipoDocumento.DNI,
-                "28111222",
-                "pedro@kiosco.com",
-                "ClaveSecreta123",
-                "Kiosco Pedro"
-        );
-
-        when(usuarioService.existeNombreUsuario("pedro@kiosco.com")).thenReturn(false);
-
-        Minorista minoristaExistente = Minorista.builder()
-                .id("min-1")
-                .nombre("Pedro")
-                .apellido("Gomez")
-                .tipoDocumento(TipoDocumento.DNI)
-                .numeroDocumento("28111222")
-                .usuario(null)
-                .eliminado(false)
-                .build();
-
-        when(minoristaRepository.findActivoByEmail("pedro@kiosco.com")).thenReturn(Optional.of(minoristaExistente));
-
-        Usuario nuevoUsuario = Usuario.builder()
-                .id("usr-pedro")
-                .nombreUsuario("pedro@kiosco.com")
-                .rol(RolUsuario.MINORISTA)
-                .claveTemporal(true)
-                .proveedorAuth(ProveedorAuth.LOCAL)
-                .build();
-        when(usuarioService.crearUsuario("pedro@kiosco.com", "ClaveSecreta123", RolUsuario.MINORISTA, true))
-                .thenReturn(nuevoUsuario);
-
-        AuthResponse authRes = new AuthResponse(
-                "mock-jwt-token",
-                "Bearer",
-                3600L,
-                true,
-                new UsuarioResponse("usr-pedro", "pedro@kiosco.com", RolUsuario.MINORISTA, true, ProveedorAuth.LOCAL)
-        );
-        when(usuarioService.generarAuthResponse(nuevoUsuario)).thenReturn(authRes);
-
-        AuthResponse res = minoristaService.registrarEnPortal(req);
-
-        assertNotNull(res);
-        assertTrue(res.debeCambiarClave());
-        assertEquals("mock-jwt-token", res.token());
-        assertEquals(nuevoUsuario, minoristaExistente.getUsuario());
-        verify(minoristaRepository).save(minoristaExistente);
-    }
-
-    @Test
-    @DisplayName("registrarEnPortal Caso C: cliente nuevo crea Minorista y Usuario con claveTemporal=false")
-    void registrarEnPortalCasoCCreaMinoristaYClaveTemporalFalse() {
+    @DisplayName("registrarEnPortal: cliente nuevo crea Minorista y Usuario con claveTemporal=false")
+    void registrarEnPortalCreaMinoristaYClaveTemporalFalse() {
         RegistroMinoristaRequest req = new RegistroMinoristaRequest(
                 "Ana",
                 "Suarez",
@@ -144,9 +89,6 @@ class MinoristaServiceTest {
         );
 
         when(usuarioService.existeNombreUsuario("ana@comercio.com")).thenReturn(false);
-        when(minoristaRepository.findActivoByEmail("ana@comercio.com")).thenReturn(Optional.empty());
-        when(minoristaRepository.findByTipoDocumentoAndNumeroDocumentoAndEliminadoFalse(TipoDocumento.DNI, "34555666"))
-                .thenReturn(Optional.empty());
 
         Usuario nuevoUsuario = Usuario.builder()
                 .id("usr-ana")
@@ -176,18 +118,14 @@ class MinoristaServiceTest {
     }
 
     @Test
-    @DisplayName("registrarEnPortal Caso A: rechaza con 409 si el Minorista ya tiene usuario asignado")
-    void registrarEnPortalCasoAYaTieneUsuarioLanza409() {
+    @DisplayName("registrarEnPortal: rechaza con 409 si el correo ya posee usuario")
+    void registrarEnPortalCorreoDuplicadoLanza409() {
         RegistroMinoristaRequest req = new RegistroMinoristaRequest(
                 "Pedro", "Gomez", TipoDocumento.DNI, "28111222",
                 "pedro@kiosco.com", "ClaveSecreta123", null
         );
 
-        Usuario userExistente = Usuario.builder().id("usr-previo").build();
-        Minorista existente = Minorista.builder().id("min-1").usuario(userExistente).build();
-
-        when(usuarioService.existeNombreUsuario("pedro@kiosco.com")).thenReturn(false);
-        when(minoristaRepository.findActivoByEmail("pedro@kiosco.com")).thenReturn(Optional.of(existente));
+        when(usuarioService.existeNombreUsuario("pedro@kiosco.com")).thenReturn(true);
 
         assertThrows(ConflictoException.class, () -> minoristaService.registrarEnPortal(req));
     }
@@ -219,9 +157,6 @@ class MinoristaServiceTest {
         ActualizarPerfilMinoristaRequest req = new ActualizarPerfilMinoristaRequest(
                 "Juan Manuel",
                 "Perez Gomez",
-                java.time.LocalDate.of(1990, 5, 20),
-                TipoDocumento.DNI,
-                "20111222",
                 "nuevo@kiosco.com",
                 "2614567890"
         );
@@ -229,7 +164,6 @@ class MinoristaServiceTest {
         minoristaService.actualizarMiPerfil("usr-1", req);
 
         verify(usuarioService).actualizarNombreUsuario(usuario, "nuevo@kiosco.com");
-        verify(personaService).validarDocumentoUnicoExcluyendoId(TipoDocumento.DNI, "20111222", "min-1");
         assertEquals("Juan Manuel", minorista.getNombre());
         assertEquals("Perez Gomez", minorista.getApellido());
     }

@@ -16,7 +16,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface EmpleadoRepository extends BaseRepository<Empleado> {
 
-    Optional<Empleado> findByUsuarioIdAndEliminadoFalse(String usuarioId);
+    @Query("SELECT e FROM Empleado e JOIN e.usuarios u WHERE u.id = :usuarioId AND e.eliminado = false")
+    Optional<Empleado> findByUsuarioIdAndEliminadoFalse(@Param("usuarioId") String usuarioId);
 
     Optional<Empleado> findByLegajoAndEliminadoFalse(String legajo);
 
@@ -24,11 +25,14 @@ public interface EmpleadoRepository extends BaseRepository<Empleado> {
 
     boolean existsByLegajoAndIdNotAndEliminadoFalse(String legajo, String id);
 
+    @Query("SELECT e FROM Empleado e WHERE TYPE(e) = :tipo AND e.eliminado = false")
+    <T extends Empleado> java.util.List<T> findAllByTipoAndEliminadoFalse(@Param("tipo") Class<T> tipo);
+
     @Query("""
         SELECT e FROM Empleado e
-        LEFT JOIN e.usuario u
+        LEFT JOIN e.usuarios u
         WHERE e.eliminado = false
-          AND (:rol IS NULL OR u.rol = :rol)
+          AND (:rol IS NULL OR (u.rol = :rol AND u.eliminado = false))
           AND (:legajo IS NULL OR LOWER(e.legajo) LIKE LOWER(CONCAT('%', :legajo, '%')))
           AND (:q IS NULL OR (
                LOWER(e.nombre) LIKE LOWER(CONCAT('%', :q, '%'))

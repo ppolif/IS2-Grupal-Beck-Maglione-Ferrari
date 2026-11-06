@@ -22,6 +22,8 @@ public interface PedidoRepository extends BaseRepository<Pedido> {
 
     List<Pedido> findAllByEliminadoFalseOrderByFechaHoraCargaDesc();
 
+    List<Pedido> findAllByEstadoAndEliminadoFalseOrderByFechaHoraCargaAsc(EstadoPedido estado);
+
     @Query("""
             SELECT p FROM Pedido p
             JOIN p.puntoDeVenta pdv

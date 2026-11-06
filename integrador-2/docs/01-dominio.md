@@ -43,8 +43,9 @@ Formato: **origen → destino** = el origen guarda la referencia al destino. Las
 | `Mayorista` | → | `Contacto` | 1 — 0..* |
 | `Mayorista` | → | `Imagen` | 1 — 0..* | Fotos de sucursales y logo. |
 | `Mayorista` | — | `ConfiguracionCorreoMayorista` | 1 — 1 | Sin flecha en el diagrama. |
+| `Empleado` | → | `Mayorista` | * — 1 | Sucursal o sede central a la que pertenece el empleado. |
 | `Persona` | → | `Contacto` | 1 — 0..* |
-| `Usuario` | → | `Persona` | 0..1 — 1 | Tal como se dibuja; ver punto abierto 2. |
+| `Persona` | → | `Usuario` | 1 — 0..* | Relación OneToMany en Persona para permitir borrado lógico/rotación de credenciales (un único usuario activo a la vez). Ver punto abierto 2. |
 | `PuntoDeVenta` | → | `Direccion` | * — 1 | Con `latitud` y `longitud`. |
 | `PuntoDeVenta` | → | `Minorista` | 1 — 1..* | Tal como se dibuja |
 | `PuntoDeVenta` | → | `Distribuidor` | — | La línea termina en `Distribuidor`; |
@@ -308,15 +309,15 @@ Credenciales de acceso. La clave se guarda encriptada. Un usuario nuevo nace con
 
 ### Empleado
 *Hereda de* `Persona`.  
-Personal de la empresa. Su perfil de acceso lo define `Usuario.rol`. Los empleados `ADMINISTRATIVO` y `JEFE` son `Empleado` directo; los repartidores y vendedores de campo son las subclases `Distribuidor` y `Preventor`.
-**Atributos:** `Legajo:String`
+Personal de la empresa. Su perfil de acceso lo define `Usuario.rol`. Está asignado a una sucursal o sede central (`Mayorista`). Los empleados `ADMINISTRATIVO` y `JEFE` son `Empleado` directo; los repartidores y vendedores de campo son las subclases `Distribuidor` y `Preventor`.
+**Atributos:** `Legajo:String`, `mayorista:Mayorista`
 
 **Métodos:**
 
 ```text
-+crearEmpleado(nombre:String, apellido:String, fechaNacimiento:Date, tipoDocumento:TipoDocumento, numeroDocumento:String, idUsuario:String, legajo:String):void
-+validar(nombre:String, apellido:String, fechaNacimiento:Date, tipoDocumento:TipoDocumento, numeroDocumento:String, idUsuario:String):void
-+modificarEmpleado(id:String, nombre:String, apellido:String, fechaNacimiento:Date, tipoDocumento:TipoDocumento, numeroDocumento:String,legajo:String):void
++crearEmpleado(nombre:String, apellido:String, fechaNacimiento:Date, tipoDocumento:TipoDocumento, numeroDocumento:String, idUsuario:String, legajo:String, idMayorista:String):void
++validar(nombre:String, apellido:String, fechaNacimiento:Date, tipoDocumento:TipoDocumento, numeroDocumento:String, idUsuario:String, idMayorista:String):void
++modificarEmpleado(id:String, nombre:String, apellido:String, fechaNacimiento:Date, tipoDocumento:TipoDocumento, numeroDocumento:String, legajo:String, idMayorista:String):void
 +buscarEmpleado(id:String):Empleado
 +listarEmpleado():Collection<Empleado>
 +listarEmpleadoActivo():Collection<Empleado>
@@ -636,5 +637,5 @@ Ruta diaria de entregas de un `Distribuidor`. Sin atributos propios en el diagra
 | # | Qué muestra el diagrama | Interpretación por defecto para implementar |
 |---|---|---|
 | 1 | Todas las asociaciones dirigidas solo llevan `0..n` junto a la punta de flecha. | Usar las multiplicidades de la sección 1. |
-| 2 | La flecha `Usuario → Persona` indica que `Usuario` guarda a `Persona`, pero las firmas (`asociarUsuarioPersona`, `crearEmpleado(..., idUsuario)`) hacen que `Persona` reciba al `Usuario`. | `Persona` guarda `usuario` (0..1). `Usuario` **no** referencia a `Persona`. |
+| 2 | La flecha `Usuario → Persona` indica que `Usuario` guarda a `Persona`, pero las firmas (`asociarUsuarioPersona`, `crearEmpleado(..., idUsuario)`) hacen que `Persona` reciba al `Usuario`. | `Persona` guarda `usuarios` (0..*) mapeado con `@OneToMany` para tolerar soft delete, con método de conveniencia para acceder al usuario activo no eliminado. `Usuario` **no** referencia a `Persona`. |
 | 11 | `RolUsuario` usa `PREVENTISTA` y `MINORISTA`; el resto de los documentos puede decir `PREVENTOR` y `CLIENTE`. | Manda el diagrama: `ADMINISTRATIVO`, `JEFE`, `PREVENTISTA`, `MINORISTA`, `DISTRIBUIDOR`. |

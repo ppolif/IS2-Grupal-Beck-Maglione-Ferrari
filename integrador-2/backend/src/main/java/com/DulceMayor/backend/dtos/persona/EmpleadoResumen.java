@@ -9,7 +9,9 @@ public record EmpleadoResumen(
         String id,
         String nombre,
         String apellido,
-        RolUsuario rol
+        RolUsuario rol,
+        String mayoristaId,
+        String mayoristaRazonSocial
 ) {
 }
 

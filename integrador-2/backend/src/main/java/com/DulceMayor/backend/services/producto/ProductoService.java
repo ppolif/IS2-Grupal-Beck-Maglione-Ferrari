@@ -126,6 +126,7 @@ public class ProductoService extends BaseService<Producto, ProductoRequest, Prod
                     "Ya existe otro producto con el código '" + request.codigo() + "'"
             );
         }
+        /// si la subcategoria o la imagen indicadas no existen dará una excepción
         subCategoriaService.obtenerEntidad(request.subCategoriaId());
         if (request.imagenId() != null) {
             imagenService.obtenerEntidad(request.imagenId());

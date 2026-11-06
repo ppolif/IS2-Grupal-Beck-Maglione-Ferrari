@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.DulceMayor.backend.config.ConflictoException;
+import com.DulceMayor.backend.config.ValidacionException;
 import com.DulceMayor.backend.dtos.producto.VigenciaPrecioMapper;
 import com.DulceMayor.backend.dtos.producto.VigenciaPrecioRequest;
 import com.DulceMayor.backend.dtos.producto.VigenciaPrecioResponse;
@@ -59,8 +60,8 @@ class VigenciaPrecioServiceTest {
     @Test
     @DisplayName("registrarPrecio: cierra la vigencia previa al día anterior e inserta la nueva")
     void registrarPrecioCierraPrevia() {
-        LocalDate hoy = LocalDate.of(2026, 10, 27);
-        LocalDate inicioPrevio = LocalDate.of(2026, 9, 1);
+        LocalDate hoyReal = LocalDate.now();
+        LocalDate inicioPrevio = hoyReal.minusMonths(1);
 
         VigenciaPrecio previa = VigenciaPrecio.builder()
                 .id("vig-ant")
@@ -71,11 +72,10 @@ class VigenciaPrecioServiceTest {
                 .eliminado(false)
                 .build();
 
-        VigenciaPrecioRequest req = new VigenciaPrecioRequest(hoy, null, 150.0);
+        VigenciaPrecioRequest req = new VigenciaPrecioRequest(150.0);
 
         when(productoService.obtenerEntidad("prod-1")).thenReturn(productoMock);
         when(vigenciaPrecioRepository.findByProductoIdAndFechaHastaIsNullAndEliminadoFalse("prod-1")).thenReturn(Optional.of(previa));
-        when(vigenciaPrecioRepository.buscarSolapamientos("prod-1", hoy, null, null)).thenReturn(Collections.emptyList());
         when(vigenciaPrecioRepository.save(any(VigenciaPrecio.class))).thenAnswer(invocation -> {
             VigenciaPrecio v = invocation.getArgument(0);
             if (v.getId() == null) {
@@ -90,20 +90,14 @@ class VigenciaPrecioServiceTest {
         assertEquals("vig-nueva", res.id());
         assertEquals(150.0, res.precio());
         // Verifica que la previa se cerró con fechaHasta = hoy - 1
-        assertEquals(hoy.minusDays(1), previa.getFechaHasta());
+        assertEquals(hoyReal.minusDays(1), previa.getFechaHasta());
     }
 
     @Test
-    @DisplayName("registrarPrecio: solapamiento detectado lanza ConflictoException")
-    void registrarPrecioSolapamientoLanzaConflicto() {
-        LocalDate hoy = LocalDate.of(2026, 10, 27);
-        VigenciaPrecioRequest req = new VigenciaPrecioRequest(hoy, null, 150.0);
-
-        when(productoService.obtenerEntidad("prod-1")).thenReturn(productoMock);
-        when(vigenciaPrecioRepository.findByProductoIdAndFechaHastaIsNullAndEliminadoFalse("prod-1")).thenReturn(Optional.empty());
-        when(vigenciaPrecioRepository.buscarSolapamientos("prod-1", hoy, null, null)).thenReturn(List.of(new VigenciaPrecio()));
-
-        assertThrows(ConflictoException.class, () -> vigenciaPrecioService.registrarPrecio("prod-1", req));
+    @DisplayName("registrarPrecio: valida que el precio sea positivo")
+    void registrarPrecioValidaPrecioPositivo() {
+        VigenciaPrecioRequest reqInvalido = new VigenciaPrecioRequest(-50.0);
+        assertThrows(ValidacionException.class, () -> vigenciaPrecioService.registrarPrecio("prod-1", reqInvalido));
     }
 
     @Test

@@ -39,19 +39,16 @@ public class PagoService extends BaseService<Pago, PagoRequest, PagoResponse> {
 
     private final PagoRepository pagoRepository;
     private final FacturaService facturaService;
-    private final FacturaLecturaService facturaLecturaService;
     private final FormaDePagoService formaDePagoService;
 
     public PagoService(
             PagoRepository pagoRepository,
             PagoMapper pagoMapper,
             FacturaService facturaService,
-            FacturaLecturaService facturaLecturaService,
             FormaDePagoService formaDePagoService) {
         super(pagoRepository, pagoMapper, "Pago");
         this.pagoRepository = pagoRepository;
         this.facturaService = facturaService;
-        this.facturaLecturaService = facturaLecturaService;
         this.formaDePagoService = formaDePagoService;
     }
 
@@ -81,7 +78,7 @@ public class PagoService extends BaseService<Pago, PagoRequest, PagoResponse> {
 
         FormaDePago formaDePago = formaDePagoService.obtenerEntidad(reqPreparado.formaDePagoId());
 
-        double totalPagadoActual = facturaLecturaService.obtenerTotalPagado(facturaId);
+        double totalPagadoActual = obtenerTotalPagado(facturaId);
         double saldoPendiente = Math.max(0.0, factura.getTotal() - totalPagadoActual);
 
         if (reqPreparado.monto() > saldoPendiente + 0.001) {
@@ -107,6 +104,23 @@ public class PagoService extends BaseService<Pago, PagoRequest, PagoResponse> {
         facturaService.actualizarEstadoSegunPagos(factura, nuevoTotalPagado);
 
         return mapper.aResponse(guardado);
+    }
+
+    /**
+     * Calcula la suma total de los pagos activos registrados para una factura.
+     */
+    @Transactional(readOnly = true)
+    public double obtenerTotalPagado(String facturaId) {
+        return java.util.Optional.ofNullable(pagoRepository.sumarPagosActivosPorFactura(facturaId))
+                .orElse(0.0);
+    }
+
+    /**
+     * Verifica si una factura posee al menos un pago activo (no eliminado).
+     */
+    @Transactional(readOnly = true)
+    public boolean tienePagosActivos(String facturaId) {
+        return pagoRepository.existsByFacturaIdAndEliminadoFalse(facturaId);
     }
 
     /**
@@ -137,7 +151,7 @@ public class PagoService extends BaseService<Pago, PagoRequest, PagoResponse> {
     protected void despuesDeEliminar(Pago entidad) {
         Factura factura = entidad.getFactura();
         if (factura != null && factura.getId() != null) {
-            double nuevoTotalPagado = facturaLecturaService.obtenerTotalPagado(factura.getId());
+            double nuevoTotalPagado = obtenerTotalPagado(factura.getId());
             facturaService.actualizarEstadoSegunPagos(factura, nuevoTotalPagado);
         }
     }

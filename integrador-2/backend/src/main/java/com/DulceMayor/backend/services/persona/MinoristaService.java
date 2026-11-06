@@ -69,6 +69,12 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         this.eventPublisher = eventPublisher;
     }
 
+    /**
+     * Normaliza los datos de entrada del minorista (recorte de espacios en blanco).
+     *
+     * <p><b>Cuándo se usa:</b> Automáticamente al inicio de las operaciones {@code crear} y {@code modificar}
+     * del Template Method en {@link BaseService}, garantizando consistencia en validaciones y persistencia.</p>
+     */
     @Override
     protected MinoristaRequest prepararRequest(MinoristaRequest request) {
         if (request == null) {
@@ -85,34 +91,69 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         );
     }
 
+    /**
+     * Valida el formato y la unicidad de tipo y número de documento para el alta de un minorista.
+     * Si el alta es realizada por un preventista en terreno, exige obligatoriamente un contacto
+     * de correo electrónico válido, ya que este se utilizará como nombre de usuario para su cuenta.
+     *
+     * <p><b>Cuándo se usa:</b> Durante {@code crear(request)} antes de persistir la entidad.</p>
+     */
     @Override
     protected void validarCrear(MinoristaRequest request) {
         validarFormato(request);
         personaService.validarDocumentoUnico(request.tipoDocumento(), request.numeroDocumento());
+
+        ///si esta siendo registrado en campo, en los contactos debe venir un mail si o si, que sera el del usuario que se cree
+        if (esPreventistaAutenticado()) {
+            String email = obtenerEmailDeContactos(request);
+            if (email == null) {
+                throw new ValidacionException(
+                        "Al registrar un minorista como preventista es obligatorio ingresar un contacto de tipo CORREO con su email, ya que será su nombre de usuario en el sistema."
+                );
+            }
+            if (usuarioService.existeNombreUsuario(email)) {
+                throw new ConflictoException("DUPLICADO", "El correo ingresado ya se encuentra registrado por otro usuario");
+            }
+        }
     }
 
+    /**
+     * Valida el formato y la unicidad del documento excluyendo el ID del propio minorista que se modifica.
+     *
+     * <p><b>Cuándo se usa:</b> Durante {@code modificar(id, request)} antes de aplicar los cambios.</p>
+     *
+     * El metodo crear del minorista es el que se llama si lo registra un preventor, sino se llama registroEnPortal
+     */
     @Override
     protected void validarModificar(String id, MinoristaRequest request, Minorista existente) {
         validarFormato(request);
-        personaService.validarDocumentoUnicoExcluyendoId(request.tipoDocumento(), request.numeroDocumento(), id);
     }
 
+    /**
+     * Hook del Template Method previo a la persistencia (alta o modificación administrativa):
+     * 1. Si el alta es realizada por un preventista en terreno y el cliente no tiene usuario,
+     *    le genera automáticamente una cuenta con clave temporal por defecto (regla de negocio 01-dominio.md).
+     * 2. Construye y asocia las colecciones anidadas de direcciones y contactos.
+     *
+     * <p><b>Cuándo se usa:</b> Inmediatamente antes de ejecutar {@code save} en {@code crear} y {@code modificar}.</p>
+     */
     @Override
     protected void antesDePersistir(Minorista entidad, MinoristaRequest request) {
         // Si lo da de alta un preventor en terreno y no tiene usuario aún, se crea con claveTemporal = true
         if (entidad.getUsuario() == null && esPreventistaAutenticado()) {
-            String username = resolverNombreUsuario(request);
-            if (!usuarioService.existeNombreUsuario(username)) {
-                Usuario usuario = usuarioService.crearUsuario(
-                        username,
-                        UsuarioService.CLAVE_POR_DEFECTO,
-                        RolUsuario.MINORISTA,
-                        true
-                );
-                entidad.setUsuario(usuario);
-            }
+            String email = obtenerEmailDeContactos(request);
+
+            Usuario usuario = usuarioService.crearUsuario(
+                    email,
+                    UsuarioService.CLAVE_POR_DEFECTO,
+                    RolUsuario.MINORISTA,
+                    true
+            );
+            entidad.setUsuario(usuario);
         }
 
+        /// como los atributos de minorista tienen CascadeType.ALL, al construirlos y agregarlos en la entidad minorista,
+        /// cuando se persiste el minorista JPA se encarga de persistir todas las entidades "hijas"
         if (request.direcciones() != null) {
             entidad.getDirecciones().clear();
             for (DireccionRequest dReq : request.direcciones()) {
@@ -127,7 +168,16 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         }
     }
 
-    ///Este metodo es para que el preventor registre minoristas
+    /**
+     * Proceso de registro público de un cliente minorista en el portal web (auto-registro).
+     *
+     * <p>Dado que cuando un preventor registra a un minorista en terreno ya se le crea una cuenta de usuario
+     * con clave temporal, un minorista existente en el sistema ya posee usuario asignado. Por lo tanto,
+     * este método realiza un auto-registro desde cero para nuevos clientes y rechaza solicitudes si el
+     * correo o el documento ya se encuentran registrados en el sistema.</p>
+     *
+     * <p><b>Cuándo se usa:</b> Al invocar {@code POST /auth/registro} en {@code AuthController}.</p>
+     */
     @Transactional
     public AuthResponse registrarEnPortal(RegistroMinoristaRequest request) {
         validarRegistro(request);
@@ -137,50 +187,6 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
             throw new ConflictoException("DUPLICADO", "El correo ya posee un usuario registrado");
         }
 
-        // Buscar si ya existía el minorista cargado previamente
-        Optional<Minorista> minoristaOpt = minoristaRepository.findActivoByEmail(emailLimpio);
-        if (minoristaOpt.isEmpty()) {
-            minoristaOpt = minoristaRepository.findByTipoDocumentoAndNumeroDocumentoAndEliminadoFalse(
-                    request.tipoDocumento(), request.numeroDocumento().trim());
-        }
-
-        if (minoristaOpt.isPresent()) {
-            Minorista existente = minoristaOpt.get();
-            if (existente.getUsuario() != null) {
-                // Caso A: Ya existía y ya tiene usuario asignado
-                throw new ConflictoException(
-                        "DUPLICADO",
-                        "El cliente ya posee una cuenta de usuario asignada. Inicie sesión directamente."
-                );
-            }
-            // Caso B: Minorista precargado con usuario == null. Se le asigna claveTemporal = true
-            Usuario usuario = usuarioService.crearUsuario(
-                    emailLimpio,
-                    request.clave(),
-                    RolUsuario.MINORISTA,
-                    true
-            );
-            existente.setUsuario(usuario);
-            if (request.fechaNacimiento() != null && existente.getFechaNacimiento() == null) {
-                existente.setFechaNacimiento(request.fechaNacimiento());
-            }
-            if (request.telefono() != null && !request.telefono().isBlank()) {
-                boolean tieneTelefono = existente.getContactos().stream()
-                        .anyMatch(c -> c instanceof ContactoTelefonico && !c.isEliminado());
-                if (!tieneTelefono) {
-                    existente.getContactos().add(ContactoTelefonico.builder()
-                            .tipoContacto(TipoContacto.PERSONAL)
-                            .telefono(request.telefono().trim())
-                            .tipoTelefono(TipoTelefono.CELULAR)
-                            .eliminado(false)
-                            .build());
-                }
-            }
-            minoristaRepository.save(existente);
-            return usuarioService.generarAuthResponse(usuario);
-        }
-
-        // Caso C: Auto-registro de un nuevo minorista desde cero
         personaService.validarDocumentoUnico(request.tipoDocumento(), request.numeroDocumento().trim());
 
         Usuario usuario = usuarioService.crearUsuario(
@@ -190,6 +196,7 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
                 false
         );
 
+        /// el mail que usa para registrarse se guarda automatico como un contacto
         List<Contacto> contactos = new ArrayList<>();
         ContactoCorreoElectronico contactoCorreo = ContactoCorreoElectronico.builder()
                 .tipoContacto(TipoContacto.PERSONAL)
@@ -223,6 +230,11 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         return usuarioService.generarAuthResponse(usuario);
     }
 
+    /**
+     * Búsqueda paginada de clientes minoristas con filtros opcionales por documento o término de búsqueda.
+     *
+     * <p><b>Cuándo se usa:</b> Desde {@code MinoristaController} en {@code GET /minoristas} para panel administrativo y preventistas.</p>
+     */
     @Transactional(readOnly = true)
     public MinoristaPage buscarPaginado(String numeroDocumento, String q, Pageable pageable) {
         String docParam = (numeroDocumento != null && !numeroDocumento.isBlank()) ? numeroDocumento.trim() : null;
@@ -239,11 +251,21 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         );
     }
 
+    /**
+     * Busca opcionalmente un minorista por el ID de su cuenta de usuario.
+     *
+     * <p><b>Cuándo se usa:</b> En consultas de seguridad o autorizaciones donde el usuario puede o no ser un minorista.</p>
+     */
     @Transactional(readOnly = true)
     public Optional<Minorista> buscarPorUsuarioId(String usuarioId) {
         return minoristaRepository.findByUsuarioIdAndEliminadoFalse(usuarioId);
     }
 
+    /**
+     * Obtiene la entidad {@link Minorista} a partir del ID del usuario, lanzando 404 si no existe o está eliminado.
+     *
+     * <p><b>Cuándo se usa:</b> En servicios de dominio (pedidos, facturas, puntos de venta) para asociar el cliente autenticado.</p>
+     */
     @Transactional(readOnly = true)
     public Minorista obtenerPorUsuarioId(String usuarioId) {
         return minoristaRepository.findByUsuarioIdAndEliminadoFalse(usuarioId)
@@ -251,20 +273,28 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
                         "No se encontró minorista para el usuario con id: " + usuarioId));
     }
 
+    /**
+     * Proyecta el perfil personal del minorista autenticado a DTO de respuesta.
+     *
+     * <p><b>Cuándo se usa:</b> En el endpoint {@code GET /mi-cuenta/perfil} del portal del cliente.</p>
+     */
     @Transactional(readOnly = true)
     public MinoristaResponse obtenerMiPerfil(String usuarioId) {
         Minorista minorista = obtenerPorUsuarioId(usuarioId);
         return mapper.aResponse(minorista);
     }
 
+    /**
+     * Actualiza los datos de contacto, documento y credencial de correo del minorista autenticado.
+     *
+     * <p><b>Cuándo se usa:</b> En el endpoint {@code PUT /mi-cuenta/perfil} del portal del cliente.</p>
+     */
     @Transactional
     public MinoristaResponse actualizarMiPerfil(String usuarioId, ActualizarPerfilMinoristaRequest request) {
         if (request == null) {
             throw new ValidacionException("Los datos de perfil son obligatorios");
         }
         Minorista minorista = obtenerPorUsuarioId(usuarioId);
-
-        personaService.validarDocumentoUnicoExcluyendoId(request.tipoDocumento(), request.numeroDocumento().trim(), minorista.getId());
 
         String nuevoEmail = request.email().trim().toLowerCase();
         Usuario usuario = minorista.getUsuario();
@@ -279,9 +309,6 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
 
         minorista.setNombre(request.nombre().trim());
         minorista.setApellido(request.apellido().trim());
-        minorista.setFechaNacimiento(request.fechaNacimiento());
-        minorista.setTipoDocumento(request.tipoDocumento());
-        minorista.setNumeroDocumento(request.numeroDocumento().trim());
 
         // Actualizar o agregar ContactoCorreoElectronico
         Optional<ContactoCorreoElectronico> correoOpt = minorista.getContactos().stream()
@@ -323,12 +350,23 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         return mapper.aResponse(guardado);
     }
 
+    /**
+     * Da de baja la cuenta del propio cliente autenticado (derecho al olvido).
+     *
+     * <p><b>Cuándo se usa:</b> En el endpoint {@code DELETE /mi-cuenta} del portal del cliente.</p>
+     */
     @Transactional
     public void eliminarMiCuenta(String usuarioId) {
         Minorista minorista = obtenerPorUsuarioId(usuarioId);
         eliminar(minorista.getId());
     }
 
+    /**
+     * Hook del Template Method previo al borrado lógico del minorista.
+     * Da de baja su {@link Usuario}, sus contactos y sus direcciones en cascada lógica.
+     *
+     * <p><b>Cuándo se usa:</b> Durante la ejecución de {@code eliminar(id)}.</p>
+     */
     @Override
     protected void antesDeEliminar(Minorista existente) {
         if (existente.getUsuario() != null) {
@@ -342,6 +380,13 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         }
     }
 
+    /**
+     * Hook del Template Method posterior al borrado lógico del minorista.
+     * Emite el evento {@link MinoristaEliminadoEvent} para que otros observadores
+     * (por ejemplo, puntos de venta asociados) reaccionen desacopladamente.
+     *
+     * <p><b>Cuándo se usa:</b> Inmediatamente después de completar el guardado del borrado lógico.</p>
+     */
     @Override
     protected void despuesDeEliminar(Minorista existente) {
         if (eventPublisher != null) {
@@ -349,6 +394,10 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         }
     }
 
+    /**
+     * Verifica si el usuario autenticado en el contexto de seguridad posee rol PREVENTISTA.
+     * lo cual significa que el minorista esta siendo registrado en campo
+     */
     private boolean esPreventistaAutenticado() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getAuthorities() == null) {
@@ -358,7 +407,14 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
                 .anyMatch(a -> a.getAuthority().equals("ROLE_PREVENTISTA") || a.getAuthority().equals("PREVENTISTA"));
     }
 
-    private String resolverNombreUsuario(MinoristaRequest request) {
+    /**
+     * Resuelve el nombre de usuario sugerido para el minorista (su correo o número de documento).
+     * el minorista hereda de persona, asi que no hay email en MinoristaRequest para directamente pedir que se complete ese
+     * campo en el caso de que el minorista este siendo registrado por un preventor
+     * por eso se usan los contactos, y nos aseguramos de que se este ingresando un contacto de correo que funcionará como el
+     * correo del usuario del minorista
+     */
+    private String obtenerEmailDeContactos(MinoristaRequest request) {
         if (request.contactos() != null) {
             for (ContactoRequest c : request.contactos()) {
                 if ("CORREO".equalsIgnoreCase(c.medio()) && c.email() != null && !c.email().isBlank()) {
@@ -366,9 +422,12 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
                 }
             }
         }
-        return request.numeroDocumento().trim();
+        return null;
     }
 
+    /**
+     * Valida la presencia de campos obligatorios para el request administrativo de minorista.
+     */
     private void validarFormato(MinoristaRequest request) {
         if (request == null) {
             throw new ValidacionException("Los datos del minorista son obligatorios");
@@ -387,6 +446,9 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
         }
     }
 
+    /**
+     * Valida los requisitos de formato y longitud de clave en el auto-registro del portal minorista.
+     */
     private void validarRegistro(RegistroMinoristaRequest request) {
         if (request == null) {
             throw new ValidacionException("Los datos de registro son obligatorios");

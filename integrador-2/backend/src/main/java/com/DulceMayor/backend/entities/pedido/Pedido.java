@@ -59,12 +59,16 @@ public class Pedido extends EntidadBase {
     @Column(name = "fecha_hora_carga", nullable = false)
     private LocalDateTime fechaHoraCarga = LocalDateTime.now();
 
+    ///Todo comprobante (pedido, remito o factura) debe desglosar: Subtotal Bruto, Descuentos aplicados e Importe Final.
+    /// subtotal es Suma de las cantidades × precio de los productos sin descuentos.
     @Column(nullable = false)
     private double subtotal;
 
+    /// Monto total bonificado por la promoción aplicada
     @Column(nullable = false)
     private double descuento;
 
+    /// Importe neto a pagar (total = subtotal - descuento)
     @Column(nullable = false)
     private double total;
 
@@ -77,14 +81,16 @@ public class Pedido extends EntidadBase {
     @JoinColumn(name = "punto_de_venta_id", nullable = false)
     private PuntoDeVenta puntoDeVenta;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "preventor_id", nullable = false)
+    /// preventor que tomo el pedido (opcional, null si el pedido es web / autogestionado por minorista)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "preventor_id")
     private Preventor preventor;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "distribuidor_id")
     private Distribuidor distribuidor;
 
+    /// indica la promocion que se uso a la hora de tomar el pedido
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "promocion_id")
     private Promocion promocion;

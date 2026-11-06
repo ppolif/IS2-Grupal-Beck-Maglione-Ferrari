@@ -64,6 +64,7 @@ public class VigenciaPrecioService extends BaseService<VigenciaPrecio, VigenciaP
         this.productoService = productoService;
     }
 
+    /// patron observer, cuando un producto nuevo se crea, se le notifica a vigencia para que cree el registro correspondiente
     @EventListener
     @Transactional
     public void alCrearProducto(ProductoCreadoEvent event) {
@@ -84,39 +85,24 @@ public class VigenciaPrecioService extends BaseService<VigenciaPrecio, VigenciaP
     public VigenciaPrecioResponse registrarPrecio(String productoId, VigenciaPrecioRequest request) {
         validarRequest(request);
         Producto producto = productoService.obtenerEntidad(productoId);
+        LocalDate hoy = LocalDate.now();
 
-        // Si existe una vigencia actual abierta (fechaHasta == null), se cierra al día previo a la nueva
+        // Si existe una vigencia actual abierta (fechaHasta == null), se cierra al día de ayer o hoy
         Optional<VigenciaPrecio> actualOpt = vigenciaPrecioRepository.findByProductoIdAndFechaHastaIsNullAndEliminadoFalse(productoId);
         if (actualOpt.isPresent()) {
             VigenciaPrecio actual = actualOpt.get();
-            if (request.fechaDesde().isBefore(actual.getFechaDesde())) {
-                throw new ConflictoException(
-                        "CONFLICTO",
-                        "La fecha desde (" + request.fechaDesde() + ") no puede ser anterior al inicio de la vigencia actual (" + actual.getFechaDesde() + ")"
-                );
+            if (hoy.isAfter(actual.getFechaDesde())) {
+                actual.setFechaHasta(hoy.minusDays(1));
+            } else {
+                actual.setFechaHasta(actual.getFechaDesde());
             }
-            actual.setFechaHasta(request.fechaDesde().minusDays(1));
             vigenciaPrecioRepository.save(actual);
-        }
-
-        // Verifica que no haya solapamiento con otras vigencias históricas
-        List<VigenciaPrecio> solapadas = vigenciaPrecioRepository.buscarSolapamientos(
-                productoId,
-                request.fechaDesde(),
-                request.fechaHasta(),
-                null
-        );
-        if (!solapadas.isEmpty()) {
-            throw new ConflictoException(
-                    "CONFLICTO",
-                    "No se permiten vigencias de precio solapadas para el mismo producto"
-            );
         }
 
         VigenciaPrecio nueva = VigenciaPrecio.builder()
                 .producto(producto)
-                .fechaDesde(request.fechaDesde())
-                .fechaHasta(request.fechaHasta())
+                .fechaDesde(hoy)
+                .fechaHasta(null)
                 .precio(request.precio())
                 .eliminado(false)
                 .build();
@@ -133,6 +119,13 @@ public class VigenciaPrecioService extends BaseService<VigenciaPrecio, VigenciaP
     }
 
     @Transactional(readOnly = true)
+    public Double obtenerPrecioVigente(String productoId) {
+        return vigenciaPrecioRepository.findByProductoIdAndFechaHastaIsNullAndEliminadoFalse(productoId)
+                .map(VigenciaPrecio::getPrecio)
+                .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
     public VigenciaPrecioResponse buscarVigente(String productoId) {
         productoService.obtenerEntidad(productoId);
         VigenciaPrecio vigente = vigenciaPrecioRepository.findByProductoIdAndFechaHastaIsNullAndEliminadoFalse(productoId)
@@ -141,44 +134,21 @@ public class VigenciaPrecioService extends BaseService<VigenciaPrecio, VigenciaP
     }
 
     @Override
-    @Transactional
-    public VigenciaPrecioResponse modificar(String id, VigenciaPrecioRequest request) {
-        VigenciaPrecio existente = obtenerEntidad(id);
+    protected void validarCrear(VigenciaPrecioRequest request) {
         validarRequest(request);
+    }
 
-        List<VigenciaPrecio> solapadas = vigenciaPrecioRepository.buscarSolapamientos(
-                existente.getProducto().getId(),
-                request.fechaDesde(),
-                request.fechaHasta(),
-                id
-        );
-        if (!solapadas.isEmpty()) {
-            throw new ConflictoException(
-                    "CONFLICTO",
-                    "La modificación genera solapamiento de fechas con otra vigencia de precio del producto"
-            );
-        }
-
-        existente.setFechaDesde(request.fechaDesde());
-        existente.setFechaHasta(request.fechaHasta());
-        existente.setPrecio(request.precio());
-
-        VigenciaPrecio guardada = vigenciaPrecioRepository.save(existente);
-        return mapper.aResponse(guardada);
+    @Override
+    protected void validarModificar(String id, VigenciaPrecioRequest request, VigenciaPrecio existente) {
+        validarRequest(request);
     }
 
     private void validarRequest(VigenciaPrecioRequest request) {
         if (request == null) {
             throw new ValidacionException("Los datos de la vigencia de precio son obligatorios");
         }
-        if (request.fechaDesde() == null) {
-            throw new ValidacionException("La fecha desde es obligatoria");
-        }
         if (request.precio() == null || request.precio() <= 0) {
             throw new ValidacionException("El precio debe ser un número positivo mayor a 0");
-        }
-        if (request.fechaHasta() != null && request.fechaHasta().isBefore(request.fechaDesde())) {
-            throw new ValidacionException("La fecha hasta no puede ser anterior a la fecha desde");
         }
     }
 }

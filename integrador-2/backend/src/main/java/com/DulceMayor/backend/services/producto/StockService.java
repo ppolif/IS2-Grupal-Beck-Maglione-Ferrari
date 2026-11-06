@@ -166,6 +166,16 @@ public class StockService {
     }
 
     /**
+     * Obtiene la cantidad actual disponible de stock para un producto.
+     */
+    @Transactional(readOnly = true)
+    public Integer obtenerStockActual(String productoId) {
+        return stockRepository.findFirstByEliminadoFalseOrderByFechaHoraDescIdDesc()
+                .map(Stock::getCantidadActual)
+                .orElse(0);
+    }
+
+    /**
      * Comprueba si el stock actual disponible cubre la cantidad solicitada.
      */
     @Transactional(readOnly = true)
@@ -191,7 +201,7 @@ public class StockService {
     @Transactional
     public void descontar(String productoId, int cantidad, DetalleFactura detalleFactura) {
         Stock ultimoStock = obtenerEntidadPorProducto(productoId);
-        if (ultimoStock.getCantidadActual() < cantidad) {
+        if (!hayStock(productoId, cantidad)) {
             throw new ConflictoException(
                     "STOCK_INSUFICIENTE",
                     "Stock insuficiente. Disponible: " + ultimoStock.getCantidadActual() + ", Requerido: " + cantidad

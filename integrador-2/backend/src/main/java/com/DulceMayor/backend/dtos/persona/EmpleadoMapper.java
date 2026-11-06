@@ -28,6 +28,7 @@ public interface EmpleadoMapper extends BaseMapper<Empleado, EmpleadoRequest, Em
     @Mapping(target = "usuario", ignore = true)
     @Mapping(target = "direcciones", ignore = true)
     @Mapping(target = "contactos", ignore = true)
+    @Mapping(target = "mayorista", ignore = true)
     Empleado aEntidad(EmpleadoRequest request);
 
     @Override
@@ -36,10 +37,17 @@ public interface EmpleadoMapper extends BaseMapper<Empleado, EmpleadoRequest, Em
     @Mapping(target = "usuario", ignore = true)
     @Mapping(target = "direcciones", ignore = true)
     @Mapping(target = "contactos", ignore = true)
+    @Mapping(target = "legajo", ignore = true)
+    @Mapping(target = "tipoDocumento", ignore = true)
+    @Mapping(target = "numeroDocumento", ignore = true)
+    @Mapping(target = "fechaNacimiento", ignore = true)
+    @Mapping(target = "mayorista", ignore = true)
     void actualizarEntidad(EmpleadoRequest request, @MappingTarget Empleado entidad);
 
     @Override
     @Mapping(target = "usuario", source = "usuario", qualifiedByName = "usuarioToResponse")
+    @Mapping(target = "mayoristaId", source = "mayorista.id")
+    @Mapping(target = "mayoristaRazonSocial", source = "mayorista.razonSocial")
     EmpleadoResponse aResponse(Empleado entidad);
 
     @Named("usuarioToResponse")
@@ -64,7 +72,9 @@ public interface EmpleadoMapper extends BaseMapper<Empleado, EmpleadoRequest, Em
                 empleado.getId(),
                 empleado.getNombre(),
                 empleado.getApellido(),
-                empleado.getUsuario() != null ? empleado.getUsuario().getRol() : null
+                empleado.getUsuario() != null ? empleado.getUsuario().getRol() : null,
+                empleado.getMayorista() != null ? empleado.getMayorista().getId() : null,
+                empleado.getMayorista() != null ? empleado.getMayorista().getRazonSocial() : null
         );
     }
 }

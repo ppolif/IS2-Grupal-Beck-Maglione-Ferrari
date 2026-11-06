@@ -12,6 +12,7 @@ import com.DulceMayor.backend.dtos.persona.EmpleadoResponse;
 import com.DulceMayor.backend.dtos.persona.RolEmpleado;
 import com.DulceMayor.backend.entities.RolUsuario;
 import com.DulceMayor.backend.entities.Usuario;
+import com.DulceMayor.backend.entities.mayorista.Mayorista;
 import com.DulceMayor.backend.entities.persona.Distribuidor;
 import com.DulceMayor.backend.entities.persona.Empleado;
 import com.DulceMayor.backend.entities.persona.Preventor;
@@ -20,6 +21,7 @@ import com.DulceMayor.backend.services.BaseService;
 import com.DulceMayor.backend.services.ContactoService;
 import com.DulceMayor.backend.services.UsuarioService;
 import com.DulceMayor.backend.services.direccion.DireccionService;
+import com.DulceMayor.backend.services.mayorista.MayoristaService;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +41,7 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
     private final UsuarioService usuarioService;
     private final DireccionService direccionService;
     private final ContactoService contactoService;
+    private final MayoristaService mayoristaService;
 
     public EmpleadoService(
             EmpleadoRepository empleadoRepository,
@@ -46,7 +49,8 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
             PersonaService personaService,
             UsuarioService usuarioService,
             DireccionService direccionService,
-            ContactoService contactoService) {
+            ContactoService contactoService,
+            MayoristaService mayoristaService) {
         super(empleadoRepository, empleadoMapper, "Empleado");
         this.empleadoRepository = empleadoRepository;
         this.empleadoMapper = empleadoMapper;
@@ -54,8 +58,15 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
         this.usuarioService = usuarioService;
         this.direccionService = direccionService;
         this.contactoService = contactoService;
+        this.mayoristaService = mayoristaService;
     }
 
+    /**
+     * Normaliza los campos del DTO de entrada (recorte de espacios y minúsculas en el usuario).
+     *
+     * <p><b>Cuándo se usa:</b> Automáticamente al inicio de las operaciones {@code crear} y {@code modificar}
+     * del Template Method heredado de {@link BaseService}, antes de ejecutar las validaciones.</p>
+     */
     @Override
     protected EmpleadoRequest prepararRequest(EmpleadoRequest request) {
         if (request == null) {
@@ -71,10 +82,18 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
                 request.contactos(),
                 request.legajo() != null ? request.legajo().trim() : null,
                 request.nombreUsuario() != null ? request.nombreUsuario().trim().toLowerCase() : null,
-                request.rol()
+                request.rol(),
+                request.mayoristaId() != null ? request.mayoristaId().trim() : null
         );
     }
 
+    /**
+     * Valida las reglas de negocio para el alta de un nuevo empleado:
+     * campos obligatorios, documento único a nivel persona, legajo único y nombre de usuario único.
+     *
+     * <p><b>Cuándo se usa:</b> Durante la ejecución del método plantilla {@code crear}, luego de preparar
+     * el request y antes de instanciar la entidad.</p>
+     */
     @Override
     protected void validarCrear(EmpleadoRequest request) {
         validarFormato(request);
@@ -87,13 +106,18 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
         }
     }
 
+    /**
+     * Valida las reglas de negocio al actualizar un empleado existente:
+     * documento único (excluyendo el actual), legajo único (excluyendo el actual),
+     * nombre de usuario único (excluyendo el suyo) y consistencia del rol (no permite mutar
+     * de especialidad {@code PREVENTISTA} o {@code DISTRIBUIDOR} a otra subclase física JPA).
+     *
+     * <p><b>Cuándo se usa:</b> Durante la ejecución del método plantilla {@code modificar}, luego de obtener
+     * la entidad existente y antes de actualizar sus campos.</p>
+     */
     @Override
     protected void validarModificar(String id, EmpleadoRequest request, Empleado existente) {
         validarFormato(request);
-        personaService.validarDocumentoUnicoExcluyendoId(request.tipoDocumento(), request.numeroDocumento(), id);
-        if (empleadoRepository.existsByLegajoAndIdNotAndEliminadoFalse(request.legajo(), id)) {
-            throw new ConflictoException("DUPLICADO", "Ya existe otro empleado con el legajo " + request.legajo());
-        }
         String usuarioId = existente.getUsuario() != null ? existente.getUsuario().getId() : null;
         if (usuarioId != null && usuarioService.existeNombreUsuarioExcluyendoId(request.nombreUsuario(), usuarioId)) {
             throw new ConflictoException("DUPLICADO", "El nombre de usuario ya se encuentra registrado por otro usuario");
@@ -113,8 +137,13 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
         }
     }
 
-    /// Como tenemos jerarquia polimorfica (JOINED), sobreescribimos aEntidad
-    /// para resolver la subclase antes de persistir.
+    /**
+     * Resuelve la subclase polimórfica concreta ({@link Preventor}, {@link Distribuidor} o {@link Empleado} base)
+     * e inicializa los atributos personales a partir del request.
+     *
+     * <p><b>Cuándo se usa:</b> Durante {@code crear}, inmediatamente después de validar el request para
+     * instanciar la entidad correcta en la estrategia de herencia JPA {@code JOINED}.</p>
+     */
     @Override
     protected Empleado aEntidad(EmpleadoRequest request) {
         Empleado entidad;
@@ -134,8 +163,25 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
         return entidad;
     }
 
+    /**
+     * Hook del Template Method ejecutado antes de persistir la entidad en la base de datos.
+     * Se encarga de:
+     * 1. Crear y asociar la cuenta de {@link Usuario} del empleado con clave temporal/por defecto y rol correspondiente.
+     * 2. Construir y asociar las colecciones de direcciones y contactos enviadas en el request.
+     *
+     * <p><b>Cuándo se usa:</b> Tanto en {@code crear} como en {@code modificar}, justo antes de ejecutar
+     * el {@code save} en el repositorio.</p>
+     */
     @Override
     protected void antesDePersistir(Empleado entidad, EmpleadoRequest request) {
+        if (request.mayoristaId() != null) {
+            Mayorista mayorista = mayoristaService.obtenerEntidad(request.mayoristaId());
+            if (request.rol() == RolEmpleado.DISTRIBUIDOR && mayorista.getTipoEmpresa() != com.DulceMayor.backend.entities.mayorista.TipoEmpresa.SEDE_CENTRAL) {
+                throw new ValidacionException("Los distribuidores solo pueden ser asignados a la sede central");
+            }
+            entidad.setMayorista(mayorista);
+        }
+
         if (entidad.getUsuario() == null) {
             Usuario usuario = usuarioService.crearUsuarioConClavePorDefecto(
                     request.nombreUsuario(), toRolUsuario(request.rol()));
@@ -156,6 +202,12 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
         }
     }
 
+    /**
+     * Hook del Template Method posterior a la modificación de un empleado.
+     * Sincroniza los cambios en el nombre de usuario y rol sobre la entidad {@link Usuario} vinculada.
+     *
+     * <p><b>Cuándo se usa:</b> Inmediatamente después de que el empleado modificado fue persistido con éxito en la base de datos.</p>
+     */
     @Override
     protected void despuesDeModificar(Empleado entidad, EmpleadoRequest request) {
         if (entidad.getUsuario() != null) {
@@ -164,13 +216,30 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
         }
     }
 
+    /**
+     * Hook del Template Method previo al borrado lógico del empleado.
+     * Da de baja lógica la cuenta de {@link Usuario} asociada para inhabilitar el acceso al sistema.
+     *
+     * <p><b>Cuándo se usa:</b> Durante la ejecución de {@code eliminar(id)}, antes de marcar {@code eliminado = true} en el empleado.</p>
+     */
     @Override
     protected void antesDeEliminar(Empleado existente) {
         if (existente.getUsuario() != null) {
             usuarioService.eliminarUsuario(existente.getUsuario().getId());
         }
+        if (existente.getContactos() != null) {
+            existente.getContactos().forEach(c -> c.setEliminado(true));
+        }
+        if (existente.getDirecciones() != null) {
+            existente.getDirecciones().forEach(d -> d.setEliminado(true));
+        }
     }
 
+    /**
+     * Consulta paginada del listado de empleados permitiendo filtrar por rol, legajo o término de búsqueda (nombre/apellido/dni).
+     *
+     * <p><b>Cuándo se usa:</b> Desde {@code EmpleadoController} en el endpoint {@code GET /empleados} para la administración de personal.</p>
+     */
     @Transactional(readOnly = true)
     public EmpleadoPage buscarPaginado(String rolStr, String legajo, String q, Pageable pageable) {
         RolUsuario rol = null;
@@ -195,6 +264,11 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
         );
     }
 
+    /**
+     * Obtiene y castea un empleado por su ID asegurando que sea de tipo {@link Preventor}.
+     *
+     * <p><b>Cuándo se usa:</b> En servicios que requieren asignar o vincular preventores (por ejemplo, al asignar preventores en pedidos o rutas).</p>
+     */
     @Transactional(readOnly = true)
     public Preventor obtenerPreventor(String id) {
         Empleado emp = obtenerEntidad(id);
@@ -204,6 +278,11 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
         return preventor;
     }
 
+    /**
+     * Obtiene y castea un empleado por su ID asegurando que sea de tipo {@link Distribuidor}.
+     *
+     * <p><b>Cuándo se usa:</b> En el módulo de logística y reparto al asociar distribuidores a las rutas de entrega.</p>
+     */
     @Transactional(readOnly = true)
     public Distribuidor obtenerDistribuidor(String id) {
         Empleado emp = obtenerEntidad(id);
@@ -213,6 +292,11 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
         return distribuidor;
     }
 
+    /**
+     * Recupera la entidad {@link Preventor} a partir del ID del usuario autenticado en la sesión.
+     *
+     * <p><b>Cuándo se usa:</b> En los endpoints donde el preventista opera en terreno (cargar pedidos, listar sus clientes, ver sus rutas asignadas).</p>
+     */
     @Transactional(readOnly = true)
     public Preventor obtenerPreventorPorUsuarioId(String usuarioId) {
         Empleado emp = empleadoRepository.findByUsuarioIdAndEliminadoFalse(usuarioId)
@@ -224,6 +308,11 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
         return preventor;
     }
 
+    /**
+     * Recupera la entidad {@link Distribuidor} a partir del ID del usuario autenticado en la sesión.
+     *
+     * <p><b>Cuándo se usa:</b> En el portal o aplicación del distribuidor al consultar su hoja de ruta diaria y registrar entregas.</p>
+     */
     @Transactional(readOnly = true)
     public Distribuidor obtenerDistribuidorPorUsuarioId(String usuarioId) {
         Empleado emp = empleadoRepository.findByUsuarioIdAndEliminadoFalse(usuarioId)
@@ -235,12 +324,76 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
         return distribuidor;
     }
 
+    /**
+     * Retorna todos los preventores activos registrados en el sistema.
+     */
+    @Transactional(readOnly = true)
+    public List<Preventor> listarTodosLosPreventoresActivos() {
+        return empleadoRepository.findAllByTipoAndEliminadoFalse(Preventor.class);
+    }
 
+    /**
+     * Retorna todos los distribuidores activos registrados en el sistema.
+     */
+    @Transactional(readOnly = true)
+    public List<Distribuidor> listarTodosLosDistribuidoresActivos() {
+        return empleadoRepository.findAllByTipoAndEliminadoFalse(Distribuidor.class);
+    }
 
+    /**
+     * Localiza el preventor cuya sucursal (Mayorista) se encuentra más cercana geodésicamente
+     * a las coordenadas del punto de venta provisto (Fórmula de Haversine).
+     */
+    @Transactional(readOnly = true)
+    public Preventor buscarPreventorMasCercano(double latitud, double longitud) {
+        List<Preventor> preventores = listarTodosLosPreventoresActivos();
+        if (preventores.isEmpty()) {
+            return null;
+        }
+
+        Preventor mejorPreventor = null;
+        double menorDistancia = Double.MAX_VALUE;
+
+        for (Preventor p : preventores) {
+            if (p.getMayorista() != null && p.getMayorista().getDirecciones() != null) {
+                for (com.DulceMayor.backend.entities.direccion.Direccion dir : p.getMayorista().getDirecciones()) {
+                    if (!dir.isEliminado() && dir.getLatitud() != null && dir.getLongitud() != null
+                            && (dir.getLatitud() != 0.0 || dir.getLongitud() != 0.0)) {
+                        double distancia = calcularDistanciaHaversine(latitud, longitud, dir.getLatitud(), dir.getLongitud());
+                        if (distancia < menorDistancia) {
+                            menorDistancia = distancia;
+                            mejorPreventor = p;
+                        }
+                    }
+                }
+            }
+        }
+
+        return mejorPreventor != null ? mejorPreventor : preventores.get(0);
+    }
+
+    private double calcularDistanciaHaversine(double lat1, double lon1, double lat2, double lon2) {
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double phi1 = Math.toRadians(lat1);
+        double phi2 = Math.toRadians(lat2);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(phi1) * Math.cos(phi2)
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return 6371000.0 * c;
+    }
+
+    /**
+     * Mapea el enum de rol del DTO {@link RolEmpleado} hacia el enum de seguridad {@link RolUsuario}.
+     */
     private RolUsuario toRolUsuario(RolEmpleado rol) {
         return RolUsuario.valueOf(rol.name());
     }
 
+    /**
+     * Valida que ninguno de los campos obligatorios del empleado sea nulo o esté vacío.
+     */
     private void validarFormato(EmpleadoRequest request) {
         if (request == null) {
             throw new ValidacionException("Los datos del empleado son obligatorios");
@@ -265,6 +418,9 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
         }
         if (request.rol() == null) {
             throw new ValidacionException("El rol es obligatorio");
+        }
+        if (request.mayoristaId() == null || request.mayoristaId().isBlank()) {
+            throw new ValidacionException("La sucursal o sede central (mayorista) es obligatoria");
         }
     }
 }

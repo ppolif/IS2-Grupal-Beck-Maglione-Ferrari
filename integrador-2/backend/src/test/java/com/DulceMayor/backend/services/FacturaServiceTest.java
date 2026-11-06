@@ -90,6 +90,7 @@ class FacturaServiceTest {
         DetalleFacturaRequest itemReq = new DetalleFacturaRequest("prod-1", 3, 1000.0);
         FacturaRequest request = new FacturaRequest("ped-1", List.of(itemReq), 200.0);
 
+        when(facturaMapper.aEntidad(any(FacturaRequest.class))).thenAnswer(inv -> Factura.builder().build());
         when(facturaRepository.findByPedidoIdAndEliminadoFalse("ped-1")).thenReturn(Optional.empty());
         when(productoService.obtenerEntidad("prod-1")).thenReturn(prod);
         when(facturaRepository.findFirstByOrderByNumeroFacturaDesc()).thenReturn(Optional.empty());

@@ -108,6 +108,12 @@ public class MayoristaService extends BaseService<Mayorista, MayoristaRequest, M
     }
 
     @Transactional(readOnly = true)
+    public Mayorista obtenerSedeCentral() {
+        List<Mayorista> centrales = mayoristaRepository.findAllByTipoEmpresaAndEliminadoFalse(TipoEmpresa.SEDE_CENTRAL);
+        return centrales.isEmpty() ? null : centrales.get(0);
+    }
+
+    @Transactional(readOnly = true)
     public List<MayoristaResponse> listarPublicoSucursales() {
         List<Mayorista> sucursales = mayoristaRepository.findAllByTipoEmpresaAndEliminadoFalse(TipoEmpresa.SUCURSAL);
         return mapper.aResponseList(sucursales);

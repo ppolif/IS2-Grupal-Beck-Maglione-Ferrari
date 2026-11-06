@@ -108,7 +108,7 @@ class VigenciaPrecioControllerTest {
     @Test
     @DisplayName("POST /productos/{id}/vigencias-precio crea nueva vigencia (201 Created)")
     void crearVigencia() throws Exception {
-        VigenciaPrecioRequest req = new VigenciaPrecioRequest(LocalDate.of(2026, 10, 1), null, 350.0);
+        VigenciaPrecioRequest req = new VigenciaPrecioRequest(350.0);
 
         mockMvc.perform(post("/productos/{id}/vigencias-precio", producto.getId())
                         .header("Authorization", "Bearer " + tokenJefe)

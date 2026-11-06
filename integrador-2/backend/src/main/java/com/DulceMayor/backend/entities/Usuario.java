@@ -30,7 +30,6 @@ import lombok.experimental.SuperBuilder;
 public class Usuario extends EntidadBase {
 
     public static final String CLAVE_POR_DEFECTO = "dulcemayor";
-    public static final String ClavePorDefecto = CLAVE_POR_DEFECTO;
 
     @Column(name = "nombre_usuario", nullable = false, unique = true, length = 100)
     private String nombreUsuario;
@@ -40,6 +39,9 @@ public class Usuario extends EntidadBase {
     @Column(nullable = false)
     private String clave;
 
+    /// por qué hay roles y también entidades?
+    /// los roles se utilizan para gestionar la seguridad, mientras que las entidades que corresponden a un cierto rol
+    /// solo es necesario si tiene datos propios o relaciones con otras entidades
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private RolUsuario rol;
@@ -48,6 +50,12 @@ public class Usuario extends EntidadBase {
     @Column(name = "clave_temporal", nullable = false)
     private boolean claveTemporal = true;
 
+    /// es importante guardar el proveedor de auth ya que esto determina cosas como por ejemplo si un usuario puede o no
+    /// modificar ciertos datos (solo puede si el proveedor es LOCAL, es decir, tiene una cuenta creada)
+    /// hay que ver el manejo de este atributo, una vez que el usuario se cree una cuenta lo más simple sería que este atributo cambie a
+    /// LOCAL y no permita que el usuario ingrese con auth0, solamente con su cuenta local
+    /// si no tiene cuenta local supongo que deberiamos hacer que esto cambie a un proveedor distinto cada vez que el usuario ingrese
+    /// con una red social distinta
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "proveedor_auth", nullable = false, length = 30)

@@ -60,9 +60,6 @@ public class Factura extends EntidadBase {
     @Column(nullable = false, length = 30)
     private EstadoFactura estado = EstadoFactura.PENDIENTE_PAGO;
 
-    /**
-     * Asociación unidireccional hacia {@link Pedido} según {@code 01-dominio.md} ({@code Factura -> Pedido}, 1 — 0..1).
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pedido_id")
     private Pedido pedido;
