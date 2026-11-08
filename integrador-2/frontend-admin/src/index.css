@@ -81,6 +81,16 @@
   --color-badge-yellow-text: #8c7512;
   --color-badge-yellow-border: #f0e6b2;
 
+  --color-pill-jefe-bg: #fff5fc;
+  --color-pill-jefe-hover: #ffeaf8;
+  --color-pill-jefe-border: #f5d5ee;
+  --color-pill-jefe-text: #93307b;
+
+  --color-pill-admin-bg: #f0faff;
+  --color-pill-admin-hover: #e4f5ff;
+  --color-pill-admin-border: #cbeafd;
+  --color-pill-admin-text: #1c6f87;
+
   --shadow-card: 0 14px 40px rgba(56, 52, 84, 0.09);
   --shadow-modal: 0 22px 80px rgba(32, 30, 50, 0.25);
   --shadow-btn: 0 8px 20px rgba(232, 107, 196, 0.2);
