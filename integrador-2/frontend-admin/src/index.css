@@ -17,6 +17,86 @@
   --color-brand-bg: #fdfdfd;
   --color-brand-canvas: #edf0f8;
 
+  /* Semantic Design Tokens */
+  --color-primary: #e86bc4;
+  --color-primary-light: #ffe2f7;
+  --color-primary-dark: #a34187;
+  --color-primary-border: #f7c2eb;
+
+  --color-secondary: #3fb8d9;
+  --color-secondary-light: #eaf8fc;
+
+  --color-ink: #2b2b3a;
+  --color-muted: #6b6b80;
+  --color-muted-light: #8c8b9c;
+  --color-muted-subtle: #aaa9b8;
+  --color-muted-label: #aaa9ba;
+  --color-muted-icon: #a3a2ae;
+
+  --color-border-subtle: #ececf2;
+  --color-divider: #f0f0f4;
+
+  --color-canvas: #f4f6fb;
+  --color-canvas-hover: #eaeef7;
+  --color-input-bg: #f5f6fa;
+  --color-surface-note: #f8f9fc;
+  --color-surface-soft: #fafafd;
+  --color-rank-neutral-bg: #f0f2f7;
+
+  --color-success-bg: #dff8e9;
+  --color-success-border: #bfeecf;
+  --color-success-text: #2e744c;
+  --color-success-icon: #39855b;
+  --color-success-circle-bg: #c9f2d8;
+  --color-trend-up: #40a56a;
+
+  --color-danger: #e5484d;
+  --color-danger-hover: #d63353;
+  --color-danger-bg: #ffe8ed;
+  --color-danger-border: #ffccd5;
+  --color-danger-light: #ffeef1;
+
+  --color-warning-bg: #fff0d3;
+  --color-warning-alt-bg: #fff2d3;
+  --color-warning-text: #986b16;
+  --color-warning-border: #f9dfac;
+
+  --color-warning-subtle-bg: #fff4db;
+  --color-warning-subtle-border: #fce4aa;
+  --color-warning-subtle-text: #93630f;
+  --color-warning-subtle-icon: #b57a15;
+
+  --color-info-bg: #d9f7ff;
+  --color-info-text: #247f99;
+  --color-info-border: #b2e8f7;
+  --color-info-subtle-bg: #f0faff;
+
+  --color-purple-bg: #ede7f6;
+  --color-purple-text: #5e35b1;
+  --color-purple-border: #d1c4e9;
+
+  --color-offer-bg: #fff0fb;
+  --color-offer-border: #f5d5ee;
+  --color-offer-text: #93307b;
+
+  --color-badge-green-bg: #d2f5df;
+  --color-badge-green-text: #277a4a;
+  --color-badge-green-border: #a4e9bf;
+
+  --color-badge-yellow-bg: #fff9db;
+  --color-badge-yellow-text: #8c7512;
+  --color-badge-yellow-border: #f0e6b2;
+
+  --color-pill-jefe-bg: #fff5fc;
+  --color-pill-jefe-hover: #ffeaf8;
+  --color-pill-jefe-border: #f5d5ee;
+  --color-pill-jefe-text: #93307b;
+
+  --color-pill-admin-bg: #f0faff;
+  --color-pill-admin-hover: #e4f5ff;
+  --color-pill-admin-border: #cbeafd;
+  --color-pill-admin-text: #1c6f87;
+
   --shadow-card: 0 14px 40px rgba(56, 52, 84, 0.09);
   --shadow-modal: 0 22px 80px rgba(32, 30, 50, 0.25);
   --shadow-btn: 0 8px 20px rgba(232, 107, 196, 0.2);

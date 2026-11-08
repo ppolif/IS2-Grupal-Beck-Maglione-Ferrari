@@ -1,52 +1,31 @@
-import { useState } from 'react';
 import Kpis from '../../components/Kpis';
 import Button from '../../components/Button';
-import Icon from '../../components/Icon';
 import Modal from '../../components/Modal';
-import { productsStockMock } from '../../mocks/products';
+import { useStock } from '../../hooks/useStock';
 
 export default function Stock() {
-  const [stockList, setStockList] = useState(productsStockMock);
-  const [filter, setFilter] = useState('todos');
-  const [isAdjustmentModal, setIsAdjustmentModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [adjustAmount, setAdjustAmount] = useState('');
-
-  const filtered = stockList.filter((item) => {
-    if (filter === 'bajo') return item.stock > 0 && item.stock <= 15;
-    if (filter === 'cero') return item.stock === 0;
-    return true;
-  });
-
-  const handleOpenAdjust = (p) => {
-    setSelectedProduct(p);
-    setAdjustAmount(p.stock.toString());
-    setIsAdjustmentModal(true);
-  };
-
-  const handleSaveAdjust = (e) => {
-    e.preventDefault();
-    if (selectedProduct) {
-      setStockList((prev) =>
-        prev.map((item) =>
-          item.id === selectedProduct.id
-            ? { ...item, stock: parseInt(adjustAmount) || 0 }
-            : item
-        )
-      );
-      alert(`Stock de "${selectedProduct.nombre}" ajustado a ${adjustAmount} unidades.`);
-      setIsAdjustmentModal(false);
-    }
-  };
+  const {
+    stockList,
+    filter,
+    setFilter,
+    isAdjustmentModal,
+    setIsAdjustmentModal,
+    selectedProduct,
+    adjustAmount,
+    setAdjustAmount,
+    filtered,
+    handleOpenAdjust,
+    handleSaveAdjust,
+  } = useStock();
 
   return (
     <div className="space-y-6">
       {/* Header and Operational KPIs */}
       <div>
-        <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#e86bc4]">
+        <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-primary">
           Almacén & Logística
         </span>
-        <h2 className="text-xl font-bold text-[#2b2b3a] mt-0.5 mb-4">
+        <h2 className="text-xl font-bold text-ink mt-0.5 mb-4">
           Control de Stock e Inventario
         </h2>
         {/* Kpis matching warehouse style from prototype */}
@@ -54,13 +33,13 @@ export default function Stock() {
       </div>
 
       {/* Main Stock Module matching prototype module */}
-      <div className="bg-white rounded-[20px] p-6 border border-[#ececf2] shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#f0f0f4]">
+      <div className="bg-white rounded-[20px] p-6 border border-border-subtle shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-divider">
           <div>
-            <h3 className="text-[16px] font-bold text-[#2b2b3a]">
+            <h3 className="text-[16px] font-bold text-ink">
               Inventario Físico en Depósito
             </h3>
-            <p className="text-[11px] text-[#6b6b80]">
+            <p className="text-[11px] text-muted">
               Actualizado hace 5 minutos · Sincronizado con preventa
             </p>
           </div>
@@ -70,8 +49,8 @@ export default function Stock() {
               onClick={() => setFilter('todos')}
               className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-colors cursor-pointer ${
                 filter === 'todos'
-                  ? 'bg-[#e86bc4] text-white shadow-xs'
-                  : 'bg-[#f0f2f7] text-[#6b6b80]'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'bg-canvas text-muted'
               }`}
             >
               Todos ({stockList.length})
@@ -80,8 +59,8 @@ export default function Stock() {
               onClick={() => setFilter('bajo')}
               className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-colors cursor-pointer ${
                 filter === 'bajo'
-                  ? 'bg-[#ffd98a] text-[#7d5707] shadow-xs'
-                  : 'bg-[#f0f2f7] text-[#6b6b80]'
+                  ? 'bg-brand-warning text-warning-text shadow-xs'
+                  : 'bg-canvas text-muted'
               }`}
             >
               Stock Bajo (2)
@@ -90,8 +69,8 @@ export default function Stock() {
               onClick={() => setFilter('cero')}
               className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-colors cursor-pointer ${
                 filter === 'cero'
-                  ? 'bg-[#ff8fa3] text-white shadow-xs'
-                  : 'bg-[#f0f2f7] text-[#6b6b80]'
+                  ? 'bg-brand-error text-white shadow-xs'
+                  : 'bg-canvas text-muted'
               }`}
             >
               Agotados (1)
@@ -103,7 +82,7 @@ export default function Stock() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-[#ececf2] text-[10px] uppercase font-bold text-[#aaa9b8] tracking-wider">
+              <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
                 <th className="pb-3 px-3">Producto</th>
                 <th className="pb-3 px-3">Categoría</th>
                 <th className="pb-3 px-3">Presentación</th>
@@ -112,25 +91,25 @@ export default function Stock() {
                 <th className="pb-3 px-3 text-right">Ajuste</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#f0f0f4] text-[12px]">
+            <tbody className="divide-y divide-divider text-[12px]">
               {filtered.map((r) => (
                 <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3 px-3 font-semibold text-[#2b2b3a]">
+                  <td className="py-3 px-3 font-semibold text-ink">
                     {r.nombre}
                   </td>
-                  <td className="py-3 px-3 text-[#6b6b80]">{r.categoria}</td>
-                  <td className="py-3 px-3 text-[#6b6b80]">{r.presentacion}</td>
-                  <td className="py-3 px-3 font-bold text-[#2b2b3a]">
+                  <td className="py-3 px-3 text-muted">{r.categoria}</td>
+                  <td className="py-3 px-3 text-muted">{r.presentacion}</td>
+                  <td className="py-3 px-3 font-bold text-ink">
                     {r.stock} u.
                   </td>
                   <td className="py-3 px-3">
                     <span
                       className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
                         r.stock === 0
-                          ? 'bg-[#ffe2e5] text-[#ff8fa3]'
+                          ? 'bg-danger-bg text-danger-hover'
                           : r.stock <= 15
-                          ? 'bg-[#fff2d3] text-[#986b16]'
-                          : 'bg-[#dff8e9] text-[#39855b]'
+                          ? 'bg-warning-bg text-warning-text'
+                          : 'bg-success-bg text-success-icon'
                       }`}
                     >
                       {r.stock === 0
@@ -143,7 +122,7 @@ export default function Stock() {
                   <td className="py-3 px-3 text-right">
                     <button
                       onClick={() => handleOpenAdjust(r)}
-                      className="text-[#3fb8d9] hover:text-[#247f99] font-semibold text-[11px] hover:underline cursor-pointer"
+                      className="text-secondary hover:text-info-text font-semibold text-[11px] hover:underline cursor-pointer"
                     >
                       Ajustar unidades
                     </button>
@@ -164,12 +143,12 @@ export default function Stock() {
       >
         {selectedProduct && (
           <form onSubmit={handleSaveAdjust} className="space-y-4">
-            <p className="text-[12px] text-[#6b6b80]">
+            <p className="text-[12px] text-muted">
               Ingresá la cantidad real contada en estantería para{' '}
-              <strong className="text-[#2b2b3a]">{selectedProduct.nombre}</strong>.
+              <strong className="text-ink">{selectedProduct.nombre}</strong>.
             </p>
             <div>
-              <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+              <label className="block text-[11px] font-semibold text-ink mb-1">
                 Unidades físicas contadas *
               </label>
               <input
@@ -177,7 +156,7 @@ export default function Stock() {
                 required
                 value={adjustAmount}
                 onChange={(e) => setAdjustAmount(e.target.value)}
-                className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[13px] text-[#2b2b3a] focus:outline-none focus:border-[#e86bc4]"
+                className="w-full border border-border-subtle rounded-[12px] p-3 text-[13px] text-ink focus:outline-none focus:border-primary"
               />
             </div>
             <div className="pt-2 flex justify-end gap-2.5">
@@ -192,4 +171,3 @@ export default function Stock() {
     </div>
   );
 }
-
