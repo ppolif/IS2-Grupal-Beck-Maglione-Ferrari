@@ -30,6 +30,7 @@ export const colors = {
     hover: '#eaeef7',
     input: '#f5f6fa',
     note: '#f8f9fc',
+    soft: '#fafafd',
   },
   status: {
     success: {
@@ -47,6 +48,7 @@ export const colors = {
     },
     warning: {
       bg: '#fff0d3',
+      altBg: '#fff2d3',
       text: '#986b16',
       border: '#f9dfac',
     },

@@ -39,6 +39,7 @@
   --color-canvas-hover: #eaeef7;
   --color-input-bg: #f5f6fa;
   --color-surface-note: #f8f9fc;
+  --color-surface-soft: #fafafd;
 
   --color-success-bg: #dff8e9;
   --color-success-border: #bfeecf;
@@ -52,6 +53,7 @@
   --color-danger-light: #ffeef1;
 
   --color-warning-bg: #fff0d3;
+  --color-warning-alt-bg: #fff2d3;
   --color-warning-text: #986b16;
   --color-warning-border: #f9dfac;
 
