@@ -55,9 +55,15 @@
   --color-warning-text: #986b16;
   --color-warning-border: #f9dfac;
 
+  --color-warning-subtle-bg: #fff4db;
+  --color-warning-subtle-border: #fce4aa;
+  --color-warning-subtle-text: #93630f;
+  --color-warning-subtle-icon: #b57a15;
+
   --color-info-bg: #d9f7ff;
   --color-info-text: #247f99;
   --color-info-border: #b2e8f7;
+  --color-info-subtle-bg: #f0faff;
 
   --color-purple-bg: #ede7f6;
   --color-purple-text: #5e35b1;

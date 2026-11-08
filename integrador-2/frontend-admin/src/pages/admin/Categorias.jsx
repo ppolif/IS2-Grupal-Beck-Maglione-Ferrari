@@ -1,229 +1,80 @@
-import { useState, useEffect, useCallback } from 'react';
 import Button from '../../components/Button';
 import Icon from '../../components/Icon';
 import Modal from '../../components/Modal';
-import { categoriaService } from '../../services/categoriaService';
-import { subCategoriaService } from '../../services/subCategoriaService';
+import { useCategorias } from '../../hooks/useCategorias';
 
 export default function Categorias() {
-  const [activeTab, setActiveTab] = useState('categorias'); // 'categorias' | 'subcategorias'
+  const {
+    // Data & state
+    activeTab,
+    setActiveTab,
+    categorias,
+    subcategorias,
+    cargando,
 
-  // Data states
-  const [categorias, setCategorias] = useState([]);
-  const [subcategorias, setSubcategorias] = useState([]);
-  const [cargando, setCargando] = useState(true);
+    // Filters & Computed
+    busqueda,
+    setBusqueda,
+    filtroCategoriaId,
+    setFiltroCategoriaId,
+    categoriasMap,
+    subCountPorCat,
+    categoriasFiltradas,
+    subcategoriasFiltradas,
 
-  // Filters
-  const [busqueda, setBusqueda] = useState('');
-  const [filtroCategoriaId, setFiltroCategoriaId] = useState('');
+    // Notifications
+    mensajeExito,
+    setMensajeExito,
+    mensajeError,
+    setMensajeError,
 
-  // Notifications
-  const [mensajeExito, setMensajeExito] = useState(null);
-  const [mensajeError, setMensajeError] = useState(null);
+    // Modal Category
+    modalCatOpen,
+    setModalCatOpen,
+    categoriaEditando,
+    nombreCategoria,
+    setNombreCategoria,
+    guardandoCat,
+    errorModalCat,
+    handleAbrirCrearCategoria,
+    handleAbrirEditarCategoria,
+    handleGuardarCategoria,
 
-  // Modal Categoría
-  const [modalCatOpen, setModalCatOpen] = useState(false);
-  const [categoriaEditando, setCategoriaEditando] = useState(null);
-  const [nombreCategoria, setNombreCategoria] = useState('');
-  const [guardandoCat, setGuardandoCat] = useState(false);
-  const [errorModalCat, setErrorModalCat] = useState(null);
+    // Modal Subcategory
+    modalSubOpen,
+    setModalSubOpen,
+    subCategoriaEditando,
+    nombreSubCategoria,
+    setNombreSubCategoria,
+    categoriaPadreId,
+    setCategoriaPadreId,
+    guardandoSub,
+    errorModalSub,
+    handleAbrirCrearSubCategoria,
+    handleAbrirEditarSubCategoria,
+    handleGuardarSubCategoria,
 
-  // Modal Subcategoría
-  const [modalSubOpen, setModalSubOpen] = useState(false);
-  const [subCategoriaEditando, setSubCategoriaEditando] = useState(null);
-  const [nombreSubCategoria, setNombreSubCategoria] = useState('');
-  const [categoriaPadreId, setCategoriaPadreId] = useState('');
-  const [guardandoSub, setGuardandoSub] = useState(false);
-  const [errorModalSub, setErrorModalSub] = useState(null);
-
-  // Modal Confirmación Eliminación
-  const [modalEliminarOpen, setModalEliminarOpen] = useState(false);
-  const [elementoAEliminar, setElementoAEliminar] = useState(null); // { tipo: 'categoria'|'subcategoria', id, nombre }
-  const [eliminando, setEliminando] = useState(false);
-
-  // Carga inicial
-  const cargarDatos = useCallback(async () => {
-    setCargando(true);
-    setMensajeError(null);
-    try {
-      const [cats, subs] = await Promise.all([
-        categoriaService.listar(),
-        subCategoriaService.listar(),
-      ]);
-      setCategorias(Array.isArray(cats) ? cats : []);
-      setSubcategorias(Array.isArray(subs) ? subs : []);
-    } catch (err) {
-      setMensajeError(err.message || 'Error al cargar las categorías y subcategorías');
-    } finally {
-      setCargando(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    cargarDatos();
-  }, [cargarDatos]);
-
-  // Handlers Categoría
-  const handleAbrirCrearCategoria = () => {
-    setCategoriaEditando(null);
-    setNombreCategoria('');
-    setErrorModalCat(null);
-    setModalCatOpen(true);
-  };
-
-  const handleAbrirEditarCategoria = (cat) => {
-    setCategoriaEditando(cat);
-    setNombreCategoria(cat.nombre);
-    setErrorModalCat(null);
-    setModalCatOpen(true);
-  };
-
-  const handleGuardarCategoria = async (e) => {
-    e.preventDefault();
-    if (!nombreCategoria.trim()) return;
-
-    setGuardandoCat(true);
-    setErrorModalCat(null);
-
-    try {
-      if (categoriaEditando) {
-        await categoriaService.modificar(categoriaEditando.id, { nombre: nombreCategoria.trim() });
-        setMensajeExito(`Categoría "${nombreCategoria.trim()}" actualizada exitosamente.`);
-      } else {
-        await categoriaService.crear({ nombre: nombreCategoria.trim() });
-        setMensajeExito(`Categoría "${nombreCategoria.trim()}" creada exitosamente.`);
-      }
-      setModalCatOpen(false);
-      await cargarDatos();
-    } catch (err) {
-      if (err.status === 409 || err.code === 'DUPLICADO') {
-        setErrorModalCat(`Ya existe una categoría con el nombre "${nombreCategoria.trim()}".`);
-      } else {
-        setErrorModalCat(err.message || 'Error al guardar la categoría.');
-      }
-    } finally {
-      setGuardandoCat(false);
-    }
-  };
-
-  // Handlers Subcategoría
-  const handleAbrirCrearSubCategoria = () => {
-    setSubCategoriaEditando(null);
-    setNombreSubCategoria('');
-    setCategoriaPadreId(filtroCategoriaId || (categorias[0]?.id || ''));
-    setErrorModalSub(null);
-    setModalSubOpen(true);
-  };
-
-  const handleAbrirEditarSubCategoria = (sub) => {
-    setSubCategoriaEditando(sub);
-    setNombreSubCategoria(sub.nombre);
-    setCategoriaPadreId(sub.categoriaId);
-    setErrorModalSub(null);
-    setModalSubOpen(true);
-  };
-
-  const handleGuardarSubCategoria = async (e) => {
-    e.preventDefault();
-    if (!nombreSubCategoria.trim() || !categoriaPadreId) return;
-
-    setGuardandoSub(true);
-    setErrorModalSub(null);
-
-    try {
-      if (subCategoriaEditando) {
-        await subCategoriaService.modificar(subCategoriaEditando.id, {
-          nombre: nombreSubCategoria.trim(),
-          categoriaId: categoriaPadreId,
-        });
-        setMensajeExito(`Subcategoría "${nombreSubCategoria.trim()}" actualizada exitosamente.`);
-      } else {
-        await subCategoriaService.crear({
-          nombre: nombreSubCategoria.trim(),
-          categoriaId: categoriaPadreId,
-        });
-        setMensajeExito(`Subcategoría "${nombreSubCategoria.trim()}" creada exitosamente.`);
-      }
-      setModalSubOpen(false);
-      await cargarDatos();
-    } catch (err) {
-      if (err.status === 409 || err.code === 'DUPLICADO') {
-        setErrorModalSub(`Ya existe una subcategoría con el nombre "${nombreSubCategoria.trim()}" en la categoría seleccionada.`);
-      } else {
-        setErrorModalSub(err.message || 'Error al guardar la subcategoría.');
-      }
-    } finally {
-      setGuardandoSub(false);
-    }
-  };
-
-  // Handlers Eliminación
-  const handleConfirmarEliminar = (tipo, id, nombre) => {
-    setElementoAEliminar({ tipo, id, nombre });
-    setModalEliminarOpen(true);
-  };
-
-  const handleEjecutarEliminacion = async () => {
-    if (!elementoAEliminar) return;
-
-    setEliminando(true);
-    try {
-      if (elementoAEliminar.tipo === 'categoria') {
-        await categoriaService.eliminar(elementoAEliminar.id);
-        setMensajeExito(`Categoría "${elementoAEliminar.nombre}" eliminada exitosamente.`);
-      } else {
-        await subCategoriaService.eliminar(elementoAEliminar.id);
-        setMensajeExito(`Subcategoría "${elementoAEliminar.nombre}" eliminada exitosamente.`);
-      }
-      setModalEliminarOpen(false);
-      setElementoAEliminar(null);
-      await cargarDatos();
-    } catch (err) {
-      setMensajeError(err.message || 'Error al eliminar el elemento.');
-      setModalEliminarOpen(false);
-    } finally {
-      setEliminando(false);
-    }
-  };
-
-  // Helper mapa de categorías por ID
-  const categoriasMap = categorias.reduce((acc, c) => {
-    acc[c.id] = c.nombre;
-    return acc;
-  }, {});
-
-  // Contar subcategorías por categoría
-  const subCountPorCat = subcategorias.reduce((acc, s) => {
-    acc[s.categoriaId] = (acc[s.categoriaId] || 0) + 1;
-    return acc;
-  }, {});
-
-  // Filtros reactivos
-  const categoriasFiltradas = categorias.filter((c) =>
-    busqueda.trim() === '' || c.nombre.toLowerCase().includes(busqueda.toLowerCase())
-  );
-
-  const subcategoriasFiltradas = subcategorias.filter((s) => {
-    const coincideCat = !filtroCategoriaId || s.categoriaId === filtroCategoriaId;
-    const coincideBusqueda =
-      busqueda.trim() === '' ||
-      s.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      (categoriasMap[s.categoriaId] || '').toLowerCase().includes(busqueda.toLowerCase());
-    return coincideCat && coincideBusqueda;
-  });
+    // Modal Delete
+    modalEliminarOpen,
+    setModalEliminarOpen,
+    elementoAEliminar,
+    eliminando,
+    handleConfirmarEliminar,
+    handleEjecutarEliminacion,
+  } = useCategorias();
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#e86bc4]">
+          <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-primary">
             Catálogo y Clasificación
           </span>
-          <h2 className="text-xl font-bold text-[#2b2b3a] mt-0.5">
+          <h2 className="text-xl font-bold text-ink mt-0.5">
             Categorías y Subcategorías
           </h2>
-          <p className="text-[12px] text-[#6b6b80] mt-0.5">
+          <p className="text-[12px] text-muted mt-0.5">
             Organizá la estructura jerárquica de los productos mayoristas de Dulce Mayor.
           </p>
         </div>
@@ -245,9 +96,9 @@ export default function Categorias() {
 
       {/* Notifications */}
       {mensajeExito && (
-        <div className="p-4 bg-[#dff8e9] border border-[#bfeecf] rounded-[16px] text-[12px] text-[#2e744c] flex items-center justify-between shadow-xs">
+        <div className="p-4 bg-success-bg border border-success-border rounded-[16px] text-[12px] text-success-text flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2.5">
-            <Icon name="check" className="w-5 h-5 shrink-0 text-[#39855b]" />
+            <Icon name="check" className="w-5 h-5 shrink-0 text-success-icon" />
             <span className="font-medium">{mensajeExito}</span>
           </div>
           <button
@@ -260,9 +111,9 @@ export default function Categorias() {
       )}
 
       {mensajeError && (
-        <div className="p-4 bg-[#ffe8ed] border border-[#ffccd5] rounded-[16px] text-[12px] text-[#d63353] flex items-center justify-between shadow-xs">
+        <div className="p-4 bg-danger-bg border border-danger-border rounded-[16px] text-[12px] text-danger-hover flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2.5">
-            <Icon name="alert" className="w-5 h-5 shrink-0 text-[#d63353]" />
+            <Icon name="alert" className="w-5 h-5 shrink-0 text-danger-hover" />
             <span className="font-medium">{mensajeError}</span>
           </div>
           <button
@@ -275,10 +126,10 @@ export default function Categorias() {
       )}
 
       {/* Main Container */}
-      <div className="bg-white rounded-[22px] p-6 border border-[#ececf2] shadow-sm">
+      <div className="bg-white rounded-[22px] p-6 border border-border-subtle shadow-sm">
         {/* Navigation Tabs */}
-        <div className="flex items-center justify-between pb-4 border-b border-[#f0f0f4] flex-wrap gap-3">
-          <div className="flex items-center gap-2 bg-[#f4f6fb] p-1.5 rounded-[14px]">
+        <div className="flex items-center justify-between pb-4 border-b border-divider flex-wrap gap-3">
+          <div className="flex items-center gap-2 bg-canvas p-1.5 rounded-[14px]">
             <button
               type="button"
               onClick={() => {
@@ -287,13 +138,13 @@ export default function Categorias() {
               }}
               className={`flex items-center gap-2 px-4 py-2 rounded-[11px] text-[12px] font-semibold transition-all cursor-pointer ${
                 activeTab === 'categorias'
-                  ? 'bg-white text-[#2b2b3a] shadow-xs'
-                  : 'text-[#8c8b9c] hover:text-[#2b2b3a]'
+                  ? 'bg-white text-ink shadow-xs'
+                  : 'text-muted-light hover:text-ink'
               }`}
             >
               <Icon name="tag" className="w-4 h-4" />
               <span>Categorías</span>
-              <span className="bg-[#ffe2f7] text-[#a34187] text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-primary-light text-primary-dark text-[10px] font-bold px-2 py-0.5 rounded-full">
                 {categorias.length}
               </span>
             </button>
@@ -306,13 +157,13 @@ export default function Categorias() {
               }}
               className={`flex items-center gap-2 px-4 py-2 rounded-[11px] text-[12px] font-semibold transition-all cursor-pointer ${
                 activeTab === 'subcategorias'
-                  ? 'bg-white text-[#2b2b3a] shadow-xs'
-                  : 'text-[#8c8b9c] hover:text-[#2b2b3a]'
+                  ? 'bg-white text-ink shadow-xs'
+                  : 'text-muted-light hover:text-ink'
               }`}
             >
               <Icon name="layers" className="w-4 h-4" />
               <span>Subcategorías</span>
-              <span className="bg-[#d9f7ff] text-[#247f99] text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-info-bg text-info-text text-[10px] font-bold px-2 py-0.5 rounded-full">
                 {subcategorias.length}
               </span>
             </button>
@@ -324,7 +175,7 @@ export default function Categorias() {
               <select
                 value={filtroCategoriaId}
                 onChange={(e) => setFiltroCategoriaId(e.target.value)}
-                className="bg-[#f5f6fa] border border-[#ececf2] text-[#2b2b3a] text-[11px] font-medium px-3 py-2 rounded-[12px] outline-none focus:border-[#e86bc4]"
+                className="bg-input-bg border border-border-subtle text-ink text-[11px] font-medium px-3 py-2 rounded-[12px] outline-none focus:border-primary"
               >
                 <option value="">Todas las categorías padre</option>
                 {categorias.map((c) => (
@@ -335,14 +186,14 @@ export default function Categorias() {
               </select>
             )}
 
-            <div className="flex items-center gap-2 bg-[#f5f6fa] px-3.5 py-2 rounded-[12px] text-[11px] border border-[#ececf2]">
-              <Icon name="search" className="w-3.5 h-3.5 text-[#a3a2ae]" />
+            <div className="flex items-center gap-2 bg-input-bg px-3.5 py-2 rounded-[12px] text-[11px] border border-border-subtle">
+              <Icon name="search" className="w-3.5 h-3.5 text-muted-icon" />
               <input
                 type="text"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 placeholder={`Buscar en ${activeTab}...`}
-                className="bg-transparent border-none outline-none text-[#2b2b3a] placeholder-[#a3a2ae] text-[11px] w-48 sm:w-56"
+                className="bg-transparent border-none outline-none text-ink placeholder-muted-icon text-[11px] w-48 sm:w-56"
               />
             </div>
           </div>
@@ -350,8 +201,8 @@ export default function Categorias() {
 
         {/* Content Table / Loading / Empty states */}
         {cargando ? (
-          <div className="py-16 text-center text-[12px] text-[#6b6b80]">
-            <svg className="animate-spin h-7 w-7 text-[#e86bc4] mx-auto mb-3" viewBox="0 0 24 24">
+          <div className="py-16 text-center text-[12px] text-muted">
+            <svg className="animate-spin h-7 w-7 text-primary mx-auto mb-3" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
@@ -361,13 +212,13 @@ export default function Categorias() {
           /* TAB 1: CATEGORÍAS */
           categoriasFiltradas.length === 0 ? (
             <div className="py-16 text-center space-y-3">
-              <div className="w-12 h-12 mx-auto rounded-full bg-[#fff0fb] text-[#e86bc4] flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto rounded-full bg-offer-bg text-primary flex items-center justify-center">
                 <Icon name="tag" className="w-6 h-6" />
               </div>
-              <h3 className="text-[14px] font-bold text-[#2b2b3a]">
+              <h3 className="text-[14px] font-bold text-ink">
                 {busqueda ? 'No se encontraron categorías' : 'Aún no hay categorías registradas'}
               </h3>
-              <p className="text-[12px] text-[#8c8b9c] max-w-sm mx-auto">
+              <p className="text-[12px] text-muted-light max-w-sm mx-auto">
                 {busqueda
                   ? 'Probá modificando el término de búsqueda.'
                   : 'Creá la primera categoría para empezar a organizar los productos mayoristas.'}
@@ -382,32 +233,32 @@ export default function Categorias() {
             <div className="overflow-x-auto mt-4">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#ececf2] text-[10px] uppercase font-bold text-[#aaa9b8] tracking-wider">
+                  <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
                     <th className="pb-3 px-4">Nombre de la Categoría</th>
                     <th className="pb-3 px-4">Subcategorías Asociadas</th>
                     <th className="pb-3 px-4 text-center">Estado</th>
                     <th className="pb-3 px-4 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#f0f0f4] text-[12px]">
+                <tbody className="divide-y divide-divider text-[12px]">
                   {categoriasFiltradas.map((cat) => {
                     const cantSubs = subCountPorCat[cat.id] || 0;
                     return (
                       <tr key={cat.id} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="py-3.5 px-4 font-semibold text-[#2b2b3a]">
+                        <td className="py-3.5 px-4 font-semibold text-ink">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-[9px] bg-[#fff0fb] text-[#e86bc4] flex items-center justify-center shrink-0">
+                            <div className="w-7 h-7 rounded-[9px] bg-offer-bg text-primary flex items-center justify-center shrink-0">
                               <Icon name="tag" className="w-3.5 h-3.5" />
                             </div>
                             <span>{cat.nombre}</span>
                           </div>
                         </td>
-                        <td className="py-3.5 px-4 text-[#6b6b80]">
-                          <span className="font-semibold text-[#2b2b3a]">{cantSubs}</span>{' '}
+                        <td className="py-3.5 px-4 text-muted">
+                          <span className="font-semibold text-ink">{cantSubs}</span>{' '}
                           {cantSubs === 1 ? 'subcategoría' : 'subcategorías'}
                         </td>
                         <td className="py-3.5 px-4 text-center">
-                          <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#dff8e9] text-[#39855b]">
+                          <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-success-bg text-success-icon">
                             Activa
                           </span>
                         </td>
@@ -416,7 +267,7 @@ export default function Categorias() {
                             <button
                               type="button"
                               onClick={() => handleAbrirEditarCategoria(cat)}
-                              className="p-1.5 rounded-[9px] text-[#6b6b80] hover:text-[#3fb8d9] hover:bg-[#d9f7ff]/30 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-[9px] text-muted hover:text-secondary hover:bg-info-bg/30 transition-colors cursor-pointer"
                               title="Modificar categoría"
                             >
                               <Icon name="edit" className="w-4 h-4" />
@@ -424,7 +275,7 @@ export default function Categorias() {
                             <button
                               type="button"
                               onClick={() => handleConfirmarEliminar('categoria', cat.id, cat.nombre)}
-                              className="p-1.5 rounded-[9px] text-[#6b6b80] hover:text-[#d63353] hover:bg-[#ffe8ed] transition-colors cursor-pointer"
+                              className="p-1.5 rounded-[9px] text-muted hover:text-danger-hover hover:bg-danger-bg transition-colors cursor-pointer"
                               title="Eliminar categoría"
                             >
                               <Icon name="trash" className="w-4 h-4" />
@@ -442,15 +293,15 @@ export default function Categorias() {
           /* TAB 2: SUBCATEGORÍAS */
           subcategoriasFiltradas.length === 0 ? (
             <div className="py-16 text-center space-y-3">
-              <div className="w-12 h-12 mx-auto rounded-full bg-[#f0faff] text-[#3fb8d9] flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto rounded-full bg-info-subtle-bg text-secondary flex items-center justify-center">
                 <Icon name="layers" className="w-6 h-6" />
               </div>
-              <h3 className="text-[14px] font-bold text-[#2b2b3a]">
+              <h3 className="text-[14px] font-bold text-ink">
                 {busqueda || filtroCategoriaId
                   ? 'No se encontraron subcategorías para el filtro aplicado'
                   : 'Aún no hay subcategorías registradas'}
               </h3>
-              <p className="text-[12px] text-[#8c8b9c] max-w-sm mx-auto">
+              <p className="text-[12px] text-muted-light max-w-sm mx-auto">
                 {categorias.length === 0
                   ? 'Primero debés dar de alta al menos una categoría padre.'
                   : 'Creá subcategorías para clasificar los productos con mayor precisión.'}
@@ -465,31 +316,31 @@ export default function Categorias() {
             <div className="overflow-x-auto mt-4">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#ececf2] text-[10px] uppercase font-bold text-[#aaa9b8] tracking-wider">
+                  <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
                     <th className="pb-3 px-4">Subcategoría</th>
                     <th className="pb-3 px-4">Categoría Padre</th>
                     <th className="pb-3 px-4 text-center">Estado</th>
                     <th className="pb-3 px-4 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#f0f0f4] text-[12px]">
+                <tbody className="divide-y divide-divider text-[12px]">
                   {subcategoriasFiltradas.map((sub) => (
                     <tr key={sub.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-3.5 px-4 font-semibold text-[#2b2b3a]">
+                      <td className="py-3.5 px-4 font-semibold text-ink">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-[9px] bg-[#f0faff] text-[#3fb8d9] flex items-center justify-center shrink-0">
+                          <div className="w-7 h-7 rounded-[9px] bg-info-subtle-bg text-secondary flex items-center justify-center shrink-0">
                             <Icon name="layers" className="w-3.5 h-3.5" />
                           </div>
                           <span>{sub.nombre}</span>
                         </div>
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#fff0fb] text-[#a34187] border border-[#f5d5ee]">
+                        <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-offer-bg text-primary-dark border border-offer-border">
                           {categoriasMap[sub.categoriaId] || 'Categoría no encontrada'}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-center">
-                        <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#dff8e9] text-[#39855b]">
+                        <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-success-bg text-success-icon">
                           Activa
                         </span>
                       </td>
@@ -498,7 +349,7 @@ export default function Categorias() {
                           <button
                             type="button"
                             onClick={() => handleAbrirEditarSubCategoria(sub)}
-                            className="p-1.5 rounded-[9px] text-[#6b6b80] hover:text-[#3fb8d9] hover:bg-[#d9f7ff]/30 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-[9px] text-muted hover:text-secondary hover:bg-info-bg/30 transition-colors cursor-pointer"
                             title="Modificar subcategoría"
                           >
                             <Icon name="edit" className="w-4 h-4" />
@@ -506,7 +357,7 @@ export default function Categorias() {
                           <button
                             type="button"
                             onClick={() => handleConfirmarEliminar('subcategoria', sub.id, sub.nombre)}
-                            className="p-1.5 rounded-[9px] text-[#6b6b80] hover:text-[#d63353] hover:bg-[#ffe8ed] transition-colors cursor-pointer"
+                            className="p-1.5 rounded-[9px] text-muted hover:text-danger-hover hover:bg-danger-bg transition-colors cursor-pointer"
                             title="Eliminar subcategoría"
                           >
                             <Icon name="trash" className="w-4 h-4" />
@@ -531,14 +382,14 @@ export default function Categorias() {
       >
         <form onSubmit={handleGuardarCategoria} className="space-y-4">
           {errorModalCat && (
-            <div className="p-3 bg-[#ffe8ed] border border-[#ffccd5] rounded-[12px] text-[12px] text-[#d63353] flex items-center gap-2">
+            <div className="p-3 bg-danger-bg border border-danger-border rounded-[12px] text-[12px] text-danger-hover flex items-center gap-2">
               <Icon name="alert" className="w-4 h-4 shrink-0" />
               <span>{errorModalCat}</span>
             </div>
           )}
 
           <div>
-            <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+            <label className="block text-[11px] font-semibold text-ink mb-1">
               Nombre de la categoría *
             </label>
             <input
@@ -549,9 +400,9 @@ export default function Categorias() {
               value={nombreCategoria}
               onChange={(e) => setNombreCategoria(e.target.value)}
               placeholder="Ej. Alfajores, Chocolates, Galletitas..."
-              className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+              className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink bg-white focus:outline-none focus:border-primary"
             />
-            <span className="text-[10px] text-[#8c8b9c] mt-1 block">
+            <span className="text-[10px] text-muted-light mt-1 block">
               Máximo 100 caracteres. El nombre debe ser único en el sistema.
             </span>
           </div>
@@ -576,21 +427,21 @@ export default function Categorias() {
       >
         <form onSubmit={handleGuardarSubCategoria} className="space-y-4">
           {errorModalSub && (
-            <div className="p-3 bg-[#ffe8ed] border border-[#ffccd5] rounded-[12px] text-[12px] text-[#d63353] flex items-center gap-2">
+            <div className="p-3 bg-danger-bg border border-danger-border rounded-[12px] text-[12px] text-danger-hover flex items-center gap-2">
               <Icon name="alert" className="w-4 h-4 shrink-0" />
               <span>{errorModalSub}</span>
             </div>
           )}
 
           <div>
-            <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+            <label className="block text-[11px] font-semibold text-ink mb-1">
               Categoría padre asociada *
             </label>
             <select
               required
               value={categoriaPadreId}
               onChange={(e) => setCategoriaPadreId(e.target.value)}
-              className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+              className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink bg-white focus:outline-none focus:border-primary"
             >
               <option value="" disabled>Seleccione una categoría</option>
               {categorias.map((c) => (
@@ -602,7 +453,7 @@ export default function Categorias() {
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+            <label className="block text-[11px] font-semibold text-ink mb-1">
               Nombre de la subcategoría *
             </label>
             <input
@@ -613,9 +464,9 @@ export default function Categorias() {
               value={nombreSubCategoria}
               onChange={(e) => setNombreSubCategoria(e.target.value)}
               placeholder="Ej. Triples, Con Maní, Rellenos..."
-              className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+              className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink bg-white focus:outline-none focus:border-primary"
             />
-            <span className="text-[10px] text-[#8c8b9c] mt-1 block">
+            <span className="text-[10px] text-muted-light mt-1 block">
               Máximo 100 caracteres. No puede repetirse dentro de la misma categoría.
             </span>
           </div>
@@ -639,15 +490,15 @@ export default function Categorias() {
         title={`Eliminar ${elementoAEliminar?.tipo === 'categoria' ? 'Categoría' : 'Subcategoría'}`}
       >
         <div className="space-y-4">
-          <p className="text-[12px] text-[#2b2b3a]">
+          <p className="text-[12px] text-ink">
             ¿Estás seguro de que deseás dar de baja{' '}
             {elementoAEliminar?.tipo === 'categoria' ? 'la categoría' : 'la subcategoría'}{' '}
-            <strong className="text-[#d63353]">"{elementoAEliminar?.nombre}"</strong>?
+            <strong className="text-danger-hover">"{elementoAEliminar?.nombre}"</strong>?
           </p>
 
           {elementoAEliminar?.tipo === 'categoria' && (subCountPorCat[elementoAEliminar.id] || 0) > 0 && (
-            <div className="p-3 bg-[#fff4db] border border-[#fce4aa] rounded-[12px] text-[11px] text-[#93630f] flex items-start gap-2">
-              <Icon name="alert" className="w-4 h-4 shrink-0 text-[#b57a15] mt-0.5" />
+            <div className="p-3 bg-warning-subtle-bg border border-warning-subtle-border rounded-[12px] text-[11px] text-warning-subtle-text flex items-start gap-2">
+              <Icon name="alert" className="w-4 h-4 shrink-0 text-warning-subtle-icon mt-0.5" />
               <span>
                 Esta categoría tiene <strong>{subCountPorCat[elementoAEliminar.id]} subcategorías</strong> vinculadas.
               </span>
