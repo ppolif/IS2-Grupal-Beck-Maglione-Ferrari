@@ -1,151 +1,209 @@
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
-import Icon from '../components/Icon';
 import Logo from '../components/Logo';
+import Icon from '../components/Icon';
 
-export default function Login({ onLoginSuccess }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+export default function Login() {
+  const { login } = useAuth();
+  const [nombreUsuario, setNombreUsuario] = useState('');
+  const [clave, setClave] = useState('');
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      if (onLoginSuccess) {
-        onLoginSuccess('administrativo');
+    if (!nombreUsuario.trim() || !clave) return;
+
+    setError(null);
+    setCargando(true);
+
+    try {
+      await login(nombreUsuario, clave);
+      // La navegación la gestiona automáticamente RoleRouter al detectar isLogged
+    } catch (err) {
+      if (err.status === 404 || err.message === 'Not Found') {
+        setError('No se pudo encontrar el servicio de autenticación en el backend (Error 404). Asegurate de que el backend esté corriendo en el puerto 8080.');
+      } else {
+        setError(err.message || 'Error al conectar con el servidor de autenticación');
       }
-    }, 500);
+    } finally {
+      setCargando(false);
+    }
   };
 
-  const handleQuickLogin = (role) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      if (onLoginSuccess) {
-        onLoginSuccess(role);
+  const handleQuickLogin = async (user, pass) => {
+    setNombreUsuario(user);
+    setClave(pass);
+    setError(null);
+    setCargando(true);
+
+    try {
+      await login(user, pass);
+    } catch (err) {
+      // Si la contraseña fue modificada previamente, intentamos con la clave actualizada
+      const alternatePass = pass === 'dulcemayor' ? 'DulceMayor2026!' : 'dulcemayor';
+      try {
+        setClave(alternatePass);
+        await login(user, alternatePass);
+        return;
+      } catch {
+        // Continuamos con el error original si ambos fallan
       }
-    }, 400);
+
+      if (err.status === 404 || err.message === 'Not Found') {
+        setError('No se pudo encontrar el servicio de autenticación en el backend (Error 404). Asegurate de que el backend esté corriendo en el puerto 8080.');
+      } else {
+        setError(err.message || 'Error al conectar con el servidor de autenticación');
+      }
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f6fb] flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-4xl bg-white rounded-[26px] shadow-[0_20px_60px_rgba(37,35,55,0.12)] border border-[#ececf2] overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[520px]">
-
-        {/* Panel Izquierdo: Branding & Contexto (5 cols) */}
-        <div className="md:col-span-5 bg-gradient-to-br from-[#2b2b3a] to-[#1c1b26] p-8 text-white flex flex-col justify-between">
+    <div className="min-h-screen bg-[#f4f6fb] flex flex-col justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl w-full mx-auto bg-white rounded-[28px] shadow-[0_20px_50px_rgba(43,43,58,0.06)] border border-[#ececf2] overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[580px]">
+        {/* Left Side: Brand Panel */}
+        <div className="lg:col-span-5 bg-gradient-to-br from-[#fff0fb] via-[#f3f9ff] to-[#e8faff] p-8 lg:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#ececf2]">
           <div>
-            <div className="flex items-center gap-2 mb-6">
-              <span className="candy-mark"><i /><b /></span>
-              <span className="font-bold text-xl tracking-tight text-white">Dulce Mayor</span>
+            <div className="mb-8">
+              <Logo />
             </div>
 
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#e86bc4] bg-white/10 px-3 py-1 rounded-full">
-              Panel Administrativo
+            <span className="inline-block text-[10px] font-bold tracking-[0.16em] uppercase text-[#e86bc4] bg-white/80 px-3 py-1 rounded-full border border-[#f0c7e8]">
+              Panel de Control Central
             </span>
 
-            <h2 className="text-2xl font-bold mt-4 leading-tight">
-              Gestión Integral y Distribución Mayorista
-            </h2>
+            <h1 className="text-2xl sm:text-[26px] font-black text-[#2b2b3a] mt-3 leading-snug">
+              Gestión y Administración Mayorista
+            </h1>
 
-            <p className="text-[12px] text-[#aaa9ba] mt-3 leading-relaxed">
-              Sistema centralizado para control de stock en almacén, recepción y facturación de pedidos, tesorería y supervisión logística de Mendoza.
+            <p className="text-[12px] text-[#6b6b80] mt-3 leading-relaxed">
+              Acceso seguro y centralizado para el personal operativo y la jefatura comercial de Dulce Mayor.
             </p>
           </div>
 
-          <div className="pt-6 border-t border-white/10 text-[11px] text-[#8e8d9e] space-y-1">
-            <p>✓ Arquitectura 3 Capas · Spring Boot & React</p>
-            <p>✓ Autenticación segura mediante JWT</p>
+          <div className="space-y-3 mt-8">
+            <div className="p-3.5 bg-white/70 backdrop-blur-xs rounded-[16px] border border-white flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#ffe2f7] text-[#a34187] flex items-center justify-center shrink-0">
+                <Icon name="user" className="w-4 h-4" />
+              </div>
+              <div className="text-[11px]">
+                <strong className="block text-[#2b2b3a] font-bold">Jefatura Comercial</strong>
+                <p className="text-[#6b6b80] leading-tight">Supervisión, reportes, métricas y alta exclusiva de empleados.</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-white/70 backdrop-blur-xs rounded-[16px] border border-white flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#d9f7ff] text-[#247f99] flex items-center justify-center shrink-0">
+                <Icon name="box" className="w-4 h-4" />
+              </div>
+              <div className="text-[11px]">
+                <strong className="block text-[#2b2b3a] font-bold">Personal Administrativo</strong>
+                <p className="text-[#6b6b80] leading-tight">Control de inventario, stock, catálogo de productos y pedidos.</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Panel Derecho: Formulario (7 cols) */}
-        <div className="md:col-span-7 p-8 sm:p-10 flex flex-col justify-center space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-[#2b2b3a]">
-              Ingreso al Sistema
-            </h1>
-            <p className="text-[12px] text-[#6b6b80] mt-1">
-              Ingresá tus credenciales de empleado para acceder al panel.
-            </p>
-          </div>
+        {/* Right Side: Login Form */}
+        <div className="lg:col-span-7 p-8 lg:p-12 flex flex-col justify-center">
+          <div className="max-w-md w-full mx-auto">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-[#2b2b3a]">Iniciar Sesión</h2>
+              <p className="text-[12px] text-[#6b6b80] mt-0.5">
+                Ingresá tus credenciales autorizadas para acceder al sistema.
+              </p>
+            </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
-                Usuario o Correo Institucional
-              </label>
-              <div className="relative">
-                <Icon name="user" className="w-4 h-4 text-[#aaa9ba] absolute left-3.5 top-3" />
+            {error && (
+              <div className="mb-5 p-3.5 bg-[#ffe8ed] border border-[#ffccd5] rounded-[14px] text-[12px] text-[#d63353] flex items-start gap-2.5">
+                <Icon name="alert" className="w-4 h-4 shrink-0 mt-0.5" />
+                <div className="flex-1 font-medium leading-relaxed">{error}</div>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
+                  Nombre de usuario o legajo *
+                </label>
                 <input
                   type="text"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@dulcemayor.com"
-                  className="w-full border border-[#ececf2] rounded-[12px] pl-10 pr-3 py-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                  autoFocus
+                  value={nombreUsuario}
+                  onChange={(e) => setNombreUsuario(e.target.value)}
+                  placeholder="Ej: jefe o administrativo"
+                  className="w-full border border-[#ececf2] rounded-[13px] px-3.5 py-2.5 text-[12px] text-[#2b2b3a] bg-[#fafafc] focus:bg-white focus:outline-none focus:border-[#e86bc4] transition-all"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
-                Contraseña
-              </label>
-              <div className="relative">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
+                  Contraseña *
+                </label>
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type="password"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={clave}
+                  onChange={(e) => setClave(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full border border-[#ececf2] rounded-[12px] px-3 py-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                  className="w-full border border-[#ececf2] rounded-[13px] px-3.5 py-2.5 text-[12px] text-[#2b2b3a] bg-[#fafafc] focus:bg-white focus:outline-none focus:border-[#e86bc4] transition-all"
                 />
+              </div>
+
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  disabled={cargando}
+                  className="w-full py-3 text-[13px]"
+                >
+                  {cargando ? (
+                    <span className="inline-flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      </svg>
+                      Verificando credenciales...
+                    </span>
+                  ) : (
+                    'Ingresar al panel administrativo'
+                  )}
+                </Button>
+              </div>
+            </form>
+
+            {/* Quick Demo Access Pills */}
+            <div className="mt-8 pt-6 border-t border-[#f0f0f4]">
+              <span className="block text-[10px] uppercase font-bold text-[#a09fb0] tracking-wider mb-2.5">
+                Accesos rápidos de demostración (1-click Login)
+              </span>
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="text-[11px] font-semibold text-[#aaa9ba] hover:text-[#2b2b3a] absolute right-3 top-3"
+                  disabled={cargando}
+                  onClick={() => handleQuickLogin('jefe', 'dulcemayor')}
+                  className="p-2.5 rounded-[12px] bg-[#fff5fc] border border-[#f5d5ee] text-left hover:bg-[#ffeaf8] transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  {showPassword ? 'Ocultar' : 'Ver'}
+                  <strong className="block text-[11px] text-[#93307b] font-bold">Jefe Comercial</strong>
+                  <span className="text-[10px] text-[#6b6b80]">jefe / dulcemayor</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={cargando}
+                  onClick={() => handleQuickLogin('administrativo', 'dulcemayor')}
+                  className="p-2.5 rounded-[12px] bg-[#f0faff] border border-[#cbeafd] text-left hover:bg-[#e4f5ff] transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <strong className="block text-[11px] text-[#1c6f87] font-bold">Administrativo</strong>
+                  <span className="text-[10px] text-[#6b6b80]">administrativo / dulcemayor</span>
                 </button>
               </div>
             </div>
-
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 text-[13px] justify-center shadow-md cursor-pointer"
-            >
-              {isLoading ? 'Verificando...' : 'Acceder al Dashboard'}
-            </Button>
-          </form>
-
-          {/* Selector Rápido Demo */}
-          <div className="pt-4 border-t border-[#f0f0f4] space-y-2">
-            <span className="text-[10px] text-[#aaa9ba] uppercase font-bold text-center block">
-              Acceso Rápido Demo (Modo Prototipo)
-            </span>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('administrativo')}
-                className="p-2.5 bg-[#fef5fc] hover:bg-[#ffeefb] text-[#e86bc4] border border-[#ffcef3] rounded-[12px] text-[11px] font-bold text-center transition-all cursor-pointer"
-              >
-                📋 Administrativo / Almacén
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('jefe')}
-                className="p-2.5 bg-[#f0faff] hover:bg-[#e6f6ff] text-[#247f99] border border-[#a1eafb] rounded-[12px] text-[11px] font-bold text-center transition-all cursor-pointer"
-              >
-                👑 Jefe Administrativo
-              </button>
-            </div>
           </div>
         </div>
-
       </div>
     </div>
   );

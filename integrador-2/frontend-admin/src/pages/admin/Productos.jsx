@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Button from '../../components/Button';
 import Icon from '../../components/Icon';
 import Modal from '../../components/Modal';
@@ -102,10 +103,18 @@ export default function Productos() {
           </p>
         </div>
 
-        <Button onClick={handleOpenCreate}>
-          <Icon name="plus" className="w-4 h-4" />
-          <span>Nuevo Producto</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link to="/categorias">
+            <Button secondary>
+              <Icon name="tag" className="w-4 h-4" />
+              <span>Categorías</span>
+            </Button>
+          </Link>
+          <Button onClick={handleOpenCreate}>
+            <Icon name="plus" className="w-4 h-4" />
+            <span>Nuevo Producto</span>
+          </Button>
+        </div>
       </div>
 
       {/* Search and stats bar */}
