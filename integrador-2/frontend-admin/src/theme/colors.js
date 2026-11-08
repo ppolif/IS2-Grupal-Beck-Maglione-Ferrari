@@ -39,6 +39,7 @@ export const colors = {
       border: '#bfeecf',
       text: '#2e744c',
       icon: '#39855b',
+      circleBg: '#c9f2d8',
       trendUp: '#40a56a',
     },
     danger: {
