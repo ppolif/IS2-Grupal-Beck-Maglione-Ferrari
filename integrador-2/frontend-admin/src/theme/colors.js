@@ -32,6 +32,7 @@ export const colors = {
     input: '#f5f6fa',
     note: '#f8f9fc',
     soft: '#fafafd',
+    rankNeutral: '#f0f2f7',
   },
   status: {
     success: {
