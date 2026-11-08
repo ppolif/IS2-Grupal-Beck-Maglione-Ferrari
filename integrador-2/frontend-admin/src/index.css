@@ -63,6 +63,18 @@
   --color-purple-text: #5e35b1;
   --color-purple-border: #d1c4e9;
 
+  --color-offer-bg: #fff0fb;
+  --color-offer-border: #f5d5ee;
+  --color-offer-text: #93307b;
+
+  --color-badge-green-bg: #d2f5df;
+  --color-badge-green-text: #277a4a;
+  --color-badge-green-border: #a4e9bf;
+
+  --color-badge-yellow-bg: #fff9db;
+  --color-badge-yellow-text: #8c7512;
+  --color-badge-yellow-border: #f0e6b2;
+
   --shadow-card: 0 14px 40px rgba(56, 52, 84, 0.09);
   --shadow-modal: 0 22px 80px rgba(32, 30, 50, 0.25);
   --shadow-btn: 0 8px 20px rgba(232, 107, 196, 0.2);

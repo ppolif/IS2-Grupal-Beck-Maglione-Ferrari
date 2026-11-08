@@ -44,3 +44,18 @@ export function getBadgeClass(rolEnum) {
   }
   return 'bg-purple-bg text-purple-text border border-purple-border';
 }
+
+/**
+ * Formats a numeric value into ARS currency string.
+ * @param {number|string|null} val - Amount to format.
+ * @returns {string} Formatted currency string.
+ */
+export function formatPrecio(val) {
+  if (val === null || val === undefined || isNaN(val)) return '$ --';
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    maximumFractionDigits: 0,
+  }).format(val);
+}
+
