@@ -30,6 +30,7 @@
   --color-muted: #6b6b80;
   --color-muted-light: #8c8b9c;
   --color-muted-subtle: #aaa9b8;
+  --color-muted-label: #aaa9ba;
   --color-muted-icon: #a3a2ae;
 
   --color-border-subtle: #ececf2;
@@ -45,6 +46,7 @@
   --color-success-border: #bfeecf;
   --color-success-text: #2e744c;
   --color-success-icon: #39855b;
+  --color-trend-up: #40a56a;
 
   --color-danger: #e5484d;
   --color-danger-hover: #d63353;

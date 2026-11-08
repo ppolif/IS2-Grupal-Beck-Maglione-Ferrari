@@ -18,6 +18,7 @@ export const colors = {
     DEFAULT: '#6b6b80',
     light: '#8c8b9c',
     subtle: '#aaa9b8',
+    label: '#aaa9ba',
     icon: '#a3a2ae',
   },
   border: {
@@ -38,6 +39,7 @@ export const colors = {
       border: '#bfeecf',
       text: '#2e744c',
       icon: '#39855b',
+      trendUp: '#40a56a',
     },
     danger: {
       DEFAULT: '#e5484d',
