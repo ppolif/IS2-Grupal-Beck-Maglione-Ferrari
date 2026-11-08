@@ -59,3 +59,17 @@ export function formatPrecio(val) {
   }).format(val);
 }
 
+/**
+ * Extracts initials from a full name (e.g. "Lucía Martínez" -> "LM").
+ * @param {string} name - Full person or unit name.
+ * @returns {string} Initials string.
+ */
+export function getInitials(name) {
+  if (!name) return '';
+  return name
+    .split(' ')
+    .map((x) => x[0])
+    .join('');
+}
+
+
