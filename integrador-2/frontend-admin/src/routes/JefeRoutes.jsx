@@ -12,6 +12,7 @@ import PreventorRutas from '../pages/jefe/PreventorRutas';
 // Vistas compartidas / administrativas reutilizadas por importación (no duplicadas)
 import Stock from '../pages/admin/Stock';
 import Productos from '../pages/admin/Productos';
+import Categorias from '../pages/admin/Categorias';
 import Pedidos from '../pages/admin/Pedidos';
 import Pagos from '../pages/admin/Pagos';
 import Rutas from '../pages/admin/Rutas';
@@ -33,6 +34,7 @@ export default function JefeRoutes() {
         {/* Vistas operativas heredadas/reutilizadas */}
         <Route path="/stock" element={<Stock />} />
         <Route path="/productos" element={<Productos />} />
+        <Route path="/categorias" element={<Categorias />} />
         <Route path="/pedidos" element={<Pedidos />} />
         <Route path="/pagos" element={<Pagos />} />
         <Route path="/rutas" element={<Rutas />} />
@@ -43,4 +45,3 @@ export default function JefeRoutes() {
     </Routes>
   );
 }
-

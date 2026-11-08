@@ -12,6 +12,7 @@ export default function AdministrativoLayout() {
     { to: '/pedidos', label: 'Pedidos', icon: 'box' },
     { to: '/stock', label: 'Stock', icon: 'chart' },
     { to: '/productos', label: 'Productos', icon: 'box' },
+    { to: '/categorias', label: 'Categorías', icon: 'tag' },
     { to: '/rutas', label: 'Rutas del día', icon: 'route' },
     { to: '/pagos', label: 'Pagos', icon: 'chart' },
     { to: '/cambiar-password', label: 'Cambiar Contraseña', icon: 'key' },
@@ -22,6 +23,7 @@ export default function AdministrativoLayout() {
     '/pedidos': 'Gestión de Pedidos',
     '/stock': 'Inventario y Stock',
     '/productos': 'Catálogo de Productos',
+    '/categorias': 'Categorías y Subcategorías',
     '/rutas': 'Rutas del Día',
     '/pagos': 'Registro de Pagos',
     '/cambiar-password': 'Cambiar Contraseña',
@@ -52,4 +54,3 @@ export default function AdministrativoLayout() {
     </div>
   );
 }
-

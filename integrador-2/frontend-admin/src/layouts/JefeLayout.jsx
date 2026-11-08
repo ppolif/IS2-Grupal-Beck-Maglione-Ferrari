@@ -16,6 +16,7 @@ export default function JefeLayout() {
     { to: '/usuarios', label: 'Usuarios', icon: 'user' },
     { to: '/stock', label: 'Stock Almacén', icon: 'chart' },
     { to: '/productos', label: 'Productos', icon: 'box' },
+    { to: '/categorias', label: 'Categorías', icon: 'tag' },
     { to: '/pedidos', label: 'Pedidos', icon: 'box' },
     { to: '/pagos', label: 'Pagos', icon: 'chart' },
     { to: '/rutas', label: 'Rutas de Distribución', icon: 'route' },
@@ -31,6 +32,7 @@ export default function JefeLayout() {
     '/usuarios': 'Usuarios del Sistema',
     '/stock': 'Inventario y Stock',
     '/productos': 'Catálogo de Productos',
+    '/categorias': 'Categorías y Subcategorías',
     '/pedidos': 'Gestión de Pedidos',
     '/pagos': 'Registro de Pagos',
     '/rutas': 'Rutas del Día',
@@ -63,4 +65,3 @@ export default function JefeLayout() {
     </div>
   );
 }
-

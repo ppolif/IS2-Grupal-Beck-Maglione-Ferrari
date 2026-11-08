@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import Logo from './Logo';
 import Icon from './Icon';
+import { useAuth } from '../context/AuthContext';
 
 export default function SidebarBase({
   links = [],
@@ -8,6 +9,8 @@ export default function SidebarBase({
   mobileOpen = false,
   onCloseMobile
 }) {
+  const { logout, usuario } = useAuth();
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -24,14 +27,14 @@ export default function SidebarBase({
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div>
+        <div className="overflow-y-auto">
           {/* Logo & Mobile close button */}
           <div className="flex items-center justify-between pb-6 px-1">
             <Logo />
             <button
               type="button"
               onClick={onCloseMobile}
-              className="lg:hidden text-[#6b6b80] hover:text-[#2b2b3a] p-1"
+              className="lg:hidden text-[#6b6b80] hover:text-[#2b2b3a] p-1 cursor-pointer"
             >
               <Icon name="x" className="w-5 h-5" />
             </button>
@@ -64,21 +67,33 @@ export default function SidebarBase({
           </nav>
         </div>
 
-        {/* Help Card from prototype: side-help */}
-        <div className="mt-6 p-4 rounded-[17px] bg-gradient-to-br from-[#ffcef3] to-[#a1eafb] text-[#2b2b3a] shadow-xs">
-          <strong className="block text-[12px] font-bold">Centro de ayuda</strong>
-          <p className="text-[10px] text-[#554e5c] mt-0.5 leading-tight">
-            ¿Necesitás asistencia técnica o soporte de facturación?
-          </p>
-          <a
-            href="mailto:soporte@dulcemayor.com"
-            className="inline-block text-[10px] font-bold text-[#2b2b3a] underline mt-2"
+        {/* Footer Area: Help Card & Logout */}
+        <div className="space-y-3 pt-4 border-t border-[#f0f0f4]">
+          {/* Help Card */}
+          <div className="p-3.5 rounded-[16px] bg-gradient-to-br from-[#ffcef3]/50 to-[#a1eafb]/50 text-[#2b2b3a]">
+            <strong className="block text-[11px] font-bold">Centro de ayuda</strong>
+            <p className="text-[10px] text-[#554e5c] mt-0.5 leading-tight">
+              ¿Dudas operativas o soporte técnico?
+            </p>
+            <a
+              href="mailto:soporte@dulcemayor.com"
+              className="inline-block text-[10px] font-bold text-[#2b2b3a] underline mt-1.5"
+            >
+              Contactar soporte
+            </a>
+          </div>
+
+          {/* Logout Action */}
+          <button
+            type="button"
+            onClick={logout}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-[11px] font-semibold text-[#8c8b9c] hover:text-[#d63353] hover:bg-[#ffe8ed] transition-colors cursor-pointer"
           >
-            Contactar soporte
-          </a>
+            <Icon name="logout" className="w-4 h-4" />
+            <span>Cerrar sesión ({usuario?.nombreUsuario})</span>
+          </button>
         </div>
       </aside>
     </>
   );
 }
-
