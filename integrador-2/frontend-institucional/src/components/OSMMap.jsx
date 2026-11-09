@@ -46,8 +46,10 @@ export default function OSMMap({
 
   // se inicializa el mapa una sola vez, al mostrar el componente
   useEffect(() => {
+    {/*verifica que ya exosta un contenedor donde leaflet pueda poner el mapa*/}
     if (!mapContainerRef.current) return;
 
+    {/*verifica que ya exista un mapa, si no existe lo crea*/}
     if (!mapInstanceRef.current) {
       {/*crea el mapa */}
       const map = L.map(mapContainerRef.current, {
@@ -61,10 +63,12 @@ export default function OSMMap({
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
+      {/*crea un grupo de capas donde se van a poner los marcadores*/}
       layerGroupRef.current = L.layerGroup().addTo(map);
       mapInstanceRef.current = map;
     }
 
+    {/*cuando se desmonta el componente, elimina el mapa*/}
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
@@ -73,11 +77,12 @@ export default function OSMMap({
     };
   }, []);
 
-  // Update Markers, Route and Active focus
+  // se ejecuta cada vez que cambian los markers, el activeMarkerId o la ruta
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !layerGroupRef.current) return;
 
+    {/*limpia los pines anteriores*/}
     layerGroupRef.current.clearLayers();
     if (polylineRef.current) {
       map.removeLayer(polylineRef.current);
@@ -99,6 +104,7 @@ export default function OSMMap({
 
       const marker = L.marker([m.lat, m.lng], { icon });
 
+      {/*Le asocia un popup HTML formateado con el nombre, dirección y etiquetas*/}
       let popupContent = `
         <div style="font-family: inherit; font-size: 12px; line-height: 1.4; padding: 2px;">
           <strong style="font-size: 13px; color: ${colors.ink}; display: block; margin-bottom: 2px;">${m.nombre || m.comercio || 'Punto'}</strong>
@@ -144,7 +150,7 @@ export default function OSMMap({
       map.setView(latLngs[0], 14);
     }
 
-    // Trigger a resize check to avoid grey tiles in responsive layouts
+    // tras 200ms le avisa a Leaflet que recalcule el tamaño del contenedor, evitando que el mapa quede cortado o con zonas grises en pantallas responsivas
     setTimeout(() => {
       map.invalidateSize();
     }, 200);
