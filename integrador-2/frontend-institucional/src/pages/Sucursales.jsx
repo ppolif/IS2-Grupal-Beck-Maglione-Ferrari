@@ -93,7 +93,9 @@ export default function Sucursales() {
               </Button>
             </div>
 
-            {/* Interactive OpenStreetMap */}
+            {/* mapa interactivo de OpenStreetMap */}
+            {/* se le pasa puntos de las sucursales (markers) */}
+            {/* el onClick hace que se muestre la info de una sucursal si el cliente toca el marker */}
             <OSMMap
               className="h-[400px] sm:h-[460px] w-full"
               markers={branchesMock}

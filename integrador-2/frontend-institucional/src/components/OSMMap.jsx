@@ -3,7 +3,11 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { colors } from '../theme/colors';
 
-// Fix generic Leaflet marker icon paths in Vite bundles
+//componente que renderiza mapas de OpenStreetMap con la librería Leaflet
+// es un puente ente react y leaflet. leaflet trabaja directo con el DOM pero react usa el virtual DOM, por eso necesitamos un componente que haga de puente entre ambos  
+
+
+// en vez de usar los iconos por defecto de leaflet, que a veces funcionan mal con vite, creamos un icono con SVG
 const createCustomIcon = (color = colors.primary.DEFAULT, number = null) => {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 42" width="32" height="42">
@@ -35,21 +39,23 @@ export default function OSMMap({
   zoom = 13,
   onMarkerClick = null
 }) {
-  const mapContainerRef = useRef(null);
-  const mapInstanceRef = useRef(null);
-  const layerGroupRef = useRef(null);
+  const mapContainerRef = useRef(null); // Referencia al <div> donde se dibuja el mapa
+  const mapInstanceRef = useRef(null); // Guarda la instancia de L.map
+  const layerGroupRef = useRef(null); // Grupo donde se agregan o quitan los marcadores
   const polylineRef = useRef(null);
 
-  // Initialize Map once
+  // se inicializa el mapa una sola vez, al mostrar el componente
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
     if (!mapInstanceRef.current) {
+      {/*crea el mapa */}
       const map = L.map(mapContainerRef.current, {
         zoomControl: true,
         attributionControl: true
       }).setView(center, zoom);
 
+      {/*aca pone el tile layer de osm encima del mapa*/}
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

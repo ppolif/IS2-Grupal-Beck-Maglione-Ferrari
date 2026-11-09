@@ -102,7 +102,7 @@ export default function Recorrido() {
         {/* Map and Active Visit Sheet (matching prototype sheet) */}
         <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
           <div className="bg-white rounded-[24px] p-4 sm:p-5 border border-[#ececf2] shadow-sm">
-            {/* OpenStreetMap interactive route */}
+            {/* OpenStreetMap mapa interactivo, usamos componente OSMMap */}
             <OSMMap
               className="h-[340px] sm:h-[420px] w-full"
               markers={visits}

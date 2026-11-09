@@ -69,6 +69,7 @@ export function useRutas() {
     }
   ];
 
+  {/* estado de seleccion para centrado del mapa*/}
   const [selectedAgentId, setSelectedAgentId] = useState('prev-1');
 
   const agents = tab === 'preventores' ? preventores : distribuidores;

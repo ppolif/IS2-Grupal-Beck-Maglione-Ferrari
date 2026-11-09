@@ -60,6 +60,7 @@ export function usePreventorRutas() {
     }
   ];
 
+  {/* estado de seleccion para centrado del mapa*/}
   const [selectedVisit, setSelectedVisit] = useState(visits[0]);
 
   const handleOpenHistorial = () => {
