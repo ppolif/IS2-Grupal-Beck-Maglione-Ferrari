@@ -167,6 +167,14 @@ public class ProductoService extends BaseService<Producto, ProductoRequest, Prod
         return productoRepository.findAllByEliminadoFalseOrderByNombreAsc();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductoResponse> listar() {
+        return buscarEntidadesActivas().stream()
+                .map(this::aResponse)
+                .toList();
+    }
+
     ///le delegamos la "verdadera busqueda" con filtros a la clase de producto que es de solo lectura
     @Transactional(readOnly = true)
     public ProductoPage listarPaginado(

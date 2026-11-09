@@ -212,3 +212,45 @@
   - `NotificacionPedidoListener`: observador Spring Events (`@EventListener`) sobre cambios de estado clave (`FACTURADO`, `ENTREGADO`).
   - `PedidoController`: endpoints `/pedidos`, `/pedidos/{id}`, `/pedidos/{id}/anular`, `/pedidos/{id}/historial`, `/pedidos/{id}/procesar` y `/mi-cuenta/pedidos` (con variantes `/api/v1/...`).
 
+---
+
+## Paso 8: Módulo Actores, Personas y Mayorista (Persona, Empleado, Minorista, PuntoDeVenta, VisitaPreventor, Mayorista)
+
+### 1. Qué se hizo
+- **Entidades de dominio (`com.DulceMayor.backend.entities.persona`, `com.DulceMayor.backend.entities.mayorista`):**
+  - `Persona` (abstracta `JOINED` con `nombre`, `apellido`, `documento`, `contactos` y `usuarios`), `Empleado` (`legajo`, `rol`, `localidadesAsignadas`) y `Minorista` (`puntosDeVenta`).
+  - `PuntoDeVenta` (`nombreComercial`, `cuit`, `direccion`, `minorista`), `VisitaPreventor` (`fechaVisita`, `horaVisita`, `observacion`, `preventor`, `puntoDeVenta`) y `Mayorista` (`razonSocial`, `nombreFantasia`, `cuit`, `direcciones`, `contactos`, `imagenes`).
+- **Repositorios, DTOs, Mappers, Servicios y Controladores REST:**
+  - ABM de `/empleados`, `/minoristas`, `/puntos-de-venta`, `/visitas-preventor`, `/mayoristas` y `/publico/sucursales`, además de la vinculación de `Pedido` con `PuntoDeVenta`, `Empleado` (`preventor` y `distribuidor`) y perfil de `Usuario`.
+
+---
+
+## Paso 9: Módulo Sitio Público (`/publico/**`) y Patrón GoF Estructural Adapter
+
+### 1. Qué se hizo
+- **DTOs del módulo público (`com.DulceMayor.backend.dtos.publico`):**
+  - Records alineados con `04-openapi.yaml`: `ProductoPublicoResponse` (con `disponible: boolean` y sin `stockActual`), `ProductoPublicoPage`, `CotizacionDolarResponse`, `ChatbotMensaje`, `ChatbotPresupuestoRequest`, `ChatbotItem` y `ChatbotPresupuestoResponse`.
+- **Patrón GoF Estructural — Adapter (`com.DulceMayor.backend.services.publico.adapter`):**
+  - `CotizacionDolarPort` (Target) y `CotizacionDolarAdapter` (Adapter): adapta la API externa de cotización del dólar (`https://dolarapi.com/v1/dolares`) al DTO interno `CotizacionDolarResponse`, con caché en memoria con TTL configurable (`app.dolar.cache-ttl-minutes`, por defecto 15 min) y fallback resiliente al último valor conocido o valor de respaldo ante caídas de red, garantizando que `GET /publico/cotizacion-dolar` nunca devuelva `5xx`.
+  - `ChatbotIntencionPort` (Target), `IntencionItemPedido` y `SpringAiChatbotAdapter` (Adapter): desacopla la extracción de intenciones conversacionales (búsqueda por código, nombre de producto y cantidades solicitadas) de las reglas de negocio.
+- **Servicio de lectura y Controlador REST (`com.DulceMayor.backend.services.publico`, `com.DulceMayor.backend.controllers.publico`):**
+  - `SitioPublicoLecturaService`: proyecta el catálogo público (`disponible = stockActual > 0` sin exponer cantidades de inventario), consulta la cotización del dólar vía `CotizacionDolarPort` y calcula el presupuesto del chatbot (`POST /publico/chatbot/presupuesto`) exclusivamente en el backend usando `VigenciaPrecio` abierta (`precioUnitario`), `unidadesPorBulto` y `Stock` actual (generando advertencias cuando la cantidad supera el stock o no hay stock disponible).
+  - `SitioPublicoController`: expone `GET /publico/catalogo`, `GET /publico/catalogo/{id}`, `GET /publico/cotizacion-dolar` y `POST /publico/chatbot/presupuesto` (y sus variantes `/api/v1/publico/...`), habilitados públicamente en `SecurityConfig`.
+
+---
+
+## Paso 10: Módulo Reportes (`/reportes/**`), Estadísticas (`/estadisticas/**`) y Patrón GoF Creacional Factory Method
+
+### 1. Qué se hizo
+- **DTOs de estadísticas y reportes (`com.DulceMayor.backend.dtos.estadistica`, `com.DulceMayor.backend.dtos.reporte`):**
+  - Records de series estadísticas: `PuntoDiaCantidad`, `SeriePreventorDia`, `PedidosPorPreventorPorDiaResponse` y `StockPorProductoItem`.
+  - Modelo intermedio tabular para exportación: `ColumnaReporte` y `ReporteTabular`.
+- **Patrón GoF Creacional — Factory Method (`com.DulceMayor.backend.services.reporte.exporter`):**
+  - `ReporteExporter` (Product), `PdfReporteExporter` (ConcreteProduct para `application/pdf` con documento PDF tabular multipágina nativo), `ExcelReporteExporter` (ConcreteProduct para `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` con paquete OpenXML `.xlsx` válido en memoria mediante `ZipOutputStream`) y `ReporteExporterFactory` (Creator que resuelve el exportador según `formato = PDF | EXCEL` o lanza `400 VALIDACION`).
+- **Servicios de lectura y Controladores REST (`com.DulceMayor.backend.services.estadistica`, `com.DulceMayor.backend.services.reporte`, `com.DulceMayor.backend.controllers.estadistica`, `com.DulceMayor.backend.controllers.reporte`):**
+  - `EstadisticaLecturaService` y `EstadisticaController`: implementan `GET /estadisticas/pedidos-por-preventor-por-dia` (exclusivo `ROLE_JEFE`) y `GET /estadisticas/stock-por-producto` (`ROLE_JEFE` y `ROLE_ADMINISTRATIVO`).
+  - `ReporteLecturaService` y `ReporteController`: implementan los 6 endpoints de exportación (`GET /reportes/facturacion`, `GET /reportes/minoristas`, `GET /reportes/pedidos`, `GET /reportes/productos-mas-vendidos`, `GET /reportes/rendimiento-preventores`, `GET /reportes/ventas-historico`) protegidos con `@PreAuthorize("hasRole('JEFE')")`, devolviendo los binarios con headers `Content-Type` y `Content-Disposition: attachment; filename="..."`.
+- **Pruebas automatizadas:**
+  - `SitioPublicoControllerTest` y `ReporteYEstadisticaControllerTest` verifican catálogo público sin filtración de `stockActual`, cotización del dólar con fallback, presupuesto de chatbot con cálculo backend de subtotales/advertencias, control de acceso por rol en estadísticas y descarga de los 6 reportes en PDF y Excel.
+
+

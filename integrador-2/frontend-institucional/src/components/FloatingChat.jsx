@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from './Icon';
+import { apiFetch } from '../services/api';
 
 export default function FloatingChat() {
   const [open, setOpen] = useState(false);
@@ -9,7 +10,8 @@ export default function FloatingChat() {
       id: 'msg-1',
       sender: 'bot',
       text: '¡Hola! Soy el asistente inteligente de Dulce Mayor 🍬. Escribime en lenguaje natural qué golosinas y cantidades necesitás (por ejemplo: "2 cajas de alfajores triples y 3 bolsas de gomitas") y te calculo el presupuesto con precios y stock en tiempo real.',
-      budget: null
+      budget: null,
+      advertencias: []
     }
   ]);
   const [inputText, setInputText] = useState('');
@@ -23,85 +25,75 @@ export default function FloatingChat() {
     }
   }, [messages, open]);
 
-  const handleSend = (textToSend) => {
+  const handleSend = async (textToSend) => {
     const query = (textToSend || inputText).trim();
-    if (!query) return;
+    if (!query || isTyping) return;
 
     const userMsg = {
       id: `msg-${Date.now()}`,
       sender: 'user',
       text: query,
-      budget: null
+      budget: null,
+      advertencias: []
     };
+
+    const historialPrevio = messages
+      .filter((m) => m.sender === 'user' || m.sender === 'bot')
+      .map((m) => ({
+        rol: m.sender === 'user' ? 'usuario' : 'asistente',
+        texto: m.text
+      }))
+      .slice(-20);
 
     setMessages((prev) => [...prev, userMsg]);
     setInputText('');
     setIsTyping(true);
 
-    setTimeout(() => {
-      setIsTyping(false);
+    try {
+      const response = await apiFetch('/publico/chatbot/presupuesto', {
+        method: 'POST',
+        body: JSON.stringify({
+          mensaje: query,
+          historial: historialPrevio
+        })
+      });
 
-      // Simulación de procesamiento NLP del backend
-      let items = [];
-      let total = 0;
-      const lower = query.toLowerCase();
+      const items = (response?.items || []).map((it) => ({
+        productoId: it.productoId,
+        nombre: it.presentacion ? `${it.productoNombre} (${it.presentacion})` : (it.productoNombre || it.nombre),
+        cantidad: it.cantidad,
+        precio: it.precioUnitario,
+        subtotal: it.subtotal
+      }));
 
-      if (lower.includes('alfajor')) {
-        items.push({
-          nombre: 'Alfajor triple chocolate (Caja x24)',
-          cantidad: 2,
-          precio: 18900,
-          subtotal: 37800
-        });
-      }
-      if (lower.includes('gomita') || lower.includes('frutal')) {
-        items.push({
-          nombre: 'Gomitas frutales (Bolsa x1 kg)',
-          cantidad: 3,
-          precio: 6450,
-          subtotal: 19350
-        });
-      }
-      if (lower.includes('chocolate') || lower.includes('maní')) {
-        items.push({
-          nombre: 'Chocolate con maní (Caja x20)',
-          cantidad: 2,
-          precio: 15600,
-          subtotal: 31200
-        });
-      }
-      if (lower.includes('chupetin') || lower.includes('chupetines')) {
-        items.push({
-          nombre: 'Chupetines surtidos (Display x50)',
-          cantidad: 4,
-          precio: 8200,
-          subtotal: 32800
-        });
-      }
-
-      // Si no detectó palabras clave específicas, asigna una combinación estándar
-      if (items.length === 0) {
-        items = [
-          { nombre: 'Alfajor triple chocolate (Caja x24)', cantidad: 2, precio: 18900, subtotal: 37800 },
-          { nombre: 'Gomitas frutales (Bolsa x1 kg)', cantidad: 2, precio: 6450, subtotal: 12900 }
-        ];
-      }
-
-      total = items.reduce((acc, it) => acc + it.subtotal, 0);
+      const advertencias = Array.isArray(response?.advertencias) ? response.advertencias : [];
 
       const botMsg = {
         id: `msg-${Date.now() + 1}`,
         sender: 'bot',
-        text: '¡Presupuesto armado! Identifiqué los siguientes productos con los precios mayoristas vigentes:',
-        budget: {
-          items,
-          total,
-          advertencia: items.length > 2 ? 'Stock ajustado en almacén central' : null
-        }
+        text: response?.respuesta || 'Procesé tu consulta de presupuesto.',
+        budget: items.length > 0
+          ? {
+              items,
+              total: response?.total ?? items.reduce((acc, it) => acc + it.subtotal, 0)
+            }
+          : null,
+        advertencias
       };
 
       setMessages((prev) => [...prev, botMsg]);
-    }, 900);
+    } catch (error) {
+      const botErrorMsg = {
+        id: `msg-${Date.now() + 1}`,
+        sender: 'bot',
+        text: error?.message || 'No se pudo consultar el presupuesto en este momento. Verificá que el servidor esté disponible.',
+        budget: null,
+        advertencias: []
+      };
+      setMessages((prev) => [...prev, botErrorMsg]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleApplyToCart = () => {
@@ -154,6 +146,15 @@ export default function FloatingChat() {
                   }`}
                 >
                   <p>{m.text}</p>
+
+                  {/* Advertencias de stock o productos no encontrados */}
+                  {m.advertencias && m.advertencias.length > 0 && (
+                    <div className="mt-2.5 p-2 rounded-[10px] bg-amber-50 border border-amber-200 text-amber-800 text-[11px] space-y-1">
+                      {m.advertencias.map((adv, idx) => (
+                        <p key={idx} className="leading-snug">⚠️ {adv}</p>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Tarjeta de Presupuesto Estructurado */}
                   {m.budget && (
