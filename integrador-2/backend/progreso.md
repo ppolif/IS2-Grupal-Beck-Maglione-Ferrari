@@ -107,3 +107,44 @@ Se completó la integración integral de **OpenStreetMap** en el frontend y back
   - Configuración externa de URL de servicio en `application.properties` (`app.osm.osrm-url`).
   - Preservación íntegra de los DTOs y del contrato OpenAPI (`04-openapi.yaml`) sin sobrecargar el payload de red.
 - **Compilación:** Verificada con `./mvnw test-compile` y `npm run build` en los 3 frontends (100% exitosas).
+
+---
+
+## 5. Módulo Integral de Envío de Correos y Notificaciones (Gmail SMTP)
+
+Se implementó y conectó de extremo a extremo el sistema de notificaciones por correo electrónico según lo estipulado en `01-dominio.md`, `02-reglas-negocio.md` (§6.3, §8), `03-arquitectura.md` (§4.3) y `04-openapi.yaml`.
+
+### 5.1 Infraestructura y Servicio Central de Correo
+- **`EmailService`:**
+  - Servicio centralizado para despacho de correos en HTML y con archivos adjuntos binarios (`MimeMessageHelper`).
+  - **Resolución dinámica de transporte:** Prioriza la entidad de base de datos `ConfiguracionCorreoMayorista`. Si no existe, recurre de forma transparente a las credenciales configuradas en variables de entorno / `application.properties` (`spring.mail.*`).
+  - **Resolución de destinatario (`resolverEmailMinorista`):** Aplica la regla de prioridad del negocio:
+    1. *Prioridad 1:* Email de la cuenta de usuario del minorista (`minorista.getUsuario().getNombreUsuario()`).
+    2. *Prioridad 2 (Respaldo):* Contactos secundarios registrados (`ContactoCorreoElectronico`).
+- **`EmailTemplateHelper`:** Generador de plantillas HTML responsivas y profesionales con el diseño visual de Dulce Mayor para facturas, avisos de entrega y catálogo de ofertas.
+- **Habilitación global:** Se activaron `@EnableAsync` y `@EnableScheduling` en `BackendApplication`.
+
+### 5.2 Emisión y Reenvío de Facturas con PDF Adjunto
+- **`FacturaGeneradaEvent` & `FacturaNotificacionListener`:**
+  - Al procesar y facturar un pedido en `FacturaService` (transición de `CARGADO` a `FACTURADO`), se publica un evento de dominio desacoplado.
+  - El listener `@Async` genera el comprobante en memoria en formato PDF mediante `generarFacturaPdf` y lo adjunta automáticamente al correo del minorista.
+- **Reenvío manual de factura:** Implementación real en `FacturaService.reenviarFacturaPorCorreo(id)` para el endpoint documentado `POST /api/v1/facturas/{id}/reenviar-correo`.
+
+### 5.3 Aviso de Próxima Entrega (Distribuidor)
+- **`AvisoProximaEntregaListener`:** Conectado con `EmailService`. Al avanzar una entrega en `POST /rutas-distribuidor/{id}/entregas`, identifica la siguiente parada y despacha el correo con el asunto estricto:
+  > *"En breve se realizará la entrega de su pedido Dulce Mayor"*.
+
+### 5.4 Newsletter Mensual de Ofertas y Notificaciones
+- **`NewsletterService`:**
+  - Tarea programada `@Scheduled(cron = "0 0 8 5 * ?")` (día 5 de cada mes a las 08:00 AM).
+  - Consulta productos con `enOferta == true` vía `ProductoRepository.findAllByEnOfertaTrueAndEliminadoFalseOrderByNombreAsc()`, busca sus precios vigentes con `VigenciaPrecioService` y despacha el boletín HTML a todos los minoristas activos con correo.
+- **`NotificacionController`:** Expone el endpoint `POST /api/v1/notificaciones/newsletter/enviar` protegido por roles (`JEFE_LOGISTICA`, `JEFE_VENTAS`, `ADMIN`) para permitir el disparo manual.
+
+### 5.5 Integración en Frontend Admin
+- Creación de los servicios de API `pedidoService.js`, `facturaService.js` y `notificacionService.js` en `frontend-admin`.
+- Conexión real de la pantalla `Pedidos.jsx` y el hook `usePedidos.js` a la API (`POST /api/v1/pedidos/{id}/procesar`) en reemplazo de mocks, incorporando la acción de **Reenviar Factura por Mail**.
+
+### 5.6 Pruebas y Validación
+- Pruebas unitarias completas: `EmailServiceTest`, `NewsletterServiceTest` y actualización de `FacturaServiceTest` (100% exitosas).
+- Verificación de autenticación SMTP real contra Gmail (`dulcemayor5@gmail.com`) y entrega exitosa en casilla de correo.
+
