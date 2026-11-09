@@ -27,6 +27,8 @@ public interface ProductoRepository extends BaseRepository<Producto> {
 
     List<Producto> findAllByEliminadoFalseOrderByNombreAsc();
 
+    List<Producto> findAllByEnOfertaTrueAndEliminadoFalseOrderByNombreAsc();
+
     List<Producto> findAllBySubCategoriaIdAndEliminadoFalseOrderByNombreAsc(String subCategoriaId);
 
     ///query para filtrar productos, de forma paginada para que no reviente la memoria lol

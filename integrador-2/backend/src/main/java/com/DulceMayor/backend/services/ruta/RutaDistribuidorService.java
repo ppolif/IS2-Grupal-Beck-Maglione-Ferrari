@@ -25,6 +25,7 @@ import com.DulceMayor.backend.entities.persona.PuntoDeVenta;
 import com.DulceMayor.backend.entities.ruta.RutaDistribuidor;
 import com.DulceMayor.backend.entities.ruta.RutaEstado;
 import com.DulceMayor.backend.repositories.ruta.RutaDistribuidorRepository;
+import com.DulceMayor.backend.services.mail.EmailService;
 import com.DulceMayor.backend.services.mayorista.MayoristaService;
 import com.DulceMayor.backend.services.pedido.PedidoService;
 import com.DulceMayor.backend.services.persona.EmpleadoService;
@@ -70,6 +71,7 @@ public class RutaDistribuidorService {
     private final MayoristaService mayoristaService;
     private final RutaOptimizerStrategy rutaOptimizerStrategy;
     private final RutaMapperHelper rutaMapperHelper;
+    private final EmailService emailService;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
@@ -482,22 +484,7 @@ public class RutaDistribuidorService {
         String emailDestino = null;
 
         if (pdv != null && pdv.getMinorista() != null) {
-            Minorista minorista = pdv.getMinorista();
-
-            // 1. Prioridad: el correo de la cuenta de usuario del minorista
-            if (minorista.getUsuario() != null && minorista.getUsuario().getNombreUsuario() != null) {
-                emailDestino = minorista.getUsuario().getNombreUsuario();
-            }
-
-            // 2. Respaldo: si aún no tiene usuario activo, busca en la lista de contactos
-            if (emailDestino == null && minorista.getContactos() != null) {
-                for (Contacto c : minorista.getContactos()) {
-                    if (c instanceof ContactoCorreoElectronico correo && correo.getEmail() != null) {
-                        emailDestino = correo.getEmail();
-                        break;
-                    }
-                }
-            }
+            emailDestino = emailService.resolverEmailMinorista(pdv.getMinorista());
         }
 
         eventPublisher.publishEvent(new AvisoProximaEntregaEvent(

@@ -63,6 +63,12 @@ class FacturaServiceTest {
     @Mock
     private com.DulceMayor.backend.services.persona.MinoristaService minoristaService;
 
+    @Mock
+    private com.DulceMayor.backend.services.mail.EmailService emailService;
+
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     private FacturaService facturaService;
 
     @BeforeEach
@@ -73,7 +79,9 @@ class FacturaServiceTest {
                 facturaLecturaService,
                 productoService,
                 stockService,
-                minoristaService
+                minoristaService,
+                emailService,
+                eventPublisher
         );
     }
 

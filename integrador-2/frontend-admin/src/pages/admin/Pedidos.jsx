@@ -6,11 +6,14 @@ import { usePedidos } from '../../hooks/usePedidos';
 export default function Pedidos() {
   const {
     orders,
+    loading,
     selectedOrder,
     isDetailModalOpen,
+    actionLoading,
     setIsDetailModalOpen,
     handleOpenDetail,
     handleInvoiceOrder,
+    handleReenviarFactura,
   } = usePedidos();
 
   return (
@@ -166,13 +169,20 @@ export default function Pedidos() {
                 Cerrar
               </Button>
               {!selectedOrder.facturado ? (
-                <Button onClick={() => handleInvoiceOrder(selectedOrder.id)}>
-                  Facturar pedido ahora
+                <Button disabled={actionLoading} onClick={() => handleInvoiceOrder(selectedOrder.id)}>
+                  {actionLoading ? 'Facturando...' : 'Facturar pedido ahora'}
                 </Button>
               ) : (
-                <Button secondary onClick={() => alert('Comprobante PDF generado (Simulado)')}>
-                  Descargar Factura A
-                </Button>
+                <>
+                  {selectedOrder.facturaId && (
+                    <Button secondary onClick={() => handleReenviarFactura(selectedOrder.facturaId)}>
+                      Reenviar Factura por Mail
+                    </Button>
+                  )}
+                  <Button secondary onClick={() => alert('Factura emitida correctamente.')}>
+                    Descargar Factura A
+                  </Button>
+                </>
               )}
             </div>
           </div>

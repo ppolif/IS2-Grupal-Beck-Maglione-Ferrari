@@ -40,9 +40,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import javax.imageio.ImageIO;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.DulceMayor.backend.dtos.facturacion.FacturaGeneradaEvent;
+import com.DulceMayor.backend.services.mail.EmailService;
+import com.DulceMayor.backend.services.mail.EmailTemplateHelper;
 
 /**
  * Servicio de negocio para la gestión de {@link Factura} y sus líneas {@link DetalleFactura}.
@@ -64,6 +68,8 @@ public class FacturaService extends BaseService<Factura, FacturaRequest, Factura
     private final ProductoService productoService;
     private final StockService stockService;
     private final MinoristaService minoristaService;
+    private final EmailService emailService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public FacturaService(
             FacturaRepository facturaRepository,
@@ -71,13 +77,17 @@ public class FacturaService extends BaseService<Factura, FacturaRequest, Factura
             FacturaLecturaService facturaLecturaService,
             ProductoService productoService,
             StockService stockService,
-            MinoristaService minoristaService) {
+            MinoristaService minoristaService,
+            EmailService emailService,
+            ApplicationEventPublisher eventPublisher) {
         super(facturaRepository, facturaMapper, "Factura");
         this.facturaRepository = facturaRepository;
         this.facturaLecturaService = facturaLecturaService;
         this.productoService = productoService;
         this.stockService = stockService;
         this.minoristaService = minoristaService;
+        this.emailService = emailService;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -229,6 +239,19 @@ public class FacturaService extends BaseService<Factura, FacturaRequest, Factura
             );
         }
 
+        // Publicar evento asíncrono para que los observadores (listeners de correo) envíen la factura en PDF
+        String emailMinorista = null;
+        if (pedido.getPuntoDeVenta() != null && pedido.getPuntoDeVenta().getMinorista() != null) {
+            emailMinorista = emailService.resolverEmailMinorista(pedido.getPuntoDeVenta().getMinorista());
+        }
+        eventPublisher.publishEvent(new FacturaGeneradaEvent(
+                guardada.getId(),
+                guardada.getNumeroFactura(),
+                pedido.getNumeroPedido(),
+                emailMinorista,
+                guardada.getTotal()
+        ));
+
         return aResponse(guardada);
     }
 
@@ -345,12 +368,42 @@ public class FacturaService extends BaseService<Factura, FacturaRequest, Factura
     }
 
     /**
-     * Reenvía la factura por correo electrónico al cliente asociado.
+     * Reenvía la factura por correo electrónico al cliente asociado con su PDF adjunto.
      */
     @Transactional(readOnly = true)
     public void reenviarFacturaPorCorreo(String id) {
-        obtenerEntidad(id);
-        // En el entorno local sin servidor SMTP externo se valida la existencia de la factura y se completa la operación.
+        Factura factura = obtenerEntidad(id);
+        verificarAccesoMinorista(factura);
+
+        String emailDestino = null;
+        String numeroPedido = "-";
+        if (factura.getPedido() != null) {
+            numeroPedido = String.valueOf(factura.getPedido().getNumeroPedido());
+            if (factura.getPedido().getPuntoDeVenta() != null && factura.getPedido().getPuntoDeVenta().getMinorista() != null) {
+                emailDestino = emailService.resolverEmailMinorista(factura.getPedido().getPuntoDeVenta().getMinorista());
+            }
+        }
+
+        if (emailDestino == null || emailDestino.isBlank()) {
+            throw new ValidacionException("El cliente asociado a la factura no posee un correo electrónico registrado");
+        }
+
+        byte[] pdf = generarFacturaPdf(id);
+        String asunto = "Factura #" + factura.getNumeroFactura() + " - Dulce Mayor";
+        String html = EmailTemplateHelper.generarHtmlFactura(
+                numeroPedido,
+                String.valueOf(factura.getNumeroFactura()),
+                String.format(Locale.US, "%.2f", factura.getTotal())
+        );
+
+        emailService.enviarCorreoConAdjunto(
+                emailDestino,
+                asunto,
+                html,
+                pdf,
+                "factura-" + factura.getNumeroFactura() + ".pdf",
+                "application/pdf"
+        );
     }
 
     @Override

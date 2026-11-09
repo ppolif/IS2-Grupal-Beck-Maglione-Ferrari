@@ -1,6 +1,8 @@
 package com.DulceMayor.backend.services.ruta;
 
 import com.DulceMayor.backend.dtos.ruta.AvisoProximaEntregaEvent;
+import com.DulceMayor.backend.services.mail.EmailService;
+import com.DulceMayor.backend.services.mail.EmailTemplateHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -23,6 +25,13 @@ import org.springframework.stereotype.Component;
 public class AvisoProximaEntregaListener {
 
     private static final Logger log = LoggerFactory.getLogger(AvisoProximaEntregaListener.class);
+    private static final String ASUNTO_AVISO_ENTREGA = "En breve se realizará la entrega de su pedido Dulce Mayor";
+
+    private final EmailService emailService;
+
+    public AvisoProximaEntregaListener(EmailService emailService) {
+        this.emailService = emailService;
+    }
 
     /**
      * Reacciona ante el evento {@link AvisoProximaEntregaEvent} despachando el aviso por email.
@@ -36,17 +45,32 @@ public class AvisoProximaEntregaListener {
             return;
         }
 
-        String destinatario = event.emailDestinatario() != null
-                ? event.emailDestinatario()
-                : "[sin email registrado]";
+        String destinatario = event.emailDestinatario();
+
+        if (destinatario == null || destinatario.isBlank()) {
+            log.warn(
+                    "No se pudo enviar notificación de próxima entrega para el pedido #{}: el cliente '{}' no posee un correo electrónico registrado.",
+                    event.numeroPedido(),
+                    event.nombreComercio()
+            );
+            return;
+        }
 
         log.info(
-                "Enviando correo al minorista del comercio '{}' ({}) - Pedido #{}: " +
-                "Asunto: 'En breve se realizará la entrega de su pedido Dulce Mayor'",
+                "Despachando notificación de próxima entrega al comercio '{}' ({}) - Pedido #{}",
                 event.nombreComercio(),
                 destinatario,
                 event.numeroPedido()
         );
+
+        String numeroPedido = event.numeroPedido() != null ? String.valueOf(event.numeroPedido()) : "";
+        String cuerpoHtml = EmailTemplateHelper.generarHtmlAvisoEntrega(
+                event.nombreComercio(),
+                numeroPedido
+        );
+
+        emailService.enviarCorreoSimple(destinatario, ASUNTO_AVISO_ENTREGA, cuerpoHtml);
     }
 }
+
 

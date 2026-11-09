@@ -35,6 +35,8 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       APP_SEED_ENABLED: "true"
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
 
   frontend-admin:
     build: ./frontend-admin
