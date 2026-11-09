@@ -2,6 +2,7 @@ import { useState } from 'react';
 import OSMMap from '../../components/OSMMap';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
+import { colors } from '../../theme/colors';
 import { deliveriesMock } from '../../mocks/deliveries';
 
 export default function Recorrido() {
@@ -106,7 +107,7 @@ export default function Recorrido() {
               markers={deliveries}
               activeMarkerId={selectedDelivery.id}
               showRoute={true}
-              routeColor="#3fb8d9"
+              routeColor={colors.secondary.DEFAULT}
               onMarkerClick={(delivery) => setSelectedDelivery(delivery)}
             />
 

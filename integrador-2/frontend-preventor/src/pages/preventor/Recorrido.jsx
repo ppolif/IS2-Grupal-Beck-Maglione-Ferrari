@@ -3,6 +3,7 @@ import OSMMap from '../../components/OSMMap';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
 import Icon from '../../components/Icon';
+import { colors } from '../../theme/colors';
 import { visitsMock } from '../../mocks/visits';
 
 export default function Recorrido() {
@@ -107,7 +108,7 @@ export default function Recorrido() {
               markers={visits}
               activeMarkerId={selectedVisit.id}
               showRoute={true}
-              routeColor="#e86bc4"
+              routeColor={colors.primary.DEFAULT}
               onMarkerClick={(visit) => setSelectedVisit(visit)}
             />
 

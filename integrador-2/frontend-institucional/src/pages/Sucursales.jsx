@@ -2,6 +2,7 @@ import { useState } from 'react';
 import OSMMap from '../components/OSMMap';
 import Icon from '../components/Icon';
 import Button from '../components/Button';
+import { colors } from '../theme/colors';
 import { branchesMock } from '../mocks/branches';
 
 export default function Sucursales() {
@@ -97,7 +98,7 @@ export default function Sucursales() {
               className="h-[400px] sm:h-[460px] w-full"
               markers={branchesMock}
               activeMarkerId={activeBranch.id}
-              routeColor="#e86bc4"
+              routeColor={colors.primary.DEFAULT}
               onMarkerClick={(branch) => setActiveBranch(branch)}
             />
 

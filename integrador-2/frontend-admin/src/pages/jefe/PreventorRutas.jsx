@@ -1,6 +1,7 @@
 import OSMMap from '../../components/OSMMap';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
+import { colors } from '../../theme/colors';
 import { usePreventorRutas } from '../../hooks/usePreventorRutas';
 
 export default function PreventorRutas() {
@@ -96,7 +97,7 @@ export default function PreventorRutas() {
               markers={visits}
               activeMarkerId={selectedVisit.id}
               showRoute={true}
-              routeColor="#e86bc4"
+              routeColor={colors.primary.DEFAULT}
               onMarkerClick={(visit) => setSelectedVisit(visit)}
             />
 

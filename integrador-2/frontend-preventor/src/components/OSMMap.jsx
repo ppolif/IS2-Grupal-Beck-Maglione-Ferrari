@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { colors } from '../theme/colors';
 
 // Fix generic Leaflet marker icon paths in Vite bundles
-const createCustomIcon = (color = '#e86bc4', number = null) => {
+const createCustomIcon = (color = colors.primary.DEFAULT, number = null) => {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 42" width="32" height="42">
-      <path d="M16 0C7.16 0 0 7.16 0 16c0 10.5 16 26 16 26s16-15.5 16-26c0-8.84-7.16-16-16-16z" fill="${color}" stroke="#ffffff" stroke-width="2"/>
-      <circle cx="16" cy="16" r="10" fill="#ffffff"/>
+      <path d="M16 0C7.16 0 0 7.16 0 16c0 10.5 16 26 16 26s16-15.5 16-26c0-8.84-7.16-16-16-16z" fill="${color}" stroke="${colors.surface.DEFAULT}" stroke-width="2"/>
+      <circle cx="16" cy="16" r="10" fill="${colors.surface.DEFAULT}"/>
       ${
         number !== null
           ? `<text x="16" y="20" font-size="11" font-weight="bold" fill="${color}" text-anchor="middle" font-family="sans-serif">${number}</text>`
@@ -28,7 +29,7 @@ export default function OSMMap({
   markers = [],
   activeMarkerId = null,
   showRoute = false,
-  routeColor = '#e86bc4',
+  routeColor = colors.primary.DEFAULT,
   className = 'h-full w-full',
   center = [-32.8895, -68.8458], // Mendoza Centro default
   zoom = 13,
@@ -87,17 +88,17 @@ export default function OSMMap({
 
     validMarkers.forEach((m, idx) => {
       const isSelected = activeMarkerId !== null && String(m.id) === String(activeMarkerId);
-      const markerColor = isSelected ? '#ff3b30' : (m.color || routeColor);
+      const markerColor = isSelected ? colors.status.danger.DEFAULT : (m.color || routeColor);
       const icon = createCustomIcon(markerColor, m.orden || idx + 1);
 
       const marker = L.marker([m.lat, m.lng], { icon });
 
       let popupContent = `
         <div style="font-family: inherit; font-size: 12px; line-height: 1.4; padding: 2px;">
-          <strong style="font-size: 13px; color: #2b2b3a; display: block; margin-bottom: 2px;">${m.nombre || m.comercio || 'Punto'}</strong>
-          ${m.direccion ? `<div style="color: #6b6b80; margin-bottom: 4px;">${m.direccion}</div>` : ''}
-          ${m.distancia ? `<div style="color: #3fb8d9; font-weight: 500; font-size: 11px;">📍 ${m.distancia}</div>` : ''}
-          ${m.estado ? `<span style="display: inline-block; background: #ffe2f7; color: #e86bc4; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-top: 4px;">${m.estado}</span>` : ''}
+          <strong style="font-size: 13px; color: ${colors.ink}; display: block; margin-bottom: 2px;">${m.nombre || m.comercio || 'Punto'}</strong>
+          ${m.direccion ? `<div style="color: ${colors.muted.DEFAULT}; margin-bottom: 4px;">${m.direccion}</div>` : ''}
+          ${m.distancia ? `<div style="color: ${colors.secondary.DEFAULT}; font-weight: 500; font-size: 11px;">📍 ${m.distancia}</div>` : ''}
+          ${m.estado ? `<span style="display: inline-block; background: ${colors.primary.light}; color: ${colors.primary.DEFAULT}; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-top: 4px;">${m.estado}</span>` : ''}
         </div>
       `;
 
@@ -144,7 +145,7 @@ export default function OSMMap({
   }, [markers, activeMarkerId, showRoute, routeColor]);
 
   return (
-    <div className={`relative overflow-hidden rounded-[24px] border border-[#ececf2] shadow-sm ${className}`}>
+    <div className={`relative overflow-hidden rounded-[24px] border border-border-subtle shadow-sm ${className}`}>
       <div ref={mapContainerRef} className="h-full w-full z-0" />
     </div>
   );

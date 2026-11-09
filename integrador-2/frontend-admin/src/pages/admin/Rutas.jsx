@@ -1,6 +1,7 @@
 import OSMMap from '../../components/OSMMap';
 import { useRutas } from '../../hooks/useRutas';
 import { getInitials } from '../../utils/formatters';
+import { colors } from '../../theme/colors';
 
 export default function Rutas() {
   const { tab, setTab, agents, selectedAgentId, setSelectedAgentId } = useRutas();
@@ -103,7 +104,7 @@ export default function Rutas() {
               className="h-[480px] w-full"
               markers={mapMarkers}
               activeMarkerId={selectedAgentId}
-              routeColor={tab === 'preventores' ? '#e86bc4' : '#3fb8d9'}
+              routeColor={tab === 'preventores' ? colors.primary.DEFAULT : colors.secondary.DEFAULT}
               onMarkerClick={(m) => setSelectedAgentId(m.id)}
             />
           </div>
