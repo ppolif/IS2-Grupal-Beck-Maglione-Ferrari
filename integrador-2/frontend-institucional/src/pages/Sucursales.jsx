@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import MapPlaceholder from '../components/MapPlaceholder';
+import OSMMap from '../components/OSMMap';
 import Icon from '../components/Icon';
 import Button from '../components/Button';
 import { branchesMock } from '../mocks/branches';
@@ -92,8 +92,14 @@ export default function Sucursales() {
               </Button>
             </div>
 
-            {/* Responsive map placeholder with exact text required */}
-            <MapPlaceholder className="h-[400px] sm:h-[460px] w-full" />
+            {/* Interactive OpenStreetMap */}
+            <OSMMap
+              className="h-[400px] sm:h-[460px] w-full"
+              markers={branchesMock}
+              activeMarkerId={activeBranch.id}
+              routeColor="#e86bc4"
+              onMarkerClick={(branch) => setActiveBranch(branch)}
+            />
 
             <div className="mt-4 p-4 rounded-[14px] bg-[#f8f9fc] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>

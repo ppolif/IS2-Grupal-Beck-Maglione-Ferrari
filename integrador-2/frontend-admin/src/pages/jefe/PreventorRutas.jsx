@@ -1,4 +1,4 @@
-import MapPlaceholder from '../../components/MapPlaceholder';
+import OSMMap from '../../components/OSMMap';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
 import { usePreventorRutas } from '../../hooks/usePreventorRutas';
@@ -90,8 +90,15 @@ export default function PreventorRutas() {
               </span>
             </div>
 
-            {/* Map container with exact text required */}
-            <MapPlaceholder className="h-[360px] w-full" />
+            {/* OpenStreetMap interactive route */}
+            <OSMMap
+              className="h-[360px] w-full"
+              markers={visits}
+              activeMarkerId={selectedVisit.id}
+              showRoute={true}
+              routeColor="#e86bc4"
+              onMarkerClick={(visit) => setSelectedVisit(visit)}
+            />
 
             <div className="mt-4 p-4 rounded-[16px] bg-surface-soft border border-border-subtle">
               <div className="flex justify-between items-start">

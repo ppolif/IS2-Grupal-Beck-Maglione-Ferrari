@@ -5,7 +5,9 @@ export const branchesMock = [
     direccion: "Av. San Martín 1045, Ciudad de Mendoza",
     telefono: "(0261) 420-9800",
     horario: "Lunes a Viernes: 8:00 a 18:30 | Sábados: 8:30 a 13:00",
-    tipo: "Casa Central & Venta Mayorista"
+    tipo: "Casa Central & Venta Mayorista",
+    lat: -32.8895,
+    lng: -68.8458
   },
   {
     id: 2,
@@ -13,7 +15,9 @@ export const branchesMock = [
     direccion: "Av. San Martín Sur 1842, Godoy Cruz",
     telefono: "(0261) 424-5511",
     horario: "Lunes a Viernes: 8:30 a 18:00 | Sábados: 9:00 a 13:00",
-    tipo: "Centro de Distribución y Venta"
+    tipo: "Centro de Distribución y Venta",
+    lat: -32.9238,
+    lng: -68.8423
   },
   {
     id: 3,
@@ -21,7 +25,9 @@ export const branchesMock = [
     direccion: "Bandera de Los Andes 3450, Guaymallén",
     telefono: "(0261) 431-7788",
     horario: "Lunes a Viernes: 8:00 a 18:00 | Sábados: 8:30 a 12:30",
-    tipo: "Depósito Mayorista"
+    tipo: "Depósito Mayorista",
+    lat: -32.8980,
+    lng: -68.8050
   },
   {
     id: 4,
@@ -29,7 +35,8 @@ export const branchesMock = [
     direccion: "Pescara 412, Maipú",
     telefono: "(0261) 497-2200",
     horario: "Lunes a Viernes: 8:30 a 17:30 | Sábados: 9:00 a 13:00",
-    tipo: "Punto de Retiro Mayorista"
+    tipo: "Punto de Retiro Mayorista",
+    lat: -32.9780,
+    lng: -68.7840
   }
 ];
-

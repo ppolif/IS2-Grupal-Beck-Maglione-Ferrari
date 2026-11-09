@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import MapPlaceholder from '../../components/MapPlaceholder';
+import OSMMap from '../../components/OSMMap';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
 import Icon from '../../components/Icon';
@@ -101,8 +101,15 @@ export default function Recorrido() {
         {/* Map and Active Visit Sheet (matching prototype sheet) */}
         <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
           <div className="bg-white rounded-[24px] p-4 sm:p-5 border border-[#ececf2] shadow-sm">
-            {/* Map container with exact text required */}
-            <MapPlaceholder className="h-[340px] sm:h-[420px] w-full" isDelivery={false} />
+            {/* OpenStreetMap interactive route */}
+            <OSMMap
+              className="h-[340px] sm:h-[420px] w-full"
+              markers={visits}
+              activeMarkerId={selectedVisit.id}
+              showRoute={true}
+              routeColor="#e86bc4"
+              onMarkerClick={(visit) => setSelectedVisit(visit)}
+            />
 
             {/* Visit Sheet Card directly beneath the map (or floating overlay on mobile) */}
             <div className="mt-4 bg-[#fafafd] rounded-[20px] p-5 border border-[#ececf2]">

@@ -13,7 +13,9 @@ export const deliveriesMock = [
     estadoPago: "cash", // 'cash' -> 'Cobrar $45.200', 'paid' -> 'Transferencia · pagado'
     estadoEntrega: "En curso",
     items: "3 cajas alfajores · 2 bolsas gomitas",
-    bultos: 5
+    bultos: 5,
+    lat: -32.9238,
+    lng: -68.8423
   },
   {
     id: "DM-2083",
@@ -29,7 +31,9 @@ export const deliveriesMock = [
     estadoPago: "paid",
     estadoEntrega: "Pendiente",
     items: "5 cajas alfajores · 4 displays chupetines",
-    bultos: 9
+    bultos: 9,
+    lat: -32.9180,
+    lng: -68.8465
   },
   {
     id: "DM-2082",
@@ -45,7 +49,9 @@ export const deliveriesMock = [
     estadoPago: "cash",
     estadoEntrega: "Pendiente",
     items: "2 cajas chocolates · 1 display turrones",
-    bultos: 3
+    bultos: 3,
+    lat: -32.9140,
+    lng: -68.8390
   },
   {
     id: "DM-2081",
@@ -61,7 +67,8 @@ export const deliveriesMock = [
     estadoPago: "paid",
     estadoEntrega: "Pendiente",
     items: "4 cajas alfajores · 3 bolsas gomitas",
-    bultos: 7
+    bultos: 7,
+    lat: -32.9265,
+    lng: -68.8495
   }
 ];
-

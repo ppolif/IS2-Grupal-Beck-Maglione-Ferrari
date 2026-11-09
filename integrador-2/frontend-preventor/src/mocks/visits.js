@@ -10,6 +10,8 @@ export const visitsMock = [
     estado: "En camino",
     telefono: "261 422 1099",
     ultimoPedido: "$45.200 (hace 7 días)",
+    lat: -32.9238,
+    lng: -68.8423,
     ticket: {
       pedidoId: "DM-2084",
       monto: "$45.200",
@@ -28,6 +30,8 @@ export const visitsMock = [
     estado: "Pendiente",
     telefono: "261 433 8765",
     ultimoPedido: "$81.450 (hace 3 días)",
+    lat: -32.9180,
+    lng: -68.8465,
     ticket: {
       pedidoId: "DM-2083",
       monto: "$81.450",
@@ -46,6 +50,8 @@ export const visitsMock = [
     estado: "Pendiente",
     telefono: "261 411 3422",
     ultimoPedido: "$32.800 (hace 10 días)",
+    lat: -32.9140,
+    lng: -68.8390,
     ticket: {
       pedidoId: "DM-2082",
       monto: "$32.800",
@@ -64,6 +70,8 @@ export const visitsMock = [
     estado: "Pendiente",
     telefono: "261 455 9012",
     ultimoPedido: "$64.120 (hace 14 días)",
+    lat: -32.9265,
+    lng: -68.8495,
     ticket: {
       pedidoId: "DM-2081",
       monto: "$64.120",
@@ -72,4 +80,3 @@ export const visitsMock = [
     }
   }
 ];
-
