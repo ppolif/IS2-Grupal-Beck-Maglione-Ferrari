@@ -1,11 +1,40 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
 import ProductCard from '../components/ProductCard';
 import { productsMock, candyImg } from '../mocks/products';
+import { apiFetch } from '../services/api';
 
 export default function Home() {
   const previewProducts = productsMock.slice(0, 4);
+  const [cotizacion, setCotizacion] = useState(null);
+
+  useEffect(() => {
+    let cancel = false;
+    apiFetch('/publico/cotizacion-dolar')
+      .then((data) => {
+        if (!cancel && data) {
+          setCotizacion(data);
+        }
+      })
+      .catch((err) => {
+        console.warn('No se pudo obtener la cotización del dólar en tiempo real:', err);
+      });
+    return () => {
+      cancel = true;
+    };
+  }, []);
+
+  const formatHora = (fechaIso) => {
+    if (!fechaIso) return 'Actualizado hoy';
+    try {
+      const d = new Date(fechaIso);
+      return `Actualizado ${d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`;
+    } catch {
+      return 'Actualizado hoy';
+    }
+  };
 
   return (
     <div className="space-y-12">
@@ -49,9 +78,20 @@ export default function Home() {
             />
             {/* Dollar indicator badge */}
             <div className="absolute right-0 bottom-6 bg-white px-5 py-3.5 rounded-[16px] shadow-[0_14px_40px_rgba(56,52,84,0.12)] border border-[#ececf2] flex flex-col">
-              <small className="text-[9px] font-bold tracking-wider text-[#6b6b80] uppercase">Dólar Hoy</small>
-              <strong className="text-[20px] font-bold text-[#2b2b3a] leading-tight">$ 1.185</strong>
-              <span className="text-[8px] text-[#6b6b80]">Actualizado 10:32</span>
+              <small className="text-[9px] font-bold tracking-wider text-[#6b6b80] uppercase">
+                {cotizacion?.moneda ? `Dólar (${cotizacion.moneda})` : 'Dólar Hoy'}
+              </small>
+              <strong className="text-[20px] font-bold text-[#2b2b3a] leading-tight">
+                {cotizacion?.venta != null
+                  ? `$ ${cotizacion.venta.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  : 'Cargando...'}
+              </strong>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${cotizacion?.esValorRespaldo ? 'bg-amber-400' : 'bg-[#7ed6a5]'}`} />
+                <span className="text-[8px] text-[#6b6b80]">
+                  {cotizacion?.esValorRespaldo ? 'Valor de respaldo' : formatHora(cotizacion?.fechaActualizacion)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
