@@ -3,11 +3,29 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { colors } from '../theme/colors';
 
-//componente que renderiza mapas de OpenStreetMap con la librería Leaflet
-// es un puente ente react y leaflet. leaflet trabaja directo con el DOM pero react usa el virtual DOM, por eso necesitamos un componente que haga de puente entre ambos  
+// Función para consultar a la API de OpenStreetMap (OSRM) la ruta real calle por calle
+async function obtenerTrazoCallesOSM(puntos) {
+  if (puntos.length < 2) return null;
 
+  // En OSRM el orden de coordenadas es: longitud,latitud
+  const coordString = puntos.map((p) => `${p.lng},${p.lat}`).join(';');
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
 
-// en vez de usar los iconos por defecto de leaflet, que a veces funcionan mal con vite, creamos un icono con SVG
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+      // Invertir formato GeoJSON [lng, lat] al formato esperado por Leaflet [lat, lng]
+      return data.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
+    }
+  } catch (error) {
+    console.warn('No se pudo obtener la ruta callejera de OpenStreetMap, usando fallback directo:', error);
+  }
+  return null;
+}
+
+// Marcador vectorial personalizado para evitar problemas de assets en Vite
 const createCustomIcon = (color = colors.primary.DEFAULT, number = null) => {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 42" width="32" height="42">
@@ -39,36 +57,30 @@ export default function OSMMap({
   zoom = 13,
   onMarkerClick = null
 }) {
-  const mapContainerRef = useRef(null); // Referencia al <div> donde se dibuja el mapa
-  const mapInstanceRef = useRef(null); // Guarda la instancia de L.map
-  const layerGroupRef = useRef(null); // Grupo donde se agregan o quitan los marcadores
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const layerGroupRef = useRef(null);
   const polylineRef = useRef(null);
 
-  // se inicializa el mapa una sola vez, al mostrar el componente
+  // Inicializa el mapa una sola vez
   useEffect(() => {
-    {/*verifica que ya exosta un contenedor donde leaflet pueda poner el mapa*/}
     if (!mapContainerRef.current) return;
 
-    {/*verifica que ya exista un mapa, si no existe lo crea*/}
     if (!mapInstanceRef.current) {
-      {/*crea el mapa */}
       const map = L.map(mapContainerRef.current, {
         zoomControl: true,
         attributionControl: true
       }).setView(center, zoom);
 
-      {/*aca pone el tile layer de osm encima del mapa*/}
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
-      {/*crea un grupo de capas donde se van a poner los marcadores*/}
       layerGroupRef.current = L.layerGroup().addTo(map);
       mapInstanceRef.current = map;
     }
 
-    {/*cuando se desmonta el componente, elimina el mapa*/}
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
@@ -77,12 +89,11 @@ export default function OSMMap({
     };
   }, []);
 
-  // se ejecuta cada vez que cambian los markers, el activeMarkerId o la ruta
+  // Actualiza los marcadores, ruta callejera y foco activo
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !layerGroupRef.current) return;
 
-    {/*limpia los pines anteriores*/}
     layerGroupRef.current.clearLayers();
     if (polylineRef.current) {
       map.removeLayer(polylineRef.current);
@@ -104,7 +115,6 @@ export default function OSMMap({
 
       const marker = L.marker([m.lat, m.lng], { icon });
 
-      {/*Le asocia un popup HTML formateado con el nombre, dirección y etiquetas*/}
       let popupContent = `
         <div style="font-family: inherit; font-size: 12px; line-height: 1.4; padding: 2px;">
           <strong style="font-size: 13px; color: ${colors.ink}; display: block; margin-bottom: 2px;">${m.nombre || m.comercio || 'Punto'}</strong>
@@ -128,18 +138,27 @@ export default function OSMMap({
       }
     });
 
-    // Draw route line if requested
+    // Trazado de ruta callejera real con OpenStreetMap
     if (showRoute && latLngs.length > 1) {
-      polylineRef.current = L.polyline(latLngs, {
-        color: routeColor,
-        weight: 4,
-        opacity: 0.8,
-        dashArray: '6, 8',
-        smoothFactor: 1
-      }).addTo(map);
+      obtenerTrazoCallesOSM(validMarkers).then((caminoCallejero) => {
+        if (!mapInstanceRef.current) return;
+        if (polylineRef.current) {
+          map.removeLayer(polylineRef.current);
+        }
+
+        // Si OSRM devuelve el trazado vial, dibuja sobre las calles reales; caso contrario usa línea directa
+        const puntosFinales = caminoCallejero || latLngs;
+
+        polylineRef.current = L.polyline(puntosFinales, {
+          color: routeColor,
+          weight: 5,
+          opacity: 0.85,
+          smoothFactor: 1
+        }).addTo(map);
+      });
     }
 
-    // Auto center
+    // Centrado de cámara
     const active = validMarkers.find((m) => String(m.id) === String(activeMarkerId));
     if (active) {
       map.flyTo([active.lat, active.lng], 15, { animate: true, duration: 0.8 });
@@ -150,7 +169,6 @@ export default function OSMMap({
       map.setView(latLngs[0], 14);
     }
 
-    // tras 200ms le avisa a Leaflet que recalcule el tamaño del contenedor, evitando que el mapa quede cortado o con zonas grises en pantallas responsivas
     setTimeout(() => {
       map.invalidateSize();
     }, 200);

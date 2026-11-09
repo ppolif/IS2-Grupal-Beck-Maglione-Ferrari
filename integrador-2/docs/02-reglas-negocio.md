@@ -141,7 +141,11 @@ Cada una de las siguientes operaciones inserta un nuevo registro inmutable en `S
 * Todo empleado se vincula a una entidad `Mayorista` (sede central o sucursal).
 * **Restricción de Distribuidores:** Los empleados con rol `DISTRIBUIDOR` solo pueden estar asignados a la **Sede Central** (`TipoEmpresa.SEDE_CENTRAL`), dado que operan desde el centro de distribución logístico principal. Si se intenta asignar un distribuidor a una sucursal secundaria, el backend rechaza la operación con una excepción de validación (HTTP 400).
 
-El sistema optimiza los recorridos usando el algoritmo del **Vecino Más Cercano (Nearest Neighbor)** basado en la fórmula de **Distancia Haversine** (cálculo de distancia geodésica entre dos puntos de latitud/longitud). *Se utiliza la libreria OpenStreetMap para esto.*
+### 6.0.1. Motor de Enrutamiento y Datos Viales (OpenStreetMap + OSRM)
+El sistema utiliza la infraestructura de **OpenStreetMap** bajo un modelo híbrido industrial:
+* **Backend:** Emplea el motor de enrutamiento oficial de OpenStreetMap (**OSRM - Open Source Routing Machine**) a través del endpoint `/table/v1/driving/` para obtener la matriz de distancias viales reales por asfalto (en metros). Con estas distancias sobre calles y sentidos de circulación, optimiza la secuencia mediante la heurística del **Vecino Más Cercano (Nearest Neighbor)** (`OsrmRoutingStrategy`).
+* **Resiliencia (Fallback):** En caso de cortes de red o timeouts en la API de OSRM, el sistema conmuta automáticamente al cálculo ortodrómico local mediante la **Fórmula de Haversine** (`NearestNeighborStrategy`) garantizando continuidad operativa sin interrupciones.
+* **Frontend:** El mapa interactivo (`Leaflet + OpenStreetMap`) consume la geometría GeoJSON de OSRM (`/route/v1/driving/`) para dibujar el recorrido exacto doblando en cada esquina y avenida del Gran Mendoza.
 
 ### 6.1. Ruta del Preventor
 

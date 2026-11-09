@@ -3,7 +3,29 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { colors } from '../theme/colors';
 
-// Fix generic Leaflet marker icon paths in Vite bundles
+// Función para consultar a la API de OpenStreetMap (OSRM) la ruta real calle por calle
+async function obtenerTrazoCallesOSM(puntos) {
+  if (puntos.length < 2) return null;
+
+  // En OSRM el orden de coordenadas es: longitud,latitud
+  const coordString = puntos.map((p) => `${p.lng},${p.lat}`).join(';');
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+      // Invertir formato GeoJSON [lng, lat] al formato esperado por Leaflet [lat, lng]
+      return data.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
+    }
+  } catch (error) {
+    console.warn('No se pudo obtener la ruta callejera de OpenStreetMap, usando fallback directo:', error);
+  }
+  return null;
+}
+
+// Marcador vectorial personalizado para evitar problemas de assets en Vite
 const createCustomIcon = (color = colors.primary.DEFAULT, number = null) => {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 42" width="32" height="42">
@@ -40,7 +62,7 @@ export default function OSMMap({
   const layerGroupRef = useRef(null);
   const polylineRef = useRef(null);
 
-  // Initialize Map once
+  // Inicializa el mapa una sola vez
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -67,7 +89,7 @@ export default function OSMMap({
     };
   }, []);
 
-  // Update Markers, Route and Active focus
+  // Actualiza los marcadores, ruta callejera y foco activo
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !layerGroupRef.current) return;
@@ -116,18 +138,27 @@ export default function OSMMap({
       }
     });
 
-    // Draw route line if requested
+    // Trazado de ruta callejera real con OpenStreetMap
     if (showRoute && latLngs.length > 1) {
-      polylineRef.current = L.polyline(latLngs, {
-        color: routeColor,
-        weight: 4,
-        opacity: 0.8,
-        dashArray: '6, 8',
-        smoothFactor: 1
-      }).addTo(map);
+      obtenerTrazoCallesOSM(validMarkers).then((caminoCallejero) => {
+        if (!mapInstanceRef.current) return;
+        if (polylineRef.current) {
+          map.removeLayer(polylineRef.current);
+        }
+
+        // Si OSRM devuelve el trazado vial, dibuja sobre las calles reales; caso contrario usa línea directa
+        const puntosFinales = caminoCallejero || latLngs;
+
+        polylineRef.current = L.polyline(puntosFinales, {
+          color: routeColor,
+          weight: 5,
+          opacity: 0.85,
+          smoothFactor: 1
+        }).addTo(map);
+      });
     }
 
-    // Auto center
+    // Centrado de cámara
     const active = validMarkers.find((m) => String(m.id) === String(activeMarkerId));
     if (active) {
       map.flyTo([active.lat, active.lng], 15, { animate: true, duration: 0.8 });
@@ -138,7 +169,6 @@ export default function OSMMap({
       map.setView(latLngs[0], 14);
     }
 
-    // Trigger a resize check to avoid grey tiles in responsive layouts
     setTimeout(() => {
       map.invalidateSize();
     }, 200);

@@ -79,8 +79,8 @@ Las 3 apps frontend consumen **únicamente** la API REST del backend. Ninguna ac
 - Los puntos de venta tienen geolocalización (`latitud`, `longitud` en `Direccion`).
 - **Ruta del preventor** (`RutaPreventor`): puntos de venta ordenados de la forma más óptima posible. Tras tomar un pedido, el sistema propone el siguiente punto más eficiente y muestra el recorrido en un mapa. El preventor también ve todos los puntos del día para identificar su zona.
 - **Ruta del distribuidor** (`RutaDistribuidor`): pedidos a entregar, ordenados. Al marcar un pedido como "Entregado", el sistema propone el siguiente punto en el mapa y envía el correo de aviso.
-- Ordenamiento: algoritmo del **vecino más cercano** con distancia haversine. **No usar servicios de optimización de rutas externos ni resolver el problema del viajante exacto.**
-- Mapas en el frontend con **Leaflet + OpenStreetMap**.
+- **Ordenamiento vial y trazado:** Integración con **OpenStreetMap (OSRM)** para calcular distancias reales por asfalto con fallback local a Haversine.
+- **Mapas en el frontend:** Visores interactivos con **Leaflet + OpenStreetMap**, renderizando el camino real sobre las calles de Mendoza.
 
 ### 5.7 Reportes y descargas (Jefe y administración)
 - Pantalla y **PDF**: clientes minoristas, pedidos realizados, estados de envío, montos facturados.

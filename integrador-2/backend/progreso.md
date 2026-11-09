@@ -82,3 +82,28 @@ Se desarrolló la arquitectura y lógica transaccional de rutas según `01-domin
 - **Resultados de las Pruebas:**
   - Compilación exitosa en Maven (`BUILD SUCCESS`).
   - **117 tests automatizados ejecutados** sin fallos (`Failures: 0, Errors: 0, Skipped: 0`).
+
+---
+
+## 4. Integración de OpenStreetMap y Enrutamiento Callejero Real (OSRM)
+
+Se completó la integración integral de **OpenStreetMap** en el frontend y backend bajo el modelo híbrido estándar de la industria:
+
+### 4.1 Frontend (React 19 + Leaflet)
+- **Componente Base Reutilizable `OSMMap`:**
+  - Creado en los tres frontends (`frontend-preventor`, `frontend-institucional`, `frontend-admin`).
+  - Renderiza capas de OpenStreetMap mediante Leaflet con marcadores vectoriales personalizados (SVG con numeración de paradas y colores corporativos) y popups informativos.
+  - Soporte de centrado suave (`flyTo`), ajuste de límites (`fitBounds`) y redimensionamiento responsivo (`invalidateSize`).
+  - **Trazado Callejero Real:** Integración asíncrona con el servicio de rutas de OpenStreetMap OSRM (`/route/v1/driving/`). Leaflet dibuja la polilínea continua siguiendo el trazado exacto de las calles y avenidas de Mendoza en lugar de líneas rectas teóricas.
+  - **Paleta de Colores Centralizada:** Reemplazo de colores hexadecimales en duro por tokens semánticos corporativos provenientes de `src/theme/colors.js`.
+- **Enriquecimiento de Mocks:** Agregadas coordenadas geodésicas en Mendoza (WGS84) a sucursales, visitas comerciales, repartos y agentes en calle.
+- **Reemplazo de Placeholders:** Sustitución de `MapPlaceholder` en las vistas de Sucursales (Institucional), Recorrido Preventor/Distribuidor (Móvil) y Rutas/PreventorRutas (Admin).
+
+### 4.2 Backend (Spring Boot)
+- **Estrategia de Enrutamiento Vial (`OsrmRoutingStrategy`):**
+  - Implementa `RutaOptimizerStrategy` con anotación `@Primary`.
+  - Consulta la matriz de distancias por calle en metros a OpenStreetMap OSRM (`/table/v1/driving/`) para calcular la secuencia óptima de paradas por asfalto.
+  - **Mecanismo de Resiliencia:** Fallback automático a la fórmula de Haversine (`NearestNeighborStrategy`) ante caídas de red o demoras en la API externa.
+  - Configuración externa de URL de servicio en `application.properties` (`app.osm.osrm-url`).
+  - Preservación íntegra de los DTOs y del contrato OpenAPI (`04-openapi.yaml`) sin sobrecargar el payload de red.
+- **Compilación:** Verificada con `./mvnw test-compile` y `npm run build` en los 3 frontends (100% exitosas).
