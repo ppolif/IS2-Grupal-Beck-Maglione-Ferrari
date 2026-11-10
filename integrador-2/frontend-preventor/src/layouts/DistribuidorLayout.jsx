@@ -1,49 +1,41 @@
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import Logo from '../components/Logo';
 import Icon from '../components/Icon';
+import { useAuth } from '../context/AuthContext';
 import { usuarioMock } from '../mocks/session';
 
-export default function DistribuidorLayout({ onSwitchRole, onLogout }) {
+export default function DistribuidorLayout({ onLogout }) {
+  const { userData } = useAuth();
+  const usuarioActivo = userData || usuarioMock;
+
   const navItems = [
-    { to: '/pedidos', label: 'Pedidos', icon: 'box' },
-    { to: '/recorrido', label: 'Recorrido', icon: 'route' },
-    { to: '/perfil', label: 'Perfil', icon: 'user' },
+    { to: '/recorrido', label: 'Ruta de Entrega', icon: 'truck' },
+    { to: '/pedidos', label: 'Cargas y Remitos', icon: 'box' },
+    { to: '/perfil', label: 'Mi Cuenta', icon: 'user' },
   ];
 
   return (
     <div className="min-h-screen bg-[#edf0f8] flex flex-col">
-      {/* Top Bar */}
+      {/* Top Bar matching phone-top and responsive desktop navbar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-[#ececf2]">
         <div className="max-w-[1280px] mx-auto h-[66px] px-4 sm:px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Logo />
-            <span className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-wider text-[#3fb8d9] bg-[#d9f7ff] px-2.5 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#247f99] bg-[#d9f7ff] px-2.5 py-0.5 rounded-full">
               Distribuidor
             </span>
-
-            {/* Selector rápido de rol para demo */}
-            {onSwitchRole && (
-              <button
-                type="button"
-                onClick={() => onSwitchRole('preventor')}
-                className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-[#e86bc4] bg-[#ffe2f7] border border-[#ffcef3] px-2.5 py-1 rounded-full hover:bg-[#ffd5f4] transition-colors cursor-pointer"
-                title="Cambiar a vista de Preventor"
-              >
-                <span>💼 Ir a Preventas</span>
-              </button>
-            )}
           </div>
 
           {/* Desktop/Tablet Navigation Links */}
-          <nav className="hidden md:flex items-center gap-2">
+          <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 px-4 py-2 rounded-[12px] text-[12px] font-semibold transition-all ${
+                  `flex items-center gap-1.5 px-3 py-2 rounded-[12px] text-[12px] font-semibold transition-all ${
                     isActive
-                      ? 'bg-[#d9f7ff] text-[#247f99] shadow-sm'
+                      ? 'bg-[#eefaff] text-[#247f99] shadow-sm'
                       : 'text-[#6b6b80] hover:text-[#2b2b3a] hover:bg-slate-50'
                   }`
                 }
@@ -62,14 +54,14 @@ export default function DistribuidorLayout({ onSwitchRole, onLogout }) {
               title="Mi cuenta"
             >
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#ffcef3] to-[#a1eafb] text-[#2b2b3a] font-bold text-[12px] flex items-center justify-center shadow-sm">
-                {usuarioMock.avatar}
+                {usuarioActivo.avatar}
               </div>
               <div className="hidden lg:flex flex-col text-left">
                 <span className="text-[12px] font-bold text-[#2b2b3a] leading-tight">
-                  {usuarioMock.nombre}
+                  {usuarioActivo.nombre}
                 </span>
                 <span className="text-[10px] text-[#6b6b80]">
-                  {usuarioMock.unidad}
+                  {usuarioActivo.unidad}
                 </span>
               </div>
             </Link>
@@ -100,15 +92,17 @@ export default function DistribuidorLayout({ onSwitchRole, onLogout }) {
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center gap-1 flex-1 py-1 px-1 rounded-[12px] text-[10px] font-semibold transition-colors ${
+              `flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-semibold transition-all ${
                 isActive
-                  ? 'text-[#247f99] bg-[#d9f7ff]'
-                  : 'text-[#9b9aaa] hover:text-[#2b2b3a]'
+                  ? 'text-[#247f99]'
+                  : 'text-[#aaa9ba] hover:text-[#2b2b3a]'
               }`
             }
           >
-            <Icon name={item.icon} className="w-[19px] h-[19px]" />
-            <span>{item.label}</span>
+            <div className="p-1 rounded-full mb-0.5">
+              <Icon name={item.icon} className="w-5 h-5" />
+            </div>
+            <span className="truncate max-w-[64px] text-center tracking-tight">{item.label}</span>
           </NavLink>
         ))}
       </nav>

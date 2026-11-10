@@ -1,9 +1,11 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { usuarioMock } from '../../mocks/session';
 
 export default function Perfil() {
-  const navigate = useNavigate();
-  const isPreventor = usuarioMock.rol === 'preventor';
+  const { userData, logout } = useAuth();
+  const usuarioActivo = userData || usuarioMock;
+  const isPreventor = usuarioActivo.rol === 'preventor';
 
   return (
     <div className="max-w-md mx-auto p-4 sm:p-6 space-y-6">
@@ -12,16 +14,19 @@ export default function Perfil() {
       </span>
       <h1 className="text-2xl font-bold text-[#2b2b3a]">Perfil de Operador</h1>
 
-      {/* Profile Card from prototype */}
+      {/* Profile Card */}
       <div className="text-center bg-white p-6 sm:p-8 rounded-[20px] border border-[#ececf2] shadow-sm">
         <div className="w-[76px] h-[76px] rounded-full bg-gradient-to-br from-[#ffcef3] to-[#a1eafb] flex items-center justify-center mx-auto font-bold text-xl text-[#2b2b3a] shadow-md">
-          {usuarioMock.avatar}
+          {usuarioActivo.avatar}
         </div>
         <h2 className="text-xl font-bold text-[#2b2b3a] mt-3 mb-1">
-          {usuarioMock.nombre}
+          {usuarioActivo.nombre}
         </h2>
         <p className="text-[12px] text-[#6b6b80] font-medium">
-          {isPreventor ? usuarioMock.zona : usuarioMock.unidad}
+          {isPreventor ? usuarioActivo.zona : usuarioActivo.unidad}
+        </p>
+        <p className="text-[11px] text-[#aaa9ba] mt-0.5">
+          {usuarioActivo.email}
         </p>
 
         {/* Stat pair */}
@@ -39,7 +44,7 @@ export default function Perfil() {
         </div>
       </div>
 
-      {/* Options from prototype */}
+      {/* Options */}
       <div className="space-y-2">
         <Link
           to="/cambiar-password"
@@ -50,7 +55,7 @@ export default function Perfil() {
         </Link>
 
         <button
-          onClick={() => alert('Sesión cerrada (Simulado)')}
+          onClick={logout}
           className="w-full bg-white border border-[#ececf2] p-4 rounded-[14px] text-[13px] font-semibold text-[#c95569] flex items-center justify-between hover:bg-red-50/50 transition-colors cursor-pointer"
         >
           <span>Cerrar sesión</span>
@@ -59,13 +64,11 @@ export default function Perfil() {
       </div>
 
       <div className="p-4 bg-[#f8f9fc] rounded-[14px] border border-[#ececf2] text-[11px] text-[#6b6b80]">
-        <strong className="text-[#2b2b3a] block mb-0.5">Rol activo en sesión:</strong>
+        <strong className="text-[#2b2b3a] block mb-0.5">Rol en sesión:</strong>
         <span className="font-mono bg-white px-2 py-0.5 rounded border border-[#ececf2]">
-          {usuarioMock.rol}
-        </span>{' '}
-        (Podés cambiarlo en <code className="text-[#e86bc4]">src/mocks/session.js</code>)
+          {usuarioActivo.rolOriginal || usuarioActivo.rol}
+        </span>
       </div>
     </div>
   );
 }
-

@@ -1,38 +1,35 @@
 import { useState } from 'react';
-import { usuarioMock } from '../mocks/session';
 import PreventorRoutes from './PreventorRoutes';
 import DistribuidorRoutes from './DistribuidorRoutes';
 import Login from '../pages/compartidas/Login';
+import { useAuth } from '../context/AuthContext';
 
 export default function RoleRouter() {
-  // Manejo de estado de rol local interactivo para demos
-  const [activeRole, setActiveRole] = useState(usuarioMock.rol);
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const { isAuthenticated, userData, logout, cargandoSesion } = useAuth();
 
-  if (!isAuthenticated) {
+  if (cargandoSesion) {
     return (
-      <Login
-        onLoginSuccess={(role) => {
-          setActiveRole(role);
-          setIsAuthenticated(true);
-        }}
-      />
+      <div className="min-h-screen bg-[#edf0f8] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-[#e86bc4] border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-[12px] font-semibold text-[#6b6b80]">Cargando sesión...</span>
+        </div>
+      </div>
     );
   }
 
-  switch (activeRole) {
+  if (!isAuthenticated) {
+    return <Login />;
+  }
+
+  const role = userData?.rol || 'preventor';
+
+  switch (role) {
     case 'preventor':
-      return <PreventorRoutes onSwitchRole={(r) => setActiveRole(r)} onLogout={() => setIsAuthenticated(false)} />;
+      return <PreventorRoutes onLogout={logout} />;
     case 'distribuidor':
-      return <DistribuidorRoutes onSwitchRole={(r) => setActiveRole(r)} onLogout={() => setIsAuthenticated(false)} />;
+      return <DistribuidorRoutes onLogout={logout} />;
     default:
-      return (
-        <Login
-          onLoginSuccess={(role) => {
-            setActiveRole(role);
-            setIsAuthenticated(true);
-          }}
-        />
-      );
+      return <Login />;
   }
 }

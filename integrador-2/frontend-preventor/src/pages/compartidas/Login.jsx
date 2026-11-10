@@ -2,33 +2,29 @@ import { useState } from 'react';
 import Button from '../../components/Button';
 import Icon from '../../components/Icon';
 import Logo from '../../components/Logo';
+import { useAuth } from '../../context/AuthContext';
 
-export default function Login({ onLoginSuccess }) {
-  const [email, setEmail] = useState('');
+export default function Login() {
+  const { login } = useAuth();
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      // Por defecto entra como preventor si no se especifica
-      if (onLoginSuccess) {
-        onLoginSuccess('preventor');
-      }
-    }, 600);
-  };
+    setError(null);
 
-  const handleQuickLogin = (role) => {
-    setIsLoading(true);
-    setTimeout(() => {
+    try {
+      await login(username, password);
+    } catch (err) {
+      console.error('Error al iniciar sesión:', err);
+      setError(err.message || 'Credenciales inválidas. Por favor verificá tus datos.');
+    } finally {
       setIsLoading(false);
-      if (onLoginSuccess) {
-        onLoginSuccess(role);
-      }
-    }, 400);
+    }
   };
 
   return (
@@ -50,20 +46,27 @@ export default function Login({ onLoginSuccess }) {
           </p>
         </div>
 
+        {error && (
+          <div className="p-3 bg-[#ffe8ed] border border-[#ffccd5] rounded-[12px] text-[12px] text-[#e5484d] flex items-start gap-2">
+            <Icon name="info" className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
-              Correo Electrónico
+              Usuario o Correo Electrónico
             </label>
             <div className="relative">
               <Icon name="user" className="w-4 h-4 text-[#aaa9ba] absolute left-3.5 top-3" />
               <input
-                type="email"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="operaciones@dulcemayor.com"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="operaciones o correo@dulcemayor.com"
                 className="w-full border border-[#ececf2] rounded-[12px] pl-10 pr-3 py-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
               />
             </div>
@@ -85,7 +88,7 @@ export default function Login({ onLoginSuccess }) {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="text-[11px] font-semibold text-[#aaa9ba] hover:text-[#2b2b3a] absolute right-3 top-3"
+                className="text-[11px] font-semibold text-[#aaa9ba] hover:text-[#2b2b3a] absolute right-3 top-3 cursor-pointer"
               >
                 {showPassword ? 'Ocultar' : 'Ver'}
               </button>
@@ -100,29 +103,6 @@ export default function Login({ onLoginSuccess }) {
             {isLoading ? 'Ingresando...' : 'Iniciar Sesión'}
           </Button>
         </form>
-
-        {/* Acceso Rápido Demo (Pills de prueba) */}
-        <div className="pt-4 border-t border-[#f0f0f4] space-y-2">
-          <span className="text-[10px] text-[#aaa9ba] uppercase font-bold text-center block">
-            Acceso Rápido Demo (Sin backend)
-          </span>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('preventor')}
-              className="p-2.5 bg-[#fef5fc] hover:bg-[#ffeefb] text-[#e86bc4] border border-[#ffcef3] rounded-[12px] text-[11px] font-bold text-center transition-all cursor-pointer"
-            >
-              💼 Modo Preventor
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('distribuidor')}
-              className="p-2.5 bg-[#f0faff] hover:bg-[#e6f6ff] text-[#247f99] border border-[#a1eafb] rounded-[12px] text-[11px] font-bold text-center transition-all cursor-pointer"
-            >
-              🚚 Modo Repartidor
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -9,10 +9,10 @@ import Comercios from '../pages/preventor/Comercios';
 import Perfil from '../pages/compartidas/Perfil';
 import CambiarPassword from '../pages/compartidas/CambiarPassword';
 
-export default function PreventorRoutes({ onSwitchRole, onLogout }) {
+export default function PreventorRoutes({ onLogout }) {
   return (
     <Routes>
-      <Route element={<PreventorLayout onSwitchRole={onSwitchRole} onLogout={onLogout} />}>
+      <Route element={<PreventorLayout onLogout={onLogout} />}>
         <Route path="/" element={<Navigate to="/recorrido" replace />} />
         <Route path="/recorrido" element={<Recorrido />} />
         <Route path="/pedidos" element={<Pedidos />} />
