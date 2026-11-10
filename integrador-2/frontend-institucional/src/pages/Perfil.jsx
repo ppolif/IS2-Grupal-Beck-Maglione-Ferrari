@@ -6,6 +6,7 @@ import PasswordInput from '../components/PasswordInput';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
+import { pedidoClienteService } from '../services/pedidoClienteService';
 
 export default function Perfil() {
   const [searchParams] = useSearchParams();
@@ -148,53 +149,25 @@ export default function Perfil() {
     }
   };
 
-  // Mock de pedidos para consulta
-  const orders = [
-    {
-      id: 'DM-2084',
-      fecha: '14 Jun 2025 · 10:15 hs',
-      total: '$45.200',
-      subtotal: '$50.100',
-      descuento: '$4.900',
-      estado: 'En camino',
-      facturaNum: 'FC-A-0001-00002084',
-      medioPago: 'Billetera Virtual / QR',
-      direccionEntrega: 'Av. San Martín 1842, Godoy Cruz, Mendoza',
-      items: [
-        { nombre: 'Alfajor triple chocolate', cant: 2, precioUnit: '$18.900', subtotal: '$37.800' },
-        { nombre: 'Gomitas frutales', cant: 1, precioUnit: '$6.450', subtotal: '$6.450' },
-        { nombre: 'Chupetines surtidos', cant: 1, precioUnit: '$5.850', subtotal: '$5.850' },
-      ],
-      trazabilidad: [
-        { estado: 'Pedido Confirmado', fecha: '14 Jun - 09:30 hs', done: true },
-        { estado: 'Facturado en Depósito', fecha: '14 Jun - 10:15 hs', done: true },
-        { estado: 'En Reparto con Distribuidor', fecha: '14 Jun - 11:00 hs', done: true },
-        { estado: 'Entregado en Comercio', fecha: 'Pendiente', done: false },
-      ],
-    },
-    {
-      id: 'DM-1950',
-      fecha: '28 May 2025 · 14:20 hs',
-      total: '$82.400',
-      subtotal: '$89.000',
-      descuento: '$6.600',
-      estado: 'Entregado',
-      facturaNum: 'FC-A-0001-00001950',
-      medioPago: 'Transferencia Bancaria',
-      direccionEntrega: 'Av. San Martín 1842, Godoy Cruz, Mendoza',
-      items: [
-        { nombre: 'Alfajor triple chocolate', cant: 3, precioUnit: '$18.900', subtotal: '$56.700' },
-        { nombre: 'Chocolate con maní', cant: 2, precioUnit: '$15.600', subtotal: '$31.200' },
-        { nombre: 'Gomitas frutales', cant: 1, precioUnit: '$1.100', subtotal: '$1.100' },
-      ],
-      trazabilidad: [
-        { estado: 'Pedido Confirmado', fecha: '28 May - 11:00 hs', done: true },
-        { estado: 'Facturado', fecha: '28 May - 12:30 hs', done: true },
-        { estado: 'En Reparto', fecha: '28 May - 14:00 hs', done: true },
-        { estado: 'Entregado en Comercio', fecha: '28 May - 16:30 hs', done: true },
-      ],
-    },
-  ];
+  // Pedidos del cliente minorista cargados reactivamente (con persistencia)
+  const [orders, setOrders] = useState(() => pedidoClienteService.obtenerPedidos());
+
+  useEffect(() => {
+    const refrescarPedidos = () => {
+      setOrders(pedidoClienteService.obtenerPedidos());
+    };
+    refrescarPedidos();
+
+    // Intentar sincronizar con backend si hay sesión activa
+    pedidoClienteService.sincronizarConBackend().then((lista) => {
+      if (lista && lista.length > 0) {
+        setOrders(pedidoClienteService.obtenerPedidos());
+      }
+    });
+
+    window.addEventListener('dm-pedido-actualizado', refrescarPedidos);
+    return () => window.removeEventListener('dm-pedido-actualizado', refrescarPedidos);
+  }, []);
 
   const handleOpenDetail = (order) => {
     setSelectedOrder(order);
@@ -207,7 +180,11 @@ export default function Perfil() {
   };
 
   const handleDownloadPdf = (orderId, facturaNum) => {
-    showToast(`Descargando factura electrónica PDF (${facturaNum})...`);
+    if (facturaNum) {
+      showToast(`Descargando factura electrónica PDF (${facturaNum})...`);
+    } else {
+      showToast(`El pedido #${orderId} se encuentra pendiente de acreditación para emitir factura.`);
+    }
   };
 
   const handleCopyAlias = () => {
@@ -337,8 +314,12 @@ export default function Perfil() {
                     <span className="text-[11px] text-[#6b6b80]">· {p.fecha}</span>
                     <span
                       className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
-                        p.estado === 'En camino'
+                        p.estado === 'En camino' || p.estado === 'Listo para reparto'
                           ? 'bg-[#d9f7ff] text-[#247f99]'
+                          : p.estado === 'Pendiente de Pago'
+                          ? 'bg-[#faf0d9] text-[#b88014]'
+                          : p.estado === 'Pago Rechazado'
+                          ? 'bg-[#fee2e2] text-[#b91c1c]'
                           : 'bg-[#dff8e9] text-[#39855b]'
                       }`}
                     >

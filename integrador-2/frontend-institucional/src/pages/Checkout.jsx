@@ -5,6 +5,7 @@ import Icon from '../components/Icon';
 import { cartMock } from '../mocks/products';
 import { puntosDeVentaMock, datosBancariosMock } from '../mocks/checkoutMock';
 import { pagoService } from '../services/pagoService';
+import { pedidoClienteService } from '../services/pedidoClienteService';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -35,6 +36,12 @@ export default function Checkout() {
   const [timeLeft, setTimeLeft] = useState(900); // 15 minutos en segundos
   const [simulatedOutcome, setSimulatedOutcome] = useState('exito'); // 'exito' | 'fallo' | 'pendiente'
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Totales calculados y punto de venta seleccionado (declarados antes de los hooks dependientes para evitar TDZ)
+  const subtotal = cartMock.reduce((acc, it) => acc + (it.producto?.precioNum || 0) * it.cantidad, 0);
+  const descuento = Math.round(subtotal * 0.10); // Promo DULCE10 simulada
+  const total = Math.max(0, subtotal - descuento);
+  const selectedPdv = puntosDeVenta.find((p) => p.id === selectedPdvId) || puntosDeVenta[0];
 
   // Cargar datos bancarios oficiales del backend
   useEffect(() => {
@@ -88,18 +95,45 @@ export default function Checkout() {
       try {
         const estado = await pagoService.consultarEstadoQr(1);
         if (estado && estado.estadoPago === 'APROBADO') {
-          navigate('/pago/exito', {
-            state: {
-              orderId: 'DM-1',
-              comercio: selectedPdv?.nombre,
-              direccion: `${selectedPdv?.direccion}, ${selectedPdv?.localidad}`,
-              total,
-              subtotal,
-              descuento,
-              metodoPago: 'Mercado Pago QR (Aprobado automáticamente)',
-              fecha: new Date().toLocaleString('es-AR')
-            }
-          });
+          const rawNum = Math.floor(3000 + Math.random() * 900);
+          const generatedOrderId = `DM-${rawNum}`;
+          const nowStr = new Date().toLocaleDateString('es-AR', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }).replace(',', ' ·');
+
+          const orderRecord = {
+            id: generatedOrderId,
+            orderId: generatedOrderId,
+            fecha: nowStr,
+            total: `$${total.toLocaleString('es-AR')}`,
+            totalNum: total,
+            subtotal: `$${subtotal.toLocaleString('es-AR')}`,
+            descuento: `$${descuento.toLocaleString('es-AR')}`,
+            estado: 'Facturado',
+            facturaNum: `FC-B-0001-${String(rawNum).padStart(8, '0')}`,
+            medioPago: 'Billetera Virtual / QR',
+            direccionEntrega: `${selectedPdv?.direccion || ''}, ${selectedPdv?.localidad || ''}`,
+            comercio: selectedPdv?.nombre || 'Comercio Minorista',
+            items: cartMock.map((it) => ({
+              nombre: it.producto?.nombre || 'Golosinas Varias',
+              cant: it.cantidad,
+              precioUnit: it.producto?.precio || `$${(it.producto?.precioNum || 0).toLocaleString('es-AR')}`,
+              subtotal: it.subtotal || `$${((it.producto?.precioNum || 0) * it.cantidad).toLocaleString('es-AR')}`,
+            })),
+            trazabilidad: [
+              { estado: 'Pedido Confirmado', fecha: nowStr, done: true },
+              { estado: 'Facturado en Depósito', fecha: nowStr, done: true },
+              { estado: 'En Reparto con Distribuidor', fecha: 'Pendiente', done: false },
+              { estado: 'Entregado en Comercio', fecha: 'Pendiente', done: false },
+            ]
+          };
+
+          pedidoClienteService.guardarPedido(orderRecord);
+          navigate('/pago/exito', { state: orderRecord });
         }
       } catch {
         // Silencioso si aún no está aprobado o en polling
@@ -133,40 +167,83 @@ export default function Checkout() {
     }
   };
 
-  // Totales calculados
-  const subtotal = cartMock.reduce((acc, it) => acc + it.producto.precioNum * it.cantidad, 0);
-  const descuento = Math.round(subtotal * 0.10); // Promo DULCE10 simulada
-  const total = Math.max(0, subtotal - descuento);
-  const selectedPdv = puntosDeVenta.find((p) => p.id === selectedPdvId) || puntosDeVenta[0];
-
   const handleProcessOrder = (e) => {
     e.preventDefault();
     setIsProcessing(true);
 
     setTimeout(() => {
       setIsProcessing(false);
+      const rawNum = Math.floor(3000 + Math.random() * 900);
+      const generatedOrderId = `DM-${rawNum}`;
+      const nowStr = new Date().toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).replace(',', ' ·');
+
+      let estadoFinal = 'Facturado';
+      let facturaGenerada = `FC-B-0001-${String(rawNum).padStart(8, '0')}`;
+      let medioPagoLabel = 'Billetera Virtual / QR';
+
+      if (paymentMethod === 'mercadopago') {
+        medioPagoLabel = 'Billetera Virtual (Mercado Pago QR)';
+        if (simulatedOutcome === 'fallo') {
+          estadoFinal = 'Pago Rechazado';
+          facturaGenerada = null;
+        } else if (simulatedOutcome === 'pendiente') {
+          estadoFinal = 'Pendiente de Pago';
+          facturaGenerada = null;
+        } else {
+          estadoFinal = 'Facturado';
+        }
+      } else if (paymentMethod === 'transferencia') {
+        medioPagoLabel = 'Transferencia Bancaria';
+        estadoFinal = 'Pendiente de Pago';
+        facturaGenerada = null;
+      } else {
+        medioPagoLabel = 'Efectivo contra entrega';
+        estadoFinal = 'En camino';
+        facturaGenerada = null;
+      }
+
       const orderPayload = {
-        orderId: `DM-${Math.floor(3000 + Math.random() * 900)}`,
-        comercio: selectedPdv?.nombre,
-        direccion: `${selectedPdv?.direccion}, ${selectedPdv?.localidad}`,
-        total,
-        subtotal,
-        descuento,
-        metodoPago:
-          paymentMethod === 'mercadopago'
-            ? 'Billetera Virtual (Mercado Pago QR)'
-            : paymentMethod === 'transferencia'
-            ? 'Transferencia Bancaria'
-            : 'Efectivo contra entrega',
+        id: generatedOrderId,
+        orderId: generatedOrderId,
+        comercio: selectedPdv?.nombre || 'Comercio Minorista',
+        direccion: `${selectedPdv?.direccion || ''}, ${selectedPdv?.localidad || ''}`,
+        direccionEntrega: `${selectedPdv?.direccion || ''}, ${selectedPdv?.localidad || ''}`,
+        total: `$${total.toLocaleString('es-AR')}`,
+        totalNum: total,
+        subtotal: `$${subtotal.toLocaleString('es-AR')}`,
+        descuento: `$${descuento.toLocaleString('es-AR')}`,
+        metodoPago: medioPagoLabel,
+        medioPago: medioPagoLabel,
+        estado: estadoFinal,
+        facturaNum: facturaGenerada,
         comprobante: transferenciaData.numeroComprobante || null,
-        fecha: new Date().toLocaleDateString('es-AR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        })
+        fecha: nowStr,
+        items: cartMock.map((it) => ({
+          nombre: it.producto?.nombre || 'Golosinas Varias',
+          cant: it.cantidad,
+          precioUnit: it.producto?.precio || `$${(it.producto?.precioNum || 0).toLocaleString('es-AR')}`,
+          subtotal: it.subtotal || `$${((it.producto?.precioNum || 0) * it.cantidad).toLocaleString('es-AR')}`,
+        })),
+        trazabilidad: [
+          { estado: 'Pedido Confirmado', fecha: nowStr, done: true },
+          {
+            estado: estadoFinal === 'Facturado' ? 'Facturado en Depósito' : 'Validación de Pago en Espera',
+            fecha: estadoFinal === 'Facturado' ? nowStr : 'En revisión administrativa',
+            done: estadoFinal === 'Facturado'
+          },
+          { estado: 'En Reparto con Distribuidor', fecha: 'Pendiente', done: false },
+          { estado: 'Entregado en Comercio', fecha: 'Pendiente', done: false },
+        ]
       };
+
+      // Registrar y persistir pedido en el sistema para el perfil del cliente
+      pedidoClienteService.guardarPedido(orderPayload);
 
       if (paymentMethod === 'mercadopago') {
         if (simulatedOutcome === 'fallo') {
