@@ -1,76 +1,77 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { apiFetch } from '../services/api';
 
 export function usePreventorRutas() {
-  const visits = [
-    {
-      id: 1,
-      comercio: 'Kiosco El Sol',
-      responsable: 'Roberto Gómez',
-      direccion: 'Av. San Martín 1842, Godoy Cruz',
-      distancia: '8 min · 2,4 km',
-      preventor: 'Lucía Martínez',
-      estado: 'Visitado',
-      ultimoPedido: '$45.200 (hace 1 hora)',
-      hora: '10:15',
-      orden: 1,
-      lat: -32.9238,
-      lng: -68.8423
-    },
-    {
-      id: 2,
-      comercio: 'Almacén Don Pepe',
-      responsable: 'José Fernández',
-      direccion: 'Belgrano 450, Godoy Cruz',
-      distancia: '12 min · 3,2 km',
-      preventor: 'Lucía Martínez',
-      estado: 'En camino',
-      ultimoPedido: '$81.450 (hace 3 horas)',
-      hora: '11:00',
-      orden: 2,
-      lat: -32.9180,
-      lng: -68.8465
-    },
-    {
-      id: 3,
-      comercio: 'Drugstore Mitre',
-      responsable: 'Carlos Mitre',
-      direccion: 'Mitre 920, Godoy Cruz',
-      distancia: '18 min · 4,8 km',
-      preventor: 'Lucía Martínez',
-      estado: 'Pendiente',
-      ultimoPedido: '$32.800 (hace 1 día)',
-      hora: '11:45',
-      orden: 3,
-      lat: -32.9140,
-      lng: -68.8390
-    },
-    {
-      id: 4,
-      comercio: 'Kiosco Central',
-      responsable: 'Mariana Paz',
-      direccion: 'Rivadavia 110, Godoy Cruz',
-      distancia: '25 min · 6,1 km',
-      preventor: 'Lucía Martínez',
-      estado: 'Pendiente',
-      ultimoPedido: '$64.120 (hace 2 días)',
-      hora: '12:30',
-      orden: 4,
-      lat: -32.9265,
-      lng: -68.8495
+  const [visits, setVisits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedVisit, setSelectedVisit] = useState(null);
+  const [preventorNombre, setPreventorNombre] = useState('Sin ruta activa');
+  const [zonaNombre, setZonaNombre] = useState('Gran Mendoza');
+
+  const cargarVisitas = useCallback(async () => {
+    setLoading(true);
+    try {
+      const rutasRes = await apiFetch('/rutas-preventor', { method: 'GET' }).catch(() => []);
+      const lista = Array.isArray(rutasRes) ? rutasRes : rutasRes.elementos || rutasRes.content || [];
+
+      if (lista.length > 0) {
+        const ruta = lista[0];
+        const resp = ruta.responsable
+          ? `${ruta.responsable.nombre || ''} ${ruta.responsable.apellido || ''}`.trim()
+          : 'Preventor';
+        setPreventorNombre(resp);
+
+        const paradas = Array.isArray(ruta.paradas) ? ruta.paradas : [];
+        const mapped = paradas.map((p, idx) => {
+          const pdv = p.puntoDeVenta || {};
+          const dir = pdv.direccion || {};
+          return {
+            id: pdv.id || idx + 1,
+            comercio: pdv.nombreComercio || `Parada #${p.orden || idx + 1}`,
+            responsable: pdv.minorista
+              ? `${pdv.minorista.nombre || ''} ${pdv.minorista.apellido || ''}`.trim()
+              : '-',
+            direccion: `${dir.calle || ''} ${dir.numeracion || ''}, ${dir.localidadNombre || dir.departamentoNombre || 'Mendoza'}`.trim(),
+            preventor: resp,
+            estado: p.completada ? 'Visitado' : ruta.paradaActual?.id === pdv.id ? 'En camino' : 'Pendiente',
+            hora: `Parada #${p.orden || idx + 1}`,
+            orden: p.orden || idx + 1,
+            lat: Number(dir.latitud) || -32.8895,
+            lng: Number(dir.longitud) || -68.8458,
+          };
+        });
+
+        setVisits(mapped);
+        if (mapped.length > 0) {
+          setSelectedVisit(mapped[0]);
+          const firstDir = paradas[0]?.puntoDeVenta?.direccion;
+          if (firstDir?.departamentoNombre) {
+            setZonaNombre(firstDir.departamentoNombre);
+          }
+        }
+      } else {
+        setVisits([]);
+        setSelectedVisit(null);
+      }
+    } catch (err) {
+      console.error('Error al cargar paradas de preventor:', err);
+      setVisits([]);
+      setSelectedVisit(null);
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, []);
 
-  {/* estado de seleccion para centrado del mapa*/}
-  const [selectedVisit, setSelectedVisit] = useState(visits[0]);
-
-  const handleOpenHistorial = () => {
-    alert('Abriendo historial comercial del cliente... (Simulado)');
-  };
+  useEffect(() => {
+    cargarVisitas();
+  }, [cargarVisitas]);
 
   return {
+    loading,
+    preventorNombre,
+    zonaNombre,
     selectedVisit,
     setSelectedVisit,
     visits,
-    handleOpenHistorial
   };
 }

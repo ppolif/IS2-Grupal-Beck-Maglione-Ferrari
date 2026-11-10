@@ -80,6 +80,21 @@ public class DireccionService extends BaseService<Direccion, DireccionRequest, D
         entidad.setEliminado(false);
         return direccionRepository.save(entidad);
     }
+
+    public Direccion crearDireccionPorDefecto() {
+        Localidad localidad = localidadService.obtenerOCrearPorDefecto();
+        return crearEntidad(new DireccionRequest(
+                "Gran Mendoza",
+                "S/N",
+                "Centro",
+                null,
+                null,
+                "Domicilio comercial a coordinar",
+                -32.8895,
+                -68.8458,
+                localidad.getId()
+        ));
+    }
     public Direccion construirEntidad(DireccionRequest request) {
         DireccionRequest normalizado = prepararRequest(request);
         validarCrear(normalizado);

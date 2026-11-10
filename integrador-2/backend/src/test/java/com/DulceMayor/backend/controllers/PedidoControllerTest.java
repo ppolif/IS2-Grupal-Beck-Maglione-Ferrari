@@ -435,4 +435,46 @@ class PedidoControllerTest {
                         .header("Authorization", "Bearer " + tokenPrev2))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @DisplayName("Autogestión web: un MINORISTA puede crear un pedido en POST /pedidos y verlo en /mi-cuenta/pedidos y /pedidos")
+    void minoristaPuedeCrearPedidoDesdePortalYVerloEnMiCuentaYEnAdmin() throws Exception {
+        Usuario minorista = crearUsuario("minorista_web", RolUsuario.MINORISTA);
+        Usuario admin = crearUsuario("admin_web", RolUsuario.ADMINISTRATIVO);
+
+        String tokenMinorista = jwtProvider.generarToken(minorista);
+        String tokenAdmin = jwtProvider.generarToken(admin);
+
+        // El minorista crea un pedido sin puntoDeVentaId previo -> el backend inicializa su comercio y guarda el pedido
+        MvcResult createRes = mockMvc.perform(post("/pedidos")
+                        .header("Authorization", "Bearer " + tokenMinorista)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new PedidoRequest(
+                                null,
+                                null,
+                                null,
+                                List.of(new DetallePedidoRequest(productoInicial.id(), 3))
+                        ))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.estado").value("CARGADO"))
+                .andExpect(jsonPath("$.puntoDeVenta.id").exists())
+                .andExpect(jsonPath("$.total").value(3000.0))
+                .andReturn();
+
+        String pedidoId = objectMapper.readTree(createRes.getResponse().getContentAsString()).get("id").asText();
+
+        // Aparece en el historial del minorista (GET /mi-cuenta/pedidos)
+        mockMvc.perform(get("/mi-cuenta/pedidos")
+                        .header("Authorization", "Bearer " + tokenMinorista))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].id").value(pedidoId));
+
+        // Aparece en el panel administrativo (GET /pedidos)
+        mockMvc.perform(get("/pedidos")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].id").value(pedidoId));
+    }
 }

@@ -21,7 +21,14 @@ export default function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="/tienda" element={<Tienda />} />
         <Route path="/carrito" element={<Carrito />} />
-        <Route path="/checkout" element={<Checkout />} />
+        <Route
+          path="/checkout"
+          element={
+            <RutaProtegida>
+              <Checkout />
+            </RutaProtegida>
+          }
+        />
         <Route path="/pago/exito" element={<PagoExito />} />
         <Route path="/pago/fallo" element={<PagoFallo />} />
         <Route path="/pago/pendiente" element={<PagoPendiente />} />

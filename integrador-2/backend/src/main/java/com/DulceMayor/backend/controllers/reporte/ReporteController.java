@@ -49,7 +49,7 @@ public class ReporteController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam(defaultValue = "json") String formato) {
         ReporteTabular reporte = reporteLecturaService.generarReporteMinoristas(desde, hasta);
-        return responderSegunFormato(reporte, formato, FORMATOS_JSON_PDF, "reporte-minoristas");
+        return responderSegunFormato(reporte, formato, FORMATOS_JSON_PDF_XLSX, "reporte-minoristas");
     }
 
     @GetMapping("/pedidos")

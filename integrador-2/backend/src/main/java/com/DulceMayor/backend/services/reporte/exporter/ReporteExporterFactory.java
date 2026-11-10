@@ -49,6 +49,9 @@ public class ReporteExporterFactory {
             throw new ValidacionException("El formato de exportación es obligatorio");
         }
         String formatoNorm = formato.trim().toLowerCase(Locale.ROOT);
+        if ("excel".equals(formatoNorm)) {
+            formatoNorm = "xlsx";
+        }
         if (formatosPermitidos != null && !formatosPermitidos.contains(formatoNorm)) {
             throw new ValidacionException(
                     "El formato '" + formato + "' no está permitido para este reporte. Formatos válidos: "

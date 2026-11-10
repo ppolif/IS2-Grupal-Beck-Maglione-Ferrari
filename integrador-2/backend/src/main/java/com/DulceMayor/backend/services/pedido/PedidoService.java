@@ -99,7 +99,9 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         if (request == null) {
             throw new ValidacionException("Los datos del pedido son obligatorios");
         }
-        if (request.puntoDeVentaId() == null || request.puntoDeVentaId().isBlank()) {
+        UsuarioPrincipal principal = obtenerPrincipalActual();
+        boolean esMinorista = principal != null && principal.getRol() == RolUsuario.MINORISTA;
+        if (!esMinorista && (request.puntoDeVentaId() == null || request.puntoDeVentaId().isBlank())) {
             throw new ValidacionException("El punto de venta es obligatorio");
         }
         if (request.detalles() == null || request.detalles().isEmpty()) {
@@ -120,7 +122,15 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
      */
     @Override
     protected void antesDePersistir(Pedido entidad, PedidoRequest request) {
-        PuntoDeVenta puntoDeVenta = puntoDeVentaService.obtenerEntidad(request.puntoDeVentaId().trim());
+        PuntoDeVenta puntoDeVenta;
+        UsuarioPrincipal principal = obtenerPrincipalActual();
+        if (request.puntoDeVentaId() != null && !request.puntoDeVentaId().isBlank()) {
+            puntoDeVenta = puntoDeVentaService.obtenerEntidad(request.puntoDeVentaId().trim());
+        } else if (principal != null && principal.getRol() == RolUsuario.MINORISTA) {
+            puntoDeVenta = puntoDeVentaService.obtenerOCrearPorDefectoParaUsuarioMinorista(principal.getId());
+        } else {
+            throw new ValidacionException("El punto de venta es obligatorio");
+        }
         Preventor preventor = resolverPreventorParaCreacion(request.preventorId(), puntoDeVenta);
         CalculoPedido calculo = calcularLineasYTotales(request.detalles(), request.codigoPromocion());
 
@@ -469,6 +479,15 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
             minoristaId = minoristaService.buscarPorUsuarioId(principal.getId())
                     .map(Minorista::getId)
                     .orElse(null);
+        }
+        if (minoristaId == null) {
+            return new PedidoMiCuentaPage(
+                    List.of(),
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    0,
+                    0
+            );
         }
         return pedidoLecturaService.listarMiCuenta(estado, minoristaId, pageable);
     }

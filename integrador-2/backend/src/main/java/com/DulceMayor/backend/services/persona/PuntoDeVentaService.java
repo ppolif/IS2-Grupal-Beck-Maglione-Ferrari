@@ -120,6 +120,38 @@ public class PuntoDeVentaService extends BaseService<PuntoDeVenta, PuntoDeVentaR
         return puntoDeVentaRepository.findAllByPreventorIdAndEliminadoFalse(preventorId.trim());
     }
 
+    @Transactional
+    public PuntoDeVenta obtenerOCrearPorDefectoParaUsuarioMinorista(String usuarioId) {
+        Minorista minorista = minoristaService.obtenerOCrearPorUsuarioId(usuarioId);
+        List<PuntoDeVenta> existentes = puntoDeVentaRepository.findAllByMinoristaIdAndEliminadoFalse(minorista.getId());
+        if (!existentes.isEmpty()) {
+            return existentes.get(0);
+        }
+        Direccion dir = null;
+        if (minorista.getDirecciones() != null) {
+            dir = minorista.getDirecciones().stream()
+                    .filter(d -> !d.isEliminado())
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (dir == null) {
+            dir = direccionService.crearDireccionPorDefecto();
+        }
+        Preventor preventor = null;
+        if (dir.getLatitud() != null && dir.getLongitud() != null) {
+            preventor = empleadoService.buscarPreventorMasCercano(dir.getLatitud(), dir.getLongitud());
+        }
+        String nombreComercio = ("Comercio de " + minorista.getNombre() + " " + minorista.getApellido()).trim();
+        PuntoDeVenta nuevo = PuntoDeVenta.builder()
+                .nombreComercio(nombreComercio)
+                .minorista(minorista)
+                .direccion(dir)
+                .preventor(preventor)
+                .eliminado(false)
+                .build();
+        return puntoDeVentaRepository.save(nuevo);
+    }
+
     @Transactional(readOnly = true)
     public PuntoDeVentaPage buscarPaginado(String minoristaId, String preventorId, String q, Pageable pageable) {
         String preventorFiltro = preventorId != null && !preventorId.isBlank() ? preventorId.trim() : null;
@@ -138,6 +170,22 @@ public class PuntoDeVentaService extends BaseService<PuntoDeVenta, PuntoDeVentaR
         }
 
         String minoristaFiltro = minoristaId != null && !minoristaId.isBlank() ? minoristaId.trim() : null;
+        if (esMinoristaAutenticado()) {
+            UsuarioPrincipal principal = obtenerPrincipalAutenticado();
+            if (principal != null) {
+                java.util.Optional<Minorista> miMinorista = minoristaService.buscarPorUsuarioId(principal.getId());
+                if (miMinorista.isEmpty()) {
+                    return new PuntoDeVentaPage(
+                            List.of(),
+                            pageable.getPageNumber(),
+                            pageable.getPageSize(),
+                            0,
+                            0
+                    );
+                }
+                minoristaFiltro = miMinorista.get().getId();
+            }
+        }
         String qFiltro = q != null && !q.isBlank() ? q.trim() : null;
 
         Page<PuntoDeVenta> page = puntoDeVentaRepository.buscarConFiltros(
@@ -171,6 +219,15 @@ public class PuntoDeVentaService extends BaseService<PuntoDeVenta, PuntoDeVentaR
         }
         return auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_PREVENTISTA") || a.getAuthority().equals("PREVENTISTA"));
+    }
+
+    private boolean esMinoristaAutenticado() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getAuthorities() == null) {
+            return false;
+        }
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_MINORISTA") || a.getAuthority().equals("MINORISTA"));
     }
 
     private UsuarioPrincipal obtenerPrincipalAutenticado() {

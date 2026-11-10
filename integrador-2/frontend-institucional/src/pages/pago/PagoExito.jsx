@@ -2,19 +2,43 @@ import { useLocation, Link } from 'react-router-dom';
 import Button from '../../components/Button';
 import Icon from '../../components/Icon';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+
 export default function PagoExito() {
   const location = useLocation();
   const order = location.state || {
-    orderId: 'DM-3041',
-    comercio: 'Kiosco San Martín',
-    direccion: 'Av. San Martín 1420, Godoy Cruz',
-    total: 35190,
-    metodoPago: 'Billetera Virtual (Mercado Pago QR)',
-    fecha: '14/06/2025 10:45'
+    orderId: 'DM-NUEVO',
+    estado: 'CARGADO',
+    comercio: 'Mi Comercio',
+    direccion: 'Gran Mendoza',
+    total: 0,
+    metodoPago: 'Mayorista',
+    fecha: new Date().toLocaleString('es-AR'),
   };
 
-  const handleDownloadPDF = () => {
-    alert(`Descargando comprobante Factura A para Pedido #${order.orderId} (Simulado en formato PDF)...`);
+  const handleDownloadPDF = async () => {
+    if (!order?.facturaId) {
+      alert('La factura electrónica estará disponible para descargar desde "Mis Pedidos" apenas Administración procese el pedido.');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('dm_institucional_token') || localStorage.getItem('dm_token');
+      const res = await fetch(`${API_BASE_URL}/facturas/${order.facturaId}/pdf`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Factura-${order.orderId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(`No se pudo descargar la factura: ${err.message}`);
+    }
   };
 
   return (
@@ -44,7 +68,7 @@ export default function PagoExito() {
             <strong className="text-xl font-bold text-[#2b2b3a]">#{order.orderId}</strong>
           </div>
           <span className="text-[11px] font-semibold bg-[#dff8e9] text-[#39855b] px-3 py-1 rounded-full">
-            Estado: Facturado
+            Estado: {order.estado || 'CARGADO'}
           </span>
         </div>
 

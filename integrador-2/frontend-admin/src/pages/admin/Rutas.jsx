@@ -4,7 +4,7 @@ import { getInitials } from '../../utils/formatters';
 import { colors } from '../../theme/colors';
 
 export default function Rutas() {
-  const { tab, setTab, agents, selectedAgentId, setSelectedAgentId } = useRutas();
+  const { tab, setTab, agents, loading, selectedAgentId, setSelectedAgentId } = useRutas();
 
   const mapMarkers = agents.map((a) => ({
     id: a.id,
@@ -12,7 +12,7 @@ export default function Rutas() {
     zona: a.zona,
     estado: `${a.stops} (${a.pct}%)`,
     lat: a.lat,
-    lng: a.lng
+    lng: a.lng,
   }));
 
   return (
@@ -30,7 +30,7 @@ export default function Rutas() {
       </div>
 
       <div className="bg-white rounded-[22px] border border-border-subtle shadow-sm overflow-hidden">
-        {/* Tabs from prototype */}
+        {/* Tabs */}
         <div className="flex gap-8 px-6 pt-5 pb-3 border-b border-border-subtle text-[13px] font-bold">
           <button
             onClick={() => setTab('preventores')}
@@ -54,48 +54,57 @@ export default function Rutas() {
           </button>
         </div>
 
-        {/* Layout: Sidebar list + Map matching prototype routes-layout */}
+        {/* Layout: Sidebar list + Map */}
         <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[580px]">
           {/* Agent list */}
           <div className="lg:col-span-4 p-4 border-r border-border-subtle space-y-2 bg-[#fdfdfd]">
-            {agents.map((a) => {
-              const isSelected = selectedAgentId === a.id;
-              return (
-                <div
-                  key={a.id}
-                  onClick={() => setSelectedAgentId(a.id)}
-                  className={`flex items-center gap-3.5 p-3.5 rounded-[16px] border transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-offer-bg border-primary shadow-xs'
-                      : 'bg-white border-border-subtle hover:border-secondary'
-                  }`}
-                >
-                  <div className="w-10 h-10 rounded-full bg-primary-soft text-primary font-bold text-[13px] flex items-center justify-center shrink-0">
-                    {getInitials(a.name)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-baseline mb-0.5">
-                      <strong className="text-[13px] text-ink truncate block">
-                        {a.name}
-                      </strong>
-                      <small className="text-[10px] text-muted font-medium">
-                        {a.stops}
-                      </small>
+            {loading ? (
+              <div className="py-10 text-center text-[12px] text-muted">
+                Cargando rutas activas...
+              </div>
+            ) : agents.length === 0 ? (
+              <div className="py-10 text-center text-[13px] text-muted px-3">
+                No hay rutas de {tab === 'preventores' ? 'preventores' : 'distribución'} registradas para mostrar en esta sección.
+              </div>
+            ) : (
+              agents.map((a) => {
+                const isSelected = selectedAgentId === a.id;
+                return (
+                  <div
+                    key={a.id}
+                    onClick={() => setSelectedAgentId(a.id)}
+                    className={`flex items-center gap-3.5 p-3.5 rounded-[16px] border transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-offer-bg border-primary shadow-xs'
+                        : 'bg-white border-border-subtle hover:border-secondary'
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-primary-soft text-primary font-bold text-[13px] flex items-center justify-center shrink-0">
+                      {getInitials(a.name)}
                     </div>
-                    <span className="text-[10px] text-secondary font-medium block">
-                      {a.zona}
-                    </span>
-                    {/* Progress bar matching prototype */}
-                    <div className="h-1.5 bg-divider rounded-full mt-2 overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
-                        style={{ width: `${a.pct}%` }}
-                      />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-baseline mb-0.5">
+                        <strong className="text-[13px] text-ink truncate block">
+                          {a.name}
+                        </strong>
+                        <small className="text-[10px] text-muted font-medium">
+                          {a.stops}
+                        </small>
+                      </div>
+                      <span className="text-[10px] text-secondary font-medium block">
+                        {a.zona}
+                      </span>
+                      <div className="h-1.5 bg-divider rounded-full mt-2 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
+                          style={{ width: `${a.pct}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
 
           {/* Map column with OpenStreetMap */}

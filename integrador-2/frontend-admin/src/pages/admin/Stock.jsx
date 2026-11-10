@@ -6,6 +6,9 @@ import { useStock } from '../../hooks/useStock';
 export default function Stock() {
   const {
     stockList,
+    loading,
+    lowStockCount,
+    zeroStockCount,
     filter,
     setFilter,
     isAdjustmentModal,
@@ -28,11 +31,10 @@ export default function Stock() {
         <h2 className="text-xl font-bold text-ink mt-0.5 mb-4">
           Control de Stock e Inventario
         </h2>
-        {/* Kpis matching warehouse style from prototype */}
         <Kpis warehouse={true} />
       </div>
 
-      {/* Main Stock Module matching prototype module */}
+      {/* Main Stock Module */}
       <div className="bg-white rounded-[20px] p-6 border border-border-subtle shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-divider">
           <div>
@@ -40,7 +42,7 @@ export default function Stock() {
               Inventario Físico en Depósito
             </h3>
             <p className="text-[11px] text-muted">
-              Actualizado hace 5 minutos · Sincronizado con preventa
+              Sincronizado con el catálogo de productos registrados
             </p>
           </div>
 
@@ -63,7 +65,7 @@ export default function Stock() {
                   : 'bg-canvas text-muted'
               }`}
             >
-              Stock Bajo (2)
+              Stock Bajo ({lowStockCount})
             </button>
             <button
               onClick={() => setFilter('cero')}
@@ -73,64 +75,76 @@ export default function Stock() {
                   : 'bg-canvas text-muted'
               }`}
             >
-              Agotados (1)
+              Agotados ({zeroStockCount})
             </button>
           </div>
         </div>
 
         {/* Stock Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
-                <th className="pb-3 px-3">Producto</th>
-                <th className="pb-3 px-3">Categoría</th>
-                <th className="pb-3 px-3">Presentación</th>
-                <th className="pb-3 px-3">Stock Disponible</th>
-                <th className="pb-3 px-3">Estado</th>
-                <th className="pb-3 px-3 text-right">Ajuste</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-divider text-[12px]">
-              {filtered.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3 px-3 font-semibold text-ink">
-                    {r.nombre}
-                  </td>
-                  <td className="py-3 px-3 text-muted">{r.categoria}</td>
-                  <td className="py-3 px-3 text-muted">{r.presentacion}</td>
-                  <td className="py-3 px-3 font-bold text-ink">
-                    {r.stock} u.
-                  </td>
-                  <td className="py-3 px-3">
-                    <span
-                      className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
-                        r.stock === 0
-                          ? 'bg-danger-bg text-danger-hover'
-                          : r.stock <= 15
-                          ? 'bg-warning-bg text-warning-text'
-                          : 'bg-success-bg text-success-icon'
-                      }`}
-                    >
-                      {r.stock === 0
-                        ? 'Sin stock'
-                        : r.stock <= 15
-                        ? 'Stock bajo'
-                        : 'Disponible'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-right">
-                    <button
-                      onClick={() => handleOpenAdjust(r)}
-                      className="text-secondary hover:text-info-text font-semibold text-[11px] hover:underline cursor-pointer"
-                    >
-                      Ajustar unidades
-                    </button>
-                  </td>
+          {loading ? (
+            <div className="py-10 text-center text-[12px] text-muted">
+              Cargando inventario...
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="py-10 text-center text-[13px] text-muted">
+              {stockList.length === 0
+                ? 'No hay productos dados de alta en el inventario aún. Podés registrarlos en la sección Productos y Precios.'
+                : 'No hay productos que coincidan con el filtro seleccionado.'}
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
+                  <th className="pb-3 px-3">Producto</th>
+                  <th className="pb-3 px-3">Categoría</th>
+                  <th className="pb-3 px-3">Presentación</th>
+                  <th className="pb-3 px-3">Stock Disponible</th>
+                  <th className="pb-3 px-3">Estado</th>
+                  <th className="pb-3 px-3 text-right">Ajuste</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-divider text-[12px]">
+                {filtered.map((r) => (
+                  <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-3 px-3 font-semibold text-ink">
+                      {r.nombre}
+                    </td>
+                    <td className="py-3 px-3 text-muted">{r.categoria}</td>
+                    <td className="py-3 px-3 text-muted">{r.presentacion}</td>
+                    <td className="py-3 px-3 font-bold text-ink">
+                      {r.stock} u.
+                    </td>
+                    <td className="py-3 px-3">
+                      <span
+                        className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
+                          r.stock === 0
+                            ? 'bg-danger-bg text-danger-hover'
+                            : r.stock <= 15
+                            ? 'bg-warning-bg text-warning-text'
+                            : 'bg-success-bg text-success-icon'
+                        }`}
+                      >
+                        {r.stock === 0
+                          ? 'Sin stock'
+                          : r.stock <= 15
+                          ? 'Stock bajo'
+                          : 'Disponible'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      <button
+                        onClick={() => handleOpenAdjust(r)}
+                        className="text-secondary hover:text-info-text font-semibold text-[11px] hover:underline cursor-pointer"
+                      >
+                        Ajustar unidades
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
@@ -153,6 +167,7 @@ export default function Stock() {
               </label>
               <input
                 type="number"
+                min="0"
                 required
                 value={adjustAmount}
                 onChange={(e) => setAdjustAmount(e.target.value)}

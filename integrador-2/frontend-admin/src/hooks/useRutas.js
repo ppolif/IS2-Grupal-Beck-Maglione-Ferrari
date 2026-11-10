@@ -1,89 +1,94 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { apiFetch } from '../services/api';
 
 export function useRutas() {
   const [tab, setTab] = useState('preventores');
+  const [preventores, setPreventores] = useState([]);
+  const [distribuidores, setDistribuidores] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedAgentId, setSelectedAgentId] = useState(null);
 
-  const preventores = [
-    {
-      id: 'prev-1',
-      name: 'Lucía Martínez',
-      stops: '8 de 12 visitas',
-      pct: 67,
-      zona: 'Godoy Cruz',
-      lat: -32.9238,
-      lng: -68.8423,
-      estado: 'En calle'
-    },
-    {
-      id: 'prev-2',
-      name: 'Martín Flores',
-      stops: '5 de 10 visitas',
-      pct: 50,
-      zona: 'Capital',
-      lat: -32.8895,
-      lng: -68.8458,
-      estado: 'En calle'
-    },
-    {
-      id: 'prev-3',
-      name: 'Sofía Vidal',
-      stops: '7 de 9 visitas',
-      pct: 78,
-      zona: 'Guaymallén',
-      lat: -32.8980,
-      lng: -68.8050,
-      estado: 'En calle'
+  const cargarRutas = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [rutasPrevRes, rutasDistRes] = await Promise.all([
+        apiFetch('/rutas-preventor', { method: 'GET' }).catch(() => []),
+        apiFetch('/rutas-distribuidor', { method: 'GET' }).catch(() => []),
+      ]);
+
+      const listaPrev = Array.isArray(rutasPrevRes)
+        ? rutasPrevRes
+        : rutasPrevRes.elementos || rutasPrevRes.content || [];
+      const listaDist = Array.isArray(rutasDistRes)
+        ? rutasDistRes
+        : rutasDistRes.elementos || rutasDistRes.content || [];
+
+      const mapRutaToAgent = (r, isDist) => {
+        const paradas = Array.isArray(r.paradas) ? r.paradas : [];
+        const completadas = paradas.filter((p) => p.completada).length;
+        const total = paradas.length;
+        const pct = total > 0 ? Math.round((completadas / total) * 100) : 0;
+        const respNombre = r.responsable
+          ? `${r.responsable.nombre || ''} ${r.responsable.apellido || ''}`.trim()
+          : isDist
+          ? 'Distribuidor'
+          : 'Preventor';
+        const dirActual =
+          r.paradaActual?.direccion || paradas[0]?.puntoDeVenta?.direccion || null;
+        const lat = Number(dirActual?.latitud) || -32.8895;
+        const lng = Number(dirActual?.longitud) || -68.8458;
+        const zona =
+          dirActual?.departamentoNombre || dirActual?.localidadNombre || 'Gran Mendoza';
+
+        return {
+          id: r.id,
+          name: respNombre,
+          stops: `${completadas} de ${total} ${isDist ? 'entregas' : 'visitas'}`,
+          pct,
+          zona,
+          lat,
+          lng,
+          estado: r.estado || 'EN_CURSO',
+        };
+      };
+
+      const mappedPrev = listaPrev.map((r) => mapRutaToAgent(r, false));
+      const mappedDist = listaDist.map((r) => mapRutaToAgent(r, true));
+
+      setPreventores(mappedPrev);
+      setDistribuidores(mappedDist);
+      if (mappedPrev.length > 0) {
+        setSelectedAgentId(mappedPrev[0].id);
+      } else if (mappedDist.length > 0) {
+        setSelectedAgentId(mappedDist[0].id);
+      }
+    } catch (err) {
+      console.error('Error al cargar rutas:', err);
+      setPreventores([]);
+      setDistribuidores([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, []);
 
-  const distribuidores = [
-    {
-      id: 'dist-1',
-      name: 'Unidad 08 (Reparto)',
-      stops: '6 de 10 entregas',
-      pct: 60,
-      zona: 'Godoy Cruz / Maipú',
-      lat: -32.9350,
-      lng: -68.8250,
-      estado: 'En ruta'
-    },
-    {
-      id: 'dist-2',
-      name: 'Unidad 03 (Reparto)',
-      stops: '8 de 12 entregas',
-      pct: 66,
-      zona: 'Ciudad / Las Heras',
-      lat: -32.8750,
-      lng: -68.8350,
-      estado: 'En ruta'
-    },
-    {
-      id: 'dist-3',
-      name: 'Unidad 05 (Reparto)',
-      stops: '4 de 8 entregas',
-      pct: 50,
-      zona: 'Guaymallén Este',
-      lat: -32.9050,
-      lng: -68.7900,
-      estado: 'En ruta'
-    }
-  ];
-
-  {/* estado de seleccion para centrado del mapa*/}
-  const [selectedAgentId, setSelectedAgentId] = useState('prev-1');
+  useEffect(() => {
+    cargarRutas();
+  }, [cargarRutas]);
 
   const agents = tab === 'preventores' ? preventores : distribuidores;
 
   const handleTabChange = (newTab) => {
     setTab(newTab);
-    setSelectedAgentId(newTab === 'preventores' ? 'prev-1' : 'dist-1');
+    const list = newTab === 'preventores' ? preventores : distribuidores;
+    setSelectedAgentId(list.length > 0 ? list[0].id : null);
   };
 
   return {
     tab,
     setTab: handleTabChange,
     agents,
+    loading,
     selectedAgentId,
-    setSelectedAgentId
+    setSelectedAgentId,
   };
 }

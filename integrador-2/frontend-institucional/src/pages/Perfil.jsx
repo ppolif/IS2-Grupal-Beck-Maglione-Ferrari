@@ -6,6 +6,9 @@ import PasswordInput from '../components/PasswordInput';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
+import { apiFetch } from '../services/api';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 export default function Perfil() {
   const [searchParams] = useSearchParams();
@@ -148,53 +151,85 @@ export default function Perfil() {
     }
   };
 
-  // Mock de pedidos para consulta
-  const orders = [
-    {
-      id: 'DM-2084',
-      fecha: '14 Jun 2025 · 10:15 hs',
-      total: '$45.200',
-      subtotal: '$50.100',
-      descuento: '$4.900',
-      estado: 'En camino',
-      facturaNum: 'FC-A-0001-00002084',
-      medioPago: 'Billetera Virtual / QR',
-      direccionEntrega: 'Av. San Martín 1842, Godoy Cruz, Mendoza',
-      items: [
-        { nombre: 'Alfajor triple chocolate', cant: 2, precioUnit: '$18.900', subtotal: '$37.800' },
-        { nombre: 'Gomitas frutales', cant: 1, precioUnit: '$6.450', subtotal: '$6.450' },
-        { nombre: 'Chupetines surtidos', cant: 1, precioUnit: '$5.850', subtotal: '$5.850' },
-      ],
-      trazabilidad: [
-        { estado: 'Pedido Confirmado', fecha: '14 Jun - 09:30 hs', done: true },
-        { estado: 'Facturado en Depósito', fecha: '14 Jun - 10:15 hs', done: true },
-        { estado: 'En Reparto con Distribuidor', fecha: '14 Jun - 11:00 hs', done: true },
-        { estado: 'Entregado en Comercio', fecha: 'Pendiente', done: false },
-      ],
-    },
-    {
-      id: 'DM-1950',
-      fecha: '28 May 2025 · 14:20 hs',
-      total: '$82.400',
-      subtotal: '$89.000',
-      descuento: '$6.600',
-      estado: 'Entregado',
-      facturaNum: 'FC-A-0001-00001950',
-      medioPago: 'Transferencia Bancaria',
-      direccionEntrega: 'Av. San Martín 1842, Godoy Cruz, Mendoza',
-      items: [
-        { nombre: 'Alfajor triple chocolate', cant: 3, precioUnit: '$18.900', subtotal: '$56.700' },
-        { nombre: 'Chocolate con maní', cant: 2, precioUnit: '$15.600', subtotal: '$31.200' },
-        { nombre: 'Gomitas frutales', cant: 1, precioUnit: '$1.100', subtotal: '$1.100' },
-      ],
-      trazabilidad: [
-        { estado: 'Pedido Confirmado', fecha: '28 May - 11:00 hs', done: true },
-        { estado: 'Facturado', fecha: '28 May - 12:30 hs', done: true },
-        { estado: 'En Reparto', fecha: '28 May - 14:00 hs', done: true },
-        { estado: 'Entregado en Comercio', fecha: '28 May - 16:30 hs', done: true },
-      ],
-    },
-  ];
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+
+  useEffect(() => {
+    let cancel = false;
+    setLoadingOrders(true);
+    Promise.all([
+      apiFetch('/mi-cuenta/pedidos?size=50').catch(() => ({ elementos: [] })),
+      apiFetch('/mi-cuenta/facturas?size=50').catch(() => ({ elementos: [] })),
+    ])
+      .then(([pedRes, factRes]) => {
+        if (cancel) return;
+        const listaPed = pedRes?.elementos || pedRes?.content || (Array.isArray(pedRes) ? pedRes : []);
+        const listaFact = factRes?.elementos || factRes?.content || (Array.isArray(factRes) ? factRes : []);
+        const factPorPedido = {};
+        listaFact.forEach((f) => {
+          if (f.pedidoId) factPorPedido[f.pedidoId] = f;
+        });
+
+        const mapped = listaPed.map((p) => {
+          const factura = factPorPedido[p.id];
+          const fechaStr = p.fechaHoraCarga
+            ? new Date(p.fechaHoraCarga).toLocaleString('es-AR')
+            : '-';
+          const dir = p.puntoDeVenta?.direccion;
+          const direccionEntrega = dir
+            ? `${dir.calle || ''} ${dir.numeracion || ''}, ${dir.localidadNombre || dir.departamentoNombre || 'Mendoza'}`.trim()
+            : p.puntoDeVenta?.nombreComercio || 'Mendoza';
+
+          return {
+            id: p.numeroPedido || p.id,
+            rawId: p.id,
+            facturaId: factura?.id || p.facturaId || null,
+            fecha: fechaStr,
+            total: `$${Number(p.total || 0).toLocaleString('es-AR')}`,
+            subtotal: `$${Number(p.subtotal || p.total || 0).toLocaleString('es-AR')}`,
+            descuento: `$${Number(p.descuento || 0).toLocaleString('es-AR')}`,
+            estado: p.estado || 'CARGADO',
+            facturaNum: factura?.numeroFactura
+              ? `FA-${String(factura.numeroFactura).padStart(8, '0')}`
+              : 'Pendiente de emisión',
+            medioPago: 'Mayorista',
+            direccionEntrega,
+            items: (p.detalles || []).map((d) => ({
+              nombre: d.productoNombre || d.producto?.nombre || 'Producto',
+              cant: d.cantidad || 1,
+              precioUnit: `$${Number(d.precioUnitario || 0).toLocaleString('es-AR')}`,
+              subtotal: `$${Number(d.subtotal || 0).toLocaleString('es-AR')}`,
+            })),
+            trazabilidad: [
+              { estado: 'Pedido Confirmado', fecha: fechaStr, done: true },
+              {
+                estado: 'Facturado en Depósito',
+                fecha: p.estado === 'FACTURADO' || p.estado === 'EN_REPARTO' || p.estado === 'ENTREGADO' ? 'Completado' : 'Pendiente',
+                done: p.estado === 'FACTURADO' || p.estado === 'EN_REPARTO' || p.estado === 'ENTREGADO',
+              },
+              {
+                estado: 'En Reparto con Distribuidor',
+                fecha: p.estado === 'EN_REPARTO' || p.estado === 'ENTREGADO' ? 'Completado' : 'Pendiente',
+                done: p.estado === 'EN_REPARTO' || p.estado === 'ENTREGADO',
+              },
+              {
+                estado: 'Entregado en Comercio',
+                fecha: p.estado === 'ENTREGADO' ? 'Completado' : 'Pendiente',
+                done: p.estado === 'ENTREGADO',
+              },
+            ],
+          };
+        });
+        setOrders(mapped);
+      })
+      .finally(() => {
+        if (!cancel) setLoadingOrders(false);
+      });
+
+    return () => {
+      cancel = true;
+    };
+  }, []);
 
   const handleOpenDetail = (order) => {
     setSelectedOrder(order);
@@ -206,8 +241,29 @@ export default function Perfil() {
     setShowQrModal(true);
   };
 
-  const handleDownloadPdf = (orderId, facturaNum) => {
-    showToast(`Descargando factura electrónica PDF (${facturaNum})...`);
+  const handleDownloadPdf = async (order) => {
+    if (!order?.facturaId) {
+      showToast('Este pedido aún no posee factura emitida para descargar.');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('dm_institucional_token') || localStorage.getItem('dm_token');
+      const res = await fetch(`${API_BASE_URL}/facturas/${order.facturaId}/pdf`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${order.facturaNum || 'factura'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast(`No se pudo descargar la factura: ${err.message}`);
+    }
   };
 
   const handleCopyAlias = () => {
@@ -325,68 +381,78 @@ export default function Perfil() {
             </div>
           </div>
 
-          <div className="space-y-3.5">
-            {orders.map((p) => (
-              <div
-                key={p.id}
-                className="p-5 rounded-[18px] border border-[#ececf2] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[#fdfdfd] hover:border-[#e86bc4]/50 transition-colors"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <strong className="text-[#2b2b3a] text-[14px]">Pedido #{p.id}</strong>
-                    <span className="text-[11px] text-[#6b6b80]">· {p.fecha}</span>
-                    <span
-                      className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
-                        p.estado === 'En camino'
-                          ? 'bg-[#d9f7ff] text-[#247f99]'
-                          : 'bg-[#dff8e9] text-[#39855b]'
-                      }`}
-                    >
-                      {p.estado}
-                    </span>
-                    <span className="text-[10px] text-[#8c8b9c] font-medium bg-[#f0f2f7] px-2 py-0.5 rounded-md">
-                      {p.medioPago}
-                    </span>
+          {loadingOrders ? (
+            <div className="py-10 text-center text-[12px] text-[#6b6b80]">
+              Cargando historial de pedidos...
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="py-10 text-center text-[13px] text-[#6b6b80]">
+              No tenés pedidos registrados en tu historial todavía.
+            </div>
+          ) : (
+            <div className="space-y-3.5">
+              {orders.map((p) => (
+                <div
+                  key={p.rawId || p.id}
+                  className="p-5 rounded-[18px] border border-[#ececf2] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[#fdfdfd] hover:border-[#e86bc4]/50 transition-colors"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <strong className="text-[#2b2b3a] text-[14px]">Pedido #{p.id}</strong>
+                      <span className="text-[11px] text-[#6b6b80]">· {p.fecha}</span>
+                      <span
+                        className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
+                          p.estado === 'EN_REPARTO'
+                            ? 'bg-[#d9f7ff] text-[#247f99]'
+                            : 'bg-[#dff8e9] text-[#39855b]'
+                        }`}
+                      >
+                        {p.estado}
+                      </span>
+                      <span className="text-[10px] text-[#8c8b9c] font-medium bg-[#f0f2f7] px-2 py-0.5 rounded-md">
+                        {p.medioPago}
+                      </span>
+                    </div>
+                    <p className="text-[12px] text-[#6b6b80]">
+                      {p.items.map((it) => `${it.cant}x ${it.nombre}`).join(' · ')}
+                    </p>
                   </div>
-                  <p className="text-[12px] text-[#6b6b80]">
-                    {p.items.map((it) => `${it.cant}x ${it.nombre}`).join(' · ')}
-                  </p>
-                </div>
 
-                <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0">
-                  <strong className="text-[16px] text-[#2b2b3a] font-bold">
-                    {p.total}
-                  </strong>
+                  <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0">
+                    <strong className="text-[16px] text-[#2b2b3a] font-bold">
+                      {p.total}
+                    </strong>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenDetail(p)}
-                      className="px-3 py-1.5 rounded-[10px] text-[12px] font-semibold text-[#3fb8d9] bg-[#d9f7ff]/40 hover:bg-[#d9f7ff] transition-colors cursor-pointer"
-                    >
-                      Ver detalle
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDownloadPdf(p.id, p.facturaNum)}
-                      className="px-3 py-1.5 rounded-[10px] text-[12px] font-semibold text-[#2b2b3a] bg-slate-100 hover:bg-slate-200 transition-colors flex items-center gap-1 cursor-pointer"
-                      title="Descargar factura en PDF"
-                    >
-                      <span>PDF</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenQr(p)}
-                      className="px-3 py-1.5 rounded-[10px] text-[12px] font-semibold text-white bg-[#e86bc4] hover:bg-[#d456b0] transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-                      title="Ver QR de pago"
-                    >
-                      <span>QR</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDetail(p)}
+                        className="px-3 py-1.5 rounded-[10px] text-[12px] font-semibold text-[#3fb8d9] bg-[#d9f7ff]/40 hover:bg-[#d9f7ff] transition-colors cursor-pointer"
+                      >
+                        Ver detalle
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadPdf(p)}
+                        className="px-3 py-1.5 rounded-[10px] text-[12px] font-semibold text-[#2b2b3a] bg-slate-100 hover:bg-slate-200 transition-colors flex items-center gap-1 cursor-pointer"
+                        title="Descargar factura en PDF"
+                      >
+                        <span>PDF</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenQr(p)}
+                        className="px-3 py-1.5 rounded-[10px] text-[12px] font-semibold text-white bg-[#e86bc4] hover:bg-[#d456b0] transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                        title="Ver QR de pago"
+                      >
+                        <span>QR</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -816,7 +882,7 @@ export default function Perfil() {
             <div className="pt-3 border-t border-[#f0f0f4] flex flex-wrap gap-2.5 justify-end">
               <Button
                 secondary
-                onClick={() => handleDownloadPdf(selectedOrder.id, selectedOrder.facturaNum)}
+                onClick={() => handleDownloadPdf(selectedOrder)}
                 className="text-[12px] py-2"
               >
                 <span>Descargar Factura PDF</span>

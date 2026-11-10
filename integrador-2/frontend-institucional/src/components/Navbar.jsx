@@ -1,16 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import Logo from './Logo';
 import Button from './Button';
 import Icon from './Icon';
 import { useAuth } from '../context/AuthContext';
+import { cartStorage } from '../utils/cartStorage';
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(() =>
+    cartStorage.getItems().reduce((acc, it) => acc + (it.cantidad || 1), 0)
+  );
   const { isLogged, perfil, usuario, logout } = useAuth();
   const navigate = useNavigate();
 
-  const cartCount = 3; // Mock de cantidad de productos en carrito
+  useEffect(() => {
+    const syncCart = () => {
+      const total = cartStorage.getItems().reduce((acc, it) => acc + (it.cantidad || 1), 0);
+      setCartCount(total);
+    };
+    window.addEventListener('dm_cart_updated', syncCart);
+    window.addEventListener('storage', syncCart);
+    return () => {
+      window.removeEventListener('dm_cart_updated', syncCart);
+      window.removeEventListener('storage', syncCart);
+    };
+  }, []);
 
   const navLinks = [
     { to: '/', label: 'Inicio' },
@@ -19,7 +34,6 @@ export default function Navbar() {
     { to: '/contacto', label: 'Contacto' },
   ];
 
-  // Resolver nombre de visualización e iniciales
   const nombreDisplay = perfil ? `${perfil.nombre} ${perfil.apellido}` : (usuario?.nombreUsuario || 'Mi Cuenta');
   const iniciales = perfil
     ? `${perfil.nombre?.[0] || ''}${perfil.apellido?.[0] || ''}`.toUpperCase()

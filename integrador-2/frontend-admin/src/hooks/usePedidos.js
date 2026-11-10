@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { pedidoService } from '../services/pedidoService';
 import { facturaService } from '../services/facturaService';
-import { ordersMock } from '../mocks/orders';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 /**
  * Custom hook managing reception orders, invoice state and detail modal.
- * Se conecta con la API del backend y recurre al mock si la API no está disponible o no hay datos.
  */
 export function usePedidos() {
   const [orders, setOrders] = useState([]);
@@ -20,7 +20,7 @@ export function usePedidos() {
     setError(null);
     try {
       const data = await pedidoService.listar({ size: 50 });
-      const listaApi = data.elementos || data.content || data;
+      const listaApi = data.elementos || data.content || (Array.isArray(data) ? data : []);
 
       if (Array.isArray(listaApi) && listaApi.length > 0) {
         const formateados = listaApi.map((p) => {
@@ -28,7 +28,8 @@ export function usePedidos() {
           const preventorNombre = p.preventor
             ? `${p.preventor.nombre || ''} ${p.preventor.apellido || ''}`.trim()
             : 'Venta Directa / Web';
-          const facturado = p.estado === 'FACTURADO' || p.estado === 'EN_REPARTO' || p.estado === 'ENTREGADO';
+          const facturado =
+            p.estado === 'FACTURADO' || p.estado === 'EN_REPARTO' || p.estado === 'ENTREGADO';
 
           const items = (p.detalles || []).map((d) => ({
             nombre: d.productoNombre || d.producto?.nombre || 'Producto',
@@ -38,7 +39,7 @@ export function usePedidos() {
 
           return {
             id: p.id,
-            numeroPedido: p.numeroPedido,
+            numeroPedido: p.numeroPedido || p.id,
             comercio,
             preventor: preventorNombre,
             monto: `$${(p.total || 0).toLocaleString('es-AR')}`,
@@ -52,12 +53,12 @@ export function usePedidos() {
         });
         setOrders(formateados);
       } else {
-        // Fallback a mocks si la BD aún está limpia
-        setOrders(ordersMock);
+        setOrders([]);
       }
     } catch (err) {
-      console.warn('No se pudieron obtener pedidos de la API, usando mock:', err);
-      setOrders(ordersMock);
+      console.error('Error al obtener pedidos de la API:', err);
+      setError(err.message);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -75,23 +76,12 @@ export function usePedidos() {
   const handleInvoiceOrder = async (orderId) => {
     setActionLoading(true);
     try {
-      // Intentar procesar en backend si es un UUID o pedido real
       await pedidoService.procesar(orderId);
-      alert(`¡Pedido #${orderId} FACTURADO con éxito! Se despachó la factura en PDF al correo del cliente.`);
+      alert(`¡Pedido facturado con éxito! Se generó la factura y se despachó el PDF al correo del cliente.`);
       await cargarPedidos();
       setIsDetailModalOpen(false);
     } catch (err) {
-      console.warn('Error al procesar en API:', err);
-      // Actualización local de contingencia
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.id === orderId ? { ...o, facturado: true, estado: 'FACTURADO' } : o
-        )
-      );
-      if (selectedOrder && selectedOrder.id === orderId) {
-        setSelectedOrder({ ...selectedOrder, facturado: true, estado: 'FACTURADO' });
-      }
-      alert(`Pedido #${orderId} facturado (Aviso: ${err.message || 'operación local'})`);
+      alert(`No se pudo facturar el pedido: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
@@ -110,6 +100,31 @@ export function usePedidos() {
     }
   };
 
+  const handleDescargarFacturaPdf = async (facturaId) => {
+    if (!facturaId) {
+      alert('Este pedido no posee factura asociada.');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('dm_admin_token');
+      const res = await fetch(`${API_BASE_URL}/facturas/${facturaId}/pdf`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `factura-${facturaId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(`No se pudo descargar el PDF de la factura: ${err.message}`);
+    }
+  };
+
   return {
     orders,
     loading,
@@ -121,6 +136,7 @@ export function usePedidos() {
     handleOpenDetail,
     handleInvoiceOrder,
     handleReenviarFactura,
+    handleDescargarFacturaPdf,
     recargar: cargarPedidos,
   };
 }

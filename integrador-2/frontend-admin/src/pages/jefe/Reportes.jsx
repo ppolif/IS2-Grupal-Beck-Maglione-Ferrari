@@ -1,10 +1,5 @@
 import Button from '../../components/Button';
 import Icon from '../../components/Icon';
-import {
-  preventorRankingMock,
-  topCandiesMock,
-  monthlySalesChart,
-} from '../../mocks/reports';
 import { useReportes } from '../../hooks/useReportes';
 
 export default function Reportes() {
@@ -12,6 +7,11 @@ export default function Reportes() {
     activeReport,
     setActiveReport,
     periodo,
+    loading,
+    ventasRows,
+    preventoresRows,
+    golosinasRows,
+    totalFacturadoVentas,
     handleDownloadPDF,
     handleDownloadExcel,
   } = useReportes();
@@ -31,9 +31,8 @@ export default function Reportes() {
         </p>
       </div>
 
-      {/* Filterbar & Download Actions matching consigna */}
+      {/* Filterbar & Download Actions */}
       <div className="bg-white rounded-[18px] p-4 border border-border-subtle shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        {/* Filter chips / selects */}
         <div className="flex flex-wrap items-center gap-2.5">
           <span className="border border-border-subtle px-3 py-1.5 rounded-[10px] text-[11px] text-muted bg-surface-note">
             Período: <strong className="text-ink">{periodo}</strong>
@@ -44,7 +43,6 @@ export default function Reportes() {
           </span>
         </div>
 
-        {/* Buttons Descargar PDF y Descargar Excel */}
         <div className="flex items-center gap-2.5">
           <Button
             secondary
@@ -108,55 +106,57 @@ export default function Reportes() {
                 Reporte Global de Ventas - Período {periodo}
               </h3>
               <p className="text-[11px] text-muted">
-                Facturación acumulada: <strong>$12.800.000</strong> (+18.4% vs Mayo)
+                Facturación acumulada: <strong>${totalFacturadoVentas.toLocaleString('es-AR')}</strong>
               </p>
             </div>
-            <span className="text-[11px] bg-success-bg text-success-icon font-bold px-3 py-1 rounded-full">
-              Meta superada
+            <span className="text-[11px] text-muted">
+              Registros: <strong>{ventasRows.length}</strong>
             </span>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
-                  <th className="pb-3 px-3">Día</th>
-                  <th className="pb-3 px-3">Ventas Netas</th>
-                  <th className="pb-3 px-3">Período Anterior</th>
-                  <th className="pb-3 px-3">Variación</th>
-                  <th className="pb-3 px-3 text-right">Cumplimiento</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-divider text-[12px]">
-                {monthlySalesChart.map((row) => {
-                  const dif = row.ventas - row.previo;
-                  const pct = Math.round((dif / row.previo) * 100);
-                  return (
-                    <tr key={row.dia} className="hover:bg-slate-50/70">
-                      <td className="py-3 px-3 font-semibold text-ink">
-                        Día {row.dia}
-                      </td>
-                      <td className="py-3 px-3 font-bold text-ink">
-                        ${row.ventas.toLocaleString('es-AR')}
-                      </td>
-                      <td className="py-3 px-3 text-muted">
-                        ${row.previo.toLocaleString('es-AR')}
-                      </td>
+            {loading ? (
+              <div className="py-10 text-center text-[12px] text-muted">
+                Cargando reporte de ventas...
+              </div>
+            ) : ventasRows.length === 0 ? (
+              <div className="py-10 text-center text-[13px] text-muted">
+                No hay ventas registradas para mostrar en este reporte.
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
+                    <th className="pb-3 px-3">Fecha</th>
+                    <th className="pb-3 px-3">Pedido</th>
+                    <th className="pb-3 px-3">Comercio</th>
+                    <th className="pb-3 px-3">Departamento</th>
+                    <th className="pb-3 px-3">Preventor</th>
+                    <th className="pb-3 px-3">Estado</th>
+                    <th className="pb-3 px-3 text-right">Total Venta</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-divider text-[12px]">
+                  {ventasRows.map((row, idx) => (
+                    <tr key={`${row.numeroPedido}-${idx}`} className="hover:bg-slate-50/70">
+                      <td className="py-3 px-3 font-semibold text-ink">{row.fecha}</td>
+                      <td className="py-3 px-3 text-secondary font-bold">#{row.numeroPedido}</td>
+                      <td className="py-3 px-3 font-medium text-ink">{row.comercio}</td>
+                      <td className="py-3 px-3 text-muted">{row.departamento}</td>
+                      <td className="py-3 px-3 text-muted">{row.preventor}</td>
                       <td className="py-3 px-3">
-                        <span className={`font-semibold ${pct >= 0 ? 'text-success-icon' : 'text-brand-error'}`}>
-                          {pct >= 0 ? `+${pct}%` : `${pct}%`}
+                        <span className="text-[10px] font-semibold text-secondary bg-info-bg px-2.5 py-0.5 rounded-full">
+                          {row.estado}
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-right">
-                        <span className="text-[10px] font-semibold text-secondary bg-info-bg px-2.5 py-0.5 rounded-full">
-                          En meta
-                        </span>
+                      <td className="py-3 px-3 text-right font-bold text-ink">
+                        ${Number(row.total || 0).toLocaleString('es-AR')}
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
@@ -170,57 +170,57 @@ export default function Reportes() {
                 Análisis de Rendimiento de la Fuerza de Preventores
               </h3>
               <p className="text-[11px] text-muted">
-                Medición de visitas, efectividad de cierre y volumen facturado
+                Medición de pedidos gestionados, entregas concretadas y volumen facturado
               </p>
             </div>
             <span className="text-[11px] text-muted">
-              Total preventores: <strong>3 activos</strong>
+              Total preventores: <strong>{preventoresRows.length}</strong>
             </span>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
-                  <th className="pb-3 px-3">Posición</th>
-                  <th className="pb-3 px-3">Preventor</th>
-                  <th className="pb-3 px-3">Zona</th>
-                  <th className="pb-3 px-3">Ventas Totales</th>
-                  <th className="pb-3 px-3">Pedidos</th>
-                  <th className="pb-3 px-3">Visitas</th>
-                  <th className="pb-3 px-3 text-right">Efectividad</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-divider text-[12px]">
-                {preventorRankingMock.map((r) => (
-                  <tr key={r.preventor} className="hover:bg-slate-50/70">
-                    <td className="py-3 px-3">
-                      <span className="w-6 h-6 rounded-full bg-primary-light text-primary font-bold text-[11px] flex items-center justify-center">
-                        #{r.ranking}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 font-semibold text-ink">
-                      {r.preventor}
-                    </td>
-                    <td className="py-3 px-3 text-muted">{r.zona}</td>
-                    <td className="py-3 px-3 font-bold text-ink">
-                      {r.ventasTotal}
-                    </td>
-                    <td className="py-3 px-3 text-muted">
-                      {r.pedidosConcretados} pedidos
-                    </td>
-                    <td className="py-3 px-3 text-muted">
-                      {r.visitasEfectuadas} visitas
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      <strong className="text-success-icon font-bold text-[13px]">
-                        {r.efectividad}
-                      </strong>
-                    </td>
+            {loading ? (
+              <div className="py-10 text-center text-[12px] text-muted">
+                Cargando rendimiento de preventores...
+              </div>
+            ) : preventoresRows.length === 0 ? (
+              <div className="py-10 text-center text-[13px] text-muted">
+                No hay preventores ni actividad registrada para mostrar en este reporte.
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
+                    <th className="pb-3 px-3">Posición</th>
+                    <th className="pb-3 px-3">Legajo</th>
+                    <th className="pb-3 px-3">Preventor</th>
+                    <th className="pb-3 px-3">Sucursal</th>
+                    <th className="pb-3 px-3">Pedidos Gestionados</th>
+                    <th className="pb-3 px-3">Pedidos Entregados</th>
+                    <th className="pb-3 px-3 text-right">Ventas Totales</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-divider text-[12px]">
+                  {preventoresRows.map((r, idx) => (
+                    <tr key={`${r.legajo}-${idx}`} className="hover:bg-slate-50/70">
+                      <td className="py-3 px-3">
+                        <span className="w-6 h-6 rounded-full bg-primary-light text-primary font-bold text-[11px] flex items-center justify-center">
+                          #{idx + 1}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-muted font-mono">{r.legajo}</td>
+                      <td className="py-3 px-3 font-semibold text-ink">{r.preventor}</td>
+                      <td className="py-3 px-3 text-muted">{r.sucursal}</td>
+                      <td className="py-3 px-3 text-muted">{r.cantidadPedidos || 0} pedidos</td>
+                      <td className="py-3 px-3 text-muted">{r.pedidosEntregados || 0} entregados</td>
+                      <td className="py-3 px-3 text-right font-bold text-ink">
+                        ${Number(r.montoTotal || 0).toLocaleString('es-AR')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
@@ -237,48 +237,50 @@ export default function Reportes() {
                 Ranking de rotación en kioscos y almacenes minoristas
               </p>
             </div>
-            <span className="text-[11px] bg-primary-light text-primary-dark font-semibold px-3 py-1 rounded-full">
-              Líder: Alfajores
+            <span className="text-[11px] text-muted">
+              Productos con ventas: <strong>{golosinasRows.length}</strong>
             </span>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
-                  <th className="pb-3 px-3">Top</th>
-                  <th className="pb-3 px-3">Producto</th>
-                  <th className="pb-3 px-3">Categoría</th>
-                  <th className="pb-3 px-3">Unidades Vendidas</th>
-                  <th className="pb-3 px-3">Total Facturado</th>
-                  <th className="pb-3 px-3 text-right">Tendencia</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-divider text-[12px]">
-                {topCandiesMock.map((c) => (
-                  <tr key={c.producto} className="hover:bg-slate-50/70">
-                    <td className="py-3 px-3 font-bold text-primary">
-                      #{c.posicion}
-                    </td>
-                    <td className="py-3 px-3 font-semibold text-ink">
-                      {c.producto}
-                    </td>
-                    <td className="py-3 px-3 text-muted">{c.categoria}</td>
-                    <td className="py-3 px-3 font-bold text-ink">
-                      {c.unidadesVendidas.toLocaleString('es-AR')} u.
-                    </td>
-                    <td className="py-3 px-3 font-semibold text-ink">
-                      {c.totalFacturado}
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      <span className="text-[11px] font-semibold text-success-icon">
-                        {c.crecimiento}
-                      </span>
-                    </td>
+            {loading ? (
+              <div className="py-10 text-center text-[12px] text-muted">
+                Cargando ranking de productos más vendidos...
+              </div>
+            ) : golosinasRows.length === 0 ? (
+              <div className="py-10 text-center text-[13px] text-muted">
+                No hay ventas de productos registradas para mostrar en este reporte.
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
+                    <th className="pb-3 px-3">Top</th>
+                    <th className="pb-3 px-3">Código</th>
+                    <th className="pb-3 px-3">Producto</th>
+                    <th className="pb-3 px-3">Presentación</th>
+                    <th className="pb-3 px-3">Unidades Vendidas</th>
+                    <th className="pb-3 px-3 text-right">Total Facturado</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-divider text-[12px]">
+                  {golosinasRows.map((c, idx) => (
+                    <tr key={`${c.codigo}-${idx}`} className="hover:bg-slate-50/70">
+                      <td className="py-3 px-3 font-bold text-primary">#{idx + 1}</td>
+                      <td className="py-3 px-3 font-mono text-muted">{c.codigo}</td>
+                      <td className="py-3 px-3 font-semibold text-ink">{c.producto}</td>
+                      <td className="py-3 px-3 text-muted">{c.presentacion}</td>
+                      <td className="py-3 px-3 font-bold text-ink">
+                        {Number(c.unidadesVendidas || 0).toLocaleString('es-AR')} u.
+                      </td>
+                      <td className="py-3 px-3 text-right font-semibold text-ink">
+                        ${Number(c.montoTotal || 0).toLocaleString('es-AR')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}

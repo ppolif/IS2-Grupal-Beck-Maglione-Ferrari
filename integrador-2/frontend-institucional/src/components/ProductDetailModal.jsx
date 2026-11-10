@@ -7,16 +7,15 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }) {
 
   if (!product) return null;
 
-  const precioNum = product.precioNum || parseInt(product.precio?.replace(/[^0-9]/g, '')) || 18900;
-  const unidades = product.unidades || 24;
-  const precioPorUnidad = Math.round(precioNum / unidades);
+  const precioNum = Number(product.precioNum || 0);
+  const unidades = Number(product.unidades || 1);
+  const precioPorUnidad = unidades > 0 ? Math.round(precioNum / unidades) : precioNum;
   const subtotal = precioNum * bultosCount;
 
   const handleAdd = () => {
     if (onAddToCart) {
-      onAddToCart({ ...product, cantidadSeleccionada: bultosCount });
+      onAddToCart(product, bultosCount);
     }
-    alert(`Se agregaron ${bultosCount} bultos de "${product.nombre}" al carrito.`);
     onClose();
   };
 
@@ -39,11 +38,11 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }) {
           </button>
           <div className="absolute bottom-3 left-3 flex gap-2">
             <span className="bg-white/95 backdrop-blur-sm text-[10px] font-bold text-[#e86bc4] px-3 py-1 rounded-full shadow-sm">
-              {product.categoria || 'Golosinas'}
+              {product.categoria || 'Catálogo'}
             </span>
             <span className="bg-[#dff8e9] text-[10px] font-bold text-[#39855b] px-3 py-1 rounded-full shadow-sm flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-[#39855b]" />
-              Stock disponible: 180 bultos
+              En stock
             </span>
           </div>
         </div>
@@ -57,15 +56,17 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }) {
             <h2 className="text-xl font-bold text-[#2b2b3a] mt-0.5">
               {product.nombre}
             </h2>
-            <p className="text-[12px] text-[#6b6b80] mt-1">
-              Presentación para venta en mostrador y exhibidores. Apto para venta individual en kioscos y minimarkets.
-            </p>
+            {product.descripcion && (
+              <p className="text-[12px] text-[#6b6b80] mt-1">
+                {product.descripcion}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-[12px] p-3 rounded-[14px] bg-[#fafafd] border border-[#ececf2]">
             <div>
               <span className="text-[#aaa9ba] text-[10px] uppercase font-bold block">Presentación</span>
-              <strong className="text-[#2b2b3a]">{product.presentacion || 'Caja x 24 u.'}</strong>
+              <strong className="text-[#2b2b3a]">{product.presentacion}</strong>
             </div>
             <div>
               <span className="text-[#aaa9ba] text-[10px] uppercase font-bold block">Costo unitario aprox.</span>

@@ -44,7 +44,7 @@ public class PromocionController extends BaseController<PromocionService, Promoc
     }
 
     @GetMapping("/codigo/{codigo}")
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO', 'PREVENTISTA')")
+    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO', 'PREVENTISTA', 'MINORISTA')")
     public ResponseEntity<PromocionResponse> buscarPromocionVigentePorCodigo(@PathVariable String codigo) {
         return ResponseEntity.ok(service.buscarVigentePorCodigo(codigo));
     }

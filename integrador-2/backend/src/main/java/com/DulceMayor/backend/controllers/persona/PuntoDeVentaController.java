@@ -35,7 +35,7 @@ public class PuntoDeVentaController {
     }
 
     @GetMapping({"/puntos-de-venta", "/api/v1/puntos-de-venta"})
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO', 'PREVENTISTA')")
+    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO', 'PREVENTISTA', 'MINORISTA')")
     public ResponseEntity<PuntoDeVentaPage> listarPuntoDeVenta(
             @RequestParam(required = false) String minoristaId,
             @RequestParam(required = false) String preventorId,

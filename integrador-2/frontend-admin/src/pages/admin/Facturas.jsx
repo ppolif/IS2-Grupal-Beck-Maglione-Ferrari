@@ -1,95 +1,164 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Button from '../../components/Button';
 import Icon from '../../components/Icon';
 import Modal from '../../components/Modal';
-import { invoicesMock } from '../../mocks/invoicesMock';
+import { facturaService } from '../../services/facturaService';
+import { pedidoService } from '../../services/pedidoService';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 export default function Facturas() {
-  const [invoices, setInvoices] = useState(invoicesMock);
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filterState, setFilterState] = useState('Todas');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [paymentModalInvoice, setPaymentModalInvoice] = useState(null);
   const [anularModalInvoice, setAnularModalInvoice] = useState(null);
 
-  // Form para imputar pago a factura
   const [pagoMonto, setPagoMonto] = useState('');
   const [pagoMedio, setPagoMedio] = useState('Transferencia Bancaria');
   const [pagoComprobante, setPagoComprobante] = useState('');
-
-  // Form para anular factura
   const [motivoAnulacion, setMotivoAnulacion] = useState('');
 
-  const handleDownloadPDF = (numeroFactura) => {
-    alert(`Descargando ${numeroFactura} en formato oficial PDF con código de barras CAE (Simulado)...`);
+  const cargarFacturas = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [factData, pedData] = await Promise.all([
+        facturaService.listar({ size: 100 }),
+        pedidoService.listar({ size: 100 }).catch(() => ({ elementos: [] })),
+      ]);
+
+      const listaFact = factData.elementos || factData.content || (Array.isArray(factData) ? factData : []);
+      const listaPed = pedData.elementos || pedData.content || (Array.isArray(pedData) ? pedData : []);
+      const pedidosMap = {};
+      listaPed.forEach((p) => {
+        pedidosMap[p.id] = p;
+      });
+
+      const mapped = listaFact.map((f) => {
+        const pedido = pedidosMap[f.pedidoId];
+        const cliente =
+          pedido?.puntoDeVenta?.nombreComercio ||
+          (pedido?.puntoDeVenta?.minorista
+            ? `${pedido.puntoDeVenta.minorista.nombre || ''} ${pedido.puntoDeVenta.minorista.apellido || ''}`.trim()
+            : 'Cliente Mayorista');
+        const cuit = pedido?.puntoDeVenta?.minorista?.numeroDocumento || '-';
+
+        return {
+          id: f.id,
+          numeroFactura: f.numeroFactura ? `FA-${String(f.numeroFactura).padStart(8, '0')}` : f.id,
+          cae: f.numeroFactura ? `74${String(f.numeroFactura).padStart(12, '0')}` : '-',
+          fechaVencimientoCae: f.fechaFactura
+            ? new Date(f.fechaFactura).toLocaleDateString('es-AR')
+            : '-',
+          pedidoId: pedido?.numeroPedido || f.pedidoId || '-',
+          cliente,
+          cuit,
+          fechaEmision: f.fechaFactura ? new Date(f.fechaFactura).toLocaleString('es-AR') : '-',
+          total: Number(f.total || 0),
+          totalPagado: Number(f.totalPagado || 0),
+          saldo: Number(f.saldo || 0),
+          estado: f.estado || 'PENDIENTE_PAGO',
+          items: (f.detalles || []).map((d) => ({
+            producto: d.productoNombre || 'Producto',
+            cantidad: d.cantidad || 1,
+            precio: Number(d.precioUnitario || 0),
+            subtotal: Number(d.subtotal || 0),
+          })),
+          pagos: (f.pagos || []).map((pg) => ({
+            id: pg.id,
+            fecha: pg.fechaPago ? new Date(pg.fechaPago).toLocaleString('es-AR') : '-',
+            medio: pg.formaDePago?.tipoPago || 'Pago',
+            comprobante: pg.referencia || 'S/N',
+            monto: Number(pg.monto || 0),
+          })),
+        };
+      });
+      setInvoices(mapped);
+    } catch (err) {
+      console.error('Error al cargar facturas:', err);
+      setInvoices([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    cargarFacturas();
+  }, [cargarFacturas]);
+
+  const handleDownloadPDF = async (facturaId, numeroFactura) => {
+    try {
+      const token = localStorage.getItem('dm_admin_token');
+      const res = await fetch(`${API_BASE_URL}/facturas/${facturaId}/pdf`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${numeroFactura}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(`No se pudo descargar el PDF: ${err.message}`);
+    }
   };
 
-  const handleReenviarCorreo = (numeroFactura, cliente) => {
-    alert(`Comprobante electrónico ${numeroFactura} reenviado exitosamente al correo registrado de ${cliente}.`);
+  const handleReenviarCorreo = async (facturaId, numeroFactura) => {
+    try {
+      await facturaService.reenviarCorreo(facturaId);
+      alert(`Comprobante ${numeroFactura} reenviado exitosamente por correo electrónico.`);
+    } catch (err) {
+      alert(`Error al reenviar comprobante: ${err.message}`);
+    }
   };
 
-  const handleImputarPago = (e) => {
+  const handleImputarPago = async (e) => {
     e.preventDefault();
     if (!paymentModalInvoice) return;
     const monto = parseFloat(pagoMonto) || 0;
     if (monto <= 0 || monto > paymentModalInvoice.saldo) {
-      alert(`El monto debe ser mayor a 0 y menor o igual al saldo pendiente ($${paymentModalInvoice.saldo.toLocaleString('es-AR')}).`);
+      alert(
+        `El monto debe ser mayor a 0 y menor o igual al saldo pendiente ($${paymentModalInvoice.saldo.toLocaleString('es-AR')}).`
+      );
       return;
     }
 
-    setInvoices((prev) =>
-      prev.map((inv) => {
-        if (inv.id === paymentModalInvoice.id) {
-          const nuevoTotalPagado = inv.totalPagado + monto;
-          const nuevoSaldo = inv.total - nuevoTotalPagado;
-          const nuevoEstado = nuevoSaldo === 0 ? 'PAGADA' : 'PENDIENTE_PAGO';
-          return {
-            ...inv,
-            totalPagado: nuevoTotalPagado,
-            saldo: nuevoSaldo,
-            estado: nuevoEstado,
-            pagos: [
-              ...inv.pagos,
-              {
-                id: `PAG-${Date.now().toString().slice(-4)}`,
-                fecha: new Date().toLocaleDateString('es-AR') + ' ' + new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
-                medio: pagoMedio,
-                comprobante: pagoComprobante || 'S/N',
-                monto
-              }
-            ]
-          };
-        }
-        return inv;
-      })
-    );
-
-    alert(`Pago de $${monto.toLocaleString('es-AR')} imputado a la factura ${paymentModalInvoice.numeroFactura}.`);
-    setPaymentModalInvoice(null);
-    setPagoMonto('');
-    setPagoComprobante('');
+    try {
+      const formaDePagoId = await facturaService.obtenerOCrearFormaDePagoId(pagoMedio);
+      await facturaService.registrarPago(paymentModalInvoice.id, {
+        formaDePagoId,
+        monto,
+        referencia: pagoComprobante || 'S/N',
+        observacion: pagoMedio,
+      });
+      alert(`Pago de $${monto.toLocaleString('es-AR')} imputado a la factura ${paymentModalInvoice.numeroFactura}.`);
+      setPaymentModalInvoice(null);
+      setPagoMonto('');
+      setPagoComprobante('');
+      await cargarFacturas();
+    } catch (err) {
+      alert(`Error al imputar cobro: ${err.message}`);
+    }
   };
 
-  const handleConfirmarAnulacion = (e) => {
+  const handleConfirmarAnulacion = async (e) => {
     e.preventDefault();
     if (!anularModalInvoice) return;
-
-    setInvoices((prev) =>
-      prev.map((inv) =>
-        inv.id === anularModalInvoice.id
-          ? {
-              ...inv,
-              estado: 'ANULADA',
-              saldo: 0,
-              motivoAnulacion: motivoAnulacion || 'Anulada por tesorería'
-            }
-          : inv
-      )
-    );
-
-    alert(`Factura ${anularModalInvoice.numeroFactura} ANULADA. Se generó la Nota de Crédito correspondiente.`);
-    setAnularModalInvoice(null);
-    setMotivoAnulacion('');
+    try {
+      await facturaService.anular(anularModalInvoice.id);
+      alert(`Factura ${anularModalInvoice.numeroFactura} ANULADA con éxito.`);
+      setAnularModalInvoice(null);
+      setMotivoAnulacion('');
+      await cargarFacturas();
+    } catch (err) {
+      alert(`Error al anular factura: ${err.message}`);
+    }
   };
 
   const filtered = invoices.filter((inv) => {
@@ -98,11 +167,12 @@ export default function Facturas() {
       (filterState === 'Pendientes' && inv.estado === 'PENDIENTE_PAGO') ||
       (filterState === 'Pagadas' && inv.estado === 'PAGADA') ||
       (filterState === 'Anuladas' && inv.estado === 'ANULADA');
+    const q = searchTerm.toLowerCase();
     const matchesSearch =
-      inv.numeroFactura.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.pedidoId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.cuit.includes(searchTerm);
+      String(inv.numeroFactura).toLowerCase().includes(q) ||
+      String(inv.pedidoId).toLowerCase().includes(q) ||
+      String(inv.cliente).toLowerCase().includes(q) ||
+      String(inv.cuit).toLowerCase().includes(q);
     return matchesFilter && matchesSearch;
   });
 
@@ -118,7 +188,7 @@ export default function Facturas() {
             Gestión Centralizada de Facturación
           </h2>
           <p className="text-[12px] text-[#6b6b80] mt-0.5">
-            Control de comprobantes electrónicos con CAE, imputación de pagos y emisión de notas de crédito.
+            Control de comprobantes electrónicos, imputación de pagos y anulación de facturas.
           </p>
         </div>
       </div>
@@ -166,110 +236,119 @@ export default function Facturas() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-[12px]">
-            <thead>
-              <tr className="border-b border-[#ececf2] text-[#6b6b80] font-semibold">
-                <th className="pb-3 px-3">Comprobante</th>
-                <th className="pb-3 px-3">Pedido</th>
-                <th className="pb-3 px-3">Cliente / CUIT</th>
-                <th className="pb-3 px-3">Fecha</th>
-                <th className="pb-3 px-3">Total</th>
-                <th className="pb-3 px-3">Saldo</th>
-                <th className="pb-3 px-3">Estado</th>
-                <th className="pb-3 px-3 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#f0f0f4]">
-              {filtered.map((inv) => (
-                <tr key={inv.id} className="hover:bg-[#fafafd] transition-colors">
-                  <td className="py-3 px-3 font-mono font-bold text-[#2b2b3a]">
-                    {inv.numeroFactura}
-                    <span className="text-[10px] text-[#aaa9ba] block font-sans">
-                      CAE: {inv.cae}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 font-mono text-[#3fb8d9] font-bold">
-                    #{inv.pedidoId}
-                  </td>
-                  <td className="py-3 px-3 font-medium text-[#2b2b3a]">
-                    {inv.cliente}
-                    <span className="text-[10px] text-[#6b6b80] block">CUIT {inv.cuit}</span>
-                  </td>
-                  <td className="py-3 px-3 text-[11px] text-[#6b6b80]">
-                    {inv.fechaEmision}
-                  </td>
-                  <td className="py-3 px-3 font-bold text-[#2b2b3a]">
-                    ${inv.total.toLocaleString('es-AR')}
-                  </td>
-                  <td className="py-3 px-3 font-bold">
-                    {inv.saldo > 0 ? (
-                      <span className="text-[#ff8fa3]">${inv.saldo.toLocaleString('es-AR')}</span>
-                    ) : (
-                      <span className="text-[#39855b]">$0</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-3">
-                    <span
-                      className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
-                        inv.estado === 'PAGADA'
-                          ? 'bg-[#dff8e9] text-[#39855b]'
-                          : inv.estado === 'PENDIENTE_PAGO'
-                          ? 'bg-[#faf0d9] text-[#b88014]'
-                          : 'bg-[#f0f0f4] text-[#6b6b80]'
-                      }`}
-                    >
-                      {inv.estado === 'PENDIENTE_PAGO' ? 'Pendiente' : inv.estado}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedInvoice(inv)}
-                        className="text-[11px] font-semibold text-[#3fb8d9] hover:underline"
-                        title="Ver detalle de ítems y pagos"
-                      >
-                        Detalle
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDownloadPDF(inv.numeroFactura)}
-                        className="text-[11px] font-semibold text-[#e86bc4] hover:underline"
-                        title="Descargar PDF"
-                      >
-                        PDF
-                      </button>
-
-                      {inv.estado === 'PENDIENTE_PAGO' && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPaymentModalInvoice(inv);
-                            setPagoMonto(inv.saldo.toString());
-                          }}
-                          className="bg-[#ffe2f7] text-[#e86bc4] text-[10px] font-bold px-2 py-0.5 rounded-[6px] hover:bg-[#ffd5f4]"
-                        >
-                          Cobrar
-                        </button>
-                      )}
-
-                      {inv.estado !== 'ANULADA' && (
-                        <button
-                          type="button"
-                          onClick={() => setAnularModalInvoice(inv)}
-                          className="text-[11px] font-semibold text-[#aaa9ba] hover:text-[#ff8fa3]"
-                          title="Anular comprobante"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  </td>
+          {loading ? (
+            <div className="py-10 text-center text-[12px] text-[#6b6b80]">
+              Cargando comprobantes emitidos...
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="py-10 text-center text-[13px] text-[#6b6b80]">
+              {invoices.length === 0
+                ? 'No hay facturas emitidas para mostrar en esta sección.'
+                : 'No se encontraron facturas con los filtros aplicados.'}
+            </div>
+          ) : (
+            <table className="w-full text-left text-[12px]">
+              <thead>
+                <tr className="border-b border-[#ececf2] text-[#6b6b80] font-semibold">
+                  <th className="pb-3 px-3">Comprobante</th>
+                  <th className="pb-3 px-3">Pedido</th>
+                  <th className="pb-3 px-3">Cliente / Doc.</th>
+                  <th className="pb-3 px-3">Fecha</th>
+                  <th className="pb-3 px-3">Total</th>
+                  <th className="pb-3 px-3">Saldo</th>
+                  <th className="pb-3 px-3">Estado</th>
+                  <th className="pb-3 px-3 text-right">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-[#f0f0f4]">
+                {filtered.map((inv) => (
+                  <tr key={inv.id} className="hover:bg-[#fafafd] transition-colors">
+                    <td className="py-3 px-3 font-mono font-bold text-[#2b2b3a]">
+                      {inv.numeroFactura}
+                    </td>
+                    <td className="py-3 px-3 font-mono text-[#3fb8d9] font-bold">
+                      #{inv.pedidoId}
+                    </td>
+                    <td className="py-3 px-3 font-medium text-[#2b2b3a]">
+                      {inv.cliente}
+                      <span className="text-[10px] text-[#6b6b80] block">Doc: {inv.cuit}</span>
+                    </td>
+                    <td className="py-3 px-3 text-[11px] text-[#6b6b80]">
+                      {inv.fechaEmision}
+                    </td>
+                    <td className="py-3 px-3 font-bold text-[#2b2b3a]">
+                      ${inv.total.toLocaleString('es-AR')}
+                    </td>
+                    <td className="py-3 px-3 font-bold">
+                      {inv.saldo > 0 ? (
+                        <span className="text-[#ff8fa3]">${inv.saldo.toLocaleString('es-AR')}</span>
+                      ) : (
+                        <span className="text-[#39855b]">$0</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3">
+                      <span
+                        className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
+                          inv.estado === 'PAGADA'
+                            ? 'bg-[#dff8e9] text-[#39855b]'
+                            : inv.estado === 'PENDIENTE_PAGO'
+                            ? 'bg-[#faf0d9] text-[#b88014]'
+                            : 'bg-[#f0f0f4] text-[#6b6b80]'
+                        }`}
+                      >
+                        {inv.estado === 'PENDIENTE_PAGO' ? 'Pendiente' : inv.estado}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedInvoice(inv)}
+                          className="text-[11px] font-semibold text-[#3fb8d9] hover:underline"
+                          title="Ver detalle de ítems y pagos"
+                        >
+                          Detalle
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadPDF(inv.id, inv.numeroFactura)}
+                          className="text-[11px] font-semibold text-[#e86bc4] hover:underline"
+                          title="Descargar PDF"
+                        >
+                          PDF
+                        </button>
+
+                        {inv.estado === 'PENDIENTE_PAGO' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPaymentModalInvoice(inv);
+                              setPagoMonto(inv.saldo.toString());
+                            }}
+                            className="bg-[#ffe2f7] text-[#e86bc4] text-[10px] font-bold px-2 py-0.5 rounded-[6px] hover:bg-[#ffd5f4]"
+                          >
+                            Cobrar
+                          </button>
+                        )}
+
+                        {inv.estado !== 'ANULADA' && (
+                          <button
+                            type="button"
+                            onClick={() => setAnularModalInvoice(inv)}
+                            className="text-[11px] font-semibold text-[#aaa9ba] hover:text-[#ff8fa3]"
+                            title="Anular comprobante"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
@@ -285,12 +364,12 @@ export default function Facturas() {
               <div>
                 <span className="text-[#aaa9ba] block text-[10px] uppercase font-bold">Cliente</span>
                 <strong className="text-[#2b2b3a]">{selectedInvoice.cliente}</strong>
-                <span className="text-[#6b6b80] block">CUIT: {selectedInvoice.cuit}</span>
+                <span className="text-[#6b6b80] block">Doc: {selectedInvoice.cuit}</span>
               </div>
               <div>
-                <span className="text-[#aaa9ba] block text-[10px] uppercase font-bold">Datos Fiscales</span>
-                <strong className="text-[#2b2b3a]">CAE: {selectedInvoice.cae}</strong>
-                <span className="text-[#6b6b80] block">Vto CAE: {selectedInvoice.fechaVencimientoCae}</span>
+                <span className="text-[#aaa9ba] block text-[10px] uppercase font-bold">Emisión</span>
+                <strong className="text-[#2b2b3a]">{selectedInvoice.numeroFactura}</strong>
+                <span className="text-[#6b6b80] block">Fecha: {selectedInvoice.fechaEmision}</span>
               </div>
             </div>
 
@@ -343,7 +422,7 @@ export default function Facturas() {
             <div className="flex justify-between items-center pt-3 border-t border-[#f0f0f4]">
               <button
                 type="button"
-                onClick={() => handleReenviarCorreo(selectedInvoice.numeroFactura, selectedInvoice.cliente)}
+                onClick={() => handleReenviarCorreo(selectedInvoice.id, selectedInvoice.numeroFactura)}
                 className="text-[11px] font-bold text-[#3fb8d9] hover:underline flex items-center gap-1"
               >
                 ✉ Reenviar por correo
@@ -400,7 +479,6 @@ export default function Facturas() {
                 <option value="Transferencia Bancaria">Transferencia Bancaria</option>
                 <option value="Efectivo (Distribuidor)">Efectivo (Distribuidor)</option>
                 <option value="Billetera Virtual">Billetera Virtual</option>
-                <option value="Cheque">Cheque</option>
               </select>
             </div>
 
@@ -418,7 +496,7 @@ export default function Facturas() {
             </div>
 
             <div className="flex justify-end gap-2 pt-3 border-t border-[#f0f0f4]">
-              <Button secondary onClick={() => setPaymentModalInvoice(null)}>Cancelar</Button>
+              <Button secondary type="button" onClick={() => setPaymentModalInvoice(null)}>Cancelar</Button>
               <Button type="submit">Imputar Cobro</Button>
             </div>
           </form>
@@ -434,7 +512,7 @@ export default function Facturas() {
         >
           <form onSubmit={handleConfirmarAnulacion} className="space-y-4">
             <div className="p-3 bg-[#fdf2f4] rounded-[10px] border border-[#fbd3db] text-[12px] text-[#c95569]">
-              ⚠️ <strong>Atención:</strong> Al anular la factura se generará una Nota de Crédito en el sistema y se revertirá el saldo adeudado del minorista.
+              ⚠️ <strong>Atención:</strong> Al anular la factura se revertirá el saldo adeudado del minorista.
             </div>
 
             <div>
@@ -452,7 +530,7 @@ export default function Facturas() {
             </div>
 
             <div className="flex justify-end gap-2 pt-3 border-t border-[#f0f0f4]">
-              <Button secondary onClick={() => setAnularModalInvoice(null)}>Cancelar</Button>
+              <Button secondary type="button" onClick={() => setAnularModalInvoice(null)}>Cancelar</Button>
               <Button type="submit" variant="danger">Confirmar Anulación</Button>
             </div>
           </form>

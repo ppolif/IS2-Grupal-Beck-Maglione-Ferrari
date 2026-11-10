@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Icon from './Icon';
 import { apiFetch } from '../services/api';
+import { cartStorage } from '../utils/cartStorage';
 
 export default function FloatingChat() {
   const [open, setOpen] = useState(false);
@@ -9,10 +9,10 @@ export default function FloatingChat() {
     {
       id: 'msg-1',
       sender: 'bot',
-      text: '¡Hola! Soy el asistente inteligente de Dulce Mayor 🍬. Escribime en lenguaje natural qué golosinas y cantidades necesitás (por ejemplo: "2 cajas de alfajores triples y 3 bolsas de gomitas") y te calculo el presupuesto con precios y stock en tiempo real.',
+      text: '¡Hola! Soy el asistente inteligente de Dulce Mayor 🍬. Escribime en lenguaje natural qué productos y cantidades necesitás y te calculo el presupuesto con precios y stock reales.',
       budget: null,
-      advertencias: []
-    }
+      advertencias: [],
+    },
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -34,14 +34,14 @@ export default function FloatingChat() {
       sender: 'user',
       text: query,
       budget: null,
-      advertencias: []
+      advertencias: [],
     };
 
     const historialPrevio = messages
       .filter((m) => m.sender === 'user' || m.sender === 'bot')
       .map((m) => ({
         rol: m.sender === 'user' ? 'usuario' : 'asistente',
-        texto: m.text
+        texto: m.text,
       }))
       .slice(-20);
 
@@ -54,16 +54,18 @@ export default function FloatingChat() {
         method: 'POST',
         body: JSON.stringify({
           mensaje: query,
-          historial: historialPrevio
-        })
+          historial: historialPrevio,
+        }),
       });
 
       const items = (response?.items || []).map((it) => ({
         productoId: it.productoId,
+        productoNombre: it.productoNombre || it.nombre || 'Producto',
+        presentacion: it.presentacion || '',
         nombre: it.presentacion ? `${it.productoNombre} (${it.presentacion})` : (it.productoNombre || it.nombre),
-        cantidad: it.cantidad,
-        precio: it.precioUnitario,
-        subtotal: it.subtotal
+        cantidad: Number(it.cantidad || 1),
+        precio: Number(it.precioUnitario || 0),
+        subtotal: Number(it.subtotal || 0),
       }));
 
       const advertencias = Array.isArray(response?.advertencias) ? response.advertencias : [];
@@ -72,13 +74,14 @@ export default function FloatingChat() {
         id: `msg-${Date.now() + 1}`,
         sender: 'bot',
         text: response?.respuesta || 'Procesé tu consulta de presupuesto.',
-        budget: items.length > 0
-          ? {
-              items,
-              total: response?.total ?? items.reduce((acc, it) => acc + it.subtotal, 0)
-            }
-          : null,
-        advertencias
+        budget:
+          items.length > 0
+            ? {
+                items,
+                total: response?.total ?? items.reduce((acc, it) => acc + it.subtotal, 0),
+              }
+            : null,
+        advertencias,
       };
 
       setMessages((prev) => [...prev, botMsg]);
@@ -86,9 +89,11 @@ export default function FloatingChat() {
       const botErrorMsg = {
         id: `msg-${Date.now() + 1}`,
         sender: 'bot',
-        text: error?.message || 'No se pudo consultar el presupuesto en este momento. Verificá que el servidor esté disponible.',
+        text:
+          error?.message ||
+          'No se pudo consultar el presupuesto en este momento. Verificá que el servidor esté disponible.',
         budget: null,
-        advertencias: []
+        advertencias: [],
       };
       setMessages((prev) => [...prev, botErrorMsg]);
     } finally {
@@ -96,8 +101,22 @@ export default function FloatingChat() {
     }
   };
 
-  const handleApplyToCart = () => {
-    alert('¡Presupuesto transferido exitosamente a tu Carrito de compras!');
+  const handleApplyToCart = (budget) => {
+    if (budget && Array.isArray(budget.items)) {
+      budget.items.forEach((it) => {
+        cartStorage.addItem(
+          {
+            id: it.productoId || it.nombre,
+            nombre: it.productoNombre || it.nombre,
+            presentacion: it.presentacion || 'Bulto mayorista',
+            categoria: 'Catálogo',
+            precioNum: it.precio,
+            precio: `$${Number(it.precio || 0).toLocaleString('es-AR')}`,
+          },
+          it.cantidad
+        );
+      });
+    }
     setOpen(false);
     navigate('/carrito');
   };
@@ -181,7 +200,7 @@ export default function FloatingChat() {
 
                       <button
                         type="button"
-                        onClick={handleApplyToCart}
+                        onClick={() => handleApplyToCart(m.budget)}
                         className="w-full mt-2 py-2 px-3 bg-[#7ed6a5] hover:bg-[#68c692] text-white font-bold rounded-[10px] text-[11px] text-center transition-colors cursor-pointer shadow-xs"
                       >
                         🛒 Cargar este pedido al Carrito
@@ -200,24 +219,6 @@ export default function FloatingChat() {
               </div>
             )}
             <div ref={messagesEndRef} />
-          </div>
-
-          {/* Sugerencias Rápidas */}
-          <div className="p-2 bg-white border-t border-[#f0f0f4] flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-            {[
-              '2 alfajores y 3 gomitas',
-              '4 cajas de chocolate con maní',
-              '3 displays chupetines'
-            ].map((sug, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => handleSend(sug)}
-                className="text-[10px] font-medium bg-[#f0f0f4] hover:bg-[#ffe2f7] hover:text-[#e86bc4] text-[#6b6b80] px-2.5 py-1 rounded-full whitespace-nowrap transition-colors cursor-pointer"
-              >
-                {sug}
-              </button>
-            ))}
           </div>
 
           {/* Barra de Entrada */}

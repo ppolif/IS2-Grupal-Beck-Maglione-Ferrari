@@ -37,6 +37,17 @@ public class ProvinciaService extends BaseService<Provincia, ProvinciaRequest, P
         this.paisService = paisService;
     }
 
+    @Transactional
+    public Provincia obtenerOCrearPorDefecto() {
+        List<Provincia> activas = buscarEntidadesActivas();
+        if (!activas.isEmpty()) {
+            return activas.get(0);
+        }
+        Pais pais = paisService.obtenerOCrearPorDefecto();
+        ProvinciaResponse creada = crear(new ProvinciaRequest("Mendoza", pais.getId()));
+        return obtenerEntidad(creada.id());
+    }
+
     @Override
     protected ProvinciaRequest prepararRequest(ProvinciaRequest request) {
         if (request == null) {

@@ -14,6 +14,7 @@ export default function Pedidos() {
     handleOpenDetail,
     handleInvoiceOrder,
     handleReenviarFactura,
+    handleDescargarFacturaPdf,
   } = usePedidos();
 
   return (
@@ -28,7 +29,7 @@ export default function Pedidos() {
             Pedidos Recepcionados
           </h2>
           <p className="text-[12px] text-muted mt-0.5">
-            Revisá los pedidos enviados por los preventores, verificá mercadería y emití factura.
+            Revisá los pedidos enviados por los preventores o vía web, verificá mercadería y emití factura.
           </p>
         </div>
       </div>
@@ -36,78 +37,88 @@ export default function Pedidos() {
       {/* Orders Table */}
       <div className="bg-white rounded-[20px] p-5 border border-border-subtle shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
-                <th className="pb-3 px-3">Pedido</th>
-                <th className="pb-3 px-3">Comercio</th>
-                <th className="pb-3 px-3">Preventor</th>
-                <th className="pb-3 px-3">Monto Total</th>
-                <th className="pb-3 px-3">Estado</th>
-                <th className="pb-3 px-3">Facturación</th>
-                <th className="pb-3 px-3 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-divider text-[12px]">
-              {orders.map((o) => (
-                <tr key={o.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3.5 px-3 font-bold text-ink">
-                    #{o.id}
-                  </td>
-                  <td className="py-3.5 px-3 font-medium text-ink">
-                    {o.comercio}
-                  </td>
-                  <td className="py-3.5 px-3 text-muted">{o.preventor}</td>
-                  <td className="py-3.5 px-3 font-bold text-ink">
-                    {o.monto}
-                  </td>
-                  <td className="py-3.5 px-3">
-                    <span
-                      className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
-                        o.estado === 'Facturado'
-                          ? 'bg-success-bg text-success-icon'
-                          : o.estado === 'En camino'
-                          ? 'bg-info-bg text-info-text'
-                          : o.estado === 'Entregado'
-                          ? 'bg-canvas text-muted'
-                          : 'bg-warning-bg text-warning-text'
-                      }`}
-                    >
-                      {o.estado}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-3">
-                    {o.facturado ? (
-                      <span className="text-[11px] font-semibold text-success-icon flex items-center gap-1">
-                        <Icon name="check" className="w-3.5 h-3.5" />
-                        Facturado
-                      </span>
-                    ) : (
-                      <span className="text-[11px] text-brand-error font-semibold">
-                        Sin facturar
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3.5 px-3 text-right space-x-2">
-                    <button
-                      onClick={() => handleOpenDetail(o)}
-                      className="text-secondary hover:underline font-semibold text-[11px] cursor-pointer"
-                    >
-                      Detalle
-                    </button>
-                    {!o.facturado && (
-                      <button
-                        onClick={() => handleInvoiceOrder(o.id)}
-                        className="bg-primary text-white px-2.5 py-1 rounded-[8px] text-[10px] font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
-                      >
-                        Facturar
-                      </button>
-                    )}
-                  </td>
+          {loading ? (
+            <div className="py-10 text-center text-[12px] text-muted">
+              Cargando pedidos recepcionados...
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="py-10 text-center text-[13px] text-muted">
+              No hay pedidos recepcionados para mostrar en esta sección.
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
+                  <th className="pb-3 px-3">Pedido</th>
+                  <th className="pb-3 px-3">Comercio</th>
+                  <th className="pb-3 px-3">Preventor</th>
+                  <th className="pb-3 px-3">Monto Total</th>
+                  <th className="pb-3 px-3">Estado</th>
+                  <th className="pb-3 px-3">Facturación</th>
+                  <th className="pb-3 px-3 text-right">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-divider text-[12px]">
+                {orders.map((o) => (
+                  <tr key={o.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-3.5 px-3 font-bold text-ink">
+                      #{o.numeroPedido}
+                    </td>
+                    <td className="py-3.5 px-3 font-medium text-ink">
+                      {o.comercio}
+                    </td>
+                    <td className="py-3.5 px-3 text-muted">{o.preventor}</td>
+                    <td className="py-3.5 px-3 font-bold text-ink">
+                      {o.monto}
+                    </td>
+                    <td className="py-3.5 px-3">
+                      <span
+                        className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
+                          o.estado === 'FACTURADO'
+                            ? 'bg-success-bg text-success-icon'
+                            : o.estado === 'EN_REPARTO'
+                            ? 'bg-info-bg text-info-text'
+                            : o.estado === 'ENTREGADO'
+                            ? 'bg-canvas text-muted'
+                            : 'bg-warning-bg text-warning-text'
+                        }`}
+                      >
+                        {o.estado}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-3">
+                      {o.facturado ? (
+                        <span className="text-[11px] font-semibold text-success-icon flex items-center gap-1">
+                          <Icon name="check" className="w-3.5 h-3.5" />
+                          Facturado
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-brand-error font-semibold">
+                          Sin facturar
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-3 text-right space-x-2">
+                      <button
+                        onClick={() => handleOpenDetail(o)}
+                        className="text-secondary hover:underline font-semibold text-[11px] cursor-pointer"
+                      >
+                        Detalle
+                      </button>
+                      {!o.facturado && (
+                        <button
+                          onClick={() => handleInvoiceOrder(o.id)}
+                          className="bg-primary text-white px-2.5 py-1 rounded-[8px] text-[10px] font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
+                        >
+                          Facturar
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
@@ -116,7 +127,7 @@ export default function Pedidos() {
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
         tag="FACTURACIÓN"
-        title={selectedOrder ? `Pedido #${selectedOrder.id}` : 'Detalle'}
+        title={selectedOrder ? `Pedido #${selectedOrder.numeroPedido}` : 'Detalle'}
         maxWidth="max-w-lg"
       >
         {selectedOrder && (
@@ -175,13 +186,15 @@ export default function Pedidos() {
               ) : (
                 <>
                   {selectedOrder.facturaId && (
-                    <Button secondary onClick={() => handleReenviarFactura(selectedOrder.facturaId)}>
-                      Reenviar Factura por Mail
-                    </Button>
+                    <>
+                      <Button secondary onClick={() => handleReenviarFactura(selectedOrder.facturaId)}>
+                        Reenviar Factura por Mail
+                      </Button>
+                      <Button secondary onClick={() => handleDescargarFacturaPdf(selectedOrder.facturaId)}>
+                        Descargar PDF
+                      </Button>
+                    </>
                   )}
-                  <Button secondary onClick={() => alert('Factura emitida correctamente.')}>
-                    Descargar Factura A
-                  </Button>
                 </>
               )}
             </div>
