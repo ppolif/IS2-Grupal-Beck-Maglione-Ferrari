@@ -14,7 +14,6 @@ public record PuntoDeVentaRequest(
         @Size(max = 150, message = "El nombre de comercio no puede superar los 150 caracteres")
         String nombreComercio,
 
-        @NotBlank(message = "El id del minorista es obligatorio")
         String minoristaId,
 
         @NotNull(message = "La dirección es obligatoria")

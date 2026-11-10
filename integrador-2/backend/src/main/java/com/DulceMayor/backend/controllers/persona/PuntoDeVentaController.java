@@ -45,7 +45,7 @@ public class PuntoDeVentaController {
     }
 
     @PostMapping({"/puntos-de-venta", "/api/v1/puntos-de-venta"})
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO', 'PREVENTISTA')")
+    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO', 'PREVENTISTA', 'MINORISTA')")
     public ResponseEntity<PuntoDeVentaResponse> crearPuntoDeVenta(@Valid @RequestBody PuntoDeVentaRequest request) {
         PuntoDeVentaResponse creado = puntoDeVentaService.crear(request);
         return ResponseEntity.created(URI.create("/puntos-de-venta/" + creado.id())).body(creado);

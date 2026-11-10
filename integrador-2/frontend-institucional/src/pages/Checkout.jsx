@@ -372,40 +372,63 @@ export default function Checkout() {
             </div>
 
             {puntosDeVenta.length === 0 ? (
-              <div className="p-4 rounded-[14px] bg-[#fafafd] border border-[#ececf2] text-[12px] text-[#6b6b80]">
-                No hay puntos de venta registrados para tu cuenta aún. La entrega se coordinará con tu preventor asignado.
+              <div className="p-5 rounded-[14px] bg-[#fafafd] border border-[#ececf2] text-[12px] text-[#6b6b80] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-[#2b2b3a]">No tenés puntos de venta registrados aún.</p>
+                  <p className="text-[11px] mt-0.5">Podés agregar uno desde tu perfil o se creará automáticamente para este pedido.</p>
+                </div>
+                <Link to="/perfil?tab=puntos-venta">
+                  <Button secondary className="text-[11px] py-1.5 px-3 whitespace-nowrap">
+                    Gestionar puntos de venta
+                  </Button>
+                </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                {puntosDeVenta.map((pdv) => {
-                  const isSelected = pdv.id === selectedPdvId;
-                  return (
-                    <div
-                      key={pdv.id}
-                      onClick={() => setSelectedPdvId(pdv.id)}
-                      className={`p-4 rounded-[16px] border cursor-pointer transition-all ${
-                        isSelected
-                          ? 'border-[#e86bc4] bg-[#fff5fc] shadow-[0_4px_16px_rgba(232,107,196,0.12)]'
-                          : 'border-[#ececf2] hover:border-[#dcdce6] bg-[#fafafd]'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="font-bold text-[13px] text-[#2b2b3a]">
-                          {pdv.nombre}
-                        </span>
-                        {pdv.esPrincipal && (
-                          <span className="text-[10px] bg-[#d9f7ff] text-[#247f99] font-bold px-2 py-0.5 rounded-full">
-                            Principal
-                          </span>
-                        )}
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[#6b6b80]">
+                    Punto de venta seleccionado: <strong className="text-[#2b2b3a]">{selectedPdv?.nombre}</strong>
+                  </span>
+                  <Link to="/perfil?tab=puntos-venta" className="text-[11px] font-bold text-[#e86bc4] hover:underline">
+                    + Administrar locales
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {puntosDeVenta.map((pdv) => {
+                    const isSelected = pdv.id === selectedPdvId;
+                    return (
+                      <div
+                        key={pdv.id}
+                        onClick={() => setSelectedPdvId(pdv.id)}
+                        className={`p-4 rounded-[16px] border cursor-pointer transition-all ${
+                          isSelected
+                            ? 'border-[#e86bc4] bg-[#fff5fc] shadow-[0_4px_16px_rgba(232,107,196,0.12)] ring-1 ring-[#e86bc4]'
+                            : 'border-[#ececf2] hover:border-[#dcdce6] bg-[#fafafd]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${isSelected ? 'border-[#e86bc4] bg-[#e86bc4]' : 'border-[#ccc]'}`}>
+                              {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
+                            </span>
+                            <span className="font-bold text-[13px] text-[#2b2b3a]">
+                              {pdv.nombre}
+                            </span>
+                          </div>
+                          {pdv.esPrincipal && (
+                            <span className="text-[10px] bg-[#d9f7ff] text-[#247f99] font-bold px-2 py-0.5 rounded-full">
+                              Principal
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[12px] text-[#6b6b80] flex items-center gap-1.5 ml-5">
+                          <Icon name="mapPin" className="w-3.5 h-3.5 text-[#3fb8d9]" />
+                          {pdv.direccion}, {pdv.localidad}
+                        </p>
                       </div>
-                      <p className="text-[12px] text-[#6b6b80] flex items-center gap-1.5">
-                        <Icon name="mapPin" className="w-3.5 h-3.5 text-[#3fb8d9]" />
-                        {pdv.direccion}, {pdv.localidad}
-                      </p>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
 
