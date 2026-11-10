@@ -1,6 +1,7 @@
 package com.DulceMayor.backend.entities.pedido;
 
 import com.DulceMayor.backend.entities.EntidadBase;
+import com.DulceMayor.backend.entities.facturacion.FormaDePago;
 import com.DulceMayor.backend.entities.persona.Distribuidor;
 import com.DulceMayor.backend.entities.persona.Preventor;
 import com.DulceMayor.backend.entities.persona.PuntoDeVenta;
@@ -49,7 +50,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@ToString(callSuper = true, exclude = {"promocion", "detalles", "puntoDeVenta", "preventor", "distribuidor"})
+@ToString(callSuper = true, exclude = {"promocion", "detalles", "puntoDeVenta", "preventor", "distribuidor", "formaDePago"})
 public class Pedido extends EntidadBase {
 
     @Column(name = "numero_pedido", nullable = false, unique = true)
@@ -94,6 +95,13 @@ public class Pedido extends EntidadBase {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "promocion_id")
     private Promocion promocion;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "forma_de_pago_id")
+    private FormaDePago formaDePago;
+
+    @Column(name = "fecha_expiracion_pago")
+    private LocalDateTime fechaExpiracionPago;
 
     /**
      * Composición 1 — 1..* hacia {@link DetallePedido}: el pedido es dueño de sus líneas de detalle.

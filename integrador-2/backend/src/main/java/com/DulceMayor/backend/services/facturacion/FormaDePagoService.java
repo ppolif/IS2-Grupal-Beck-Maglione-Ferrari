@@ -5,6 +5,7 @@ import com.DulceMayor.backend.dtos.facturacion.FormaDePagoMapper;
 import com.DulceMayor.backend.dtos.facturacion.FormaDePagoRequest;
 import com.DulceMayor.backend.dtos.facturacion.FormaDePagoResponse;
 import com.DulceMayor.backend.entities.facturacion.FormaDePago;
+import com.DulceMayor.backend.entities.facturacion.TipoPago;
 import com.DulceMayor.backend.repositories.facturacion.FormaDePagoRepository;
 import com.DulceMayor.backend.services.BaseService;
 import java.util.List;
@@ -52,6 +53,23 @@ public class FormaDePagoService extends BaseService<FormaDePago, FormaDePagoRequ
     @Override
     protected List<FormaDePago> buscarEntidadesActivas() {
         return formaDePagoRepository.findAllByEliminadoFalseOrderByTipoPagoAsc();
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public FormaDePago obtenerOCrearPorTipo(TipoPago tipoPago) {
+        if (tipoPago == null) {
+            throw new ValidacionException("El tipo de pago es obligatorio");
+        }
+        return formaDePagoRepository.findAllByTipoPagoAndEliminadoFalse(tipoPago).stream()
+                .findFirst()
+                .orElseGet(() -> {
+                    FormaDePago nueva = FormaDePago.builder()
+                            .tipoPago(tipoPago)
+                            .observacion("Medio de pago generado automáticamente: " + tipoPago.name())
+                            .eliminado(false)
+                            .build();
+                    return formaDePagoRepository.save(nueva);
+                });
     }
 
     private void validarFormato(FormaDePagoRequest request) {

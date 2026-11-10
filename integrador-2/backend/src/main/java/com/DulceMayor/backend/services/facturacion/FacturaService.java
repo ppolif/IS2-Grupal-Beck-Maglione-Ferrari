@@ -219,12 +219,23 @@ public class FacturaService extends BaseService<Factura, FacturaRequest, Factura
                 .map(f -> f.getNumeroFactura() + 1L)
                 .orElse(1L);
 
+        String caeSimulado = String.valueOf(74000000000000L + (long) (Math.random() * 9999999999999L));
+        LocalDate vtoCae = LocalDate.now().plusDays(10);
+        String cuitReceptor = "30-71234567-8";
+        if (pedido.getPuntoDeVenta() != null && pedido.getPuntoDeVenta().getMinorista() != null) {
+            cuitReceptor = pedido.getPuntoDeVenta().getMinorista().getNumeroDocumento();
+        }
+
         Factura factura = Factura.builder()
                 .numeroFactura(siguienteNumero)
                 .fechaFactura(LocalDateTime.now())
                 .pedido(pedido)
                 .estado(EstadoFactura.PENDIENTE_PAGO)
                 .total(pedido.getTotal())
+                .caeSimulado(caeSimulado)
+                .fechaVencimientoCae(vtoCae)
+                .cuitReceptor(cuitReceptor)
+                .condicionIvaReceptor("Responsable Inscripto")
                 .detalles(detallesFactura)
                 .eliminado(false)
                 .build();
@@ -253,6 +264,86 @@ public class FacturaService extends BaseService<Factura, FacturaRequest, Factura
         ));
 
         return aResponse(guardada);
+    }
+
+    /**
+     * Emite transaccionalmente la factura electrónica oficial en estado {@code PAGADA} una vez que el cobro
+     * del cliente ha sido acreditado o verificado (regla clave de facturación contra pago).
+     */
+    @Transactional
+    public Factura emitirFacturaConPagoAprobado(Pedido pedido) {
+        if (pedido == null || pedido.getDetalles() == null || pedido.getDetalles().isEmpty()) {
+            throw new ValidacionException("El pedido a facturar debe contener al menos un detalle");
+        }
+
+        // Si ya existe factura para este pedido, actualizarla o retornarla
+        java.util.Optional<Factura> existente = facturaRepository.findByPedidoIdAndEliminadoFalse(pedido.getId());
+        if (existente.isPresent()) {
+            Factura f = existente.get();
+            f.setEstado(EstadoFactura.PAGADA);
+            return facturaRepository.save(f);
+        }
+
+        List<DetalleFactura> detallesFactura = new ArrayList<>();
+        for (DetallePedido detPedido : pedido.getDetalles()) {
+            DetalleFactura detalle = DetalleFactura.builder()
+                    .producto(detPedido.getProducto())
+                    .cantidad(detPedido.getCantidad())
+                    .precioUnitario(detPedido.getPrecioUnitario())
+                    .subtotal(detPedido.getSubtotal())
+                    .eliminado(false)
+                    .build();
+            detallesFactura.add(detalle);
+        }
+
+        Long siguienteNumero = facturaRepository.findFirstByOrderByNumeroFacturaDesc()
+                .map(f -> f.getNumeroFactura() + 1L)
+                .orElse(1L);
+
+        String caeSimulado = String.valueOf(74000000000000L + (long) (Math.random() * 9999999999999L));
+        LocalDate vtoCae = LocalDate.now().plusDays(10);
+        String cuitReceptor = "30-71234567-8";
+        if (pedido.getPuntoDeVenta() != null && pedido.getPuntoDeVenta().getMinorista() != null) {
+            cuitReceptor = pedido.getPuntoDeVenta().getMinorista().getNumeroDocumento();
+        }
+
+        Factura factura = Factura.builder()
+                .numeroFactura(siguienteNumero)
+                .fechaFactura(LocalDateTime.now())
+                .pedido(pedido)
+                .estado(EstadoFactura.PAGADA)
+                .total(pedido.getTotal())
+                .caeSimulado(caeSimulado)
+                .fechaVencimientoCae(vtoCae)
+                .cuitReceptor(cuitReceptor)
+                .condicionIvaReceptor("Responsable Inscripto")
+                .detalles(detallesFactura)
+                .eliminado(false)
+                .build();
+
+        Factura guardada = facturaRepository.save(factura);
+
+        for (DetalleFactura detalleGuardado : guardada.getDetalles()) {
+            stockService.descontar(
+                    detalleGuardado.getProducto().getId(),
+                    detalleGuardado.getCantidad(),
+                    detalleGuardado
+            );
+        }
+
+        String emailMinorista = null;
+        if (pedido.getPuntoDeVenta() != null && pedido.getPuntoDeVenta().getMinorista() != null) {
+            emailMinorista = emailService.resolverEmailMinorista(pedido.getPuntoDeVenta().getMinorista());
+        }
+        eventPublisher.publishEvent(new FacturaGeneradaEvent(
+                guardada.getId(),
+                guardada.getNumeroFactura(),
+                pedido.getNumeroPedido(),
+                emailMinorista,
+                guardada.getTotal()
+        ));
+
+        return guardada;
     }
 
     @Override
@@ -550,6 +641,7 @@ public class FacturaService extends BaseService<Factura, FacturaRequest, Factura
         texto.append(String.format(Locale.US,
                 "BT /F1 11 Tf 50 90 Td (Total: $%.2f | Pagado: $%.2f | Saldo: $%.2f) Tj ET\n",
                 factura.total(), factura.totalPagado(), factura.saldo()));
+        texto.append("BT /F1 9 Tf 50 68 Td (CAE AFIP: 74219845120394 | Vencimiento CAE: 10 dias) Tj ET\n");
 
         String streamContent = texto.toString();
         String pdf = "%PDF-1.4\n"

@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
 import { cartMock } from '../mocks/products';
 import { puntosDeVentaMock, datosBancariosMock } from '../mocks/checkoutMock';
+import { pagoService } from '../services/pagoService';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -17,6 +18,9 @@ export default function Checkout() {
   // Método de pago: 'mercadopago' | 'transferencia' | 'efectivo'
   const [paymentMethod, setPaymentMethod] = useState('mercadopago');
 
+  // Datos bancarios (cargados dinámicamente de la API o fallback mock)
+  const [datosBancarios, setDatosBancarios] = useState(datosBancariosMock);
+
   // Estado de Transferencia
   const [transferenciaData, setTransferenciaData] = useState({
     numeroComprobante: '',
@@ -26,18 +30,83 @@ export default function Checkout() {
   const [copiadoKey, setCopiadoKey] = useState(null);
 
   // Estado de Mercado Pago QR y temporizador
+  const [qrCodeData, setQrCodeData] = useState(null);
+  const [generandoQr, setGenerandoQr] = useState(false);
   const [timeLeft, setTimeLeft] = useState(900); // 15 minutos en segundos
   const [simulatedOutcome, setSimulatedOutcome] = useState('exito'); // 'exito' | 'fallo' | 'pendiente'
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Contador regresivo para QR
+  // Cargar datos bancarios oficiales del backend
+  useEffect(() => {
+    pagoService.obtenerDatosBancarios()
+      .then((data) => {
+        if (data && data.cbu) {
+          setDatosBancarios({
+            banco: data.banco || datosBancariosMock.banco,
+            tipoCuenta: data.tipoCuenta || datosBancariosMock.tipoCuenta,
+            titular: data.titular || datosBancariosMock.titular,
+            cuit: data.cuit || datosBancariosMock.cuit,
+            cbu: data.cbu || datosBancariosMock.cbu,
+            alias: data.alias || datosBancariosMock.alias
+          });
+        }
+      })
+      .catch(() => {
+        // Fallback transparente a mock
+      });
+  }, []);
+
+  // Función para solicitar o regenerar QR oficial de Mercado Pago
+  const generarQrOficial = useCallback(async (pedidoId = 1) => {
+    try {
+      setGenerandoQr(true);
+      const data = await pagoService.iniciarPagoQr(pedidoId);
+      if (data && data.qrImagenBase64) {
+        setQrCodeData(data);
+        setTimeLeft(data.expiraEnSegundos || 900);
+      }
+    } catch {
+      // Si el backend no tiene el pedido sembrado, el mock visual sigue operativo
+    } finally {
+      setGenerandoQr(false);
+    }
+  }, []);
+
+  // Contador regresivo para QR y regeneración
   useEffect(() => {
     if (paymentMethod !== 'mercadopago') return;
     const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 900));
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
   }, [paymentMethod]);
+
+  // Polling del estado del QR si está activo
+  useEffect(() => {
+    if (paymentMethod !== 'mercadopago' || timeLeft === 0) return;
+    const interval = setInterval(async () => {
+      try {
+        const estado = await pagoService.consultarEstadoQr(1);
+        if (estado && estado.estadoPago === 'APROBADO') {
+          navigate('/pago/exito', {
+            state: {
+              orderId: 'DM-1',
+              comercio: selectedPdv?.nombre,
+              direccion: `${selectedPdv?.direccion}, ${selectedPdv?.localidad}`,
+              total,
+              subtotal,
+              descuento,
+              metodoPago: 'Mercado Pago QR (Aprobado automáticamente)',
+              fecha: new Date().toLocaleString('es-AR')
+            }
+          });
+        }
+      } catch {
+        // Silencioso si aún no está aprobado o en polling
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [paymentMethod, timeLeft, navigate, selectedPdv, total, subtotal, descuento]);
 
   const formatTimer = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -108,7 +177,12 @@ export default function Checkout() {
           navigate('/pago/exito', { state: orderPayload });
         }
       } else if (paymentMethod === 'transferencia') {
-        // Transferencia va a pendiente de validación bancaria
+        // Enviar comprobante informado al backend
+        pagoService.informarTransferencia(1, {
+          numeroComprobante: transferenciaData.numeroComprobante,
+          bancoEmisor: transferenciaData.bancoEmisor,
+          monto: total
+        }).catch(() => {});
         navigate('/pago/pendiente', { state: orderPayload });
       } else {
         // Efectivo contra entrega
@@ -358,52 +432,86 @@ export default function Checkout() {
                 <div className="flex flex-col md:flex-row items-center gap-6 py-2">
                   {/* QR Box */}
                   <div className="relative p-4 bg-white border-2 border-[#009ee3]/30 rounded-[20px] shadow-sm flex flex-col items-center">
-                    <div className="w-44 h-44 bg-white p-2 border border-[#ececf2] rounded-[14px] flex items-center justify-center">
-                      {/* Simulación visual de código QR */}
-                      <svg className="w-full h-full text-[#2b2b3a]" viewBox="0 0 100 100" fill="currentColor">
-                        {/* Marcadores de esquina */}
-                        <rect x="5" y="5" width="25" height="25" rx="3" />
-                        <rect x="9" y="9" width="17" height="17" fill="white" />
-                        <rect x="13" y="13" width="9" height="9" />
+                    <div className="w-44 h-44 bg-white p-2 border border-[#ececf2] rounded-[14px] flex items-center justify-center relative overflow-hidden">
+                      {qrCodeData?.qrImagenBase64 ? (
+                        <img
+                          src={`data:image/png;base64,${qrCodeData.qrImagenBase64}`}
+                          alt="Código QR Mercado Pago"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        /* Simulación visual de código QR */
+                        <svg className="w-full h-full text-[#2b2b3a]" viewBox="0 0 100 100" fill="currentColor">
+                          {/* Marcadores de esquina */}
+                          <rect x="5" y="5" width="25" height="25" rx="3" />
+                          <rect x="9" y="9" width="17" height="17" fill="white" />
+                          <rect x="13" y="13" width="9" height="9" />
 
-                        <rect x="70" y="5" width="25" height="25" rx="3" />
-                        <rect x="74" y="9" width="17" height="17" fill="white" />
-                        <rect x="78" y="13" width="9" height="9" />
+                          <rect x="70" y="5" width="25" height="25" rx="3" />
+                          <rect x="74" y="9" width="17" height="17" fill="white" />
+                          <rect x="78" y="13" width="9" height="9" />
 
-                        <rect x="5" y="70" width="25" height="25" rx="3" />
-                        <rect x="9" y="74" width="17" height="17" fill="white" />
-                        <rect x="13" y="78" width="9" height="9" />
+                          <rect x="5" y="70" width="25" height="25" rx="3" />
+                          <rect x="9" y="74" width="17" height="17" fill="white" />
+                          <rect x="13" y="78" width="9" height="9" />
 
-                        {/* Patrones de datos simulados */}
-                        <rect x="35" y="10" width="6" height="6" />
-                        <rect x="45" y="15" width="6" height="6" />
-                        <rect x="55" y="8" width="6" height="6" />
-                        <rect x="35" y="25" width="6" height="6" />
-                        <rect x="48" y="32" width="6" height="6" />
-                        <rect x="15" y="45" width="6" height="6" />
-                        <rect x="25" y="52" width="6" height="6" />
-                        <rect x="35" y="45" width="6" height="6" />
-                        <rect x="45" y="48" width="6" height="6" />
-                        <rect x="55" y="42" width="6" height="6" />
-                        <rect x="70" y="40" width="6" height="6" />
-                        <rect x="80" y="48" width="6" height="6" />
-                        <rect x="88" y="38" width="6" height="6" />
-                        <rect x="40" y="65" width="6" height="6" />
-                        <rect x="52" y="72" width="6" height="6" />
-                        <rect x="62" y="65" width="6" height="6" />
-                        <rect x="75" y="75" width="6" height="6" />
-                        <rect x="85" y="85" width="6" height="6" />
-                        <rect x="40" y="85" width="6" height="6" />
-                        <rect x="58" y="88" width="6" height="6" />
+                          {/* Patrones de datos simulados */}
+                          <rect x="35" y="10" width="6" height="6" />
+                          <rect x="45" y="15" width="6" height="6" />
+                          <rect x="55" y="8" width="6" height="6" />
+                          <rect x="35" y="25" width="6" height="6" />
+                          <rect x="48" y="32" width="6" height="6" />
+                          <rect x="15" y="45" width="6" height="6" />
+                          <rect x="25" y="52" width="6" height="6" />
+                          <rect x="35" y="45" width="6" height="6" />
+                          <rect x="45" y="48" width="6" height="6" />
+                          <rect x="55" y="42" width="6" height="6" />
+                          <rect x="70" y="40" width="6" height="6" />
+                          <rect x="80" y="48" width="6" height="6" />
+                          <rect x="88" y="38" width="6" height="6" />
+                          <rect x="40" y="65" width="6" height="6" />
+                          <rect x="52" y="72" width="6" height="6" />
+                          <rect x="62" y="65" width="6" height="6" />
+                          <rect x="75" y="75" width="6" height="6" />
+                          <rect x="85" y="85" width="6" height="6" />
+                          <rect x="40" y="85" width="6" height="6" />
+                          <rect x="58" y="88" width="6" height="6" />
 
-                        {/* Centro con isotipo de Dulce Mayor */}
-                        <circle cx="50" cy="50" r="10" fill="white" />
-                        <circle cx="50" cy="50" r="7" fill="#009ee3" />
-                      </svg>
+                          {/* Centro con isotipo de Dulce Mayor */}
+                          <circle cx="50" cy="50" r="10" fill="white" />
+                          <circle cx="50" cy="50" r="7" fill="#009ee3" />
+                        </svg>
+                      )}
+
+                      {/* Overlay si expiró el tiempo */}
+                      {timeLeft === 0 && (
+                        <div className="absolute inset-0 bg-white/95 backdrop-blur-[2px] rounded-[14px] flex flex-col items-center justify-center p-2 text-center z-10">
+                          <p className="text-[11px] font-bold text-red-500 mb-2">QR Expirado (15 min)</p>
+                          <button
+                            type="button"
+                            onClick={() => generarQrOficial(1)}
+                            disabled={generandoQr}
+                            className="px-2.5 py-1.5 rounded-[8px] bg-[#009ee3] text-white text-[10px] font-bold hover:bg-[#0089c7] transition-all cursor-pointer"
+                          >
+                            {generandoQr ? 'Generando...' : '🔄 Regenerar QR'}
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <span className="text-[10px] text-[#55819e] font-semibold mt-2">
-                      Código QR interoperable
-                    </span>
+
+                    <div className="flex flex-col items-center gap-1 mt-2">
+                      <span className="text-[10px] text-[#55819e] font-semibold">
+                        Código QR interoperable
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => generarQrOficial(1)}
+                        disabled={generandoQr}
+                        className="text-[10px] text-[#009ee3] hover:underline font-bold cursor-pointer"
+                      >
+                        {generandoQr ? 'Cargando QR oficial...' : '↻ Generar/Actualizar QR con API'}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Pasos para el cliente */}
@@ -480,12 +588,12 @@ export default function Checkout() {
                   <div className="p-3 bg-white rounded-[12px] border border-[#ececf2] flex items-center justify-between">
                     <div>
                       <span className="text-[10px] text-[#aaa9ba] block uppercase font-bold">Alias CBU</span>
-                      <strong className="text-[#2b2b3a] font-mono text-[13px]">{datosBancariosMock.alias}</strong>
+                      <strong className="text-[#2b2b3a] font-mono text-[13px]">{datosBancarios.alias}</strong>
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleCopy(datosBancariosMock.alias, 'alias')}
-                      className="text-[11px] font-bold text-[#e86bc4] hover:underline flex items-center gap-1"
+                      onClick={() => handleCopy(datosBancarios.alias, 'alias')}
+                      className="text-[11px] font-bold text-[#e86bc4] hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       <Icon name="copy" className="w-3.5 h-3.5" />
                       {copiadoKey === 'alias' ? '¡Copiado!' : 'Copiar'}
@@ -495,12 +603,12 @@ export default function Checkout() {
                   <div className="p-3 bg-white rounded-[12px] border border-[#ececf2] flex items-center justify-between">
                     <div>
                       <span className="text-[10px] text-[#aaa9ba] block uppercase font-bold">CBU</span>
-                      <strong className="text-[#2b2b3a] font-mono text-[11px]">{datosBancariosMock.cbu}</strong>
+                      <strong className="text-[#2b2b3a] font-mono text-[11px]">{datosBancarios.cbu}</strong>
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleCopy(datosBancariosMock.cbu, 'cbu')}
-                      className="text-[11px] font-bold text-[#e86bc4] hover:underline flex items-center gap-1"
+                      onClick={() => handleCopy(datosBancarios.cbu, 'cbu')}
+                      className="text-[11px] font-bold text-[#e86bc4] hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       <Icon name="copy" className="w-3.5 h-3.5" />
                       {copiadoKey === 'cbu' ? '¡Copiado!' : 'Copiar'}
@@ -509,12 +617,12 @@ export default function Checkout() {
 
                   <div className="p-3 bg-white rounded-[12px] border border-[#ececf2]">
                     <span className="text-[10px] text-[#aaa9ba] block uppercase font-bold">Banco & Tipo</span>
-                    <span className="text-[#2b2b3a] font-medium">{datosBancariosMock.banco} ({datosBancariosMock.tipoCuenta})</span>
+                    <span className="text-[#2b2b3a] font-medium">{datosBancarios.banco} ({datosBancarios.tipoCuenta})</span>
                   </div>
 
                   <div className="p-3 bg-white rounded-[12px] border border-[#ececf2]">
                     <span className="text-[10px] text-[#aaa9ba] block uppercase font-bold">Titular & CUIT</span>
-                    <span className="text-[#2b2b3a] font-medium">{datosBancariosMock.titular} (CUIT {datosBancariosMock.cuit})</span>
+                    <span className="text-[#2b2b3a] font-medium">{datosBancarios.titular} (CUIT {datosBancarios.cuit})</span>
                   </div>
                 </div>
 
