@@ -73,7 +73,7 @@ public class PedidoController extends BaseController<PedidoService, PedidoReques
     }
 
     @PostMapping({"/pedidos", "/api/v1/pedidos"})
-    @PreAuthorize("hasAnyRole('JEFE', 'PREVENTISTA')")
+    @PreAuthorize("hasAnyRole('JEFE', 'PREVENTISTA', 'MINORISTA')")
     public ResponseEntity<PedidoResponse> crearPedido(@RequestBody PedidoRequest request) {
         return ejecutarCrear(request);
     }

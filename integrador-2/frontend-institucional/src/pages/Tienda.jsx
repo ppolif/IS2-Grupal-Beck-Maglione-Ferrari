@@ -1,17 +1,45 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ProductCard from '../components/ProductCard';
 import ProductDetailModal from '../components/ProductDetailModal';
 import Icon from '../components/Icon';
-import { productsMock } from '../mocks/products';
+import { apiFetch } from '../services/api';
+import { cartStorage, mapPublicProduct } from '../utils/cartStorage';
 
 export default function Tienda() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [detailProduct, setDetailProduct] = useState(null);
 
-  const categories = ['Todos', 'Alfajores', 'Golosinas', 'Chupetines', 'Chocolates'];
+  useEffect(() => {
+    let cancel = false;
+    setLoading(true);
+    apiFetch('/publico/catalogo?size=100')
+      .then((data) => {
+        if (cancel) return;
+        const list = data?.content || data?.elementos || (Array.isArray(data) ? data : []);
+        setProducts(list.map(mapPublicProduct));
+      })
+      .catch((err) => {
+        console.error('Error al cargar catálogo público:', err);
+        if (!cancel) setProducts([]);
+      })
+      .finally(() => {
+        if (!cancel) setLoading(false);
+      });
 
-  const filteredProducts = productsMock.filter((p) => {
+    return () => {
+      cancel = true;
+    };
+  }, []);
+
+  const dynamicCategories = Array.from(
+    new Set(products.map((p) => p.categoria).filter(Boolean))
+  );
+  const categories = ['Todos', ...dynamicCategories];
+
+  const filteredProducts = products.filter((p) => {
     const matchesCategory =
       selectedCategory === 'Todos' || p.categoria === selectedCategory;
     const matchesSearch =
@@ -19,6 +47,11 @@ export default function Tienda() {
       p.presentacion.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  const handleAdd = (prod, cant = 1) => {
+    cartStorage.addItem(prod, cant);
+    alert(`Se agregaron ${cant} bulto(s) de "${prod.nombre}" al carrito.`);
+  };
 
   return (
     <div className="space-y-8">
@@ -31,7 +64,7 @@ export default function Tienda() {
           Golosinas y Confitería
         </h1>
         <p className="text-[13px] text-[#6b6b80] max-w-2xl mb-6">
-          Precios por bulto cerrado y caja exhibidora para kioscos, almacenes, minimarkets y distribuidoras.
+          Precios por bulto cerrado y caja exhibidora para kioscos, almacenes, minimarkets y distribuidoras. Solo se exhiben productos con stock disponible.
         </p>
 
         {/* Search & Category Filter bar */}
@@ -45,7 +78,7 @@ export default function Tienda() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por nombre, presentación o marca..."
+              placeholder="Buscar por nombre o presentación..."
               className="w-full pl-10 pr-4 py-2.5 rounded-[12px] border border-[#ececf2] bg-[#f8f9fc] text-[12px] text-[#2b2b3a] focus:bg-white focus:outline-none focus:border-[#e86bc4] transition-colors"
             />
           </div>
@@ -74,30 +107,40 @@ export default function Tienda() {
       <div>
         <div className="flex items-center justify-between mb-4 px-1">
           <span className="text-[12px] text-[#6b6b80]">
-            Mostrando <strong>{filteredProducts.length}</strong> productos
+            Mostrando <strong>{filteredProducts.length}</strong> productos con stock
           </span>
           <span className="text-[11px] text-[#3fb8d9] font-medium">
             Precios vigentes con IVA incluido
           </span>
         </div>
 
-        {filteredProducts.length === 0 ? (
+        {loading ? (
+          <div className="bg-white rounded-[20px] p-12 text-center border border-[#ececf2] text-[13px] text-[#6b6b80]">
+            Cargando productos disponibles...
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <div className="bg-white rounded-[20px] p-12 text-center border border-[#ececf2]">
             <p className="text-[15px] font-semibold text-[#2b2b3a]">
-              No encontramos productos para tu búsqueda
+              {products.length === 0
+                ? 'No hay productos con stock disponibles en la tienda en este momento.'
+                : 'No encontramos productos para tu búsqueda'}
             </p>
-            <p className="text-[12px] text-[#6b6b80] mt-1">
-              Probá con otra palabra clave o limpiá los filtros.
-            </p>
-            <button
-              onClick={() => {
-                setSelectedCategory('Todos');
-                setSearchTerm('');
-              }}
-              className="mt-4 text-[12px] text-[#e86bc4] font-semibold hover:underline"
-            >
-              Restablecer filtros
-            </button>
+            {products.length > 0 && (
+              <>
+                <p className="text-[12px] text-[#6b6b80] mt-1">
+                  Probá con otra palabra clave o limpiá los filtros.
+                </p>
+                <button
+                  onClick={() => {
+                    setSelectedCategory('Todos');
+                    setSearchTerm('');
+                  }}
+                  className="mt-4 text-[12px] text-[#e86bc4] font-semibold hover:underline"
+                >
+                  Restablecer filtros
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
@@ -106,9 +149,7 @@ export default function Tienda() {
                 key={p.id}
                 product={p}
                 onClick={(prod) => setDetailProduct(prod)}
-                onAddToCart={(prod) => {
-                  alert(`Agregado 1 bulto de "${prod.nombre}" al carrito.`);
-                }}
+                onAddToCart={(prod) => handleAdd(prod, 1)}
               />
             ))}
           </div>
@@ -120,9 +161,7 @@ export default function Tienda() {
         <ProductDetailModal
           product={detailProduct}
           onClose={() => setDetailProduct(null)}
-          onAddToCart={(item) => {
-            console.log('Agregado al carrito:', item);
-          }}
+          onAddToCart={(prod, cant) => handleAdd(prod, cant)}
         />
       )}
     </div>

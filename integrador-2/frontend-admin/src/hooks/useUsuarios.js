@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { empleadoService } from '../services/empleadoService';
+import { mayoristaService } from '../services/mayoristaService';
 
 /**
  * Custom hook managing employee state, filters, API operations and modal workflows.
  */
 export function useUsuarios() {
   const [empleados, setEmpleados] = useState([]);
+  const [mayoristas, setMayoristas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [errorGlobal, setErrorGlobal] = useState(null);
   const [exitoMensaje, setExitoMensaje] = useState(null);
@@ -27,6 +29,7 @@ export function useUsuarios() {
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
   const [rol, setRol] = useState('PREVENTISTA');
+  const [mayoristaId, setMayoristaId] = useState('');
 
   // Modal Edición
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -42,6 +45,7 @@ export function useUsuarios() {
   const [editEmail, setEditEmail] = useState('');
   const [editTelefono, setEditTelefono] = useState('');
   const [editRol, setEditRol] = useState('PREVENTISTA');
+  const [editMayoristaId, setEditMayoristaId] = useState('');
 
   // Modal Baja / Eliminación
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -49,11 +53,27 @@ export function useUsuarios() {
   const [errorDelete, setErrorDelete] = useState(null);
   const [empleadoAEliminar, setEmpleadoAEliminar] = useState(null);
 
+  const cargarMayoristas = useCallback(async () => {
+    try {
+      const res = await mayoristaService.listar();
+      const list = Array.isArray(res) ? res : [];
+      setMayoristas(list);
+      if (list.length > 0) {
+        setMayoristaId((prev) => prev || list[0].id);
+      }
+    } catch {
+      // Ignorar si falla la carga silenciosa de mayoristas o manejar en errorGlobal
+    }
+  }, []);
+
   const cargarEmpleados = useCallback(async () => {
     setCargando(true);
     setErrorGlobal(null);
     try {
-      const res = await empleadoService.listar({ size: 100 });
+      const [res] = await Promise.all([
+        empleadoService.listar({ size: 100 }),
+        cargarMayoristas(),
+      ]);
       if (res && Array.isArray(res.content)) {
         setEmpleados(res.content);
       } else {
@@ -65,7 +85,7 @@ export function useUsuarios() {
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [cargarMayoristas]);
 
   useEffect(() => {
     cargarEmpleados();
@@ -81,7 +101,17 @@ export function useUsuarios() {
     setEmail('');
     setTelefono('');
     setRol('PREVENTISTA');
+    if (mayoristas.length > 0) {
+      setMayoristaId(mayoristas[0].id);
+    }
     setErrorCreate(null);
+  };
+
+  const formatearError = (err, fallback) => {
+    if (err.errors && Array.isArray(err.errors) && err.errors.length > 0) {
+      return err.errors.map((e) => e.mensaje || `${e.campo}: error`).join(' - ');
+    }
+    return err.message || fallback;
   };
 
   const handleCreate = async (e) => {
@@ -113,6 +143,7 @@ export function useUsuarios() {
       legajo: legajo.trim(),
       nombreUsuario: nombreUsuario.trim().toLowerCase(),
       rol,
+      mayoristaId: mayoristaId || (mayoristas.length > 0 ? mayoristas[0].id : null),
       contactos,
       direcciones: [],
     };
@@ -126,7 +157,7 @@ export function useUsuarios() {
       resetCreateForm();
       cargarEmpleados();
     } catch (err) {
-      setErrorCreate(err.message || 'Error al registrar el empleado.');
+      setErrorCreate(formatearError(err, 'Error al registrar el empleado.'));
     } finally {
       setCreando(false);
     }
@@ -146,6 +177,7 @@ export function useUsuarios() {
     setEditEmail(correo);
     setEditTelefono(tel);
     setEditRol(emp.usuario?.rol || 'PREVENTISTA');
+    setEditMayoristaId(emp.mayoristaId || (mayoristas.length > 0 ? mayoristas[0].id : ''));
     setErrorEdit(null);
     setIsEditOpen(true);
   };
@@ -180,6 +212,7 @@ export function useUsuarios() {
       legajo: editLegajo.trim(),
       nombreUsuario: editNombreUsuario.trim().toLowerCase(),
       rol: editRol,
+      mayoristaId: editMayoristaId || empleadoAEditar.mayoristaId || (mayoristas.length > 0 ? mayoristas[0].id : null),
       contactos,
       direcciones: empleadoAEditar.direcciones || [],
     };
@@ -193,7 +226,7 @@ export function useUsuarios() {
       setEmpleadoAEditar(null);
       cargarEmpleados();
     } catch (err) {
-      setErrorEdit(err.message || 'Error al actualizar el empleado.');
+      setErrorEdit(formatearError(err, 'Error al actualizar el empleado.'));
     } finally {
       setGuardando(false);
     }
@@ -254,6 +287,7 @@ export function useUsuarios() {
 
   return {
     // Data & state
+    mayoristas,
     cargando,
     errorGlobal,
     exitoMensaje,
@@ -290,6 +324,8 @@ export function useUsuarios() {
     setTelefono,
     rol,
     setRol,
+    mayoristaId,
+    setMayoristaId,
     resetCreateForm,
     handleCreate,
 
@@ -317,6 +353,8 @@ export function useUsuarios() {
     editTelefono,
     setEditTelefono,
     editRol,
+    editMayoristaId,
+    setEditMayoristaId,
     openEditModal,
     handleEdit,
 

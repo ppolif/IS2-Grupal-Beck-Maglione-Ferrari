@@ -37,6 +37,17 @@ public class DepartamentoService extends BaseService<Departamento, DepartamentoR
         this.provinciaService = provinciaService;
     }
 
+    @Transactional
+    public Departamento obtenerOCrearPorDefecto() {
+        List<Departamento> activos = buscarEntidadesActivas();
+        if (!activos.isEmpty()) {
+            return activos.get(0);
+        }
+        Provincia provincia = provinciaService.obtenerOCrearPorDefecto();
+        DepartamentoResponse creado = crear(new DepartamentoRequest("Capital", provincia.getId()));
+        return obtenerEntidad(creado.id());
+    }
+
     @Override
     protected DepartamentoRequest prepararRequest(DepartamentoRequest request) {
         if (request == null) {

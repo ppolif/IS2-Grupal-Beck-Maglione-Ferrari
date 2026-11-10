@@ -274,6 +274,38 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
     }
 
     /**
+     * Obtiene la entidad {@link Minorista} asociada al usuario autenticado o la inicializa si se trata
+     * de un usuario minorista válido sin ficha de persona asociada aún (ej. usuario semilla).
+     */
+    @Transactional
+    public Minorista obtenerOCrearPorUsuarioId(String usuarioId) {
+        Optional<Minorista> existente = minoristaRepository.findByUsuarioIdAndEliminadoFalse(usuarioId);
+        if (existente.isPresent()) {
+            return existente.get();
+        }
+        Usuario usuario = usuarioService.buscarUsuario(usuarioId);
+        if (usuario.isEliminado()) {
+            throw new RecursoNoEncontradoException(
+                    "No se encontró minorista activo para el usuario con id: " + usuarioId);
+        }
+        String sufijoDoc = usuarioId.replace("-", "");
+        if (sufijoDoc.length() > 10) {
+            sufijoDoc = sufijoDoc.substring(0, 10);
+        }
+        Minorista nuevo = Minorista.builder()
+                .nombre("Cliente")
+                .apellido(usuario.getNombreUsuario())
+                .tipoDocumento(com.DulceMayor.backend.entities.persona.TipoDocumento.DNI)
+                .numeroDocumento("MIN-" + sufijoDoc)
+                .usuario(usuario)
+                .contactos(new ArrayList<>())
+                .direcciones(new ArrayList<>())
+                .eliminado(false)
+                .build();
+        return minoristaRepository.save(nuevo);
+    }
+
+    /**
      * Proyecta el perfil personal del minorista autenticado a DTO de respuesta.
      *
      * <p><b>Cuándo se usa:</b> En el endpoint {@code GET /mi-cuenta/perfil} del portal del cliente.</p>

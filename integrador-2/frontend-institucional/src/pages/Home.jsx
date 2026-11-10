@@ -3,15 +3,20 @@ import { Link } from 'react-router-dom';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
 import ProductCard from '../components/ProductCard';
-import { productsMock, candyImg } from '../mocks/products';
 import { apiFetch } from '../services/api';
+import { cartStorage, mapPublicProduct } from '../utils/cartStorage';
+
+const HERO_IMG =
+  'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?auto=format&fit=crop&w=1000&q=85';
 
 export default function Home() {
-  const previewProducts = productsMock.slice(0, 4);
+  const [previewProducts, setPreviewProducts] = useState([]);
+  const [loadingCatalogo, setLoadingCatalogo] = useState(true);
   const [cotizacion, setCotizacion] = useState(null);
 
   useEffect(() => {
     let cancel = false;
+
     apiFetch('/publico/cotizacion-dolar')
       .then((data) => {
         if (!cancel && data) {
@@ -21,6 +26,20 @@ export default function Home() {
       .catch((err) => {
         console.warn('No se pudo obtener la cotización del dólar en tiempo real:', err);
       });
+
+    apiFetch('/publico/catalogo?size=4')
+      .then((data) => {
+        if (cancel) return;
+        const list = data?.content || data?.elementos || (Array.isArray(data) ? data : []);
+        setPreviewProducts(list.map(mapPublicProduct));
+      })
+      .catch(() => {
+        if (!cancel) setPreviewProducts([]);
+      })
+      .finally(() => {
+        if (!cancel) setLoadingCatalogo(false);
+      });
+
     return () => {
       cancel = true;
     };
@@ -38,7 +57,7 @@ export default function Home() {
 
   return (
     <div className="space-y-12">
-      {/* Hero Section matching prototype web-hero */}
+      {/* Hero Section */}
       <section className="relative overflow-hidden rounded-[26px] bg-gradient-to-tr from-[#ffe7f8] via-[#f7eefc] to-[#dff8ff] p-8 sm:p-12 md:p-16 min-h-[490px] flex items-center shadow-[0_14px_40px_rgba(56,52,84,0.08)]">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full">
           <div className="lg:col-span-7 space-y-4 z-10">
@@ -64,19 +83,15 @@ export default function Home() {
                 </Button>
               </Link>
             </div>
-            <div className="pt-4 flex items-center gap-2 text-[12px] text-[#6b6b80]">
-              <strong className="text-[#2b2b3a] font-bold text-[14px]">+450</strong> comercios de Mendoza eligen Dulce Mayor cada mes
-            </div>
           </div>
 
-          {/* Photo stack from prototype */}
+          {/* Photo stack & Dollar indicator badge */}
           <div className="hidden lg:flex lg:col-span-5 relative justify-center items-center h-[380px]">
             <img
-              src={candyImg}
+              src={HERO_IMG}
               alt="Golosinas coloridas mayoristas"
               className="w-[90%] h-full object-cover rounded-[48%_48%_20%_20%] rotate-3 shadow-[0_14px_40px_rgba(56,52,84,0.15)] border-4 border-white"
             />
-            {/* Dollar indicator badge */}
             <div className="absolute right-0 bottom-6 bg-white px-5 py-3.5 rounded-[16px] shadow-[0_14px_40px_rgba(56,52,84,0.12)] border border-[#ececf2] flex flex-col">
               <small className="text-[9px] font-bold tracking-wider text-[#6b6b80] uppercase">
                 {cotizacion?.moneda ? `Dólar (${cotizacion.moneda})` : 'Dólar Hoy'}
@@ -97,7 +112,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Shop Preview Section matching prototype shop-preview */}
+      {/* Shop Preview Section */}
       <section className="bg-white rounded-[22px] p-6 sm:p-10 md:p-12 border border-[#ececf2] shadow-[0_14px_40px_rgba(56,52,84,0.06)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
@@ -115,15 +130,31 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* 4 columns in desktop, 2 in tablet/mobile */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {previewProducts.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
+        {loadingCatalogo ? (
+          <div className="py-12 text-center text-[13px] text-[#6b6b80]">
+            Cargando catálogo disponible...
+          </div>
+        ) : previewProducts.length === 0 ? (
+          <div className="py-12 text-center text-[14px] text-[#6b6b80] bg-[#fafafd] rounded-[18px] border border-[#ececf2]">
+            No hay productos con stock disponibles en este momento en el catálogo.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {previewProducts.map((p) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                onAddToCart={(prod) => {
+                  cartStorage.addItem(prod, 1);
+                  alert(`Se agregó "${prod.nombre}" al carrito.`);
+                }}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* Benefits Section matching prototype benefits */}
+      {/* Benefits Section */}
       <section className="bg-[#292838] text-white rounded-[24px] p-8 sm:p-10 md:p-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="flex flex-col sm:flex-row md:flex-col items-start gap-4">
@@ -166,4 +197,3 @@ export default function Home() {
     </div>
   );
 }
-

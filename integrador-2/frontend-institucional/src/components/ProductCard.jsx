@@ -1,15 +1,17 @@
 export default function ProductCard({
   product,
   onAddToCart,
-  onClick
+  onClick,
 }) {
+  if (!product) return null;
+
   const {
-    nombre = "Alfajor triple chocolate",
-    presentacion = "Caja x 24 u.",
-    precio = "$18.900",
-    categoria = "Golosinas",
-    imagen = "https://images.unsplash.com/photo-1633158832466-be592c721217?crop=entropy&cs=tinysrgb&fit=crop&fm=jpg&q=85&w=1200"
-  } = product || {};
+    nombre = 'Producto',
+    presentacion = 'Unidad mayorista',
+    precio = '$0',
+    categoria = 'Catálogo',
+    imagen = 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?auto=format&fit=crop&w=1000&q=85',
+  } = product;
 
   return (
     <article
@@ -60,4 +62,3 @@ export default function ProductCard({
     </article>
   );
 }
-

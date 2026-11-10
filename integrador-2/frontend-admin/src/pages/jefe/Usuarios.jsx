@@ -7,6 +7,7 @@ import { formatRolLabel, getBadgeClass } from '../../utils/formatters';
 export default function Usuarios() {
   const {
     // Data & state
+    mayoristas,
     cargando,
     errorGlobal,
     exitoMensaje,
@@ -43,6 +44,8 @@ export default function Usuarios() {
     setTelefono,
     rol,
     setRol,
+    mayoristaId,
+    setMayoristaId,
     resetCreateForm,
     handleCreate,
 
@@ -69,6 +72,8 @@ export default function Usuarios() {
     editTelefono,
     setEditTelefono,
     editRol,
+    editMayoristaId,
+    setEditMayoristaId,
     openEditModal,
     handleEdit,
 
@@ -197,8 +202,9 @@ export default function Usuarios() {
                 <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
                   <th className="pb-3 px-3">Legajo</th>
                   <th className="pb-3 px-3">Empleado</th>
+                  <th className="pb-3 px-3">Sede / Sucursal</th>
                   <th className="pb-3 px-3">Documento</th>
-                  <th className="pb-3 px-3">Usuario y Contacto</th>
+                  <th className="pb-3 px-3">Usuario</th>
                   <th className="pb-3 px-3">Rol Autorizado</th>
                   <th className="pb-3 px-3 text-right">Acciones</th>
                 </tr>
@@ -219,19 +225,16 @@ export default function Usuarios() {
                           {emp.nombre} {emp.apellido}
                         </div>
                       </td>
+                      <td className="py-3 px-3 text-[11px] text-muted">
+                        {emp.mayoristaRazonSocial || 'Sede Central'}
+                      </td>
                       <td className="py-3 px-3 text-muted text-[11px]">
                         <span className="font-semibold text-ink">{emp.tipoDocumento}</span> {emp.numeroDocumento}
                       </td>
                       <td className="py-3 px-3 text-[11px]">
                         <div className="font-medium text-ink">
-                          @{emp.usuario?.nombreUsuario || 'sin-usuario'}
+                          {emp.usuario?.nombreUsuario || 'sin-usuario'}
                         </div>
-                        {emailContacto && (
-                          <div className="text-[10px] text-muted-light">{emailContacto}</div>
-                        )}
-                        {telContacto && (
-                          <div className="text-[10px] text-muted-light">Tel: {telContacto}</div>
-                        )}
                       </td>
                       <td className="py-3 px-3">
                         <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${getBadgeClass(rolUsuario)}`}>
@@ -361,16 +364,25 @@ export default function Usuarios() {
 
             <div>
               <label className="block text-[11px] font-semibold text-ink mb-1">
-                Nombre de Usuario (Login) *
+                Nombre de Usuario (Email de Login) *
               </label>
               <input
-                type="text"
+                type="email"
                 required
                 value={nombreUsuario}
-                onChange={(e) => setNombreUsuario(e.target.value)}
-                placeholder="Ej. lgomez"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setNombreUsuario(val);
+                  if (!email || email === nombreUsuario) {
+                    setEmail(val);
+                  }
+                }}
+                placeholder="ejemplo@dulcemayor.com"
                 className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink bg-white focus:outline-none focus:border-primary"
               />
+              <p className="text-[10px] text-muted-light mt-1">
+                Debe ser el correo electrónico con el que el empleado iniciará sesión.
+              </p>
             </div>
           </div>
 
@@ -402,19 +414,43 @@ export default function Usuarios() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-[11px] font-semibold text-ink mb-1">
-              Rol de Empleado Autorizado *
-            </label>
-            <select
-              value={rol}
-              onChange={(e) => setRol(e.target.value)}
-              className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink bg-white focus:outline-none focus:border-primary"
-            >
-              <option value="PREVENTISTA">Preventista (Ventas y Pedidos)</option>
-              <option value="DISTRIBUIDOR">Distribuidor (Logística y Entrega)</option>
-              <option value="ADMINISTRATIVO">Personal Administrativo</option>
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-ink mb-1">
+                Rol de Empleado Autorizado *
+              </label>
+              <select
+                value={rol}
+                onChange={(e) => setRol(e.target.value)}
+                className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink bg-white focus:outline-none focus:border-primary"
+              >
+                <option value="PREVENTISTA">Preventista (Ventas y Pedidos)</option>
+                <option value="DISTRIBUIDOR">Distribuidor (Logística y Entrega)</option>
+                <option value="ADMINISTRATIVO">Personal Administrativo</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-ink mb-1">
+                Sede Central o Sucursal Mayorista *
+              </label>
+              <select
+                value={mayoristaId}
+                onChange={(e) => setMayoristaId(e.target.value)}
+                required
+                className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink bg-white focus:outline-none focus:border-primary"
+              >
+                {mayoristas.length === 0 ? (
+                  <option value="">Cargando sedes...</option>
+                ) : (
+                  mayoristas.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.razonSocial || m.nombreFantasia || m.id} ({m.tipoEmpresa === 'SEDE_CENTRAL' ? 'Sede Central' : 'Sucursal'})
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
           </div>
 
           <div className="p-3 bg-surface-note rounded-[12px] border border-border-subtle text-[11px] text-muted">
@@ -532,15 +568,19 @@ export default function Usuarios() {
 
             <div>
               <label className="block text-[11px] font-semibold text-ink mb-1">
-                Nombre de Usuario *
+                Nombre de Usuario (Email de Login) *
               </label>
               <input
-                type="text"
+                type="email"
                 required
                 value={editNombreUsuario}
                 onChange={(e) => setEditNombreUsuario(e.target.value)}
+                placeholder="ejemplo@dulcemayor.com"
                 className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink bg-white focus:outline-none focus:border-primary"
               />
+              <p className="text-[10px] text-muted-light mt-1">
+                Debe ser el correo electrónico con el que el empleado inicia sesión.
+              </p>
             </div>
           </div>
 
@@ -570,20 +610,44 @@ export default function Usuarios() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-[11px] font-semibold text-ink mb-1">
-              Rol Asignado
-            </label>
-            <input
-              type="text"
-              readOnly
-              disabled
-              value={formatRolLabel(editRol)}
-              className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-muted bg-surface-note cursor-not-allowed"
-            />
-            <p className="text-[10px] text-muted-light mt-1">
-              La especialidad de la entidad está ligada a su registro inicial.
-            </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-ink mb-1">
+                Rol Asignado
+              </label>
+              <input
+                type="text"
+                readOnly
+                disabled
+                value={formatRolLabel(editRol)}
+                className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-muted bg-surface-note cursor-not-allowed"
+              />
+              <p className="text-[10px] text-muted-light mt-1">
+                La especialidad de la entidad está ligada a su registro inicial.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-ink mb-1">
+                Sede Central o Sucursal Mayorista *
+              </label>
+              <select
+                value={editMayoristaId}
+                onChange={(e) => setEditMayoristaId(e.target.value)}
+                required
+                className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink bg-white focus:outline-none focus:border-primary"
+              >
+                {mayoristas.length === 0 ? (
+                  <option value="">Cargando sedes...</option>
+                ) : (
+                  mayoristas.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.razonSocial || m.nombreFantasia || m.id} ({m.tipoEmpresa === 'SEDE_CENTRAL' ? 'Sede Central' : 'Sucursal'})
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
           </div>
 
           <div className="pt-2 flex justify-end gap-2.5">

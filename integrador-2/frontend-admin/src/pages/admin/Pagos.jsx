@@ -5,6 +5,7 @@ import { usePagos } from '../../hooks/usePagos';
 
 export default function Pagos() {
   const {
+    facturasPendientes,
     activeTab,
     setActiveTab,
     loading,
@@ -24,12 +25,12 @@ export default function Pagos() {
     formData,
     setFormData,
     handleRegisterPayment,
-    filtered
+    filtered,
   } = usePagos();
 
   return (
     <div className="space-y-6">
-      {/* Title */}
+      {/* Title & Navigation Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-primary">
@@ -77,12 +78,8 @@ export default function Pagos() {
 
       {activeTab === 'todos' ? (
         <>
-          {/* Filterbar matching prototype filterbar */}
+          {/* Filterbar */}
           <div className="bg-white rounded-[18px] p-4 border border-border-subtle shadow-sm flex flex-wrap items-center gap-3">
-            <span className="border border-border-subtle px-3.5 py-2 rounded-[10px] text-[11px] text-muted bg-surface-soft">
-              Período: <strong className="text-ink">Junio 2025</strong>
-            </span>
-
             <span className="border border-border-subtle px-3.5 py-2 rounded-[10px] text-[11px] text-muted bg-surface-soft">
               Departamento: <strong className="text-ink">Gran Mendoza</strong>
             </span>
@@ -98,7 +95,7 @@ export default function Pagos() {
                 <option value="Transferencia">Transferencia</option>
                 <option value="Mercado Pago">Mercado Pago QR</option>
                 <option value="Efectivo">Efectivo</option>
-                <option value="Cheque">Cheque</option>
+                <option value="Billetera">Billetera Virtual</option>
               </select>
             </div>
 
@@ -114,7 +111,7 @@ export default function Pagos() {
           <div className="bg-white rounded-[20px] p-6 border border-border-subtle shadow-sm">
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-divider">
               <h3 className="text-[15px] font-bold text-ink">
-                Historial General de Pagos
+                Estado de Pagos Registrados
               </h3>
               <span className="text-[11px] text-muted">
                 Total registros: <strong>{filtered.length}</strong>
@@ -122,52 +119,62 @@ export default function Pagos() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
-                    <th className="pb-3 px-3">Nº Pago</th>
-                    <th className="pb-3 px-3">Pedido</th>
-                    <th className="pb-3 px-3">Comercio</th>
-                    <th className="pb-3 px-3">Monto</th>
-                    <th className="pb-3 px-3">Medio de Pago</th>
-                    <th className="pb-3 px-3">Fecha</th>
-                    <th className="pb-3 px-3">Estado</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-divider text-[12px]">
-                  {filtered.map((p) => (
-                    <tr key={p.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-3 px-3 font-semibold text-ink">
-                        {p.id}
-                      </td>
-                      <td className="py-3 px-3 font-bold text-secondary">
-                        #{p.pedidoId}
-                      </td>
-                      <td className="py-3 px-3 font-medium text-ink">
-                        {p.comercio}
-                      </td>
-                      <td className="py-3 px-3 font-bold text-ink">
-                        {p.monto}
-                      </td>
-                      <td className="py-3 px-3 text-muted">{p.medioPago}</td>
-                      <td className="py-3 px-3 text-muted text-[11px]">{p.fecha}</td>
-                      <td className="py-3 px-3">
-                        <span
-                          className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
-                            p.estado === 'Acreditado' || p.estado === 'Aprobado'
-                              ? 'bg-success-bg text-success-icon'
-                              : p.estado.includes('Cobrado')
-                              ? 'bg-info-bg text-info-text'
-                              : 'bg-warning-alt-bg text-warning-text'
-                          }`}
-                        >
-                          {p.estado}
-                        </span>
-                      </td>
+              {loading ? (
+                <div className="py-10 text-center text-[12px] text-muted">
+                  Cargando pagos registrados...
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="py-10 text-center text-[13px] text-muted">
+                  No hay pagos registrados para mostrar en esta sección.
+                </div>
+              ) : (
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-border-subtle text-[10px] uppercase font-bold text-muted-subtle tracking-wider">
+                      <th className="pb-3 px-3">Comprobante</th>
+                      <th className="pb-3 px-3">Pedido</th>
+                      <th className="pb-3 px-3">Comercio</th>
+                      <th className="pb-3 px-3">Monto</th>
+                      <th className="pb-3 px-3">Medio de Pago</th>
+                      <th className="pb-3 px-3">Fecha</th>
+                      <th className="pb-3 px-3">Estado</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-divider text-[12px]">
+                    {filtered.map((p) => (
+                      <tr key={p.rawId || p.id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3 px-3 font-semibold text-ink">
+                          {p.id}
+                        </td>
+                        <td className="py-3 px-3 font-bold text-secondary">
+                          #{p.pedidoId}
+                        </td>
+                        <td className="py-3 px-3 font-medium text-ink">
+                          {p.comercio}
+                        </td>
+                        <td className="py-3 px-3 font-bold text-ink">
+                          {p.monto}
+                        </td>
+                        <td className="py-3 px-3 text-muted">{p.medioPago}</td>
+                        <td className="py-3 px-3 text-muted text-[11px]">{p.fecha}</td>
+                        <td className="py-3 px-3">
+                          <span
+                            className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
+                              p.estado === 'Acreditado' || p.estado === 'Aprobado'
+                                ? 'bg-success-bg text-success-icon'
+                                : p.estado.includes('Cobrado')
+                                ? 'bg-info-bg text-info-text'
+                                : 'bg-warning-alt-bg text-warning-text'
+                            }`}
+                          >
+                            {p.estado}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </>
@@ -272,83 +279,95 @@ export default function Pagos() {
         tag="COBRANZAS"
         title="Registrar Nuevo Pago"
       >
-        <form onSubmit={handleRegisterPayment} className="space-y-4">
-          <div>
-            <label className="block text-[11px] font-semibold text-ink mb-1">
-              Nº de Pedido a Imputar *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.pedidoId}
-              onChange={(e) => setFormData({ ...formData, pedidoId: e.target.value })}
-              className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink focus:outline-none focus:border-primary"
-            />
+        {facturasPendientes.length === 0 ? (
+          <div className="space-y-4 text-[12px] text-muted">
+            <p>No hay facturas con saldo pendiente de pago en este momento.</p>
+            <div className="flex justify-end">
+              <Button secondary type="button" onClick={() => setIsModalOpen(false)}>
+                Cerrar
+              </Button>
+            </div>
           </div>
-
-          <div>
-            <label className="block text-[11px] font-semibold text-ink mb-1">
-              Nombre del Comercio / Cliente *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.comercio}
-              onChange={(e) => setFormData({ ...formData, comercio: e.target.value })}
-              className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink focus:outline-none focus:border-primary"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+        ) : (
+          <form onSubmit={handleRegisterPayment} className="space-y-4">
             <div>
               <label className="block text-[11px] font-semibold text-ink mb-1">
-                Monto cobrado *
+                Factura / Pedido a Imputar *
+              </label>
+              <select
+                required
+                value={formData.facturaId}
+                onChange={(e) => {
+                  const sel = facturasPendientes.find((f) => f.id === e.target.value);
+                  setFormData({
+                    ...formData,
+                    facturaId: e.target.value,
+                    monto: sel ? String(sel.saldo) : formData.monto,
+                  });
+                }}
+                className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink bg-white focus:outline-none focus:border-primary"
+              >
+                {facturasPendientes.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.numeroFactura} · Pedido #{f.numeroPedido} · {f.comercio} (Saldo: ${f.saldo.toLocaleString('es-AR')})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-ink mb-1">
+                  Monto cobrado ($) *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={formData.monto}
+                  onChange={(e) => setFormData({ ...formData, monto: e.target.value })}
+                  className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-ink mb-1">
+                  Medio de Pago *
+                </label>
+                <select
+                  value={formData.medioPago}
+                  onChange={(e) => setFormData({ ...formData, medioPago: e.target.value })}
+                  className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink bg-white focus:outline-none focus:border-primary"
+                >
+                  <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Billetera Virtual">Billetera Virtual</option>
+                  <option value="Mercado Pago QR">Mercado Pago QR</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-ink mb-1">
+                Nº de Comprobante / Recibo
               </label>
               <input
                 type="text"
-                required
-                value={formData.monto}
-                onChange={(e) => setFormData({ ...formData, monto: e.target.value })}
+                value={formData.comprobante}
+                onChange={(e) => setFormData({ ...formData, comprobante: e.target.value })}
+                placeholder="Ej: TRF-909988"
                 className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink focus:outline-none focus:border-primary"
               />
             </div>
 
-            <div>
-              <label className="block text-[11px] font-semibold text-ink mb-1">
-                Medio de Pago *
-              </label>
-              <select
-                value={formData.medioPago}
-                onChange={(e) => setFormData({ ...formData, medioPago: e.target.value })}
-                className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink bg-white focus:outline-none focus:border-primary"
-              >
-                <option>Transferencia Bancaria</option>
-                <option>Efectivo</option>
-                <option>Mercado Pago QR</option>
-                <option>Cheque 30 días</option>
-              </select>
+            <div className="pt-2 flex justify-end gap-2.5">
+              <Button secondary type="button" onClick={() => setIsModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">Guardar pago</Button>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-semibold text-ink mb-1">
-              Nº de Comprobante / Recibo
-            </label>
-            <input
-              type="text"
-              value={formData.comprobante}
-              onChange={(e) => setFormData({ ...formData, comprobante: e.target.value })}
-              className="w-full border border-border-subtle rounded-[12px] p-2.5 text-[12px] text-ink focus:outline-none focus:border-primary"
-            />
-          </div>
-
-          <div className="pt-2 flex justify-end gap-2.5">
-            <Button secondary type="button" onClick={() => setIsModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit">Guardar pago</Button>
-          </div>
-        </form>
+          </form>
+        )}
       </Modal>
 
       {/* Modal Rechazar Transferencia */}

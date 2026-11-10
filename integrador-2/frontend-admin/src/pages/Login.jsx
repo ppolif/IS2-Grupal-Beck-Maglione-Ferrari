@@ -81,7 +81,7 @@ export default function Login() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-[11px] font-semibold text-ink mb-1.5">
-                  Nombre de usuario o legajo *
+                  Usuario (Email o nombre de usuario) *
                 </label>
                 <input
                   type="text"
@@ -89,7 +89,7 @@ export default function Login() {
                   autoFocus
                   value={nombreUsuario}
                   onChange={(e) => setNombreUsuario(e.target.value)}
-                  placeholder="Ej: jefe o administrativo"
+                  placeholder="Ej: usuario@dulcemayor.com o jefe"
                   className="w-full border border-border-subtle rounded-[13px] px-3.5 py-2.5 text-[12px] text-ink bg-surface-note focus:bg-white focus:outline-none focus:border-primary transition-all"
                 />
               </div>

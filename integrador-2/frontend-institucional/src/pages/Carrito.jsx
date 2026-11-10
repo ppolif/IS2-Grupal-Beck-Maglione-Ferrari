@@ -1,64 +1,79 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
-import { cartMock } from '../mocks/products';
+import { apiFetch } from '../services/api';
+import { cartStorage } from '../utils/cartStorage';
 
 export default function Carrito() {
   const navigate = useNavigate();
-  const [items, setItems] = useState(cartMock);
+  const [items, setItems] = useState(() => cartStorage.getItems());
   const [promoCodeInput, setPromoCodeInput] = useState('');
-  const [appliedPromo, setAppliedPromo] = useState({
-    code: 'DULCE10',
-    descripcion: '10% de descuento mayorista',
-    pct: 0.10
-  });
+  const [appliedPromo, setAppliedPromo] = useState(() => cartStorage.getPromo());
   const [promoError, setPromoError] = useState('');
 
-  const PROMO_CODES = {
-    'DULCE10': { code: 'DULCE10', descripcion: '10% de descuento mayorista', pct: 0.10 },
-    'MAYORISTA20': { code: 'MAYORISTA20', descripcion: '20% por compra en volumen', pct: 0.20 },
-    'BIENVENIDA': { code: 'BIENVENIDA', descripcion: '$5.000 de descuento inicial', fijo: 5000 }
-  };
+  useEffect(() => {
+    const sync = () => {
+      setItems(cartStorage.getItems());
+      setAppliedPromo(cartStorage.getPromo());
+    };
+    window.addEventListener('dm_cart_updated', sync);
+    return () => window.removeEventListener('dm_cart_updated', sync);
+  }, []);
 
   const updateQuantity = (index, delta) => {
-    setItems((prev) =>
-      prev.map((item, i) => {
-        if (i === index) {
-          const newQ = Math.max(1, item.cantidad + delta);
-          return { ...item, cantidad: newQ };
-        }
-        return item;
-      })
-    );
+    const updated = items.map((item, i) => {
+      if (i === index) {
+        const newQ = Math.max(1, item.cantidad + delta);
+        return { ...item, cantidad: newQ };
+      }
+      return item;
+    });
+    setItems(updated);
+    cartStorage.setItems(updated);
   };
 
   const removeItem = (index) => {
-    setItems((prev) => prev.filter((_, i) => i !== index));
+    const updated = items.filter((_, i) => i !== index);
+    setItems(updated);
+    cartStorage.setItems(updated);
   };
 
-  const handleApplyPromo = (e) => {
+  const handleApplyPromo = async (e) => {
     e.preventDefault();
     const cleanCode = promoCodeInput.trim().toUpperCase();
     if (!cleanCode) return;
 
-    if (PROMO_CODES[cleanCode]) {
-      setAppliedPromo(PROMO_CODES[cleanCode]);
-      setPromoError('');
-      setPromoCodeInput('');
-    } else {
-      setPromoError('El código ingresado no existe o ha expirado.');
+    try {
+      const promo = await apiFetch(`/promociones/codigo/${encodeURIComponent(cleanCode)}`, {
+        method: 'GET',
+      });
+      if (promo && promo.porcentajeDescuento) {
+        const promoObj = {
+          code: promo.codigo,
+          descripcion: promo.descripcion || `${promo.porcentajeDescuento}% de descuento`,
+          pct: Number(promo.porcentajeDescuento) / 100,
+        };
+        setAppliedPromo(promoObj);
+        cartStorage.setPromo(promoObj);
+        setPromoError('');
+        setPromoCodeInput('');
+      } else {
+        setPromoError('El código ingresado no existe o ha expirado.');
+      }
+    } catch {
+      setPromoError('El código ingresado no existe, ha expirado o requiere iniciar sesión.');
     }
   };
 
   const handleRemovePromo = () => {
     setAppliedPromo(null);
+    cartStorage.setPromo(null);
     setPromoError('');
   };
 
-  // Dinámica de subtotales y descuentos
   const subtotal = items.reduce(
-    (acc, it) => acc + it.producto.precioNum * it.cantidad,
+    (acc, it) => acc + Number(it.producto.precioNum || 0) * Number(it.cantidad || 1),
     0
   );
 
@@ -95,7 +110,7 @@ export default function Carrito() {
           </div>
           <h2 className="text-xl font-bold text-[#2b2b3a]">El carrito está vacío</h2>
           <p className="text-[13px] text-[#6b6b80] mt-1 mb-6">
-            Sumá productos mayoristas desde el catálogo para generar tu pedido.
+            Sumá productos mayoristas con stock desde el catálogo para generar tu pedido.
           </p>
           <Link to="/tienda">
             <Button>Ir a la tienda</Button>
@@ -174,22 +189,6 @@ export default function Carrito() {
                 ))}
               </div>
             </div>
-
-            {/* Delivery address info */}
-            <div className="bg-white rounded-[20px] p-5 border border-[#ececf2] flex items-center justify-between text-[12px]">
-              <div className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-full bg-[#d9f7ff] text-[#247f99] flex items-center justify-center">
-                  <Icon name="route" className="w-4 h-4" />
-                </span>
-                <div>
-                  <strong className="text-[#2b2b3a] block">Lugar de entrega:</strong>
-                  <span className="text-[#6b6b80]">Kiosco San Martín · Av. San Martín 1842, Godoy Cruz</span>
-                </div>
-              </div>
-              <button className="text-[#3fb8d9] font-semibold text-[11px] hover:underline cursor-pointer">
-                Cambiar
-              </button>
-            </div>
           </div>
 
           {/* Order Summary Card */}
@@ -241,7 +240,7 @@ export default function Carrito() {
                           setPromoCodeInput(e.target.value);
                           if (promoError) setPromoError('');
                         }}
-                        placeholder="Ej. DULCE10 o MAYORISTA20"
+                        placeholder="Ingresá tu código..."
                         className="flex-1 border border-[#ececf2] rounded-[10px] px-3 py-2 text-[11px] text-[#2b2b3a] uppercase font-mono bg-[#f8f9fc] focus:bg-white focus:outline-none focus:border-[#e86bc4]"
                       />
                       <Button type="submit" className="px-3.5 py-2 text-[11px]">
@@ -251,9 +250,6 @@ export default function Carrito() {
                     {promoError && (
                       <p className="text-[10px] text-[#ff8fa3] font-medium">{promoError}</p>
                     )}
-                    <span className="text-[9px] text-[#aaa9ba] block">
-                      Probá: <code className="text-[#e86bc4] font-semibold">DULCE10</code>, <code className="text-[#e86bc4] font-semibold">MAYORISTA20</code> o <code className="text-[#e86bc4] font-semibold">BIENVENIDA</code>
-                    </span>
                   </form>
                 )}
               </div>
@@ -283,11 +279,6 @@ export default function Carrito() {
                     ${total.toLocaleString('es-AR')}
                   </strong>
                 </div>
-              </div>
-
-              <div className="p-3 bg-[#f8f9fc] rounded-[12px] text-[11px] text-[#6b6b80] space-y-1">
-                <p>✓ Pago contra entrega o billetera virtual con QR.</p>
-                <p>✓ Factura electrónica A o B descargable en tu perfil.</p>
               </div>
 
               <Button

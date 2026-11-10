@@ -38,6 +38,17 @@ public class LocalidadService extends BaseService<Localidad, LocalidadRequest, L
         this.departamentoService = departamentoService;
     }
 
+    @Transactional
+    public Localidad obtenerOCrearPorDefecto() {
+        List<Localidad> activas = buscarEntidadesActivas();
+        if (!activas.isEmpty()) {
+            return activas.get(0);
+        }
+        Departamento departamento = departamentoService.obtenerOCrearPorDefecto();
+        LocalidadResponse creada = crear(new LocalidadRequest("Ciudad de Mendoza", "5500", departamento.getId()));
+        return obtenerEntidad(creada.id());
+    }
+
     @Override
     protected LocalidadRequest prepararRequest(LocalidadRequest request) {
         if (request == null) {

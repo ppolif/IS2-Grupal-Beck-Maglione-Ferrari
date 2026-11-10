@@ -13,6 +13,7 @@ import java.util.List;
 
 import com.DulceMayor.backend.services.BaseService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Servicio de negocio para la gestión de países del diccionario geográfico.
@@ -30,6 +31,16 @@ public class PaisService extends BaseService<Pais, PaisRequest, PaisResponse> {
             PaisMapper paisMapper) {
         super(paisRepository, paisMapper, "País");
         this.paisRepository = paisRepository;
+    }
+
+    @Transactional
+    public Pais obtenerOCrearPorDefecto() {
+        List<Pais> activos = buscarEntidadesActivas();
+        if (!activos.isEmpty()) {
+            return activos.get(0);
+        }
+        PaisResponse creado = crear(new PaisRequest("Argentina"));
+        return obtenerEntidad(creado.id());
     }
 
     @Override

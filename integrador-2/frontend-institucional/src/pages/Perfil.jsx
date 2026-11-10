@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
@@ -6,7 +6,10 @@ import PasswordInput from '../components/PasswordInput';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
+import { apiFetch } from '../services/api';
 import { pedidoClienteService } from '../services/pedidoClienteService';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 export default function Perfil() {
   const [searchParams] = useSearchParams();
@@ -149,25 +152,93 @@ export default function Perfil() {
     }
   };
 
-  // Pedidos del cliente minorista cargados reactivamente (con persistencia)
-  const [orders, setOrders] = useState(() => pedidoClienteService.obtenerPedidos());
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
 
-  useEffect(() => {
-    const refrescarPedidos = () => {
-      setOrders(pedidoClienteService.obtenerPedidos());
-    };
-    refrescarPedidos();
-
-    // Intentar sincronizar con backend si hay sesión activa
-    pedidoClienteService.sincronizarConBackend().then((lista) => {
-      if (lista && lista.length > 0) {
-        setOrders(pedidoClienteService.obtenerPedidos());
-      }
+  const cargarPedidos = useCallback(() => {
+    setLoadingOrders(true);
+    const localOrders = pedidoClienteService.obtenerPedidos();
+    const localPorId = {};
+    localOrders.forEach((lo) => {
+      if (lo.rawId) localPorId[lo.rawId] = lo;
+      if (lo.id) localPorId[lo.id] = lo;
     });
 
-    window.addEventListener('dm-pedido-actualizado', refrescarPedidos);
-    return () => window.removeEventListener('dm-pedido-actualizado', refrescarPedidos);
+    Promise.all([
+      apiFetch('/mi-cuenta/pedidos?size=50').catch(() => ({ elementos: [] })),
+      apiFetch('/mi-cuenta/facturas?size=50').catch(() => ({ elementos: [] })),
+    ])
+      .then(([pedRes, factRes]) => {
+        const listaPed = pedRes?.elementos || pedRes?.content || (Array.isArray(pedRes) ? pedRes : []);
+        const listaFact = factRes?.elementos || factRes?.content || (Array.isArray(factRes) ? factRes : []);
+        const factPorPedido = {};
+        listaFact.forEach((f) => {
+          if (f.pedidoId) factPorPedido[f.pedidoId] = f;
+        });
+
+        const mapped = listaPed.map((p) => {
+          const factura = factPorPedido[p.id];
+          const localMatch = localPorId[p.id] || localPorId[`DM-${p.numeroPedido}`] || localPorId[p.numeroPedido];
+          const fechaStr = p.fechaHoraCarga
+            ? new Date(p.fechaHoraCarga).toLocaleString('es-AR')
+            : '-';
+          const dir = p.puntoDeVenta?.direccion;
+          const direccionEntrega = dir
+            ? `${dir.calle || ''} ${dir.numeracion || ''}, ${dir.localidadNombre || dir.departamentoNombre || 'Mendoza'}`.trim()
+            : p.puntoDeVenta?.nombreComercio || 'Mendoza';
+
+          return {
+            id: p.numeroPedido || p.id,
+            rawId: p.id,
+            facturaId: factura?.id || p.facturaId || null,
+            fecha: fechaStr,
+            total: `$${Number(p.total || 0).toLocaleString('es-AR')}`,
+            subtotal: `$${Number(p.subtotal || p.total || 0).toLocaleString('es-AR')}`,
+            descuento: `$${Number(p.descuento || 0).toLocaleString('es-AR')}`,
+            estado: p.estado || localMatch?.estado || 'CARGADO',
+            facturaNum: factura?.numeroFactura
+              ? `FA-${String(factura.numeroFactura).padStart(8, '0')}`
+              : 'Pendiente de emisión',
+            medioPago: localMatch?.medioPago || localMatch?.metodoPago || 'Mayorista',
+            direccionEntrega,
+            items: (p.detalles || []).map((d) => ({
+              nombre: d.productoNombre || d.producto?.nombre || 'Producto',
+              cant: d.cantidad || 1,
+              precioUnit: `$${Number(d.precioUnitario || 0).toLocaleString('es-AR')}`,
+              subtotal: `$${Number(d.subtotal || 0).toLocaleString('es-AR')}`,
+            })),
+            trazabilidad: [
+              { estado: 'Pedido Confirmado', fecha: fechaStr, done: true },
+              {
+                estado: 'Facturado en Depósito',
+                fecha: p.estado === 'FACTURADO' || p.estado === 'EN_REPARTO' || p.estado === 'ENTREGADO' ? 'Completado' : 'Pendiente',
+                done: p.estado === 'FACTURADO' || p.estado === 'EN_REPARTO' || p.estado === 'ENTREGADO',
+              },
+              {
+                estado: 'En Reparto con Distribuidor',
+                fecha: p.estado === 'EN_REPARTO' || p.estado === 'ENTREGADO' ? 'Completado' : 'Pendiente',
+                done: p.estado === 'EN_REPARTO' || p.estado === 'ENTREGADO',
+              },
+              {
+                estado: 'Entregado en Comercio',
+                fecha: p.estado === 'ENTREGADO' ? 'Completado' : 'Pendiente',
+                done: p.estado === 'ENTREGADO',
+              },
+            ],
+          };
+        });
+        setOrders(mapped);
+      })
+      .finally(() => {
+        setLoadingOrders(false);
+      });
   }, []);
+
+  useEffect(() => {
+    cargarPedidos();
+    window.addEventListener('dm-pedido-actualizado', cargarPedidos);
+    return () => window.removeEventListener('dm-pedido-actualizado', cargarPedidos);
+  }, [cargarPedidos]);
 
   const handleOpenDetail = (order) => {
     setSelectedOrder(order);
@@ -179,11 +250,28 @@ export default function Perfil() {
     setShowQrModal(true);
   };
 
-  const handleDownloadPdf = (orderId, facturaNum) => {
-    if (facturaNum) {
-      showToast(`Descargando factura electrónica PDF (${facturaNum})...`);
-    } else {
-      showToast(`El pedido #${orderId} se encuentra pendiente de acreditación para emitir factura.`);
+  const handleDownloadPdf = async (order) => {
+    if (!order?.facturaId) {
+      showToast('Este pedido aún no posee factura emitida para descargar.');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('dm_institucional_token') || localStorage.getItem('dm_token');
+      const res = await fetch(`${API_BASE_URL}/facturas/${order.facturaId}/pdf`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${order.facturaNum || 'factura'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast(`No se pudo descargar la factura: ${err.message}`);
     }
   };
 
@@ -302,72 +390,82 @@ export default function Perfil() {
             </div>
           </div>
 
-          <div className="space-y-3.5">
-            {orders.map((p) => (
-              <div
-                key={p.id}
-                className="p-5 rounded-[18px] border border-[#ececf2] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[#fdfdfd] hover:border-[#e86bc4]/50 transition-colors"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <strong className="text-[#2b2b3a] text-[14px]">Pedido #{p.id}</strong>
-                    <span className="text-[11px] text-[#6b6b80]">· {p.fecha}</span>
-                    <span
-                      className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
-                        p.estado === 'En camino' || p.estado === 'Listo para reparto'
-                          ? 'bg-[#d9f7ff] text-[#247f99]'
-                          : p.estado === 'Pendiente de Pago'
-                          ? 'bg-[#faf0d9] text-[#b88014]'
-                          : p.estado === 'Pago Rechazado'
-                          ? 'bg-[#fee2e2] text-[#b91c1c]'
-                          : 'bg-[#dff8e9] text-[#39855b]'
-                      }`}
-                    >
-                      {p.estado}
-                    </span>
-                    <span className="text-[10px] text-[#8c8b9c] font-medium bg-[#f0f2f7] px-2 py-0.5 rounded-md">
-                      {p.medioPago}
-                    </span>
+          {loadingOrders ? (
+            <div className="py-10 text-center text-[12px] text-[#6b6b80]">
+              Cargando historial de pedidos...
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="py-10 text-center text-[13px] text-[#6b6b80]">
+              No tenés pedidos registrados en tu historial todavía.
+            </div>
+          ) : (
+            <div className="space-y-3.5">
+              {orders.map((p) => (
+                <div
+                  key={p.rawId || p.id}
+                  className="p-5 rounded-[18px] border border-[#ececf2] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[#fdfdfd] hover:border-[#e86bc4]/50 transition-colors"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <strong className="text-[#2b2b3a] text-[14px]">Pedido #{p.id}</strong>
+                      <span className="text-[11px] text-[#6b6b80]">· {p.fecha}</span>
+                      <span
+                        className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
+                          p.estado === 'EN_REPARTO' || p.estado === 'En camino' || p.estado === 'Listo para reparto'
+                            ? 'bg-[#d9f7ff] text-[#247f99]'
+                            : p.estado === 'Pendiente de Pago' || p.estado === 'CARGADO'
+                            ? 'bg-[#faf0d9] text-[#b88014]'
+                            : p.estado === 'Pago Rechazado' || p.estado === 'ANULADO'
+                            ? 'bg-[#fee2e2] text-[#b91c1c]'
+                            : 'bg-[#dff8e9] text-[#39855b]'
+                        }`}
+                      >
+                        {p.estado}
+                      </span>
+                      <span className="text-[10px] text-[#8c8b9c] font-medium bg-[#f0f2f7] px-2 py-0.5 rounded-md">
+                        {p.medioPago}
+                      </span>
+                    </div>
+                    <p className="text-[12px] text-[#6b6b80]">
+                      {p.items.map((it) => `${it.cant}x ${it.nombre}`).join(' · ')}
+                    </p>
                   </div>
-                  <p className="text-[12px] text-[#6b6b80]">
-                    {p.items.map((it) => `${it.cant}x ${it.nombre}`).join(' · ')}
-                  </p>
-                </div>
 
-                <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0">
-                  <strong className="text-[16px] text-[#2b2b3a] font-bold">
-                    {p.total}
-                  </strong>
+                  <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0">
+                    <strong className="text-[16px] text-[#2b2b3a] font-bold">
+                      {p.total}
+                    </strong>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenDetail(p)}
-                      className="px-3 py-1.5 rounded-[10px] text-[12px] font-semibold text-[#3fb8d9] bg-[#d9f7ff]/40 hover:bg-[#d9f7ff] transition-colors cursor-pointer"
-                    >
-                      Ver detalle
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDownloadPdf(p.id, p.facturaNum)}
-                      className="px-3 py-1.5 rounded-[10px] text-[12px] font-semibold text-[#2b2b3a] bg-slate-100 hover:bg-slate-200 transition-colors flex items-center gap-1 cursor-pointer"
-                      title="Descargar factura en PDF"
-                    >
-                      <span>PDF</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenQr(p)}
-                      className="px-3 py-1.5 rounded-[10px] text-[12px] font-semibold text-white bg-[#e86bc4] hover:bg-[#d456b0] transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-                      title="Ver QR de pago"
-                    >
-                      <span>QR</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDetail(p)}
+                        className="px-3 py-1.5 rounded-[10px] text-[12px] font-semibold text-[#3fb8d9] bg-[#d9f7ff]/40 hover:bg-[#d9f7ff] transition-colors cursor-pointer"
+                      >
+                        Ver detalle
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadPdf(p)}
+                        className="px-3 py-1.5 rounded-[10px] text-[12px] font-semibold text-[#2b2b3a] bg-slate-100 hover:bg-slate-200 transition-colors flex items-center gap-1 cursor-pointer"
+                        title="Descargar factura en PDF"
+                      >
+                        <span>PDF</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenQr(p)}
+                        className="px-3 py-1.5 rounded-[10px] text-[12px] font-semibold text-white bg-[#e86bc4] hover:bg-[#d456b0] transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                        title="Ver QR de pago"
+                      >
+                        <span>QR</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -797,7 +895,7 @@ export default function Perfil() {
             <div className="pt-3 border-t border-[#f0f0f4] flex flex-wrap gap-2.5 justify-end">
               <Button
                 secondary
-                onClick={() => handleDownloadPdf(selectedOrder.id, selectedOrder.facturaNum)}
+                onClick={() => handleDownloadPdf(selectedOrder)}
                 className="text-[12px] py-2"
               >
                 <span>Descargar Factura PDF</span>
