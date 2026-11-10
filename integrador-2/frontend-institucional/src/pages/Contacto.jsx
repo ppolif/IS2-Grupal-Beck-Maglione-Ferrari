@@ -61,8 +61,9 @@ export default function Contacto() {
                 </span>
                 <div>
                   <strong className="text-[#2b2b3a] block">Correo Electrónico</strong>
-                  <span className="text-[#6b6b80]">ventas@dulcemayor.com.ar</span><br />
-                  <span className="text-[#6b6b80]">atencion@dulcemayor.com.ar</span>
+                  <a href="mailto:dulcemayor5@gmail.com" className="text-[#6b6b80] hover:text-[#e86bc4] transition-colors">
+                    dulcemayor5@gmail.com
+                  </a>
                 </div>
               </div>
             </div>
