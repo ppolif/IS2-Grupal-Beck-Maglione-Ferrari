@@ -2,11 +2,14 @@ import { NavLink, Outlet, Link } from 'react-router-dom';
 import Logo from '../components/Logo';
 import Icon from '../components/Icon';
 import { useAuth } from '../context/AuthContext';
-import { usuarioMock } from '../mocks/session';
 
 export default function DistribuidorLayout({ onLogout }) {
   const { userData } = useAuth();
-  const usuarioActivo = userData || usuarioMock;
+  const usuarioActivo = userData || {
+    nombre: 'Distribuidor',
+    avatar: 'DT',
+    unidad: 'Móvil de Reparto',
+  };
 
   const navItems = [
     { to: '/recorrido', label: 'Ruta de Entrega', icon: 'truck' },

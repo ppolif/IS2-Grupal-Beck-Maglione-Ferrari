@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import PreventorRoutes from './PreventorRoutes';
 import DistribuidorRoutes from './DistribuidorRoutes';
 import Login from '../pages/compartidas/Login';

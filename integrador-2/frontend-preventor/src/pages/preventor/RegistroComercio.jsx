@@ -1,22 +1,88 @@
+/**
+ * Formulario de Alta y Registro de Comercios Minoristas en Ruta.
+ * Conectado con los endpoints /minoristas y /puntos-de-venta del backend.
+ */
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
+import { comercioService } from '../../services/comercioService';
 
 export default function RegistroComercio() {
+  const navigate = useNavigate();
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSuccess(true);
+  const [formData, setFormData] = useState({
+    nombreComercio: '',
+    nombre: '',
+    apellido: '',
+    tipoDocumento: 'CUIT',
+    numeroDocumento: '',
+    telefono: '',
+    email: '',
+    calle: '',
+    numero: '',
+    localidad: 'Godoy Cruz',
+  });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const fields = [
-    { label: 'Nombre del comercio', placeholder: 'Kiosco El Sol', defaultVal: 'Kiosco El Sol' },
-    { label: 'Responsable', placeholder: 'Nombre y apellido del titular', defaultVal: 'Roberto Gómez' },
-    { label: 'CUIT / CUIL', placeholder: '20-28192834-4', defaultVal: '20-28192834-4' },
-    { label: 'Teléfono', placeholder: '261 422 1099', defaultVal: '261 422 1099' },
-    { label: 'Email', placeholder: 'comercio@email.com', defaultVal: 'kioscoelsol@gmail.com' },
-    { label: 'Dirección', placeholder: 'Av. San Martín 1842, Godoy Cruz', defaultVal: 'Av. San Martín 1842, Godoy Cruz' },
-  ];
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 1. Registrar Minorista
+      const minoristaPayload = {
+        nombre: formData.nombre.trim(),
+        apellido: formData.apellido.trim(),
+        tipoDocumento: formData.tipoDocumento,
+        numeroDocumento: formData.numeroDocumento.trim(),
+        contactos: [
+          ...(formData.telefono ? [{ tipo: 'TELEFONO', valor: formData.telefono.trim() }] : []),
+          ...(formData.email ? [{ tipo: 'EMAIL', valor: formData.email.trim() }] : []),
+        ],
+        direcciones: [
+          {
+            calle: formData.calle.trim(),
+            numero: formData.numero.trim() || 'S/N',
+            pisoDpto: '',
+            observaciones: formData.nombreComercio.trim(),
+            localidadId: 'loc-01', // Localidad por defecto Gran Mendoza
+          },
+        ],
+      };
+
+      const minoristaCreado = await comercioService.registrarMinorista(minoristaPayload);
+
+      // 2. Si se devuelve ID de minorista, vincular su punto de venta
+      if (minoristaCreado?.id) {
+        await comercioService.crearPuntoDeVenta({
+          nombreComercio: formData.nombreComercio.trim(),
+          minoristaId: minoristaCreado.id,
+          direccion: {
+            calle: formData.calle.trim(),
+            numero: formData.numero.trim() || 'S/N',
+            pisoDpto: '',
+            localidadId: 'loc-01',
+          },
+        }).catch(() => {
+          // Si el endpoint de minoristas ya generó el punto de venta automáticamente
+        });
+      }
+
+      setSuccess(true);
+    } catch (err) {
+      console.error('Error al registrar comercio:', err);
+      setError(err.message || 'Error al guardar el nuevo comercio.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -28,7 +94,7 @@ export default function RegistroComercio() {
           Registrar Comercio en Ruta
         </h1>
         <p className="text-[12px] text-[#6b6b80] mt-0.5">
-          Completá la información del nuevo punto de venta para darlo de alta en tu recorrido.
+          Completá la información del nuevo punto de venta para darlo de alta en el sistema central.
         </p>
       </div>
 
@@ -37,42 +103,153 @@ export default function RegistroComercio() {
           <div className="p-8 text-center bg-[#dff8e9] rounded-[16px] text-[#39855b] space-y-3">
             <h3 className="text-[17px] font-bold">¡Comercio registrado con éxito!</h3>
             <p className="text-[12px] text-[#39855b]/90">
-              El cliente fue incorporado a tu hoja de ruta y ya podés cargarle pedidos mayoristas.
+              El cliente fue incorporado a la base de datos central y ya podés cargarle pedidos.
             </p>
-            <div className="pt-2">
+            <div className="pt-2 flex justify-center gap-2">
               <Button onClick={() => setSuccess(false)}>
                 Registrar otro comercio
+              </Button>
+              <Button secondary onClick={() => navigate('/comercios')}>
+                Ver en la lista
               </Button>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="p-3 bg-[#ffe8ed] border border-[#ffccd5] rounded-[12px] text-[12px] text-[#e5484d]">
+                {error}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {fields.map((f) => (
-                <div key={f.label} className="space-y-1">
-                  <label className="block text-[11px] font-semibold text-[#2b2b3a]">
-                    {f.label} *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    defaultValue={f.defaultVal}
-                    placeholder={f.placeholder}
-                    className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white placeholder-[#aaa9ba] focus:outline-none focus:border-[#e86bc4]"
-                  />
-                </div>
-              ))}
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-[#2b2b3a]">
+                  Nombre de Fantasía del Comercio *
+                </label>
+                <input
+                  type="text"
+                  required
+                  name="nombreComercio"
+                  value={formData.nombreComercio}
+                  onChange={handleChange}
+                  placeholder="Ej: Kiosco El Paso"
+                  className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-[#2b2b3a]">
+                  CUIT / CUIL / DNI *
+                </label>
+                <input
+                  type="text"
+                  required
+                  name="numeroDocumento"
+                  value={formData.numeroDocumento}
+                  onChange={handleChange}
+                  placeholder="Ej: 20-28192834-4"
+                  className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-[#2b2b3a]">
+                  Nombre del Titular *
+                </label>
+                <input
+                  type="text"
+                  required
+                  name="nombre"
+                  value={formData.nombre}
+                  onChange={handleChange}
+                  placeholder="Ej: Roberto"
+                  className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-[#2b2b3a]">
+                  Apellido del Titular *
+                </label>
+                <input
+                  type="text"
+                  required
+                  name="apellido"
+                  value={formData.apellido}
+                  onChange={handleChange}
+                  placeholder="Ej: Gómez"
+                  className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-[#2b2b3a]">
+                  Calle de Ubicación *
+                </label>
+                <input
+                  type="text"
+                  required
+                  name="calle"
+                  value={formData.calle}
+                  onChange={handleChange}
+                  placeholder="Ej: Av. San Martín"
+                  className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-[#2b2b3a]">
+                  Altura / Número
+                </label>
+                <input
+                  type="text"
+                  name="numero"
+                  value={formData.numero}
+                  onChange={handleChange}
+                  placeholder="Ej: 1842"
+                  className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-[#2b2b3a]">
+                  Teléfono de Contacto
+                </label>
+                <input
+                  type="text"
+                  name="telefono"
+                  value={formData.telefono}
+                  onChange={handleChange}
+                  placeholder="Ej: 261 422 1099"
+                  className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-[#2b2b3a]">
+                  Correo Electrónico
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="comercio@ejemplo.com"
+                  className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                />
+              </div>
             </div>
 
             <div className="pt-4 border-t border-[#f0f0f4] flex flex-col sm:flex-row gap-3">
-              <Button type="submit" className="w-full sm:w-auto px-8 py-3.5 text-[13px]">
-                Registrar comercio
+              <Button type="submit" disabled={loading} className="w-full sm:w-auto px-8 py-3.5 text-[13px] cursor-pointer">
+                {loading ? 'Guardando en Base de Datos...' : 'Registrar comercio'}
               </Button>
               <Button
                 secondary
                 type="button"
-                onClick={() => window.history.back()}
-                className="w-full sm:w-auto px-6 py-3.5 text-[13px]"
+                onClick={() => navigate('/comercios')}
+                className="w-full sm:w-auto px-6 py-3.5 text-[13px] cursor-pointer"
               >
                 Volver
               </Button>
@@ -83,4 +260,3 @@ export default function RegistroComercio() {
     </div>
   );
 }
-

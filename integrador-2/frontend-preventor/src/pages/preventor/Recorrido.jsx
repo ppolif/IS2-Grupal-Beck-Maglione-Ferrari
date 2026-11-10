@@ -1,32 +1,94 @@
-import { useState } from 'react';
+/**
+ * Hoja de Ruta interactiva y Mapa OpenStreetMap del Preventor.
+ * Conectado con /api/v1/rutas-preventor/mi-ruta-del-dia del backend.
+ */
+import { useState, useEffect } from 'react';
 import OSMMap from '../../components/OSMMap';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
-import Icon from '../../components/Icon';
 import { colors } from '../../theme/colors';
-import { visitsMock } from '../../mocks/visits';
+import { rutaService } from '../../services/rutaService';
 
 export default function Recorrido() {
-  const [selectedVisit, setSelectedVisit] = useState(visitsMock[0]);
-  const [visits, setVisits] = useState(visitsMock);
+  const [ruta, setRuta] = useState(null);
+  const [selectedVisit, setSelectedVisit] = useState(null);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
+  const [procesando, setProcesando] = useState(false);
 
-  const handleMarkVisited = (id) => {
-    setVisits((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, estado: 'Visitado' } : v))
-    );
-    alert(`Visita a "${selectedVisit.comercio}" marcada como VISITADA`);
+  // Carga la ruta de hoy desde el backend
+  useEffect(() => {
+    async function cargarRuta() {
+      try {
+        setCargando(true);
+        setError(null);
+        const data = await rutaService.obtenerMiRutaPreventorDelDia();
+        setRuta(data);
+        if (data?.paradas && data.paradas.length > 0) {
+          const primeraIncompleta = data.paradas.find((p) => !p.completada) || data.paradas[0];
+          setSelectedVisit(primeraIncompleta);
+        }
+      } catch (err) {
+        console.error('Error al cargar la ruta del preventor:', err);
+        setError('No tenés una ruta de preventa generada para hoy.');
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargarRuta();
+  }, []);
+
+  const handleMarcarParada = async (parada) => {
+    if (!ruta?.id || !parada?.puntoDeVenta?.id) return;
+    try {
+      setProcesando(true);
+      await rutaService.completarParadaPreventor(ruta.id, {
+        puntoDeVentaId: parada.puntoDeVenta.id,
+        pedidoId: null, // Visita sin pedido inmediato o ya cargado
+      });
+
+      // Actualizar localmente la parada como completada
+      setRuta((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          paradas: prev.paradas.map((p) =>
+            p.puntoDeVenta?.id === parada.puntoDeVenta.id ? { ...p, completada: true } : p
+          ),
+        };
+      });
+
+      alert(`Visita a "${parada.puntoDeVenta.nombreComercio}" registrada con éxito.`);
+    } catch (err) {
+      alert(err.message || 'Error al registrar visita');
+    } finally {
+      setProcesando(false);
+    }
   };
 
-  const handleLeavePending = (id) => {
-    setVisits((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, estado: 'Pendiente' } : v))
-    );
-    alert(`Visita a "${selectedVisit.comercio}" dejada como PENDIENTE`);
-  };
+  const paradas = ruta?.paradas || [];
+  const completadas = paradas.filter((p) => p.completada).length;
+  const total = paradas.length;
+
+  // Adaptar marcadores al componente Leaflet OSMMap
+  const markers = paradas.map((p) => {
+    const pdv = p.puntoDeVenta;
+    const lat = pdv?.direccion?.latitud ?? -32.8895;
+    const lng = pdv?.direccion?.longitud ?? -68.8458;
+    return {
+      id: pdv?.id || p.orden,
+      lat,
+      lng,
+      label: pdv?.nombreComercio || `Parada #${p.orden}`,
+      sublabel: pdv?.direccion?.calle || 'Mendoza',
+      status: p.completada ? 'completed' : 'pending',
+      orden: p.orden,
+    };
+  });
 
   return (
     <div className="space-y-6">
-      {/* Title header for desktop/tablet */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#e86bc4]">
@@ -37,127 +99,124 @@ export default function Recorrido() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <Chip variant="pink">3 de 12 visitas completadas</Chip>
-          <span className="text-[12px] text-[#6b6b80] hidden sm:inline">Zona Godoy Cruz</span>
+          <Chip variant="pink">
+            {completadas} de {total} visitas completadas
+          </Chip>
+          <span className="text-[12px] text-[#6b6b80] hidden sm:inline">
+            Estado: {ruta?.estado || 'En curso'}
+          </span>
         </div>
       </div>
 
-      {/* Responsive layout: mobile stacked, lg side-by-side */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Scheduled visits list (visible on desktop/tablet, collapsable or tabbed) */}
-        <div className="lg:col-span-5 space-y-3 order-2 lg:order-1">
-          <div className="bg-white rounded-[20px] p-4 border border-[#ececf2] shadow-sm">
-            <h2 className="text-[14px] font-bold text-[#2b2b3a] mb-3 pb-2 border-b border-[#f0f0f4] flex items-center justify-between">
-              <span>Comercios en la ruta ({visits.length})</span>
-              <span className="text-[11px] text-[#6b6b80] font-normal">Orden optimizado</span>
-            </h2>
+      {cargando && (
+        <div className="flex justify-center items-center py-16">
+          <div className="w-8 h-8 border-3 border-[#e86bc4] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
 
-            <div className="space-y-2">
-              {visits.map((v) => {
-                const isSelected = selectedVisit.id === v.id;
-                return (
-                  <div
-                    key={v.id}
-                    onClick={() => setSelectedVisit(v)}
-                    className={`p-3.5 rounded-[16px] border transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-[#fff0fb] border-[#e86bc4] shadow-sm'
-                        : 'bg-[#fafafd] border-[#ececf2] hover:bg-white'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <span className="text-[10px] font-bold text-[#e86bc4] uppercase">
-                          Parada #{v.orden}
-                        </span>
-                        <h3 className="font-bold text-[14px] text-[#2b2b3a] leading-tight">
-                          {v.comercio}
-                        </h3>
-                        <p className="text-[11px] text-[#6b6b80] mt-0.5">
-                          {v.direccion}
-                        </p>
-                      </div>
-                      <span
-                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                          v.estado === 'Visitado'
-                            ? 'bg-[#dff8e9] text-[#39855b]'
-                            : 'bg-[#ffe2f7] text-[#a34187]'
+      {error && (
+        <div className="p-6 bg-white rounded-[20px] border border-[#ececf2] text-center space-y-2">
+          <span className="text-3xl">📍</span>
+          <h3 className="font-bold text-[#2b2b3a] text-lg">Sin ruta asignada</h3>
+          <p className="text-[12px] text-[#6b6b80] max-w-sm mx-auto">{error}</p>
+        </div>
+      )}
+
+      {!cargando && !error && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Listado de paradas */}
+          <div className="lg:col-span-5 space-y-3 order-2 lg:order-1">
+            <div className="bg-white rounded-[20px] p-4 border border-[#ececf2] shadow-sm">
+              <h2 className="text-[14px] font-bold text-[#2b2b3a] mb-3 pb-2 border-b border-[#f0f0f4] flex items-center justify-between">
+                <span>Comercios en la ruta ({paradas.length})</span>
+                <span className="text-[11px] text-[#6b6b80] font-normal">Orden optimizado</span>
+              </h2>
+
+              {paradas.length === 0 ? (
+                <p className="text-[12px] text-[#6b6b80] text-center py-4">No hay comercios asignados para hoy.</p>
+              ) : (
+                <div className="space-y-2">
+                  {paradas.map((p) => {
+                    const isSelected = selectedVisit?.puntoDeVenta?.id === p.puntoDeVenta?.id;
+                    const pdv = p.puntoDeVenta;
+
+                    return (
+                      <div
+                        key={pdv?.id || p.orden}
+                        onClick={() => setSelectedVisit(p)}
+                        className={`p-3.5 rounded-[16px] border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#fff0fb] border-[#e86bc4] shadow-sm'
+                            : 'bg-[#fafafd] border-[#ececf2] hover:bg-white'
                         }`}
                       >
-                        {v.estado}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#ececf2]/60 text-[10px] text-[#6b6b80]">
-                      <span>{v.distancia}</span>
-                      <span className="text-[#3fb8d9] font-medium">{v.telefono}</span>
-                    </div>
-                  </div>
-                );
-              })}
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <span className="text-[10px] font-bold text-[#e86bc4] uppercase">
+                              Parada #{p.orden}
+                            </span>
+                            <h3 className="font-bold text-[14px] text-[#2b2b3a] leading-tight">
+                              {pdv?.nombreComercio}
+                            </h3>
+                            <p className="text-[11px] text-[#6b6b80] mt-0.5">
+                              {pdv?.direccion?.calle || 'Mendoza'}
+                            </p>
+                          </div>
+                          <span
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                              p.completada ? 'bg-[#dff8e9] text-[#39855b]' : 'bg-[#fff0d3] text-[#986b16]'
+                            }`}
+                          >
+                            {p.completada ? 'Visitado' : 'Pendiente'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Map and Active Visit Sheet (matching prototype sheet) */}
-        <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
-          <div className="bg-white rounded-[24px] p-4 sm:p-5 border border-[#ececf2] shadow-sm">
-            {/* OpenStreetMap mapa interactivo, usamos componente OSMMap */}
-            <OSMMap
-              className="h-[340px] sm:h-[420px] w-full"
-              markers={visits}
-              activeMarkerId={selectedVisit.id}
-              showRoute={true}
-              routeColor={colors.primary.DEFAULT}
-              onMarkerClick={(visit) => setSelectedVisit(visit)}
-            />
-
-            {/* Visit Sheet Card directly beneath the map (or floating overlay on mobile) */}
-            <div className="mt-4 bg-[#fafafd] rounded-[20px] p-5 border border-[#ececf2]">
-              <div className="w-10 h-1 bg-[#dedee5] rounded-full mx-auto mb-3" />
-
-              <div className="flex items-center justify-between mb-1">
-                <Chip variant="pink">
-                  {selectedVisit.orden} de {selectedVisit.totalVisitas} visitas
-                </Chip>
-                <small className="text-[11px] text-[#6b6b80]">
-                  {selectedVisit.distancia}
-                </small>
-              </div>
-
-              <h2 className="text-xl font-bold text-[#2b2b3a] mt-2 mb-0.5">
-                {selectedVisit.comercio}
-              </h2>
-              <p className="text-[12px] text-[#6b6b80] mb-3">
-                {selectedVisit.direccion}
-              </p>
-
-              <div className="p-3 bg-white rounded-[12px] border border-[#ececf2] text-[11px] text-[#6b6b80] mb-4 flex items-center justify-between">
-                <span>Responsable: <strong>{selectedVisit.responsable}</strong></span>
-                <span>Último pedido: <strong className="text-[#2b2b3a]">{selectedVisit.ultimoPedido}</strong></span>
-              </div>
-
-              {/* Action buttons from prototype */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <Button
-                  onClick={() => handleMarkVisited(selectedVisit.id)}
-                  className="w-full justify-center text-[12px]"
-                >
-                  Marcar como visitado
-                </Button>
-                <Button
-                  secondary
-                  onClick={() => handleLeavePending(selectedVisit.id)}
-                  className="w-full justify-center text-[12px]"
-                >
-                  Dejar pendiente
-                </Button>
+          {/* Mapa OSM interactivo */}
+          <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
+            <div className="bg-white rounded-[24px] p-3 border border-[#ececf2] shadow-sm overflow-hidden">
+              <div className="h-[380px] sm:h-[460px] rounded-[18px] overflow-hidden">
+                <OSMMap
+                  markers={markers}
+                  activeMarkerId={selectedVisit?.puntoDeVenta?.id}
+                  showRoute={true}
+                  routeColor={colors.primary.DEFAULT}
+                />
               </div>
             </div>
+
+            {selectedVisit && (
+              <div className="bg-white rounded-[20px] p-4 border border-[#ececf2] shadow-sm flex items-center justify-between gap-4">
+                <div>
+                  <span className="text-[10px] font-bold text-[#e86bc4] uppercase">
+                    Parada #{selectedVisit.orden} Seleccionada
+                  </span>
+                  <h4 className="font-bold text-[15px] text-[#2b2b3a]">
+                    {selectedVisit.puntoDeVenta?.nombreComercio}
+                  </h4>
+                  <p className="text-[11px] text-[#6b6b80]">
+                    {selectedVisit.puntoDeVenta?.direccion?.calle || 'Mendoza'}
+                  </p>
+                </div>
+
+                <Button
+                  onClick={() => handleMarcarParada(selectedVisit)}
+                  disabled={procesando || selectedVisit.completada}
+                  className={`text-[12px] cursor-pointer ${selectedVisit.completada ? 'opacity-50' : ''}`}
+                >
+                  {selectedVisit.completada ? 'Completada ✓' : 'Marcar Visitada'}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
-

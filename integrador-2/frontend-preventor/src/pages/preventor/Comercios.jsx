@@ -1,23 +1,59 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+/**
+ * Directorio de Comercios / Puntos de Venta para el Preventista.
+ * Conectado con /api/v1/puntos-de-venta del backend.
+ * Permite seleccionar el comercio activo para tomar pedidos desde el catálogo.
+ */
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Icon from '../../components/Icon';
-import { comerciosPreventorMock } from '../../mocks/preventorOrdersMock';
+import { comercioService } from '../../services/comercioService';
+import { useCart } from '../../context/CartContext';
 
 export default function Comercios() {
-  const [comercios] = useState(comerciosPreventorMock);
+  const { seleccionarCliente, clienteActual } = useCart();
+  const navigate = useNavigate();
+  const [comercios, setComercios] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDay, setSelectedDay] = useState('TODOS');
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
 
-  const days = ['TODOS', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  useEffect(() => {
+    async function cargarComercios() {
+      try {
+        setCargando(true);
+        setError(null);
+        const data = await comercioService.listarPuntosDeVenta({ size: 100 });
+        const list = Array.isArray(data) ? data : (data?.content || []);
+        setComercios(list);
+      } catch (err) {
+        console.error('Error al listar comercios:', err);
+        setError('No se pudieron obtener los comercios asignados.');
+      } finally {
+        setCargando(false);
+      }
+    }
+    cargarComercios();
+  }, []);
+
+  const handleTomarPedido = (pdv) => {
+    seleccionarCliente(pdv);
+    navigate('/tienda');
+  };
 
   const filtered = comercios.filter((c) => {
-    const matchesSearch =
-      c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.direccion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.cuit.includes(searchTerm);
-    const matchesDay = selectedDay === 'TODOS' || c.diaVisita.includes(selectedDay);
-    return matchesSearch && matchesDay;
+    const term = searchTerm.toLowerCase();
+    const nombre = c.nombreComercio || '';
+    const titular = c.minorista ? `${c.minorista.nombre || ''} ${c.minorista.apellido || ''}` : '';
+    const cuit = c.minorista?.cuit || c.minorista?.numeroDocumento || '';
+    const dir = c.direccion ? `${c.direccion.calle || ''} ${c.direccion.localidad?.nombre || ''}` : '';
+
+    return (
+      nombre.toLowerCase().includes(term) ||
+      titular.toLowerCase().includes(term) ||
+      cuit.includes(term) ||
+      dir.toLowerCase().includes(term)
+    );
   });
 
   return (
@@ -32,7 +68,7 @@ export default function Comercios() {
             Comercios Asignados
           </h1>
           <p className="text-[12px] text-[#6b6b80]">
-            Puntos de venta asignados en tu zona de recorrido (Gran Mendoza).
+            Puntos de venta habilitados en el sistema central para toma de pedidos.
           </p>
         </div>
 
@@ -44,96 +80,107 @@ export default function Comercios() {
         </Link>
       </div>
 
-      {/* Buscador y filtro por día */}
-      <div className="space-y-3">
-        <div className="relative">
-          <Icon name="search" className="w-4 h-4 text-[#aaa9ba] absolute left-3.5 top-3" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por nombre de comercio, CUIT o dirección..."
-            className="w-full bg-white border border-[#ececf2] rounded-[14px] pl-10 pr-4 py-2.5 text-[12px] text-[#2b2b3a] focus:outline-none focus:border-[#e86bc4] shadow-sm"
-          />
-        </div>
-
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-          {days.map((day) => (
-            <button
-              key={day}
-              type="button"
-              onClick={() => setSelectedDay(day)}
-              className={`px-3 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                selectedDay === day
-                  ? 'bg-[#2b2b3a] text-white shadow-sm'
-                  : 'bg-white text-[#6b6b80] border border-[#ececf2] hover:bg-slate-50'
-              }`}
-            >
-              {day}
-            </button>
-          ))}
-        </div>
+      {/* Buscador */}
+      <div className="relative">
+        <Icon name="search" className="w-4 h-4 text-[#aaa9ba] absolute left-3.5 top-3" />
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Buscar por nombre de comercio, titular, CUIT o calle..."
+          className="w-full bg-white border border-[#ececf2] rounded-[14px] pl-10 pr-4 py-2.5 text-[12px] text-[#2b2b3a] focus:outline-none focus:border-[#e86bc4] shadow-sm"
+        />
       </div>
+
+      {/* Estados de carga / error */}
+      {cargando && (
+        <div className="flex justify-center items-center py-12">
+          <div className="w-8 h-8 border-3 border-[#e86bc4] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-4 bg-[#ffe8ed] border border-[#ffccd5] rounded-[16px] text-[12px] text-[#e5484d]">
+          {error}
+        </div>
+      )}
 
       {/* Lista de Comercios */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filtered.map((c) => (
-          <div
-            key={c.id}
-            className="bg-white rounded-[20px] p-5 border border-[#ececf2] shadow-sm hover:border-[#d9d9e6] transition-all flex flex-col justify-between space-y-4"
-          >
-            <div>
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div>
-                  <h3 className="text-base font-bold text-[#2b2b3a]">{c.nombre}</h3>
-                  <span className="text-[11px] text-[#6b6b80]">Titular: {c.titular} (CUIT {c.cuit})</span>
-                </div>
-                <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
-                  c.estadoCuenta.includes('Al día')
-                    ? 'bg-[#dff8e9] text-[#39855b]'
-                    : 'bg-[#faf0d9] text-[#b88014]'
-                }`}>
-                  {c.estadoCuenta}
-                </span>
-              </div>
-
-              <div className="space-y-1.5 text-[12px] text-[#6b6b80] pt-2 border-t border-[#f0f0f4]">
-                <p className="flex items-center gap-1.5">
-                  <Icon name="mapPin" className="w-3.5 h-3.5 text-[#3fb8d9]" />
-                  <span>{c.direccion}, {c.localidad}</span>
-                </p>
-                <p className="flex items-center gap-1.5">
-                  <Icon name="phone" className="w-3.5 h-3.5 text-[#7ed6a5]" />
-                  <span>{c.telefono}</span>
-                </p>
-                <p className="text-[11px] text-[#aaa9ba]">
-                  📅 Días habituales de visita: <strong>{c.diaVisita}</strong>
-                </p>
-                <p className="text-[11px] text-[#aaa9ba]">
-                  📦 Último pedido registrado: <strong>{c.ultimoPedido}</strong>
-                </p>
-              </div>
+      {!cargando && !error && (
+        <>
+          {filtered.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-[20px] border border-[#ececf2]">
+              <p className="text-[#6b6b80] text-[13px]">No se encontraron comercios registrados.</p>
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filtered.map((c) => {
+                const isSelected = clienteActual?.id === c.id;
+                const titular = c.minorista ? `${c.minorista.nombre || ''} ${c.minorista.apellido || ''}` : 'Sin titular';
+                const doc = c.minorista?.cuit || c.minorista?.numeroDocumento || 'S/D';
+                const calle = c.direccion ? `${c.direccion.calle || ''} ${c.direccion.numero || ''}` : 'Sin dirección informada';
+                const localidad = c.direccion?.localidad?.nombre || 'Mendoza';
 
-            <div className="pt-3 border-t border-[#f0f0f4] flex items-center justify-between gap-2">
-              <Link
-                to="/recorrido"
-                className="text-[11px] font-bold text-[#3fb8d9] hover:underline flex items-center gap-1"
-              >
-                <Icon name="route" className="w-3.5 h-3.5" />
-                <span>Ver en mapa</span>
-              </Link>
+                return (
+                  <div
+                    key={c.id}
+                    className={`bg-white rounded-[20px] p-5 border shadow-sm transition-all flex flex-col justify-between space-y-4 ${
+                      isSelected ? 'border-[#e86bc4] ring-2 ring-[#e86bc4]/20' : 'border-[#ececf2] hover:border-[#d9d9e6]'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div>
+                          <h3 className="text-base font-bold text-[#2b2b3a]">{c.nombreComercio}</h3>
+                          <span className="text-[11px] text-[#6b6b80]">
+                            Titular: {titular} (Doc/CUIT: {doc})
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#dff8e9] text-[#39855b]">
+                          Activo
+                        </span>
+                      </div>
 
-              <Link to="/tienda">
-                <Button className="text-[11px] px-3.5 py-2">
-                  <Icon name="bag" className="w-3.5 h-3.5" />
-                  <span>Tomar pedido</span>
-                </Button>
-              </Link>
+                      <div className="space-y-1.5 text-[12px] text-[#6b6b80] pt-2 border-t border-[#f0f0f4]">
+                        <p className="flex items-center gap-1.5">
+                          <Icon name="mapPin" className="w-3.5 h-3.5 text-[#3fb8d9]" />
+                          <span>{calle}, {localidad}</span>
+                        </p>
+                        {c.direccion?.telefono && (
+                          <p className="flex items-center gap-1.5">
+                            <Icon name="phone" className="w-3.5 h-3.5 text-[#7ed6a5]" />
+                            <span>{c.direccion.telefono}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-[#f0f0f4] flex items-center justify-between gap-2">
+                      <Link
+                        to="/recorrido"
+                        className="text-[11px] font-bold text-[#3fb8d9] hover:underline flex items-center gap-1"
+                      >
+                        <Icon name="route" className="w-3.5 h-3.5" />
+                        <span>Ver en mapa</span>
+                      </Link>
+
+                      <Button
+                        onClick={() => handleTomarPedido(c)}
+                        className={`text-[11px] px-3.5 py-2 cursor-pointer ${
+                          isSelected ? 'bg-[#39855b] hover:bg-[#2c6e49]' : ''
+                        }`}
+                      >
+                        <Icon name="bag" className="w-3.5 h-3.5" />
+                        <span>{isSelected ? 'Comercio Activo ✓' : 'Tomar pedido'}</span>
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
-        ))}
-      </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
