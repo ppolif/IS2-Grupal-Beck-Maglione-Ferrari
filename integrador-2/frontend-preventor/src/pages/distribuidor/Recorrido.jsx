@@ -1,18 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import OSMMap from '../../components/OSMMap';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
 import Modal from '../../components/Modal';
 import Icon from '../../components/Icon';
 import { colors } from '../../theme/colors';
-import { deliveriesMock } from '../../mocks/deliveries';
+import { recorridoService, parseMonto } from '../../services/recorridoService';
 
 export default function Recorrido() {
-  const [selectedDelivery, setSelectedDelivery] = useState(deliveriesMock[0]);
-  const [deliveries, setDeliveries] = useState(deliveriesMock);
+  const [deliveries, setDeliveries] = useState(() => recorridoService.obtenerEntregas());
+  const [selectedDelivery, setSelectedDelivery] = useState(() => deliveries[0]);
   const [isCashModalOpen, setIsCashModalOpen] = useState(false);
   const [reciboNumero, setReciboNumero] = useState('REC-2084');
   const [observacionesCobro, setObservacionesCobro] = useState('');
+
+  // Sincronizar selección inicial si cambia la lista
+  useEffect(() => {
+    if (!selectedDelivery && deliveries.length > 0) {
+      setSelectedDelivery(deliveries[0]);
+    }
+  }, [deliveries, selectedDelivery]);
+
+  // Contadores en tiempo real de la ruta actual
+  const entregadosCount = deliveries.filter((d) => d.estadoEntrega === 'Entregado').length;
+  const pendientesCount = deliveries.filter((d) => d.estadoEntrega !== 'Entregado').length;
+  const recaudadoEfectivo = deliveries
+    .filter((d) => d.estadoEntrega === 'Entregado' && (d.medioPago?.toLowerCase().includes('efectivo') || d.cobradoEnEfectivo))
+    .reduce((acc, d) => acc + parseMonto(d.monto), 0);
 
   const avanzarSiguientePunto = (updatedDeliveries, currentId) => {
     const remaining = updatedDeliveries.filter((d) => d.id !== currentId && d.estadoEntrega !== 'Entregado');
@@ -25,7 +39,7 @@ export default function Recorrido() {
   };
 
   const handleMarkDeliveredClick = () => {
-    if (selectedDelivery.estadoPago === 'cash') {
+    if (selectedDelivery.estadoPago === 'cash' || selectedDelivery.medioPago?.toLowerCase().includes('efectivo')) {
       setReciboNumero(`REC-${selectedDelivery.id.replace(/\D/g, '') || Math.floor(1000 + Math.random() * 9000)}`);
       setObservacionesCobro('');
       setIsCashModalOpen(true);
@@ -39,6 +53,7 @@ export default function Recorrido() {
       d.id === selectedDelivery.id ? { ...d, estadoEntrega: 'Entregado' } : d
     );
     setDeliveries(updated);
+    recorridoService.guardarEntregas(updated);
     avanzarSiguientePunto(updated, selectedDelivery.id);
   };
 
@@ -46,25 +61,37 @@ export default function Recorrido() {
     e.preventDefault();
     const updated = deliveries.map((d) =>
       d.id === selectedDelivery.id
-        ? { ...d, estadoEntrega: 'Entregado', estadoPago: 'paid', medioPago: 'Efectivo (Cobrado)' }
+        ? {
+            ...d,
+            estadoEntrega: 'Entregado',
+            estadoPago: 'paid',
+            medioPago: 'Efectivo (Cobrado)',
+            cobradoEnEfectivo: true,
+            reciboNumero,
+            observacionesCobro,
+            fechaCobro: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+          }
         : d
     );
     setDeliveries(updated);
+    recorridoService.guardarEntregas(updated);
     setIsCashModalOpen(false);
     avanzarSiguientePunto(updated, selectedDelivery.id);
   };
 
   const handleLeavePending = (id) => {
-    setDeliveries((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, estadoEntrega: 'Pendiente' } : d))
+    const updated = deliveries.map((d) =>
+      d.id === id ? { ...d, estadoEntrega: 'Pendiente' } : d
     );
-    alert(`Pedido #${id} para "${selectedDelivery.comercio}" dejado como PENDIENTE`);
+    setDeliveries(updated);
+    recorridoService.guardarEntregas(updated);
+    alert(`Pedido #${id} para "${selectedDelivery?.comercio}" dejado como PENDIENTE`);
   };
 
   return (
     <div className="space-y-6">
-      {/* Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      {/* Title & Contadores de Ruta */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
           <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#e86bc4]">
             Ruta de Distribución
@@ -73,10 +100,26 @@ export default function Recorrido() {
             Entregas Programadas
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Bloque de Contadores del Distribuidor */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Contador de Dinero Recaudado en Efectivo */}
+          <div className="flex items-center gap-2 bg-[#f0fdf4] border border-[#bbf7d0] px-3.5 py-1.5 rounded-full text-[12px] text-[#15803d] font-bold shadow-xs">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e] animate-pulse" />
+            <span>Recaudado en efectivo:</span>
+            <strong className="text-[14px] text-[#166534] font-extrabold font-mono">
+              ${recaudadoEfectivo.toLocaleString('es-AR')}
+            </strong>
+          </div>
+
           <Chip variant="blue">
-            {deliveries.filter((d) => d.estadoEntrega === 'Entregado').length} de {deliveries.length} entregados
+            {entregadosCount} de {deliveries.length} entregados
           </Chip>
+
+          <span className="text-[11px] font-medium bg-slate-100 text-[#475569] px-2.5 py-1 rounded-full border border-slate-200">
+            {pendientesCount} pendientes
+          </span>
+
           <span className="text-[12px] text-[#6b6b80] hidden sm:inline">Unidad 08 · Gran Mendoza</span>
         </div>
       </div>
@@ -93,7 +136,7 @@ export default function Recorrido() {
 
             <div className="space-y-2">
               {deliveries.map((d) => {
-                const isSelected = selectedDelivery.id === d.id;
+                const isSelected = selectedDelivery?.id === d.id;
                 const isEntregado = d.estadoEntrega === 'Entregado';
                 return (
                   <div
@@ -128,12 +171,16 @@ export default function Recorrido() {
                       </div>
                       <span
                         className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                          d.estadoPago === 'cash'
+                          d.estadoPago === 'cash' || (d.medioPago?.toLowerCase().includes('efectivo') && !isEntregado)
                             ? 'bg-[#fff0d3] text-[#986b16]'
                             : 'bg-[#dff8e9] text-[#39855b]'
                         }`}
                       >
-                        {d.estadoPago === 'cash' ? `Cobrar ${d.monto}` : 'Pagado'}
+                        {d.estadoPago === 'cash' || (d.medioPago?.toLowerCase().includes('efectivo') && !isEntregado)
+                          ? `Cobrar ${d.monto}`
+                          : d.cobradoEnEfectivo
+                          ? `Cobrado en Efectivo`
+                          : 'Pagado'}
                       </span>
                     </div>
 
@@ -154,64 +201,68 @@ export default function Recorrido() {
             <OSMMap
               className="h-[340px] sm:h-[420px] w-full"
               markers={deliveries}
-              activeMarkerId={selectedDelivery.id}
+              activeMarkerId={selectedDelivery?.id}
               showRoute={true}
               routeColor={colors.secondary.DEFAULT}
               onMarkerClick={(delivery) => setSelectedDelivery(delivery)}
             />
 
             {/* Delivery Sheet Card */}
-            <div className="mt-4 bg-[#fafafd] rounded-[20px] p-5 border border-[#ececf2]">
-              <div className="w-10 h-1 bg-[#dedee5] rounded-full mx-auto mb-3" />
+            {selectedDelivery && (
+              <div className="mt-4 bg-[#fafafd] rounded-[20px] p-5 border border-[#ececf2]">
+                <div className="w-10 h-1 bg-[#dedee5] rounded-full mx-auto mb-3" />
 
-              <div className="flex items-center justify-between mb-1">
-                <Chip variant="pink">
-                  Entrega {selectedDelivery.orden} de {selectedDelivery.totalEntregas}
-                </Chip>
-                <small className="text-[11px] text-[#6b6b80]">
-                  {selectedDelivery.tiempoEstimado} · {selectedDelivery.distancia}
-                </small>
-              </div>
-
-              <h2 className="text-xl font-bold text-[#2b2b3a] mt-2 mb-0.5">
-                {selectedDelivery.comercio}
-              </h2>
-              <p className="text-[12px] text-[#6b6b80] mb-3">
-                {selectedDelivery.direccion}
-              </p>
-
-              {/* Ticket breakdown */}
-              <div className="bg-white border border-[#ececf2] rounded-[13px] p-3 text-[11px] mb-4 space-y-1">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-[#6b6b80]">
-                    Pedido #{selectedDelivery.id}
-                  </span>
-                  <strong className="text-[12px] text-[#2b2b3a]">
-                    {selectedDelivery.monto} · {selectedDelivery.medioPago}
-                  </strong>
+                <div className="flex items-center justify-between mb-1">
+                  <Chip variant="pink">
+                    Entrega {selectedDelivery.orden} de {selectedDelivery.totalEntregas || deliveries.length}
+                  </Chip>
+                  <small className="text-[11px] text-[#6b6b80]">
+                    {selectedDelivery.tiempoEstimado} · {selectedDelivery.distancia}
+                  </small>
                 </div>
-                <small className="text-[#6b6b80] block text-[10px] pt-1 border-t border-[#f0f0f4]">
-                  {selectedDelivery.items}
-                </small>
-              </div>
 
-              {/* Sheet Actions */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <Button
-                  onClick={handleMarkDeliveredClick}
-                  className="w-full justify-center text-[12px] cursor-pointer"
-                >
-                  {selectedDelivery.estadoPago === 'cash' ? 'Cobrar en Efectivo y Entregar' : 'Marcar como entregado'}
-                </Button>
-                <Button
-                  secondary
-                  onClick={() => handleLeavePending(selectedDelivery.id)}
-                  className="w-full justify-center text-[12px] cursor-pointer"
-                >
-                  Dejar pendiente
-                </Button>
+                <h2 className="text-xl font-bold text-[#2b2b3a] mt-2 mb-0.5">
+                  {selectedDelivery.comercio}
+                </h2>
+                <p className="text-[12px] text-[#6b6b80] mb-3">
+                  {selectedDelivery.direccion}
+                </p>
+
+                {/* Ticket breakdown */}
+                <div className="bg-white border border-[#ececf2] rounded-[13px] p-3 text-[11px] mb-4 space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-[#6b6b80]">
+                      Pedido #{selectedDelivery.id}
+                    </span>
+                    <strong className="text-[12px] text-[#2b2b3a]">
+                      {selectedDelivery.monto} · {selectedDelivery.medioPago}
+                    </strong>
+                  </div>
+                  <small className="text-[#6b6b80] block text-[10px] pt-1 border-t border-[#f0f0f4]">
+                    {selectedDelivery.items}
+                  </small>
+                </div>
+
+                {/* Sheet Actions */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <Button
+                    onClick={handleMarkDeliveredClick}
+                    className="w-full justify-center text-[12px] cursor-pointer"
+                  >
+                    {selectedDelivery.estadoPago === 'cash' || selectedDelivery.medioPago?.toLowerCase().includes('efectivo')
+                      ? 'Cobrar en Efectivo y Entregar'
+                      : 'Marcar como entregado'}
+                  </Button>
+                  <Button
+                    secondary
+                    onClick={() => handleLeavePending(selectedDelivery.id)}
+                    className="w-full justify-center text-[12px] cursor-pointer"
+                  >
+                    Dejar pendiente
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -228,7 +279,7 @@ export default function Recorrido() {
             <p><strong>Comercio:</strong> {selectedDelivery?.comercio}</p>
             <p><strong>Dirección:</strong> {selectedDelivery?.direccion}</p>
             <p className="pt-1 text-[13px]">
-              <strong>Monto a recaudar:</strong>{' '}
+              <strong>Monto en efectivo a recibir:</strong>{' '}
               <span className="text-xl font-bold text-[#39855b]">{selectedDelivery?.monto}</span>
             </p>
           </div>
@@ -261,7 +312,7 @@ export default function Recorrido() {
 
           <div className="p-2.5 bg-[#f0f9ff] border border-[#d2ecfa] rounded-[10px] text-[11px] text-[#0f344d] flex items-center gap-2">
             <Icon name="check" className="w-4 h-4 text-[#009ee3] shrink-0" />
-            <span>Al confirmar el cobro, el backend emitirá la Factura y se notificará por correo al próximo cliente en la ruta.</span>
+            <span>Al confirmar el cobro, el dinero se suma al contador de caja del distribuidor, se emite la Factura y se notifica al próximo cliente.</span>
           </div>
 
           <div className="pt-2 flex justify-end gap-2.5">
