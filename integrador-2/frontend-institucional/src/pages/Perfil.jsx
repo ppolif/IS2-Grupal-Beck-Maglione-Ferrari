@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
@@ -7,6 +7,7 @@ import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
 import { apiFetch } from '../services/api';
+import { pedidoClienteService } from '../services/pedidoClienteService';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
@@ -154,15 +155,20 @@ export default function Perfil() {
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
 
-  useEffect(() => {
-    let cancel = false;
+  const cargarPedidos = useCallback(() => {
     setLoadingOrders(true);
+    const localOrders = pedidoClienteService.obtenerPedidos();
+    const localPorId = {};
+    localOrders.forEach((lo) => {
+      if (lo.rawId) localPorId[lo.rawId] = lo;
+      if (lo.id) localPorId[lo.id] = lo;
+    });
+
     Promise.all([
       apiFetch('/mi-cuenta/pedidos?size=50').catch(() => ({ elementos: [] })),
       apiFetch('/mi-cuenta/facturas?size=50').catch(() => ({ elementos: [] })),
     ])
       .then(([pedRes, factRes]) => {
-        if (cancel) return;
         const listaPed = pedRes?.elementos || pedRes?.content || (Array.isArray(pedRes) ? pedRes : []);
         const listaFact = factRes?.elementos || factRes?.content || (Array.isArray(factRes) ? factRes : []);
         const factPorPedido = {};
@@ -172,6 +178,7 @@ export default function Perfil() {
 
         const mapped = listaPed.map((p) => {
           const factura = factPorPedido[p.id];
+          const localMatch = localPorId[p.id] || localPorId[`DM-${p.numeroPedido}`] || localPorId[p.numeroPedido];
           const fechaStr = p.fechaHoraCarga
             ? new Date(p.fechaHoraCarga).toLocaleString('es-AR')
             : '-';
@@ -188,11 +195,11 @@ export default function Perfil() {
             total: `$${Number(p.total || 0).toLocaleString('es-AR')}`,
             subtotal: `$${Number(p.subtotal || p.total || 0).toLocaleString('es-AR')}`,
             descuento: `$${Number(p.descuento || 0).toLocaleString('es-AR')}`,
-            estado: p.estado || 'CARGADO',
+            estado: p.estado || localMatch?.estado || 'CARGADO',
             facturaNum: factura?.numeroFactura
               ? `FA-${String(factura.numeroFactura).padStart(8, '0')}`
               : 'Pendiente de emisión',
-            medioPago: 'Mayorista',
+            medioPago: localMatch?.medioPago || localMatch?.metodoPago || 'Mayorista',
             direccionEntrega,
             items: (p.detalles || []).map((d) => ({
               nombre: d.productoNombre || d.producto?.nombre || 'Producto',
@@ -223,13 +230,15 @@ export default function Perfil() {
         setOrders(mapped);
       })
       .finally(() => {
-        if (!cancel) setLoadingOrders(false);
+        setLoadingOrders(false);
       });
-
-    return () => {
-      cancel = true;
-    };
   }, []);
+
+  useEffect(() => {
+    cargarPedidos();
+    window.addEventListener('dm-pedido-actualizado', cargarPedidos);
+    return () => window.removeEventListener('dm-pedido-actualizado', cargarPedidos);
+  }, [cargarPedidos]);
 
   const handleOpenDetail = (order) => {
     setSelectedOrder(order);
@@ -402,8 +411,12 @@ export default function Perfil() {
                       <span className="text-[11px] text-[#6b6b80]">· {p.fecha}</span>
                       <span
                         className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${
-                          p.estado === 'EN_REPARTO'
+                          p.estado === 'EN_REPARTO' || p.estado === 'En camino' || p.estado === 'Listo para reparto'
                             ? 'bg-[#d9f7ff] text-[#247f99]'
+                            : p.estado === 'Pendiente de Pago' || p.estado === 'CARGADO'
+                            ? 'bg-[#faf0d9] text-[#b88014]'
+                            : p.estado === 'Pago Rechazado' || p.estado === 'ANULADO'
+                            ? 'bg-[#fee2e2] text-[#b91c1c]'
                             : 'bg-[#dff8e9] text-[#39855b]'
                         }`}
                       >

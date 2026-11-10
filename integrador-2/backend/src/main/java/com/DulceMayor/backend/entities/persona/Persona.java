@@ -110,7 +110,7 @@ public abstract class Persona extends EntidadBase {
     /// C representa la clase final que se está construyendo (ej: Empleado o Minorista).
     /// B representa el Builder de esa clase
     public abstract static class PersonaBuilder<C extends Persona, B extends PersonaBuilder<C, B>>
-            extends EntidadBaseBuilder<C, B> {
+            extends EntidadBase.EntidadBaseBuilder<C, B> {
         public B usuario(Usuario usuario) {
             if (usuario != null) {
                 return usuarios(new ArrayList<>(List.of(usuario)));

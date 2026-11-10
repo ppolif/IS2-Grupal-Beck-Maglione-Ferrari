@@ -132,6 +132,30 @@ public class PagoService extends BaseService<Pago, PagoRequest, PagoResponse> {
         return mapper.aResponseList(pagoRepository.findAllByFacturaIdAndEliminadoFalseOrderByFechaPagoAsc(facturaId));
     }
 
+    @Transactional
+    public Pago guardarPago(Pago pago) {
+        return pagoRepository.save(pago);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Pago> buscarEntidadesPorPedido(String pedidoId) {
+        return pagoRepository.findAllByPedidoIdAndEliminadoFalseOrderByFechaPagoAsc(pedidoId);
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.Optional<Pago> buscarPorMpPaymentId(String mpPaymentId) {
+        return pagoRepository.findByMpPaymentIdAndEliminadoFalse(mpPaymentId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Pago> listarTransferenciasPendientes() {
+        return pagoRepository.findAllByEstadoPagoAndEliminadoFalseOrderByFechaPagoDesc(
+                com.DulceMayor.backend.entities.facturacion.EstadoPago.PENDIENTE
+        ).stream()
+                .filter(p -> p.getFormaDePago() != null && p.getFormaDePago().getTipoPago() == com.DulceMayor.backend.entities.facturacion.TipoPago.TRANSFERENCIA)
+                .toList();
+    }
+
     @Override
     protected PagoRequest prepararRequest(PagoRequest request) {
         if (request == null) {

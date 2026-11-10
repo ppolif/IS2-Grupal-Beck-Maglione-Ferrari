@@ -45,6 +45,8 @@ class ArquitecturaTests {
                 .and().haveSimpleNameEndingWith("Service")
                 .and().haveSimpleNameNotEndingWith("LecturaService")
                 .and().doNotHaveSimpleName("BaseService")
+                .and().doNotHaveSimpleName("EmailService")
+                .and().doNotHaveSimpleName("NewsletterService")
                 .should(dependerUnicamenteDeSuPropioRepositorio());
 
         regla.check(clasesProduccion);

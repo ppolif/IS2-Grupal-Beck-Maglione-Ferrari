@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
 import { apiFetch } from '../services/api';
+import { pagoService } from '../services/pagoService';
+import { pedidoClienteService } from '../services/pedidoClienteService';
 import { cartStorage } from '../utils/cartStorage';
 
-const DATOS_BANCARIOS = {
+const DATOS_BANCARIOS_FALLBACK = {
   banco: 'Banco Nación Argentina',
   tipoCuenta: 'Cuenta Corriente en Pesos',
   titular: 'Dulce Mayor S.R.L.',
@@ -25,15 +27,32 @@ export default function Checkout() {
   const [observacionEntrega, setObservacionEntrega] = useState('');
 
   const [paymentMethod, setPaymentMethod] = useState('mercadopago');
+
+  // Datos bancarios cargados dinámicamente desde la API con fallback institucional
+  const [datosBancarios, setDatosBancarios] = useState(DATOS_BANCARIOS_FALLBACK);
+
+  // Estado de Transferencia
   const [transferenciaData, setTransferenciaData] = useState({
     numeroComprobante: '',
     bancoEmisor: '',
     comprobanteArchivo: null,
   });
   const [copiadoKey, setCopiadoKey] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(900);
-  const [simulatedOutcome, setSimulatedOutcome] = useState('exito');
+
+  // Estado de Mercado Pago QR y temporizador
+  const [qrCodeData, setQrCodeData] = useState(null);
+  const [generandoQr, setGenerandoQr] = useState(false);
+  const [pedidoQrId, setPedidoQrId] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(900); // 15 minutos en segundos
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const subtotal = cartItems.reduce(
+    (acc, it) => acc + Number(it.producto.precioNum || 0) * Number(it.cantidad || 1),
+    0
+  );
+  const descuento = appliedPromo?.pct ? Math.round(subtotal * appliedPromo.pct) : 0;
+  const total = Math.max(0, subtotal - descuento);
+  const selectedPdv = puntosDeVenta.find((p) => p.id === selectedPdvId) || puntosDeVenta[0] || null;
 
   useEffect(() => {
     const sync = () => setCartItems(cartStorage.getItems());
@@ -69,13 +88,90 @@ export default function Checkout() {
     };
   }, []);
 
+  // Cargar datos bancarios oficiales del backend
+  useEffect(() => {
+    pagoService
+      .obtenerDatosBancarios()
+      .then((data) => {
+        if (data && data.cbu) {
+          setDatosBancarios({
+            banco: data.banco || DATOS_BANCARIOS_FALLBACK.banco,
+            tipoCuenta: data.tipoCuenta || DATOS_BANCARIOS_FALLBACK.tipoCuenta,
+            titular: data.titular || DATOS_BANCARIOS_FALLBACK.titular,
+            cuit: data.cuit || DATOS_BANCARIOS_FALLBACK.cuit,
+            cbu: data.cbu || DATOS_BANCARIOS_FALLBACK.cbu,
+            alias: data.alias || DATOS_BANCARIOS_FALLBACK.alias,
+          });
+        }
+      })
+      .catch(() => {
+        // Mantiene datos bancarios por defecto
+      });
+  }, []);
+
+  // Función para solicitar o regenerar QR oficial de Mercado Pago
+  const generarQrOficial = useCallback(
+    async (targetPedidoId) => {
+      const idToUse = targetPedidoId || pedidoQrId;
+      if (!idToUse) {
+        setTimeLeft(900);
+        return;
+      }
+      try {
+        setGenerandoQr(true);
+        const data = await pagoService.iniciarPagoQr(idToUse);
+        if (data && data.qrImagenBase64) {
+          setQrCodeData(data);
+          setTimeLeft(data.expiraEnSegundos || 900);
+        }
+      } catch {
+        setTimeLeft(900);
+      } finally {
+        setGenerandoQr(false);
+      }
+    },
+    [pedidoQrId]
+  );
+
   useEffect(() => {
     if (paymentMethod !== 'mercadopago') return;
     const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 900));
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
   }, [paymentMethod]);
+
+  // Polling del estado del QR si ya existe un pedido asociado
+  useEffect(() => {
+    if (paymentMethod !== 'mercadopago' || timeLeft === 0 || !pedidoQrId) return;
+    const interval = setInterval(async () => {
+      try {
+        const estado = await pagoService.consultarEstadoQr(pedidoQrId);
+        if (estado && estado.estadoPago === 'APROBADO') {
+          cartStorage.clear();
+          navigate('/pago/exito', {
+            state: {
+              id: pedidoQrId,
+              orderId: pedidoQrId,
+              total,
+              subtotal,
+              descuento,
+              estado: 'FACTURADO',
+              metodoPago: 'Billetera Virtual (Mercado Pago QR)',
+              comercio: selectedPdv?.nombre || 'Mi Comercio',
+              direccion: selectedPdv
+                ? `${selectedPdv.direccion}, ${selectedPdv.localidad}`
+                : 'Gran Mendoza',
+              fecha: new Date().toLocaleString('es-AR'),
+            },
+          });
+        }
+      } catch {
+        // Silencioso mientras aguarda acreditación
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [paymentMethod, timeLeft, pedidoQrId, navigate, selectedPdv, total, subtotal, descuento]);
 
   const formatTimer = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -102,14 +198,6 @@ export default function Checkout() {
     }
   };
 
-  const subtotal = cartItems.reduce(
-    (acc, it) => acc + Number(it.producto.precioNum || 0) * Number(it.cantidad || 1),
-    0
-  );
-  const descuento = appliedPromo?.pct ? Math.round(subtotal * appliedPromo.pct) : 0;
-  const total = Math.max(0, subtotal - descuento);
-  const selectedPdv = puntosDeVenta.find((p) => p.id === selectedPdvId) || puntosDeVenta[0] || null;
-
   if (cartItems.length === 0) {
     return (
       <div className="bg-white rounded-[22px] p-12 text-center border border-[#ececf2] max-w-2xl mx-auto">
@@ -128,23 +216,11 @@ export default function Checkout() {
     e.preventDefault();
     setIsProcessing(true);
 
-    if (paymentMethod === 'mercadopago' && simulatedOutcome === 'fallo') {
-      setIsProcessing(false);
-      navigate('/pago/fallo', {
-        state: {
-          orderId: 'SIN-PROCESAR',
-          total,
-          metodoPago: 'Billetera Virtual (Mercado Pago QR)',
-        },
-      });
-      return;
-    }
-
     try {
       const requestBody = {
         puntoDeVentaId: selectedPdv?.id || null,
         preventorId: null,
-        codigoPromocion: appliedPromo?.codigo || null,
+        codigoPromocion: appliedPromo?.code || appliedPromo?.codigo || null,
         detalles: cartItems.map((it) => ({
           productoId: it.producto.id,
           cantidad: Number(it.cantidad || 1),
@@ -164,33 +240,82 @@ export default function Checkout() {
         ? `${selectedPdv.direccion}, ${selectedPdv.localidad}`
         : 'Gran Mendoza';
 
+      const medioPagoLabel =
+        paymentMethod === 'mercadopago'
+          ? 'Billetera Virtual (Mercado Pago QR)'
+          : paymentMethod === 'transferencia'
+          ? 'Transferencia Bancaria'
+          : 'Efectivo contra entrega';
+
+      if (creado?.id && paymentMethod === 'mercadopago') {
+        setPedidoQrId(creado.id);
+        await pagoService.iniciarPagoQr(creado.id).catch(() => null);
+      } else if (creado?.id && paymentMethod === 'transferencia') {
+        await pagoService
+          .informarTransferencia(creado.id, {
+            numeroComprobante: transferenciaData.numeroComprobante,
+            bancoEmisor: transferenciaData.bancoEmisor || 'Transferencia CBU',
+            monto: Number(creado?.total ?? total),
+          })
+          .catch(() => null);
+      }
+
+      const fechaStr = creado?.fechaHoraCarga
+        ? new Date(creado.fechaHoraCarga).toLocaleString('es-AR')
+        : new Date().toLocaleString('es-AR');
+
+      const totalCalc = Number(creado?.total ?? total);
+      const subtotalCalc = Number(creado?.subtotal ?? subtotal);
+      const descuentoCalc = Number(creado?.descuento ?? descuento);
+
       const orderPayload = {
-        id: creado?.id,
+        id: creado?.numeroPedido ? `DM-${creado.numeroPedido}` : creado?.id || 'DM-NUEVO',
+        rawId: creado?.id,
         orderId: creado?.numeroPedido ? `DM-${creado.numeroPedido}` : creado?.id || 'DM-NUEVO',
-        estado: creado?.estado || 'CARGADO',
+        estado:
+          paymentMethod === 'transferencia'
+            ? 'Pendiente de Pago'
+            : creado?.estado || 'CARGADO',
         facturaId: creado?.facturaId || null,
+        facturaNum: creado?.facturaId ? 'Emitida' : 'Pendiente de emisión',
         comercio: pdvResp?.nombreComercio || selectedPdv?.nombre || 'Mi Comercio',
         direccion: direccionStr,
-        total: Number(creado?.total ?? total),
-        subtotal: Number(creado?.subtotal ?? subtotal),
-        descuento: Number(creado?.descuento ?? descuento),
-        metodoPago:
-          paymentMethod === 'mercadopago'
-            ? 'Billetera Virtual (Mercado Pago QR)'
-            : paymentMethod === 'transferencia'
-            ? 'Transferencia Bancaria'
-            : 'Efectivo contra entrega',
+        direccionEntrega: direccionStr,
+        total: totalCalc,
+        subtotal: subtotalCalc,
+        descuento: descuentoCalc,
+        metodoPago: medioPagoLabel,
+        medioPago: medioPagoLabel,
         comprobante: transferenciaData.numeroComprobante || null,
-        fecha: creado?.fechaHoraCarga
-          ? new Date(creado.fechaHoraCarga).toLocaleString('es-AR')
-          : new Date().toLocaleString('es-AR'),
+        fecha: fechaStr,
+        items: cartItems.map((it) => ({
+          nombre: it.producto?.nombre || 'Producto',
+          cant: Number(it.cantidad || 1),
+          precioUnit: `$${Number(it.producto?.precioNum || 0).toLocaleString('es-AR')}`,
+          subtotal: `$${(Number(it.producto?.precioNum || 0) * Number(it.cantidad || 1)).toLocaleString('es-AR')}`,
+        })),
+        trazabilidad: [
+          { estado: 'Pedido Confirmado', fecha: fechaStr, done: true },
+          {
+            estado: paymentMethod === 'transferencia' ? 'Validación de Pago en Espera' : 'Facturado en Depósito',
+            fecha: paymentMethod === 'transferencia' ? 'En revisión administrativa' : 'Pendiente',
+            done: false,
+          },
+          { estado: 'En Reparto con Distribuidor', fecha: 'Pendiente', done: false },
+          { estado: 'Entregado en Comercio', fecha: 'Pendiente', done: false },
+        ],
       };
+
+      pedidoClienteService.guardarPedido({
+        ...orderPayload,
+        total: `$${totalCalc.toLocaleString('es-AR')}`,
+        subtotal: `$${subtotalCalc.toLocaleString('es-AR')}`,
+        descuento: `$${descuentoCalc.toLocaleString('es-AR')}`,
+      });
 
       cartStorage.clear();
 
-      if (paymentMethod === 'mercadopago' && simulatedOutcome === 'pendiente') {
-        navigate('/pago/pendiente', { state: orderPayload });
-      } else if (paymentMethod === 'transferencia') {
+      if (paymentMethod === 'transferencia') {
         navigate('/pago/pendiente', { state: orderPayload });
       } else {
         navigate('/pago/exito', { state: orderPayload });
@@ -435,29 +560,106 @@ export default function Checkout() {
                   </div>
                 </div>
 
-                <div className="pt-2">
-                  <label className="block text-[11px] font-bold text-[#0f344d] mb-1.5">
-                    Estado de respuesta de pasarela:
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { id: 'exito', label: '✓ Aprobado', color: 'bg-[#dff8e9] text-[#39855b]' },
-                      { id: 'pendiente', label: '⏳ En proceso', color: 'bg-[#faf0d9] text-[#b88014]' },
-                      { id: 'fallo', label: '✕ Rechazado', color: 'bg-[#ffe2e7] text-[#c95569]' },
-                    ].map((s) => (
+                <div className="flex flex-col md:flex-row items-center gap-6 py-2">
+                  {/* QR Box */}
+                  <div className="relative p-4 bg-white border-2 border-[#009ee3]/30 rounded-[20px] shadow-sm flex flex-col items-center">
+                    <div className="w-44 h-44 bg-white p-2 border border-[#ececf2] rounded-[14px] flex items-center justify-center relative overflow-hidden">
+                      {qrCodeData?.qrImagenBase64 ? (
+                        <img
+                          src={`data:image/png;base64,${qrCodeData.qrImagenBase64}`}
+                          alt="Código QR Mercado Pago"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <svg className="w-full h-full text-[#2b2b3a]" viewBox="0 0 100 100" fill="currentColor">
+                          <rect x="5" y="5" width="25" height="25" rx="3" />
+                          <rect x="9" y="9" width="17" height="17" fill="white" />
+                          <rect x="13" y="13" width="9" height="9" />
+
+                          <rect x="70" y="5" width="25" height="25" rx="3" />
+                          <rect x="74" y="9" width="17" height="17" fill="white" />
+                          <rect x="78" y="13" width="9" height="9" />
+
+                          <rect x="5" y="70" width="25" height="25" rx="3" />
+                          <rect x="9" y="74" width="17" height="17" fill="white" />
+                          <rect x="13" y="78" width="9" height="9" />
+
+                          <rect x="35" y="10" width="6" height="6" />
+                          <rect x="45" y="15" width="6" height="6" />
+                          <rect x="55" y="8" width="6" height="6" />
+                          <rect x="35" y="25" width="6" height="6" />
+                          <rect x="48" y="32" width="6" height="6" />
+                          <rect x="15" y="45" width="6" height="6" />
+                          <rect x="25" y="52" width="6" height="6" />
+                          <rect x="35" y="45" width="6" height="6" />
+                          <rect x="45" y="48" width="6" height="6" />
+                          <rect x="55" y="42" width="6" height="6" />
+                          <rect x="70" y="40" width="6" height="6" />
+                          <rect x="80" y="48" width="6" height="6" />
+                          <rect x="88" y="38" width="6" height="6" />
+                          <rect x="40" y="65" width="6" height="6" />
+                          <rect x="52" y="72" width="6" height="6" />
+                          <rect x="62" y="65" width="6" height="6" />
+                          <rect x="75" y="75" width="6" height="6" />
+                          <rect x="85" y="85" width="6" height="6" />
+                          <rect x="40" y="85" width="6" height="6" />
+                          <rect x="58" y="88" width="6" height="6" />
+
+                          <circle cx="50" cy="50" r="10" fill="white" />
+                          <circle cx="50" cy="50" r="7" fill="#009ee3" />
+                        </svg>
+                      )}
+
+                      {timeLeft === 0 && (
+                        <div className="absolute inset-0 bg-white/95 backdrop-blur-[2px] rounded-[14px] flex flex-col items-center justify-center p-2 text-center z-10">
+                          <p className="text-[11px] font-bold text-red-500 mb-2">QR Expirado (15 min)</p>
+                          <button
+                            type="button"
+                            onClick={() => generarQrOficial()}
+                            disabled={generandoQr}
+                            className="px-2.5 py-1.5 rounded-[8px] bg-[#009ee3] text-white text-[10px] font-bold hover:bg-[#0089c7] transition-all cursor-pointer"
+                          >
+                            {generandoQr ? 'Generando...' : '🔄 Regenerar QR'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col items-center gap-1 mt-2">
+                      <span className="text-[10px] text-[#55819e] font-semibold">
+                        Código QR interoperable
+                      </span>
                       <button
-                        key={s.id}
                         type="button"
-                        onClick={() => setSimulatedOutcome(s.id)}
-                        className={`text-[11px] font-bold px-3 py-1 rounded-[8px] border transition-all ${
-                          simulatedOutcome === s.id
-                            ? `${s.color} border-current shadow-sm`
-                            : 'bg-white text-[#6b6b80] border-[#ececf2] hover:bg-slate-50'
-                        }`}
+                        onClick={() => generarQrOficial()}
+                        disabled={generandoQr}
+                        className="text-[10px] text-[#009ee3] hover:underline font-bold cursor-pointer"
                       >
-                        {s.label}
+                        {generandoQr ? 'Cargando QR oficial...' : '↻ Generar/Actualizar QR con API'}
                       </button>
-                    ))}
+                    </div>
+                  </div>
+
+                  {/* Pasos para el cliente */}
+                  <div className="space-y-3 flex-1 text-[12px] text-[#426c88]">
+                    <div className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-[#009ee3]/15 text-[#009ee3] font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                        1
+                      </span>
+                      <p>Abrí la app de <strong>Mercado Pago</strong> o tu aplicación bancaria preferida con lector QR.</p>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-[#009ee3]/15 text-[#009ee3] font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                        2
+                      </span>
+                      <p>Escaneá este código QR con la cámara de tu celular.</p>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-[#009ee3]/15 text-[#009ee3] font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                        3
+                      </span>
+                      <p>Confirmá el pago por <strong>${total.toLocaleString('es-AR')}</strong> con dinero en cuenta.</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -469,12 +671,12 @@ export default function Checkout() {
                   <div className="p-3 bg-white rounded-[12px] border border-[#ececf2] flex items-center justify-between">
                     <div>
                       <span className="text-[10px] text-[#aaa9ba] block uppercase font-bold">Alias CBU</span>
-                      <strong className="text-[#2b2b3a] font-mono text-[13px]">{DATOS_BANCARIOS.alias}</strong>
+                      <strong className="text-[#2b2b3a] font-mono text-[13px]">{datosBancarios.alias}</strong>
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleCopy(DATOS_BANCARIOS.alias, 'alias')}
-                      className="text-[11px] font-bold text-[#e86bc4] hover:underline flex items-center gap-1"
+                      onClick={() => handleCopy(datosBancarios.alias, 'alias')}
+                      className="text-[11px] font-bold text-[#e86bc4] hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       <Icon name="copy" className="w-3.5 h-3.5" />
                       {copiadoKey === 'alias' ? '¡Copiado!' : 'Copiar'}
@@ -484,16 +686,26 @@ export default function Checkout() {
                   <div className="p-3 bg-white rounded-[12px] border border-[#ececf2] flex items-center justify-between">
                     <div>
                       <span className="text-[10px] text-[#aaa9ba] block uppercase font-bold">CBU</span>
-                      <strong className="text-[#2b2b3a] font-mono text-[11px]">{DATOS_BANCARIOS.cbu}</strong>
+                      <strong className="text-[#2b2b3a] font-mono text-[11px]">{datosBancarios.cbu}</strong>
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleCopy(DATOS_BANCARIOS.cbu, 'cbu')}
-                      className="text-[11px] font-bold text-[#e86bc4] hover:underline flex items-center gap-1"
+                      onClick={() => handleCopy(datosBancarios.cbu, 'cbu')}
+                      className="text-[11px] font-bold text-[#e86bc4] hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       <Icon name="copy" className="w-3.5 h-3.5" />
                       {copiadoKey === 'cbu' ? '¡Copiado!' : 'Copiar'}
                     </button>
+                  </div>
+
+                  <div className="p-3 bg-white rounded-[12px] border border-[#ececf2]">
+                    <span className="text-[10px] text-[#aaa9ba] block uppercase font-bold">Banco & Tipo</span>
+                    <span className="text-[#2b2b3a] font-medium">{datosBancarios.banco} ({datosBancarios.tipoCuenta})</span>
+                  </div>
+
+                  <div className="p-3 bg-white rounded-[12px] border border-[#ececf2]">
+                    <span className="text-[10px] text-[#aaa9ba] block uppercase font-bold">Titular & CUIT</span>
+                    <span className="text-[#2b2b3a] font-medium">{datosBancarios.titular} (CUIT {datosBancarios.cuit})</span>
                   </div>
                 </div>
 

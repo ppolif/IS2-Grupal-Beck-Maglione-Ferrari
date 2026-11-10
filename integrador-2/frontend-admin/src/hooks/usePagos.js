@@ -1,12 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { facturaService } from '../services/facturaService';
 import { pedidoService } from '../services/pedidoService';
+import { pagoAdminService } from '../services/pagoAdminService';
 
 export function usePagos() {
   const [payments, setPayments] = useState([]);
   const [facturasPendientes, setFacturasPendientes] = useState([]);
+  const [transferenciasPendientes, setTransferenciasPendientes] = useState([]);
+  const [activeTab, setActiveTab] = useState('todos'); // 'todos' | 'transferencias'
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRechazarModalOpen, setIsRechazarModalOpen] = useState(false);
+  const [selectedPagoParaRechazo, setSelectedPagoParaRechazo] = useState(null);
+  const [motivoRechazo, setMotivoRechazo] = useState('');
   const [periodo, setPeriodo] = useState('Histórico');
   const [medio, setMedio] = useState('Todos');
 
@@ -88,9 +94,59 @@ export function usePagos() {
     }
   }, []);
 
+  const cargarTransferenciasPendientes = useCallback(async () => {
+    try {
+      const data = await pagoAdminService.listarTransferenciasPendientes();
+      if (Array.isArray(data)) {
+        setTransferenciasPendientes(data);
+      } else {
+        setTransferenciasPendientes([]);
+      }
+    } catch {
+      setTransferenciasPendientes([]);
+    }
+  }, []);
+
   useEffect(() => {
     cargarPagos();
-  }, [cargarPagos]);
+    cargarTransferenciasPendientes();
+  }, [cargarPagos, cargarTransferenciasPendientes]);
+
+  const handleAprobarTransferencia = async (pagoId, observaciones = 'Aprobado por administración') => {
+    try {
+      setLoading(true);
+      await pagoAdminService.aprobarPago(pagoId, observaciones);
+      alert(`Pago #${pagoId} APROBADO con éxito. Se generó la Factura y se descontó el stock.`);
+      await Promise.all([cargarTransferenciasPendientes(), cargarPagos()]);
+    } catch (err) {
+      alert(err.message || `No se pudo aprobar el pago #${pagoId}.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAbrirRechazo = (pago) => {
+    setSelectedPagoParaRechazo(pago);
+    setMotivoRechazo('');
+    setIsRechazarModalOpen(true);
+  };
+
+  const handleConfirmarRechazo = async (e) => {
+    e.preventDefault();
+    if (!selectedPagoParaRechazo || !motivoRechazo.trim()) return;
+    try {
+      setLoading(true);
+      await pagoAdminService.rechazarPago(selectedPagoParaRechazo.id, motivoRechazo);
+      alert(`Pago #${selectedPagoParaRechazo.id} RECHAZADO: ${motivoRechazo}`);
+      await Promise.all([cargarTransferenciasPendientes(), cargarPagos()]);
+    } catch (err) {
+      alert(err.message || `No se pudo rechazar el pago #${selectedPagoParaRechazo.id}.`);
+    } finally {
+      setIsRechazarModalOpen(false);
+      setSelectedPagoParaRechazo(null);
+      setLoading(false);
+    }
+  };
 
   const handleRegisterPayment = async (e) => {
     e.preventDefault();
@@ -133,9 +189,21 @@ export function usePagos() {
   return {
     payments,
     facturasPendientes,
+    transferenciasPendientes,
+    activeTab,
+    setActiveTab,
     loading,
     isModalOpen,
     setIsModalOpen,
+    isRechazarModalOpen,
+    setIsRechazarModalOpen,
+    selectedPagoParaRechazo,
+    motivoRechazo,
+    setMotivoRechazo,
+    handleAprobarTransferencia,
+    handleAbrirRechazo,
+    handleConfirmarRechazo,
+    cargarTransferenciasPendientes,
     periodo,
     setPeriodo,
     medio,

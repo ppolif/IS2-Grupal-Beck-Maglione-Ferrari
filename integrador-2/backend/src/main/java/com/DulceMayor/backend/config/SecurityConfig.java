@@ -70,6 +70,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(HttpMethod.POST, "/auth/login", "/api/v1/auth/login").permitAll();
                     auth.requestMatchers(HttpMethod.POST, "/auth/registro", "/api/v1/auth/registro").permitAll();
+                    auth.requestMatchers(HttpMethod.POST, "/pagos/webhook/**", "/api/v1/pagos/webhook/**").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/pagos/datos-bancarios", "/api/v1/pagos/datos-bancarios").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/publico/**", "/api/v1/publico/**").permitAll();
                     auth.requestMatchers(HttpMethod.POST, "/publico/chatbot/presupuesto", "/api/v1/publico/chatbot/presupuesto").permitAll();
                     auth.requestMatchers(

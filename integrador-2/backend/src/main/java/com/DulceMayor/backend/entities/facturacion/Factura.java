@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +64,18 @@ public class Factura extends EntidadBase {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pedido_id")
     private Pedido pedido;
+
+    @Column(name = "cae_simulado", length = 30)
+    private String caeSimulado;
+
+    @Column(name = "fecha_vencimiento_cae")
+    private LocalDate fechaVencimientoCae;
+
+    @Column(name = "cuit_receptor", length = 20)
+    private String cuitReceptor;
+
+    @Column(name = "condicion_iva_receptor", length = 50)
+    private String condicionIvaReceptor;
 
     /**
      * Composición 1 — 1..* hacia {@link DetalleFactura}: la factura es dueña de sus líneas de detalle.

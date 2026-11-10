@@ -37,7 +37,7 @@ public class Imagen extends EntidadBase {
 
     @Lob
     @Basic(fetch = FetchType.LAZY)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "LONGBLOB")
     private byte[] contenido;
 
     @Enumerated(EnumType.STRING)
