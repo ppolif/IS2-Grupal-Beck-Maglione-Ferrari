@@ -251,6 +251,13 @@ class PersonasYPuntoDeVentaControllerTest {
                 .andExpect(jsonPath("$.preventor.id").value(preventorId))
                 .andReturn();
 
+        // 4b. Listar puntos de venta como preventista
+        mockMvc.perform(get("/puntos-de-venta")
+                        .header("Authorization", "Bearer " + tokenPreventista))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].nombreComercio").value("Kiosco Central San Martín"));
+
         // 5. Auto-registro público de un nuevo cliente minorista en portal (POST /auth/registro - Caso C)
         RegistroMinoristaRequest regReq = new RegistroMinoristaRequest(
                 "Laura",
@@ -287,6 +294,28 @@ class PersonasYPuntoDeVentaControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombre").value("Laura"))
                 .andExpect(jsonPath("$.numeroDocumento").value("37888999"));
+
+        // 7b. Laura consulta sus puntos de venta y crea uno propio
+        mockMvc.perform(get("/puntos-de-venta")
+                        .header("Authorization", "Bearer " + tokenLaura))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
+
+        PuntoDeVentaRequest lauraPdvReq = new PuntoDeVentaRequest(
+                "Sucursal Laura Centro", null, dirReq, null
+        );
+        mockMvc.perform(post("/puntos-de-venta")
+                        .header("Authorization", "Bearer " + tokenLaura)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(lauraPdvReq)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.nombreComercio").value("Sucursal Laura Centro"));
+
+        mockMvc.perform(get("/puntos-de-venta")
+                        .header("Authorization", "Bearer " + tokenLaura))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[?(@.nombreComercio == 'Sucursal Laura Centro')]").exists());
 
         // 8. Laura actualiza sus datos y modifica su mail de ingreso (PUT /api/v1/mi-cuenta/perfil)
         ActualizarPerfilMinoristaRequest actReq = new ActualizarPerfilMinoristaRequest(

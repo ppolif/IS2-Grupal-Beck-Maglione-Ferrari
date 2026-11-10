@@ -50,6 +50,126 @@ export default function Perfil() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eliminandoCuenta, setEliminandoCuenta] = useState(false);
 
+  // Estados de puntos de venta
+  const [puntosDeVenta, setPuntosDeVenta] = useState([]);
+  const [loadingPdv, setLoadingPdv] = useState(false);
+  const [showPdvModal, setShowPdvModal] = useState(false);
+  const [localidades, setLocalidades] = useState([]);
+  const [cargandoLocalidades, setCargandoLocalidades] = useState(false);
+  const [guardandoPdv, setGuardandoPdv] = useState(false);
+  const [errorPdv, setErrorPdv] = useState('');
+  const [pdvForm, setPdvForm] = useState({
+    nombreComercio: '',
+    calle: '',
+    numeracion: '',
+    barrio: '',
+    manzanaPiso: '',
+    casaDepartamento: '',
+    referencia: '',
+    localidadId: '',
+    latitud: -32.8895,
+    longitud: -68.8458,
+  });
+
+  const cargarMisPuntosDeVenta = useCallback(async () => {
+    setLoadingPdv(true);
+    try {
+      const res = await authService.listarMisPuntosDeVenta();
+      const list = res?.elementos || res?.content || (Array.isArray(res) ? res : []);
+      setPuntosDeVenta(list);
+    } catch (err) {
+      console.error('Error al listar puntos de venta:', err);
+      setPuntosDeVenta([]);
+    } finally {
+      setLoadingPdv(false);
+    }
+  }, []);
+
+  const cargarLocalidades = useCallback(async () => {
+    setCargandoLocalidades(true);
+    try {
+      const locs = await authService.listarLocalidades();
+      const arr = Array.isArray(locs) ? locs : locs?.content || locs?.elementos || [];
+      setLocalidades(arr);
+      if (arr.length > 0) {
+        setPdvForm((prev) => ({
+          ...prev,
+          localidadId: prev.localidadId || arr[0].id,
+        }));
+      }
+    } catch (err) {
+      console.error('Error al listar localidades:', err);
+      setLocalidades([]);
+    } finally {
+      setCargandoLocalidades(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    cargarMisPuntosDeVenta();
+    cargarLocalidades();
+  }, [cargarMisPuntosDeVenta, cargarLocalidades]);
+
+  const handleCrearPuntoDeVenta = async (e) => {
+    e.preventDefault();
+    setErrorPdv('');
+    if (!pdvForm.nombreComercio.trim()) {
+      setErrorPdv('El nombre del comercio es obligatorio.');
+      return;
+    }
+    if (!pdvForm.calle.trim()) {
+      setErrorPdv('La calle es obligatoria.');
+      return;
+    }
+    if (!pdvForm.numeracion.trim()) {
+      setErrorPdv('La numeración es obligatoria.');
+      return;
+    }
+    if (!pdvForm.localidadId) {
+      setErrorPdv('Debe seleccionar una localidad.');
+      return;
+    }
+
+    setGuardandoPdv(true);
+    try {
+      await authService.crearPuntoDeVenta({
+        nombreComercio: pdvForm.nombreComercio.trim(),
+        minoristaId: perfil?.id || null,
+        direccion: {
+          calle: pdvForm.calle.trim(),
+          numeracion: pdvForm.numeracion.trim(),
+          barrio: pdvForm.barrio.trim() || null,
+          manzanaPiso: pdvForm.manzanaPiso.trim() || null,
+          casaDepartamento: pdvForm.casaDepartamento.trim() || null,
+          referencia: pdvForm.referencia.trim() || null,
+          latitud: pdvForm.latitud ? parseFloat(pdvForm.latitud) : -32.8895,
+          longitud: pdvForm.longitud ? parseFloat(pdvForm.longitud) : -68.8458,
+          localidadId: pdvForm.localidadId,
+        },
+      });
+
+      showToast('¡Punto de venta registrado con éxito!');
+      setShowPdvModal(false);
+      setPdvForm({
+        nombreComercio: '',
+        calle: '',
+        numeracion: '',
+        barrio: '',
+        manzanaPiso: '',
+        casaDepartamento: '',
+        referencia: '',
+        localidadId: localidades[0]?.id || '',
+        latitud: -32.8895,
+        longitud: -68.8458,
+      });
+      await cargarMisPuntosDeVenta();
+    } catch (err) {
+      setErrorPdv(err.message || 'Error al registrar el punto de venta.');
+    } finally {
+      setGuardandoPdv(false);
+    }
+  };
+
   // Inicializar formulario de datos al cargar el perfil
   useEffect(() => {
     if (perfil) {
@@ -82,9 +202,6 @@ export default function Perfil() {
       const resp = await authService.actualizarMiPerfil({
         nombre: datosForm.nombre.trim(),
         apellido: datosForm.apellido.trim(),
-        tipoDocumento: datosForm.tipoDocumento,
-        numeroDocumento: datosForm.numeroDocumento.trim(),
-        fechaNacimiento: datosForm.fechaNacimiento || null,
         email: datosForm.email.trim().toLowerCase(),
         telefono: datosForm.telefono.trim() || null,
       });
@@ -367,6 +484,16 @@ export default function Perfil() {
           Datos Personales
         </button>
         <button
+          onClick={() => setActiveTab('puntos-venta')}
+          className={`pb-3 transition-colors cursor-pointer ${
+            activeTab === 'puntos-venta'
+              ? 'text-[#e86bc4] border-b-2 border-[#e86bc4]'
+              : 'text-[#6b6b80] hover:text-[#2b2b3a]'
+          }`}
+        >
+          Puntos de Venta ({puntosDeVenta.length})
+        </button>
+        <button
           onClick={() => setActiveTab('seguridad')}
           className={`pb-3 transition-colors cursor-pointer ${
             activeTab === 'seguridad'
@@ -563,36 +690,23 @@ export default function Perfil() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label htmlFor="edit-tipoDoc" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
-                    Tipo Doc. *
-                  </label>
-                  <select
-                    id="edit-tipoDoc"
-                    value={datosForm.tipoDocumento}
-                    onChange={(e) => setDatosForm({ ...datosForm, tipoDocumento: e.target.value })}
-                    disabled={guardandoDatos}
-                    className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
-                  >
-                    <option value="DNI">DNI</option>
-                    <option value="CUIT">CUIT</option>
-                    <option value="PASAPORTE">Pasaporte</option>
-                  </select>
+              {/* Datos inmutables: documento y fecha de nacimiento solo lectura */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-3.5 rounded-[12px] bg-[#f8f9fc] border border-[#ececf2]">
+                  <span className="text-[10px] font-bold uppercase text-[#6b6b80] block mb-1">
+                    Documento de Identidad (No editable)
+                  </span>
+                  <span className="text-[12px] font-semibold text-[#2b2b3a]">
+                    {perfil?.tipoDocumento} {perfil?.numeroDocumento}
+                  </span>
                 </div>
-                <div className="sm:col-span-2">
-                  <label htmlFor="edit-numDoc" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
-                    Número de Documento *
-                  </label>
-                  <input
-                    type="text"
-                    id="edit-numDoc"
-                    required
-                    value={datosForm.numeroDocumento}
-                    onChange={(e) => setDatosForm({ ...datosForm, numeroDocumento: e.target.value })}
-                    disabled={guardandoDatos}
-                    className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
-                  />
+                <div className="p-3.5 rounded-[12px] bg-[#f8f9fc] border border-[#ececf2]">
+                  <span className="text-[10px] font-bold uppercase text-[#6b6b80] block mb-1">
+                    Fecha de Nacimiento (No editable)
+                  </span>
+                  <span className="text-[12px] font-semibold text-[#2b2b3a]">
+                    {perfil?.fechaNacimiento || 'Sin fecha informada'}
+                  </span>
                 </div>
               </div>
 
@@ -632,20 +746,6 @@ export default function Perfil() {
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="edit-fechaNac" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
-                  Fecha de Nacimiento
-                </label>
-                <input
-                  type="date"
-                  id="edit-fechaNac"
-                  value={datosForm.fechaNacimiento}
-                  onChange={(e) => setDatosForm({ ...datosForm, fechaNacimiento: e.target.value })}
-                  disabled={guardandoDatos}
-                  className="w-full sm:w-1/2 border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
-                />
-              </div>
-
               <div className="flex gap-3 pt-2">
                 <Button
                   type="submit"
@@ -668,6 +768,103 @@ export default function Perfil() {
                 </Button>
               </div>
             </form>
+          )}
+        </div>
+      )}
+
+      {/* Tab content: Puntos de Venta del Minorista */}
+      {activeTab === 'puntos-venta' && (
+        <div className="bg-white rounded-[22px] p-6 sm:p-8 border border-[#ececf2] shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b border-[#f0f0f4]">
+            <div>
+              <h3 className="text-[16px] font-bold text-[#2b2b3a]">Locales y Puntos de Venta</h3>
+              <p className="text-[11px] text-[#6b6b80]">
+                Administrá las direcciones y comercios donde recibís las entregas de tus pedidos mayoristas.
+              </p>
+            </div>
+            <Button
+              onClick={() => {
+                setErrorPdv('');
+                cargarLocalidades();
+                setShowPdvModal(true);
+              }}
+              className="text-[12px] py-2 px-4 shrink-0 flex items-center gap-1.5"
+            >
+              <span>+</span>
+              <span>Nuevo punto de venta</span>
+            </Button>
+          </div>
+
+          {loadingPdv ? (
+            <div className="py-10 text-center text-[#6b6b80] text-[13px] flex items-center justify-center gap-2">
+              <span className="w-4 h-4 border-2 border-[#e86bc4] border-t-transparent rounded-full animate-spin"></span>
+              Cargando puntos de venta...
+            </div>
+          ) : puntosDeVenta.length === 0 ? (
+            <div className="py-12 px-4 text-center rounded-[16px] bg-[#fafafd] border border-[#ececf2] space-y-3">
+              <div className="w-12 h-12 rounded-full bg-[#ffe2f7] text-[#e86bc4] flex items-center justify-center mx-auto text-xl font-bold">
+                🏪
+              </div>
+              <h4 className="text-[14px] font-bold text-[#2b2b3a]">No tenés puntos de venta registrados</h4>
+              <p className="text-[12px] text-[#6b6b80] max-w-md mx-auto">
+                Registrá tu primer comercio o kiosco con su dirección física para asignarle envíos al hacer tus pedidos.
+              </p>
+              <Button
+                onClick={() => {
+                  setErrorPdv('');
+                  cargarLocalidades();
+                  setShowPdvModal(true);
+                }}
+                className="text-[12px] py-2 px-4"
+              >
+                Agregar mi primer punto de venta
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {puntosDeVenta.map((pdv, idx) => {
+                const dir = pdv.direccion;
+                const dirTexto = dir
+                  ? `${dir.calle || ''} ${dir.numeracion || ''} ${dir.barrio ? `(${dir.barrio})` : ''}`.trim()
+                  : 'Sin dirección';
+                const localidadTexto = dir?.localidadNombre || dir?.departamentoNombre || 'Mendoza';
+                const preventorTexto = pdv.preventor
+                  ? `${pdv.preventor.nombre || ''} ${pdv.preventor.apellido || ''}`.trim()
+                  : 'Asignación automática por zona';
+
+                return (
+                  <div
+                    key={pdv.id || idx}
+                    className="p-5 rounded-[18px] border border-[#ececf2] bg-[#fdfdfd] hover:border-[#e86bc4]/40 transition-all flex flex-col justify-between space-y-3"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <strong className="text-[14px] font-bold text-[#2b2b3a]">
+                          {pdv.nombreComercio}
+                        </strong>
+                        <span className="text-[10px] bg-[#dff8e9] text-[#39855b] font-semibold px-2.5 py-0.5 rounded-full">
+                          Activo
+                        </span>
+                      </div>
+                      <p className="text-[12px] text-[#6b6b80] flex items-start gap-1.5 mt-2">
+                        <Icon name="mapPin" className="w-3.5 h-3.5 text-[#3fb8d9] shrink-0 mt-0.5" />
+                        <span>{dirTexto}, {localidadTexto}</span>
+                      </p>
+                      {dir?.referencia && (
+                        <p className="text-[11px] text-[#8c8b9c] italic ml-5 mt-1">
+                          Ref: {dir.referencia}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-[#f0f0f4] flex items-center justify-between text-[11px] text-[#6b6b80]">
+                      <span>Preventor: <strong className="text-[#2b2b3a]">{preventorTexto}</strong></span>
+                      <span className="font-mono text-[10px] text-[#aaa9ba]">ID #{pdv.id?.slice(0, 8)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       )}
@@ -1039,6 +1236,190 @@ export default function Perfil() {
                 Volver
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Alta de Punto de Venta */}
+      {showPdvModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-[24px] max-w-lg w-full overflow-hidden shadow-2xl border border-[#ececf2] p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-[#f0f0f4]">
+              <div>
+                <h3 className="text-[16px] font-bold text-[#2b2b3a]">Nuevo Punto de Venta</h3>
+                <p className="text-[11px] text-[#6b6b80]">Ingresá los datos de tu comercio o local físico.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPdvModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {errorPdv && (
+              <div className="p-3 bg-[#ffe8ed] text-[#ff8fa3] rounded-[12px] text-[12px] font-medium border border-[#ff8fa3]/30">
+                {errorPdv}
+              </div>
+            )}
+
+            <form onSubmit={handleCrearPuntoDeVenta} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+                  Nombre de Fantasía o Comercio *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej. Kiosco San Martín, Minimarket Central"
+                  value={pdvForm.nombreComercio}
+                  onChange={(e) => setPdvForm({ ...pdvForm, nombreComercio: e.target.value })}
+                  disabled={guardandoPdv}
+                  className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+                    Calle *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Av. San Martín, Belgrano, etc."
+                    value={pdvForm.calle}
+                    onChange={(e) => setPdvForm({ ...pdvForm, calle: e.target.value })}
+                    disabled={guardandoPdv}
+                    className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+                    Numeración *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="1234 o S/N"
+                    value={pdvForm.numeracion}
+                    onChange={(e) => setPdvForm({ ...pdvForm, numeracion: e.target.value })}
+                    disabled={guardandoPdv}
+                    className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+                    Barrio (opcional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej. Centro, Bombal"
+                    value={pdvForm.barrio}
+                    onChange={(e) => setPdvForm({ ...pdvForm, barrio: e.target.value })}
+                    disabled={guardandoPdv}
+                    className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+                    Localidad *
+                  </label>
+                  <select
+                    required
+                    value={pdvForm.localidadId}
+                    onChange={(e) => setPdvForm({ ...pdvForm, localidadId: e.target.value })}
+                    disabled={guardandoPdv || cargandoLocalidades}
+                    className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                  >
+                    <option value="">{cargandoLocalidades ? 'Cargando localidades...' : 'Seleccione una localidad...'}</option>
+                    {localidades.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.nombre} {loc.codigoPostal ? `(CP ${loc.codigoPostal})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {localidades.length === 0 && !cargandoLocalidades && (
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[11px] text-[#ff8fa3]">No se encontraron localidades.</span>
+                      <button
+                        type="button"
+                        onClick={cargarLocalidades}
+                        className="text-[11px] text-[#e86bc4] underline cursor-pointer hover:opacity-80"
+                      >
+                        Reintentar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+                    Manzana / Piso
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej. Piso 1 o Mza B"
+                    value={pdvForm.manzanaPiso}
+                    onChange={(e) => setPdvForm({ ...pdvForm, manzanaPiso: e.target.value })}
+                    disabled={guardandoPdv}
+                    className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+                    Casa / Departamento
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej. Casa 4 o Dpto B"
+                    value={pdvForm.casaDepartamento}
+                    onChange={(e) => setPdvForm({ ...pdvForm, casaDepartamento: e.target.value })}
+                    disabled={guardandoPdv}
+                    className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+                  Referencia de entrega
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej. Portón verde frente a la plaza, timbre 2"
+                  value={pdvForm.referencia}
+                  onChange={(e) => setPdvForm({ ...pdvForm, referencia: e.target.value })}
+                  disabled={guardandoPdv}
+                  className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-[#f0f0f4] flex gap-2 justify-end">
+                <Button
+                  secondary
+                  type="button"
+                  disabled={guardandoPdv}
+                  onClick={() => setShowPdvModal(false)}
+                  className="text-[12px] py-2 px-4"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={guardandoPdv}
+                  className="text-[12px] py-2 px-5"
+                >
+                  {guardandoPdv ? 'Guardando...' : 'Crear punto de venta'}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

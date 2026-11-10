@@ -54,9 +54,17 @@ public class PuntoDeVentaService extends BaseService<PuntoDeVenta, PuntoDeVentaR
         if (request == null) {
             return null;
         }
+        String minId = request.minoristaId() != null ? request.minoristaId().trim() : null;
+        if ((minId == null || minId.isBlank()) && esMinoristaAutenticado()) {
+            UsuarioPrincipal principal = obtenerPrincipalAutenticado();
+            if (principal != null) {
+                Minorista min = minoristaService.obtenerOCrearPorUsuarioId(principal.getId());
+                minId = min.getId();
+            }
+        }
         return new PuntoDeVentaRequest(
                 request.nombreComercio() != null ? request.nombreComercio().trim() : null,
-                request.minoristaId() != null ? request.minoristaId().trim() : null,
+                minId,
                 request.direccion(),
                 request.preventorId() != null ? request.preventorId().trim() : null
         );
@@ -65,7 +73,14 @@ public class PuntoDeVentaService extends BaseService<PuntoDeVenta, PuntoDeVentaR
     @Override
     protected void validarCrear(PuntoDeVentaRequest request) {
         validarFormato(request);
-        minoristaService.obtenerEntidad(request.minoristaId());
+        Minorista minorista = minoristaService.obtenerEntidad(request.minoristaId());
+        if (esMinoristaAutenticado()) {
+            UsuarioPrincipal principal = obtenerPrincipalAutenticado();
+            if (principal != null && minorista.getUsuario() != null
+                    && !principal.getId().equals(minorista.getUsuario().getId())) {
+                throw new ValidacionException("No tiene permisos para dar de alta puntos de venta en nombre de otro minorista");
+            }
+        }
         if (request.preventorId() != null && !request.preventorId().isBlank()) {
             empleadoService.obtenerPreventor(request.preventorId());
         }

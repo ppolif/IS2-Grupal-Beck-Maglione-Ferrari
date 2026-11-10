@@ -21,16 +21,10 @@ public interface PuntoDeVentaRepository extends BaseRepository<PuntoDeVenta> {
 
     @Query("""
         SELECT p FROM PuntoDeVenta p
-        JOIN p.minorista m
-        LEFT JOIN p.preventor pr
         WHERE p.eliminado = false
-          AND (:minoristaId IS NULL OR m.id = :minoristaId)
-          AND (:preventorId IS NULL OR pr.id = :preventorId)
-          AND (:q IS NULL OR (
-               LOWER(p.nombreComercio) LIKE LOWER(CONCAT('%', :q, '%'))
-               OR LOWER(m.nombre) LIKE LOWER(CONCAT('%', :q, '%'))
-               OR LOWER(m.apellido) LIKE LOWER(CONCAT('%', :q, '%'))
-          ))
+          AND (:minoristaId IS NULL OR p.minorista.id = :minoristaId)
+          AND (:preventorId IS NULL OR p.preventor.id = :preventorId)
+          AND (:q IS NULL OR LOWER(p.nombreComercio) LIKE LOWER(CONCAT('%', :q, '%')))
         ORDER BY p.nombreComercio ASC
     """)
     Page<PuntoDeVenta> buscarConFiltros(
