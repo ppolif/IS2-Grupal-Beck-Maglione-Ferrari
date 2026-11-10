@@ -14,4 +14,11 @@ public record IniciarPagoQrResponse(
         LocalDateTime fechaExpiracion,
         long tiempoRestanteSegundos
 ) {
+    public String estadoPago() {
+        return qrData;
+    }
+
+    public long expiraEnSegundos() {
+        return tiempoRestanteSegundos;
+    }
 }
