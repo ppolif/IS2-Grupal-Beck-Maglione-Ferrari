@@ -147,7 +147,13 @@ export default function Checkout() {
     const interval = setInterval(async () => {
       try {
         const estado = await pagoService.consultarEstadoQr(pedidoQrId);
-        if (estado && estado.estadoPago === 'APROBADO') {
+        if (
+          estado &&
+          (estado.estadoPago === 'APROBADO' ||
+            estado.qrData === 'APROBADO' ||
+            estado.estado === 'APROBADO' ||
+            estado.estado === 'FACTURADO')
+        ) {
           cartStorage.clear();
           navigate('/pago/exito', {
             state: {
@@ -247,19 +253,6 @@ export default function Checkout() {
           ? 'Transferencia Bancaria'
           : 'Efectivo contra entrega';
 
-      if (creado?.id && paymentMethod === 'mercadopago') {
-        setPedidoQrId(creado.id);
-        await pagoService.iniciarPagoQr(creado.id).catch(() => null);
-      } else if (creado?.id && paymentMethod === 'transferencia') {
-        await pagoService
-          .informarTransferencia(creado.id, {
-            numeroComprobante: transferenciaData.numeroComprobante,
-            bancoEmisor: transferenciaData.bancoEmisor || 'Transferencia CBU',
-            monto: Number(creado?.total ?? total),
-          })
-          .catch(() => null);
-      }
-
       const fechaStr = creado?.fechaHoraCarga
         ? new Date(creado.fechaHoraCarga).toLocaleString('es-AR')
         : new Date().toLocaleString('es-AR');
@@ -305,6 +298,34 @@ export default function Checkout() {
           { estado: 'Entregado en Comercio', fecha: 'Pendiente', done: false },
         ],
       };
+
+      if (creado?.id && paymentMethod === 'mercadopago') {
+        setPedidoQrId(creado.id);
+        const qrResp = await pagoService.iniciarPagoQr(creado.id).catch((err) => {
+          console.error('Error al iniciar QR oficial:', err);
+          return null;
+        });
+        if (qrResp && qrResp.qrImagenBase64) {
+          setQrCodeData(qrResp);
+          setTimeLeft(qrResp.tiempoRestanteSegundos || qrResp.expiraEnSegundos || 900);
+        }
+        pedidoClienteService.guardarPedido({
+          ...orderPayload,
+          total: `$${totalCalc.toLocaleString('es-AR')}`,
+          subtotal: `$${subtotalCalc.toLocaleString('es-AR')}`,
+          descuento: `$${descuentoCalc.toLocaleString('es-AR')}`,
+        });
+        setIsProcessing(false);
+        return;
+      } else if (creado?.id && paymentMethod === 'transferencia') {
+        await pagoService
+          .informarTransferencia(creado.id, {
+            numeroComprobante: transferenciaData.numeroComprobante,
+            bancoEmisor: transferenciaData.bancoEmisor || 'Transferencia CBU',
+            monto: Number(creado?.total ?? total),
+          })
+          .catch(() => null);
+      }
 
       pedidoClienteService.guardarPedido({
         ...orderPayload,
@@ -546,122 +567,183 @@ export default function Checkout() {
                     </div>
                     <div>
                       <h3 className="text-[14px] font-bold text-[#0f344d]">
-                        Escaneo de QR Dinámico
+                        Billetera Virtual (Mercado Pago QR)
                       </h3>
                       <p className="text-[11px] text-[#55819e]">
-                        Acreditación por ${total.toLocaleString('es-AR')}
+                        Acreditación instantánea por ${total.toLocaleString('es-AR')}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-[#d2ecfa] text-[11px] text-[#009ee3] font-semibold self-start sm:self-auto">
-                    <Icon name="clock" className="w-3.5 h-3.5" />
-                    <span>Expira en: <strong>{formatTimer(timeLeft)}</strong></span>
-                  </div>
+                  {pedidoQrId && (
+                    <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-[#d2ecfa] text-[11px] text-[#009ee3] font-semibold self-start sm:self-auto">
+                      <Icon name="clock" className="w-3.5 h-3.5" />
+                      <span>Expira en: <strong>{formatTimer(timeLeft)}</strong></span>
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex flex-col md:flex-row items-center gap-6 py-2">
-                  {/* QR Box */}
-                  <div className="relative p-4 bg-white border-2 border-[#009ee3]/30 rounded-[20px] shadow-sm flex flex-col items-center">
-                    <div className="w-44 h-44 bg-white p-2 border border-[#ececf2] rounded-[14px] flex items-center justify-center relative overflow-hidden">
-                      {qrCodeData?.qrImagenBase64 ? (
-                        <img
-                          src={`data:image/png;base64,${qrCodeData.qrImagenBase64}`}
-                          alt="Código QR Mercado Pago"
-                          className="w-full h-full object-contain"
-                        />
-                      ) : (
-                        <svg className="w-full h-full text-[#2b2b3a]" viewBox="0 0 100 100" fill="currentColor">
-                          <rect x="5" y="5" width="25" height="25" rx="3" />
-                          <rect x="9" y="9" width="17" height="17" fill="white" />
-                          <rect x="13" y="13" width="9" height="9" />
+                {!pedidoQrId ? (
+                  /* ESTADO 1: Antes de confirmar el pedido */
+                  <div className="flex flex-col sm:flex-row items-center gap-6 py-2">
+                    <div className="w-44 h-44 bg-white p-4 border-2 border-dashed border-[#009ee3]/30 rounded-[20px] flex flex-col items-center justify-center text-center shadow-inner shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-[#009ee3]/10 text-[#009ee3] flex items-center justify-center mb-2">
+                        <Icon name="credit-card" className="w-6 h-6" />
+                      </div>
+                      <span className="text-[11px] font-bold text-[#0f344d] leading-tight">
+                        Código QR Oficial
+                      </span>
+                      <span className="text-[10px] text-[#55819e] mt-1">
+                        Se generará con la API al confirmar
+                      </span>
+                    </div>
 
-                          <rect x="70" y="5" width="25" height="25" rx="3" />
-                          <rect x="74" y="9" width="17" height="17" fill="white" />
-                          <rect x="78" y="13" width="9" height="9" />
+                    <div className="space-y-3 flex-1 text-[12px] text-[#426c88]">
+                      <div className="p-3 bg-white/80 rounded-[12px] border border-[#d2ecfa] space-y-1">
+                        <span className="text-[11px] font-bold text-[#009ee3] uppercase tracking-wider block">
+                          ¿Cómo funciona el pago?
+                        </span>
+                        <p className="text-[12px] text-[#2b2b3a]">
+                          Al hacer clic en <strong>"Confirmar Pedido y Generar QR"</strong>, el sistema registrará tu pedido e invocará a la API de Mercado Pago para generar tu código QR interoperable con vencimiento a 15 minutos.
+                        </p>
+                      </div>
 
-                          <rect x="5" y="70" width="25" height="25" rx="3" />
-                          <rect x="9" y="74" width="17" height="17" fill="white" />
-                          <rect x="13" y="78" width="9" height="9" />
+                      <div className="space-y-2">
+                        <div className="flex items-start gap-2.5">
+                          <span className="w-5 h-5 rounded-full bg-[#009ee3]/15 text-[#009ee3] font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                            1
+                          </span>
+                          <p>Hacé clic en <strong>"Confirmar Pedido y Generar QR"</strong> en el panel derecho.</p>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <span className="w-5 h-5 rounded-full bg-[#009ee3]/15 text-[#009ee3] font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                            2
+                          </span>
+                          <p>Escaneá el código QR que se desplegará en pantalla con la app de <strong>Mercado Pago</strong> o tu billetera virtual.</p>
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                          <span className="w-5 h-5 rounded-full bg-[#009ee3]/15 text-[#009ee3] font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                            3
+                          </span>
+                          <p>Confirmá el pago de <strong>${total.toLocaleString('es-AR')}</strong>. La acreditación es automática.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* ESTADO 2: Pedido creado, mostrando QR oficial en Base64 */
+                  <div className="space-y-4">
+                    <div className="p-3 bg-[#eaf8fc] border border-[#3fb8d9] rounded-[14px] text-[12px] text-[#0f344d] flex items-center gap-2.5 shadow-sm">
+                      <span className="text-xl animate-pulse">📲</span>
+                      <div className="flex-1">
+                        <strong className="block text-[#0f344d]">
+                          ¡Pedido #{pedidoQrId.slice(0, 8)} registrado! Escaneá el código QR oficial
+                        </strong>
+                        <span className="text-[#3a6888] text-[11px]">
+                          Aguardando confirmación de Mercado Pago. La pantalla se actualizará automáticamente apenas se acredite.
+                        </span>
+                      </div>
+                    </div>
 
-                          <rect x="35" y="10" width="6" height="6" />
-                          <rect x="45" y="15" width="6" height="6" />
-                          <rect x="55" y="8" width="6" height="6" />
-                          <rect x="35" y="25" width="6" height="6" />
-                          <rect x="48" y="32" width="6" height="6" />
-                          <rect x="15" y="45" width="6" height="6" />
-                          <rect x="25" y="52" width="6" height="6" />
-                          <rect x="35" y="45" width="6" height="6" />
-                          <rect x="45" y="48" width="6" height="6" />
-                          <rect x="55" y="42" width="6" height="6" />
-                          <rect x="70" y="40" width="6" height="6" />
-                          <rect x="80" y="48" width="6" height="6" />
-                          <rect x="88" y="38" width="6" height="6" />
-                          <rect x="40" y="65" width="6" height="6" />
-                          <rect x="52" y="72" width="6" height="6" />
-                          <rect x="62" y="65" width="6" height="6" />
-                          <rect x="75" y="75" width="6" height="6" />
-                          <rect x="85" y="85" width="6" height="6" />
-                          <rect x="40" y="85" width="6" height="6" />
-                          <rect x="58" y="88" width="6" height="6" />
+                    <div className="flex flex-col md:flex-row items-center gap-6 py-2">
+                      <div className="relative p-4 bg-white border-2 border-[#009ee3]/30 rounded-[20px] shadow-sm flex flex-col items-center">
+                        <div className="w-48 h-48 bg-white p-2 border border-[#ececf2] rounded-[14px] flex items-center justify-center relative overflow-hidden">
+                          {qrCodeData?.qrImagenBase64 ? (
+                            <img
+                              src={
+                                qrCodeData.qrImagenBase64.startsWith('data:')
+                                  ? qrCodeData.qrImagenBase64
+                                  : `data:image/png;base64,${qrCodeData.qrImagenBase64}`
+                              }
+                              alt="Código QR Mercado Pago Oficial"
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center gap-2 text-center p-4">
+                              <span className="animate-spin text-2xl">⏳</span>
+                              <span className="text-[11px] text-[#55819e] font-semibold">
+                                {generandoQr ? 'Generando código QR con Mercado Pago...' : 'Cargando QR oficial...'}
+                              </span>
+                            </div>
+                          )}
 
-                          <circle cx="50" cy="50" r="10" fill="white" />
-                          <circle cx="50" cy="50" r="7" fill="#009ee3" />
-                        </svg>
-                      )}
+                          {timeLeft === 0 && (
+                            <div className="absolute inset-0 bg-white/95 backdrop-blur-[2px] rounded-[14px] flex flex-col items-center justify-center p-2 text-center z-10">
+                              <p className="text-[11px] font-bold text-red-500 mb-2">QR Expirado (15 min)</p>
+                              <button
+                                type="button"
+                                onClick={() => generarQrOficial()}
+                                disabled={generandoQr}
+                                className="px-3 py-1.5 rounded-[8px] bg-[#009ee3] text-white text-[11px] font-bold hover:bg-[#0089c7] transition-all cursor-pointer shadow-sm"
+                              >
+                                {generandoQr ? 'Generando...' : '🔄 Regenerar QR'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
 
-                      {timeLeft === 0 && (
-                        <div className="absolute inset-0 bg-white/95 backdrop-blur-[2px] rounded-[14px] flex flex-col items-center justify-center p-2 text-center z-10">
-                          <p className="text-[11px] font-bold text-red-500 mb-2">QR Expirado (15 min)</p>
+                        <div className="flex flex-col items-center gap-1.5 mt-2">
+                          <span className="text-[10px] text-[#55819e] font-semibold">
+                            {qrCodeData?.qrData?.startsWith('http')
+                              ? 'Escaneá con tu celular o pagá desde tu navegador'
+                              : 'Código QR EMVCo Interoperable Oficial'}
+                          </span>
+                          {qrCodeData?.qrData?.startsWith('http') && (
+                            <a
+                              href={qrCodeData.qrData}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 rounded-[10px] bg-[#009ee3] text-white text-[11px] font-bold hover:bg-[#0089c7] transition-all shadow-sm flex items-center gap-1"
+                            >
+                              <span>Pagar con Mercado Pago ↗</span>
+                            </a>
+                          )}
                           <button
                             type="button"
                             onClick={() => generarQrOficial()}
                             disabled={generandoQr}
-                            className="px-2.5 py-1.5 rounded-[8px] bg-[#009ee3] text-white text-[10px] font-bold hover:bg-[#0089c7] transition-all cursor-pointer"
+                            className="text-[10px] text-[#009ee3] hover:underline font-bold cursor-pointer"
                           >
-                            {generandoQr ? 'Generando...' : '🔄 Regenerar QR'}
+                            {generandoQr ? 'Actualizando...' : '↻ Regenerar QR oficial'}
                           </button>
                         </div>
-                      )}
-                    </div>
+                      </div>
 
-                    <div className="flex flex-col items-center gap-1 mt-2">
-                      <span className="text-[10px] text-[#55819e] font-semibold">
-                        Código QR interoperable
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => generarQrOficial()}
-                        disabled={generandoQr}
-                        className="text-[10px] text-[#009ee3] hover:underline font-bold cursor-pointer"
-                      >
-                        {generandoQr ? 'Cargando QR oficial...' : '↻ Generar/Actualizar QR con API'}
-                      </button>
+                      <div className="space-y-3 flex-1 text-[12px] text-[#426c88]">
+                        <div className="p-3 bg-white rounded-[12px] border border-[#d2ecfa] space-y-2">
+                          <div className="flex items-center gap-2 text-[#39855b] font-semibold text-[11px]">
+                            <span className="w-2 h-2 rounded-full bg-[#39855b] animate-ping" />
+                            <span>Verificación en tiempo real activa</span>
+                          </div>
+                          <p className="text-[11px] text-[#6b6b80]">
+                            El sistema consulta automáticamente cada 4 segundos el estado de la transacción en Mercado Pago.
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-start gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-[#009ee3]/15 text-[#009ee3] font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                              1
+                            </span>
+                            <p>Abrí la app de <strong>Mercado Pago</strong> o tu aplicación bancaria preferida con lector QR.</p>
+                          </div>
+                          <div className="flex items-start gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-[#009ee3]/15 text-[#009ee3] font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                              2
+                            </span>
+                            <p>Escaneá este código QR directamente desde la pantalla.</p>
+                          </div>
+                          <div className="flex items-start gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-[#009ee3]/15 text-[#009ee3] font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                              3
+                            </span>
+                            <p>Confirmá el importe de <strong>${total.toLocaleString('es-AR')}</strong> con dinero en cuenta.</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Pasos para el cliente */}
-                  <div className="space-y-3 flex-1 text-[12px] text-[#426c88]">
-                    <div className="flex items-start gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-[#009ee3]/15 text-[#009ee3] font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
-                        1
-                      </span>
-                      <p>Abrí la app de <strong>Mercado Pago</strong> o tu aplicación bancaria preferida con lector QR.</p>
-                    </div>
-                    <div className="flex items-start gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-[#009ee3]/15 text-[#009ee3] font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
-                        2
-                      </span>
-                      <p>Escaneá este código QR con la cámara de tu celular.</p>
-                    </div>
-                    <div className="flex items-start gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-[#009ee3]/15 text-[#009ee3] font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
-                        3
-                      </span>
-                      <p>Confirmá el pago por <strong>${total.toLocaleString('es-AR')}</strong> con dinero en cuenta.</p>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             )}
 
@@ -834,10 +916,16 @@ export default function Checkout() {
 
             <Button
               type="submit"
-              disabled={isProcessing}
+              disabled={isProcessing || (paymentMethod === 'mercadopago' && Boolean(pedidoQrId))}
               className="w-full py-3.5 text-[14px] justify-center cursor-pointer shadow-md"
             >
-              {isProcessing ? 'Procesando pedido...' : 'Confirmar Pedido'}
+              {isProcessing
+                ? 'Procesando pedido...'
+                : paymentMethod === 'mercadopago'
+                ? pedidoQrId
+                  ? '⏳ Aguardando pago en Mercado Pago...'
+                  : 'Confirmar Pedido y Generar QR'
+                : 'Confirmar Pedido'}
             </Button>
 
             <div className="text-center">
