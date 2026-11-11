@@ -56,9 +56,10 @@ public class NewsletterService {
     /**
      * Tarea programada que se ejecuta automáticamente el día 5 de cada mes a las 08:00 AM.
      */
-    @Scheduled(cron = "0 0 8 5 * ?")
+    @Transactional
+    @Scheduled(cron = "${app.newsletter.cron:0 0 8 5 * ?}")
     public void ejecutarNewsletterMensualProgramado() {
-        log.info("Iniciando despacho automático programado del Newsletter mensual (Día 5, 08:00 AM)...");
+        log.info("Iniciando despacho automático programado del Newsletter mensual...");
         NewsletterEnvioResponse resultado = enviarNewsletter();
         log.info("Newsletter mensual finalizado: {} productos en oferta enviados a {} clientes.",
                 resultado.productosEnOferta(), resultado.destinatarios());
@@ -70,7 +71,7 @@ public class NewsletterService {
      *
      * @return {@link NewsletterEnvioResponse} con el balance de correos enviados y productos incluidos.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public NewsletterEnvioResponse enviarNewsletter() {
         // 1. Obtener productos activos en oferta y preparar ítems con precio vigente
         List<Producto> productosEnOferta = productoRepository
@@ -90,14 +91,16 @@ public class NewsletterService {
             ));
         }
 
-        // 2. Obtener clientes minoristas y resolver correos únicos
-        List<Minorista> minoristas = minoristaRepository.findAllByEliminadoFalse();
+        // 2. Obtener clientes minoristas y resolver correos de sus usuarios registrados
+        List<Minorista> minoristas = minoristaRepository.findAllActivosConUsuarios();
         Set<String> correosDestinatarios = new HashSet<>();
 
         for (Minorista m : minoristas) {
-            String email = emailService.resolverEmailMinorista(m);
-            if (email != null && !email.isBlank()) {
-                correosDestinatarios.add(email.trim().toLowerCase());
+            if (m.getUsuario() != null && m.getUsuario().getNombreUsuario() != null) {
+                String username = m.getUsuario().getNombreUsuario().trim();
+                if (username.contains("@")) {
+                    correosDestinatarios.add(username.toLowerCase());
+                }
             }
         }
 

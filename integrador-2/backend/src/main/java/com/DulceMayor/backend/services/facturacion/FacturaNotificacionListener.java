@@ -6,17 +6,19 @@ import com.DulceMayor.backend.services.mail.EmailTemplateHelper;
 import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * Listener asíncrono observador encargado de despachar el correo con la factura PDF adjunta
  * cuando se emite una nueva factura en el sistema.
  *
  * <p><b>Regla de Arquitectura y Negocio:</b> {@code 02-reglas-negocio.md} (§8) y {@code 03-arquitectura.md} (§4.3).</p>
- * <p>Aplica el patrón <b>Observer</b> con {@link EventListener} y {@link Async} para no demorar
- * ni comprometer la transacción principal de facturación si la conexión SMTP tarda o falla.</p>
+ * <p>Aplica el patrón <b>Observer</b> con {@link TransactionalEventListener} y {@link Async} para no demorar
+ * ni comprometer la transacción principal de facturación si la conexión SMTP tarda o falla, asegurando
+ * que el comprobante se despache únicamente tras el commit exitoso en base de datos.</p>
  */
 @Component
 public class FacturaNotificacionListener {
@@ -32,12 +34,13 @@ public class FacturaNotificacionListener {
     }
 
     /**
-     * Reacciona ante {@link FacturaGeneradaEvent} despachando el comprobante PDF por email.
+     * Reacciona ante {@link FacturaGeneradaEvent} despachando el comprobante PDF por email
+     * una vez confirmada (commit) la transacción de persistencia de la factura.
      *
      * @param event Datos de la factura recién persistida.
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void alGenerarFactura(FacturaGeneradaEvent event) {
         if (event == null) {
             return;

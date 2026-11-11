@@ -1,6 +1,7 @@
 package com.DulceMayor.backend.services.notificacion;
 
 import com.DulceMayor.backend.dtos.notificacion.NewsletterEnvioResponse;
+import com.DulceMayor.backend.entities.Usuario;
 import com.DulceMayor.backend.entities.contacto.ContactoCorreoElectronico;
 import com.DulceMayor.backend.entities.persona.Minorista;
 import com.DulceMayor.backend.entities.producto.Producto;
@@ -62,20 +63,20 @@ class NewsletterServiceTest {
                 .thenReturn(List.of(prodOferta));
         when(vigenciaPrecioService.obtenerPrecioVigente("prod-oferta-1")).thenReturn(1500.0);
 
-        ContactoCorreoElectronico contactoMail = ContactoCorreoElectronico.builder()
-                .email("kiosco@test.com")
+        Usuario usuario = Usuario.builder()
+                .nombreUsuario("kiosco@test.com")
+                .eliminado(false)
                 .build();
 
         Minorista minorista = Minorista.builder()
                 .id("min-1")
                 .nombre("Juan")
                 .apellido("Perez")
-                .contactos(List.of(contactoMail))
+                .usuario(usuario)
                 .eliminado(false)
                 .build();
 
-        when(minoristaRepository.findAllByEliminadoFalse()).thenReturn(List.of(minorista));
-        when(emailService.resolverEmailMinorista(minorista)).thenReturn("kiosco@test.com");
+        when(minoristaRepository.findAllActivosConUsuarios()).thenReturn(List.of(minorista));
 
         NewsletterEnvioResponse res = newsletterService.enviarNewsletter();
 

@@ -30,7 +30,7 @@ public class NotificacionController {
      *
      * @return {@link NewsletterEnvioResponse} con el total de destinatarios y productos incluidos.
      */
-    @PreAuthorize("hasAnyRole('JEFE_LOGISTICA', 'JEFE_VENTAS', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
     @PostMapping({"/notificaciones/newsletter/enviar", "/api/v1/notificaciones/newsletter/enviar"})
     public ResponseEntity<NewsletterEnvioResponse> enviarNewsletter() {
         NewsletterEnvioResponse response = newsletterService.enviarNewsletter();

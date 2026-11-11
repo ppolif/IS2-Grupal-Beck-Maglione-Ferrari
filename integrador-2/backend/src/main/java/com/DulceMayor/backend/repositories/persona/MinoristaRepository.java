@@ -34,6 +34,13 @@ public interface MinoristaRepository extends BaseRepository<Minorista> {
     Optional<Minorista> findActivoByEmail(@Param("email") String email);
 
     @Query("""
+        SELECT DISTINCT m FROM Minorista m
+        LEFT JOIN FETCH m.usuarios u
+        WHERE m.eliminado = false
+    """)
+    java.util.List<Minorista> findAllActivosConUsuarios();
+
+    @Query("""
         SELECT m FROM Minorista m
         WHERE m.eliminado = false
           AND (:numeroDocumento IS NULL OR m.numeroDocumento = :numeroDocumento)
