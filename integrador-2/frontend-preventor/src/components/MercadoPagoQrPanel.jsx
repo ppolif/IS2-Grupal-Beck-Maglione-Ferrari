@@ -13,7 +13,8 @@ export default function MercadoPagoQrPanel({
   monto,
   qrInicial = null,
   onPagoAprobado,
-  onPosponerPago,
+  onCancelarPedido,
+  cancelando = false,
 }) {
   const [qrData, setQrData] = useState(qrInicial);
   const [timeLeft, setTimeLeft] = useState(
@@ -284,14 +285,16 @@ export default function MercadoPagoQrPanel({
             </p>
           </div>
 
-          {onPosponerPago && (
-            <div className="pt-1">
+          {onCancelarPedido && (
+            <div className="pt-2 border-t border-[#d2ecfa]">
               <button
                 type="button"
-                onClick={onPosponerPago}
-                className="w-full py-2 px-3 rounded-[10px] bg-white hover:bg-slate-50 border border-[#d2ecfa] text-[#426c88] text-[11px] font-bold transition-colors cursor-pointer"
+                onClick={onCancelarPedido}
+                disabled={cancelando}
+                className="w-full py-2.5 px-3 rounded-[12px] bg-[#fff0f3] hover:bg-[#ffe2e8] border border-[#ffccd5] text-[#d92d4c] text-[12px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
               >
-                Cobrar más tarde (dejar pedido en CARGADO)
+                <Icon name="trash" className="w-4 h-4 text-[#d92d4c]" />
+                <span>{cancelando ? 'Cancelando pedido...' : 'Cancelar pedido'}</span>
               </button>
             </div>
           )}

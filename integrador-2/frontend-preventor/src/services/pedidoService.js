@@ -43,5 +43,16 @@ export const pedidoService = {
    */
   async obtenerPedido(id) {
     return apiFetch(`/pedidos/${id}`);
-  }
+  },
+
+  /**
+   * Cancela y elimina lógicamente un pedido no facturado en el backend.
+   * @param {string} id
+   * @returns {Promise<void>}
+   */
+  async eliminarPedido(id) {
+    return apiFetch(`/pedidos/${id}`, {
+      method: 'DELETE',
+    });
+  },
 };

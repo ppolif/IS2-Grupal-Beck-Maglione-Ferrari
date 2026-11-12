@@ -60,5 +60,20 @@ public class HistorialEstadoPedidoService {
                 .findAllByPedidoIdAndEliminadoFalseOrderByFechaHoraAscIdAsc(pedidoId);
         return historialEstadoPedidoMapper.aResponseList(registros);
     }
+
+    /**
+     * Da de baja lógica todos los registros de historial asociados a un pedido eliminado.
+     */
+    @Transactional
+    public void darDeBajaPorPedido(String pedidoId) {
+        List<HistorialEstadoPedido> registros = historialEstadoPedidoRepository
+                .findAllByPedidoIdAndEliminadoFalseOrderByFechaHoraAscIdAsc(pedidoId);
+        if (!registros.isEmpty()) {
+            for (HistorialEstadoPedido reg : registros) {
+                reg.setEliminado(true);
+            }
+            historialEstadoPedidoRepository.saveAll(registros);
+        }
+    }
 }
 

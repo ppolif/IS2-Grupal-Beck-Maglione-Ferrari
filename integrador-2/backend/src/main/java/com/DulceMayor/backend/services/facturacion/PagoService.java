@@ -143,6 +143,23 @@ public class PagoService extends BaseService<Pago, PagoRequest, PagoResponse> {
     }
 
     @Transactional(readOnly = true)
+    public boolean tienePagoAprobadoPorPedido(String pedidoId) {
+        return buscarEntidadesPorPedido(pedidoId).stream()
+                .anyMatch(p -> p.getEstadoPago() == com.DulceMayor.backend.entities.facturacion.EstadoPago.APROBADO);
+    }
+
+    @Transactional
+    public void darDeBajaPorPedido(String pedidoId) {
+        List<Pago> pagos = buscarEntidadesPorPedido(pedidoId);
+        if (!pagos.isEmpty()) {
+            for (Pago p : pagos) {
+                p.setEliminado(true);
+            }
+            pagoRepository.saveAll(pagos);
+        }
+    }
+
+    @Transactional(readOnly = true)
     public java.util.Optional<Pago> buscarPorMpPaymentId(String mpPaymentId) {
         return pagoRepository.findByMpPaymentIdAndEliminadoFalse(mpPaymentId);
     }

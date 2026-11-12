@@ -9,6 +9,7 @@ import Icon from '../../components/Icon';
 import MercadoPagoQrPanel from '../../components/MercadoPagoQrPanel';
 import { useCart } from '../../context/CartContext';
 import { pagoService } from '../../services/pagoService';
+import { pedidoService } from '../../services/pedidoService';
 import { DATOS_BANCARIOS } from '../../utils/paymentConstants';
 
 export default function Carrito() {
@@ -27,6 +28,7 @@ export default function Carrito() {
   const [flowStep, setFlowStep] = useState('CART');
   const [confirmedOrderData, setConfirmedOrderData] = useState(null);
   const [initialQrData, setInitialQrData] = useState(null);
+  const [cancelandoQr, setCancelandoQr] = useState(false);
   const [promoCodeInput, setPromoCodeInput] = useState(codigoPromo || '');
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -169,6 +171,21 @@ export default function Carrito() {
     }
   };
 
+  const handleCancelarPedidoQr = async () => {
+    if (!confirmedOrderData?.orderId) return;
+    try {
+      setCancelandoQr(true);
+      await pedidoService.eliminarPedido(confirmedOrderData.orderId);
+      setConfirmedOrderData(null);
+      setInitialQrData(null);
+      setFlowStep('CART');
+    } catch (err) {
+      alert(err.message || 'No se pudo cancelar el pedido. Intentá nuevamente.');
+    } finally {
+      setCancelandoQr(false);
+    }
+  };
+
   return (
     <div className="max-w-xl mx-auto space-y-6">
       <div>
@@ -208,6 +225,7 @@ export default function Carrito() {
               nombreComercio={confirmedOrderData.cliente}
               monto={confirmedOrderData.total}
               qrInicial={initialQrData}
+              cancelando={cancelandoQr}
               onPagoAprobado={() => {
                 setConfirmedOrderData((prev) => ({
                   ...prev,
@@ -216,14 +234,7 @@ export default function Carrito() {
                 }));
                 setFlowStep('CONFIRMED');
               }}
-              onPosponerPago={() => {
-                setConfirmedOrderData((prev) => ({
-                  ...prev,
-                  estadoPago: 'Pendiente de cobro QR (podés reabrirlo en Mis Pedidos)',
-                  pagoAprobado: false,
-                }));
-                setFlowStep('CONFIRMED');
-              }}
+              onCancelarPedido={handleCancelarPedidoQr}
             />
           </div>
         ) : flowStep === 'CONFIRMED' && confirmedOrderData ? (

@@ -29,6 +29,7 @@ import com.DulceMayor.backend.entities.producto.Producto;
 import com.DulceMayor.backend.entities.producto.Promocion;
 import com.DulceMayor.backend.repositories.pedido.PedidoRepository;
 import com.DulceMayor.backend.services.BaseService;
+import com.DulceMayor.backend.services.facturacion.PagoService;
 import com.DulceMayor.backend.services.facturacion.FormaDePagoService;
 import com.DulceMayor.backend.services.persona.EmpleadoService;
 import com.DulceMayor.backend.services.persona.MinoristaService;
@@ -64,6 +65,7 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     private final PuntoDeVentaService puntoDeVentaService;
     private final EmpleadoService empleadoService;
     private final MinoristaService minoristaService;
+    private final PagoService pagoService;
     private final FormaDePagoService formaDePagoService;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -78,6 +80,7 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
             PuntoDeVentaService puntoDeVentaService,
             EmpleadoService empleadoService,
             MinoristaService minoristaService,
+            PagoService pagoService,
             FormaDePagoService formaDePagoService,
             ApplicationEventPublisher eventPublisher) {
         super(pedidoRepository, pedidoMapper, "Pedido");
@@ -91,6 +94,7 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         this.empleadoService = empleadoService;
         this.minoristaService = minoristaService;
         this.formaDePagoService = formaDePagoService;
+        this.pagoService = pagoService;
         this.eventPublisher = eventPublisher;
     }
 
@@ -152,6 +156,50 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
             FormaDePago formaDePago = formaDePagoService.obtenerOCrearPorTipo(request.tipoPago());
             entidad.setFormaDePago(formaDePago);
         }
+    }
+
+    /**
+     * Valida las condiciones de negocio antes de aplicar la baja lógica a un pedido:
+     * 1. Verifica los permisos de acceso del usuario actual.
+     * 2. Solo se permite dar de baja un pedido en estado {@link EstadoPedido#CARGADO}.
+     * 3. No se permite dar de baja un pedido que ya tenga pagos aprobados.
+     */
+    @Override
+    protected void validarEliminar(Pedido existente) {
+        verificarAcceso(existente);
+        if (existente.getEstado() != EstadoPedido.CARGADO) {
+            throw new ConflictoException(
+                    "TRANSICION_INVALIDA",
+                    "Solo se puede eliminar un pedido en estado CARGADO. Estado actual: " + existente.getEstado()
+            );
+        }
+        if (pagoService.tienePagoAprobadoPorPedido(existente.getId())) {
+            throw new ConflictoException(
+                    "CONFLICTO",
+                    "No se puede eliminar un pedido con pagos aprobados"
+            );
+        }
+    }
+
+    /**
+     * Hook de baja lógica ejecutado antes de persistir la marca en el pedido.
+     * Aplica baja lógica a los detalles de pedido, registros de historial y pagos asociados.
+     */
+    @Override
+    protected void antesDeEliminar(Pedido existente) {
+        if (existente.getDetalles() != null) {
+            existente.getDetalles().forEach(detalle -> detalle.setEliminado(true));
+        }
+        historialEstadoPedidoService.darDeBajaPorPedido(existente.getId());
+        pagoService.darDeBajaPorPedido(existente.getId());
+    }
+
+    /**
+     * Lista pedidos en estado CARGADO con pago BILLETERA_VIRTUAL y expiración vencida para limpieza automática.
+     */
+    @Transactional(readOnly = true)
+    public List<Pedido> listarPedidosQrExpirados(LocalDateTime ahora) {
+        return pedidoRepository.buscarPedidosQrExpirados(ahora);
     }
 
     /**

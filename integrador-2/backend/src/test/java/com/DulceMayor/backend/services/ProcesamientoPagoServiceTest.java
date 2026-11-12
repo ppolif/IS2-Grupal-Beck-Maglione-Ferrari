@@ -385,4 +385,21 @@ class ProcesamientoPagoServiceTest {
         verify(pagoStrategyFactory, never()).obtenerEstrategia(any());
         verify(pagoService, never()).buscarEntidadesPorPedido(anyString());
     }
+
+    @Test
+    @DisplayName("limpiarPedidosQrExpirados: elimina pedidos expirados sin pago aprobado")
+    void limpiarPedidosQrExpiradosEliminaSinPagoAprobado() {
+        Pedido exp1 = Pedido.builder().id("ped-exp-1").numeroPedido(101L).build();
+        Pedido exp2 = Pedido.builder().id("ped-exp-2").numeroPedido(102L).build();
+
+        when(pedidoService.listarPedidosQrExpirados(any(LocalDateTime.class)))
+                .thenReturn(java.util.List.of(exp1, exp2));
+        when(pagoService.tienePagoAprobadoPorPedido("ped-exp-1")).thenReturn(false);
+        when(pagoService.tienePagoAprobadoPorPedido("ped-exp-2")).thenReturn(true);
+
+        service.limpiarPedidosQrExpirados();
+
+        verify(pedidoService).eliminar("ped-exp-1");
+        verify(pedidoService, never()).eliminar("ped-exp-2");
+    }
 }

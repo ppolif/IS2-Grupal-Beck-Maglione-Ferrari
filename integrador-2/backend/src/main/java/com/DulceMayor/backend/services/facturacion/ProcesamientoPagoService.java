@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -127,6 +128,28 @@ public class ProcesamientoPagoService {
         );
 
         return respuesta;
+    }
+
+    /**
+     * Limpieza programada de pedidos abandonados generados mediante Mercado Pago QR
+     * que expiraron sin registrar acreditación de pago.
+     */
+    @Scheduled(fixedDelayString = "${app.mercadopago.cleanup-interval-ms:60000}")
+    @Transactional
+    public void limpiarPedidosQrExpirados() {
+        LocalDateTime ahora = LocalDateTime.now();
+        List<Pedido> pedidosExpirados = pedidoService.listarPedidosQrExpirados(ahora);
+        for (Pedido pedido : pedidosExpirados) {
+            try {
+                if (!pagoService.tienePagoAprobadoPorPedido(pedido.getId())) {
+                    log.info("Limpieza automática: cancelando pedido expirado con QR abandonado: ID={}, NroPedido={}",
+                            pedido.getId(), pedido.getNumeroPedido());
+                    pedidoService.eliminar(pedido.getId());
+                }
+            } catch (Exception ex) {
+                log.error("Error al limpiar pedido QR expirado ID {}: {}", pedido.getId(), ex.getMessage());
+            }
+        }
     }
 
     /**

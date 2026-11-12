@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -98,6 +99,12 @@ public class PedidoController extends BaseController<PedidoService, PedidoReques
             @PathVariable String id,
             @RequestBody(required = false) AnularPedidoRequest request) {
         return ResponseEntity.ok(service.anularPedido(id, request));
+    }
+
+    @DeleteMapping({"/pedidos/{id}", "/api/v1/pedidos/{id}"})
+    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO', 'PREVENTISTA', 'MINORISTA')")
+    public ResponseEntity<Void> eliminarPedido(@PathVariable String id) {
+        return ejecutarEliminar(id);
     }
 
     @GetMapping({"/pedidos/{id}/historial", "/api/v1/pedidos/{id}/historial"})

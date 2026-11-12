@@ -41,6 +41,23 @@ export const pedidoClienteService = {
   },
 
   /**
+   * Elimina un pedido del almacenamiento local por id o rawId.
+   */
+  eliminarPedidoLocal(pedidoId) {
+    if (!pedidoId) return;
+    try {
+      const pedidosActuales = this.obtenerPedidos();
+      const actualizados = pedidosActuales.filter(
+        (p) => p.id !== pedidoId && p.rawId !== pedidoId && p.orderId !== pedidoId
+      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizados));
+      window.dispatchEvent(new CustomEvent('dm-pedido-actualizado'));
+    } catch (err) {
+      console.error('Error al eliminar pedido localmente:', err);
+    }
+  },
+
+  /**
    * Consulta los pedidos del cliente en el backend si hay sesión activa.
    */
   async sincronizarConBackend() {

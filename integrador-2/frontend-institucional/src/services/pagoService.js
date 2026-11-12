@@ -33,4 +33,14 @@ export const pagoService = {
       body: JSON.stringify(data),
     });
   },
+
+  /**
+   * Cancela y elimina lógicamente un pedido no abonado al salir del checkout o descartar el QR.
+   */
+  async cancelarPedido(pedidoId, options = {}) {
+    return apiFetch(`/pedidos/${pedidoId}`, {
+      method: 'DELETE',
+      ...options,
+    });
+  },
 };

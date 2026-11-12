@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
@@ -43,8 +43,65 @@ export default function Checkout() {
   const [qrCodeData, setQrCodeData] = useState(null);
   const [generandoQr, setGenerandoQr] = useState(false);
   const [pedidoQrId, setPedidoQrId] = useState(null);
+  const [cancelandoPedido, setCancelandoPedido] = useState(false);
   const [timeLeft, setTimeLeft] = useState(900); // 15 minutos en segundos
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const pedidoQrIdRef = useRef(null);
+  const pagoAprobadoRef = useRef(false);
+
+  useEffect(() => {
+    pedidoQrIdRef.current = pedidoQrId;
+  }, [pedidoQrId]);
+
+  // Si el usuario abandona el Checkout con un pedido QR pendiente sin pagar, se cancela automáticamente
+  useEffect(() => {
+    const cancelarPedidoPendiente = () => {
+      if (pedidoQrIdRef.current && !pagoAprobadoRef.current) {
+        pagoService.cancelarPedido(pedidoQrIdRef.current, { keepalive: true }).catch(() => null);
+        pedidoClienteService.eliminarPedidoLocal(pedidoQrIdRef.current);
+      }
+    };
+
+    window.addEventListener('pagehide', cancelarPedidoPendiente);
+    return () => {
+      window.removeEventListener('pagehide', cancelarPedidoPendiente);
+      cancelarPedidoPendiente();
+    };
+  }, []);
+
+  const handleCancelarPedidoQr = async () => {
+    if (!pedidoQrId) return;
+    try {
+      setCancelandoPedido(true);
+      await pagoService.cancelarPedido(pedidoQrId);
+      pedidoClienteService.eliminarPedidoLocal(pedidoQrId);
+      setPedidoQrId(null);
+      pedidoQrIdRef.current = null;
+      setQrCodeData(null);
+      setTimeLeft(900);
+    } catch (err) {
+      alert(err.message || 'No se pudo cancelar el pedido. Intentá nuevamente.');
+    } finally {
+      setCancelandoPedido(false);
+    }
+  };
+
+  const handleCambiarMetodoPago = async (nuevoMetodo) => {
+    if (paymentMethod === 'mercadopago' && pedidoQrId && !pagoAprobadoRef.current) {
+      try {
+        await pagoService.cancelarPedido(pedidoQrId);
+        pedidoClienteService.eliminarPedidoLocal(pedidoQrId);
+        setPedidoQrId(null);
+        pedidoQrIdRef.current = null;
+        setQrCodeData(null);
+        setTimeLeft(900);
+      } catch {
+        // Silencioso
+      }
+    }
+    setPaymentMethod(nuevoMetodo);
+  };
 
   const subtotal = cartItems.reduce(
     (acc, it) => acc + Number(it.producto.precioNum || 0) * Number(it.cantidad || 1),
@@ -160,25 +217,28 @@ export default function Checkout() {
             estado.estado === 'FACTURADO')
         ) {
           cancelado = true;
+          pagoAprobadoRef.current = true;
           const detallePedido = await apiFetch(`/pedidos/${pedidoQrId}`).catch(() => null);
           const nroPedido = detallePedido?.numeroPedido || estado?.numeroPedido;
           cartStorage.clear();
+          const orderSuccessPayload = {
+            id: nroPedido ? `DM-${nroPedido}` : pedidoQrId,
+            orderId: nroPedido ? `DM-${nroPedido}` : pedidoQrId,
+            facturaId: detallePedido?.facturaId || null,
+            total,
+            subtotal,
+            descuento,
+            estado: 'FACTURADO',
+            metodoPago: 'Billetera Virtual (Mercado Pago QR)',
+            comercio: selectedPdv?.nombre || 'Mi Comercio',
+            direccion: selectedPdv
+              ? `${selectedPdv.direccion}, ${selectedPdv.localidad}`
+              : 'Gran Mendoza',
+            fecha: new Date().toLocaleString('es-AR'),
+          };
+          pedidoClienteService.guardarPedido(orderSuccessPayload);
           navigate('/pago/exito', {
-            state: {
-              id: pedidoQrId,
-              orderId: nroPedido ? `DM-${nroPedido}` : pedidoQrId,
-              facturaId: detallePedido?.facturaId || null,
-              total,
-              subtotal,
-              descuento,
-              estado: 'FACTURADO',
-              metodoPago: 'Billetera Virtual (Mercado Pago QR)',
-              comercio: selectedPdv?.nombre || 'Mi Comercio',
-              direccion: selectedPdv
-                ? `${selectedPdv.direccion}, ${selectedPdv.localidad}`
-                : 'Gran Mendoza',
-              fecha: new Date().toLocaleString('es-AR'),
-            },
+            state: orderSuccessPayload,
           });
         }
       } catch {
@@ -549,7 +609,7 @@ export default function Checkout() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
                 type="button"
-                onClick={() => setPaymentMethod('mercadopago')}
+                onClick={() => handleCambiarMetodoPago('mercadopago')}
                 className={`p-4 rounded-[16px] border text-left cursor-pointer transition-all ${
                   paymentMethod === 'mercadopago'
                     ? 'border-[#009ee3] bg-[#f0faff] shadow-[0_4px_16px_rgba(0,158,227,0.15)] ring-1 ring-[#009ee3]'
@@ -570,7 +630,7 @@ export default function Checkout() {
 
               <button
                 type="button"
-                onClick={() => setPaymentMethod('transferencia')}
+                onClick={() => handleCambiarMetodoPago('transferencia')}
                 className={`p-4 rounded-[16px] border text-left cursor-pointer transition-all ${
                   paymentMethod === 'transferencia'
                     ? 'border-[#e86bc4] bg-[#fff5fc] shadow-[0_4px_16px_rgba(232,107,196,0.15)] ring-1 ring-[#e86bc4]'
@@ -591,7 +651,7 @@ export default function Checkout() {
 
               <button
                 type="button"
-                onClick={() => setPaymentMethod('efectivo')}
+                onClick={() => handleCambiarMetodoPago('efectivo')}
                 className={`p-4 rounded-[16px] border text-left cursor-pointer transition-all ${
                   paymentMethod === 'efectivo'
                     ? 'border-[#7ed6a5] bg-[#f2fdf7] shadow-[0_4px_16px_rgba(126,214,165,0.2)] ring-1 ring-[#7ed6a5]'
@@ -792,6 +852,18 @@ export default function Checkout() {
                             </span>
                             <p>Confirmá el importe de <strong>${total.toLocaleString('es-AR')}</strong> con dinero en cuenta.</p>
                           </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-[#d2ecfa]">
+                          <button
+                            type="button"
+                            onClick={handleCancelarPedidoQr}
+                            disabled={cancelandoPedido}
+                            className="w-full py-2.5 px-3 rounded-[12px] bg-[#fff0f3] hover:bg-[#ffe2e8] border border-[#ffccd5] text-[#d92d4c] text-[12px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                          >
+                            <Icon name="trash" className="w-4 h-4 text-[#d92d4c]" />
+                            <span>{cancelandoPedido ? 'Cancelando pedido...' : 'Cancelar pedido'}</span>
+                          </button>
                         </div>
                       </div>
                     </div>

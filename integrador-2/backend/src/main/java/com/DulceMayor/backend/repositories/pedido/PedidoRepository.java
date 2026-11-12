@@ -43,6 +43,17 @@ public interface PedidoRepository extends BaseRepository<Pedido> {
 
     @Query("""
             SELECT p FROM Pedido p
+            WHERE p.eliminado = false
+              AND p.estado = com.DulceMayor.backend.entities.pedido.EstadoPedido.CARGADO
+              AND p.formaDePago IS NOT NULL
+              AND p.formaDePago.tipoPago = com.DulceMayor.backend.entities.facturacion.TipoPago.BILLETERA_VIRTUAL
+              AND p.fechaExpiracionPago IS NOT NULL
+              AND p.fechaExpiracionPago < :ahora
+            """)
+    List<Pedido> buscarPedidosQrExpirados(@Param("ahora") LocalDateTime ahora);
+
+    @Query("""
+            SELECT p FROM Pedido p
             JOIN p.puntoDeVenta pdv
             LEFT JOIN p.preventor pr
             LEFT JOIN p.distribuidor d

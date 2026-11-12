@@ -29,6 +29,7 @@ import com.DulceMayor.backend.entities.producto.Producto;
 import com.DulceMayor.backend.entities.producto.Promocion;
 import com.DulceMayor.backend.repositories.pedido.PedidoRepository;
 import com.DulceMayor.backend.services.facturacion.FormaDePagoService;
+import com.DulceMayor.backend.services.facturacion.PagoService;
 import com.DulceMayor.backend.services.pedido.HistorialEstadoPedidoService;
 import com.DulceMayor.backend.services.pedido.PedidoLecturaService;
 import com.DulceMayor.backend.services.pedido.PedidoService;
@@ -91,6 +92,9 @@ class PedidoServiceTest {
     private FormaDePagoService formaDePagoService;
 
     @Mock
+    private PagoService pagoService;
+
+    @Mock
     private ApplicationEventPublisher eventPublisher;
 
     private PedidoService pedidoService;
@@ -109,6 +113,7 @@ class PedidoServiceTest {
                 empleadoService,
                 minoristaService,
                 formaDePagoService,
+                pagoService,
                 eventPublisher
         );
         lenient().when(pedidoMapper.aEntidad(any(PedidoRequest.class))).thenAnswer(inv -> Pedido.builder().build());
@@ -281,5 +286,53 @@ class PedidoServiceTest {
 
         sinStock.setEstado(EstadoPedido.FACTURADO);
         assertThrows(ConflictoException.class, () -> pedidoService.anularPedido("ped-1", new AnularPedidoRequest("Intento inválido")));
+    }
+
+    @Test
+    @DisplayName("eliminar: da de baja lógica pedido en CARGADO, sus detalles, historial y pagos asociados")
+    void eliminarPedidoCargadoExitoso() {
+        DetallePedido det = DetallePedido.builder().id("det-1").cantidad(2).precioUnitario(500.0).eliminado(false).build();
+        Pedido cargado = Pedido.builder()
+                .id("ped-1")
+                .numeroPedido(10L)
+                .estado(EstadoPedido.CARGADO)
+                .detalles(new ArrayList<>(List.of(det)))
+                .eliminado(false)
+                .build();
+
+        when(pedidoRepository.findByIdAndEliminadoFalse("ped-1")).thenReturn(Optional.of(cargado));
+        when(pagoService.tienePagoAprobadoPorPedido("ped-1")).thenReturn(false);
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        pedidoService.eliminar("ped-1");
+
+        assertEquals(true, cargado.isEliminado());
+        assertEquals(true, det.isEliminado());
+        verify(historialEstadoPedidoService).darDeBajaPorPedido("ped-1");
+        verify(pagoService).darDeBajaPorPedido("ped-1");
+        verify(pedidoRepository).save(cargado);
+    }
+
+    @Test
+    @DisplayName("eliminar: rechaza con 409 si el pedido ya fue facturado o tiene pagos aprobados")
+    void eliminarPedidoValidacionesConflictos() {
+        Pedido facturado = Pedido.builder()
+                .id("ped-2")
+                .estado(EstadoPedido.FACTURADO)
+                .eliminado(false)
+                .build();
+        when(pedidoRepository.findByIdAndEliminadoFalse("ped-2")).thenReturn(Optional.of(facturado));
+
+        assertThrows(ConflictoException.class, () -> pedidoService.eliminar("ped-2"));
+
+        Pedido conPago = Pedido.builder()
+                .id("ped-3")
+                .estado(EstadoPedido.CARGADO)
+                .eliminado(false)
+                .build();
+        when(pedidoRepository.findByIdAndEliminadoFalse("ped-3")).thenReturn(Optional.of(conPago));
+        when(pagoService.tienePagoAprobadoPorPedido("ped-3")).thenReturn(true);
+
+        assertThrows(ConflictoException.class, () -> pedidoService.eliminar("ped-3"));
     }
 }
