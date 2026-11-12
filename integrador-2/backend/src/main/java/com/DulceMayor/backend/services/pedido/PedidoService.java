@@ -99,10 +99,8 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         if (request == null) {
             throw new ValidacionException("Los datos del pedido son obligatorios");
         }
-        UsuarioPrincipal principal = obtenerPrincipalActual();
-        boolean esMinorista = principal != null && principal.getRol() == RolUsuario.MINORISTA;
-        if (!esMinorista && (request.puntoDeVentaId() == null || request.puntoDeVentaId().isBlank())) {
-            throw new ValidacionException("El punto de venta es obligatorio");
+        if (request.puntoDeVentaId() == null || request.puntoDeVentaId().isBlank()) {
+            throw new ValidacionException("Debe registrar y seleccionar un punto de venta antes de realizar un pedido");
         }
         if (request.detalles() == null || request.detalles().isEmpty()) {
             throw new ValidacionException("El pedido debe contener al menos un detalle");
@@ -112,7 +110,7 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     /**
      * Hook del Template Method ejecutado antes de persistir la entidad en base de datos.
      * Se encarga de:
-     * 1. Resolver la entidad {@link PuntoDeVenta}.
+     * 1. Resolver la entidad {@link PuntoDeVenta} seleccionada obligatoriamente.
      * 2. Determinar el {@link Preventor} responsable (si es preventista autenticado, asigna el suyo).
      * 3. Calcular precios vigentes, promociones aplicables, subtotales, descuentos y total.
      * 4. Asignar el siguiente número de pedido autoincremental correlativo.
@@ -122,15 +120,10 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
      */
     @Override
     protected void antesDePersistir(Pedido entidad, PedidoRequest request) {
-        PuntoDeVenta puntoDeVenta;
-        UsuarioPrincipal principal = obtenerPrincipalActual();
-        if (request.puntoDeVentaId() != null && !request.puntoDeVentaId().isBlank()) {
-            puntoDeVenta = puntoDeVentaService.obtenerEntidad(request.puntoDeVentaId().trim());
-        } else if (principal != null && principal.getRol() == RolUsuario.MINORISTA) {
-            puntoDeVenta = puntoDeVentaService.obtenerOCrearPorDefectoParaUsuarioMinorista(principal.getId());
-        } else {
-            throw new ValidacionException("El punto de venta es obligatorio");
+        if (request.puntoDeVentaId() == null || request.puntoDeVentaId().isBlank()) {
+            throw new ValidacionException("Debe registrar y seleccionar un punto de venta antes de realizar un pedido");
         }
+        PuntoDeVenta puntoDeVenta = puntoDeVentaService.obtenerEntidad(request.puntoDeVentaId().trim());
         Preventor preventor = resolverPreventorParaCreacion(request.preventorId(), puntoDeVenta);
         CalculoPedido calculo = calcularLineasYTotales(request.detalles(), request.codigoPromocion());
 

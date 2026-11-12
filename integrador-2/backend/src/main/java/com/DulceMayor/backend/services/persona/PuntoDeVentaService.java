@@ -2,6 +2,8 @@ package com.DulceMayor.backend.services.persona;
 
 import com.DulceMayor.backend.config.UsuarioPrincipal;
 import com.DulceMayor.backend.config.ValidacionException;
+import com.DulceMayor.backend.dtos.persona.MinoristaEliminadoEvent;
+import com.DulceMayor.backend.dtos.persona.PuntoDeVentaCarteraActualizadaEvent;
 import com.DulceMayor.backend.dtos.persona.PuntoDeVentaMapper;
 import com.DulceMayor.backend.dtos.persona.PuntoDeVentaPage;
 import com.DulceMayor.backend.dtos.persona.PuntoDeVentaRequest;
@@ -13,9 +15,9 @@ import com.DulceMayor.backend.entities.persona.PuntoDeVenta;
 import com.DulceMayor.backend.repositories.persona.PuntoDeVentaRepository;
 import com.DulceMayor.backend.services.BaseService;
 import com.DulceMayor.backend.services.direccion.DireccionService;
-import com.DulceMayor.backend.dtos.persona.MinoristaEliminadoEvent;
-import org.springframework.context.event.EventListener;
 import java.util.List;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -34,19 +36,22 @@ public class PuntoDeVentaService extends BaseService<PuntoDeVenta, PuntoDeVentaR
     private final MinoristaService minoristaService;
     private final EmpleadoService empleadoService;
     private final DireccionService direccionService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public PuntoDeVentaService(
             PuntoDeVentaRepository puntoDeVentaRepository,
             PuntoDeVentaMapper puntoDeVentaMapper,
             MinoristaService minoristaService,
             EmpleadoService empleadoService,
-            DireccionService direccionService) {
+            DireccionService direccionService,
+            ApplicationEventPublisher eventPublisher) {
         super(puntoDeVentaRepository, puntoDeVentaMapper, "Punto de Venta");
         this.puntoDeVentaRepository = puntoDeVentaRepository;
         this.puntoDeVentaMapper = puntoDeVentaMapper;
         this.minoristaService = minoristaService;
         this.empleadoService = empleadoService;
         this.direccionService = direccionService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -117,7 +122,7 @@ public class PuntoDeVentaService extends BaseService<PuntoDeVenta, PuntoDeVentaR
                 entidad.setPreventor(preventor);
             }
         } else if (entidad.getPreventor() == null) {
-            // Alta desde portal web por minorista: asignación automática por cercanía geodésica a sucursales
+            // Alta desde portal web por minorista: asignación automática por distancia vial OSRM a sucursales
             Direccion dir = entidad.getDireccion();
             if (dir != null && dir.getLatitud() != null && dir.getLongitud() != null
                     && (dir.getLatitud() != 0.0 || dir.getLongitud() != 0.0)) {
@@ -127,44 +132,31 @@ public class PuntoDeVentaService extends BaseService<PuntoDeVenta, PuntoDeVentaR
         }
     }
 
+    @Override
+    protected void despuesDeCrear(PuntoDeVenta entidad, PuntoDeVentaRequest request) {
+        notificarActualizacionCarteraPreventor(entidad);
+    }
+
+    @Override
+    protected void despuesDeModificar(PuntoDeVenta entidad, PuntoDeVentaRequest request) {
+        notificarActualizacionCarteraPreventor(entidad);
+    }
+
+    private void notificarActualizacionCarteraPreventor(PuntoDeVenta entidad) {
+        if (eventPublisher != null && entidad != null && entidad.getPreventor() != null) {
+            eventPublisher.publishEvent(new PuntoDeVentaCarteraActualizadaEvent(
+                    entidad.getPreventor().getId(),
+                    entidad.getId()
+            ));
+        }
+    }
+
     @Transactional(readOnly = true)
     public List<PuntoDeVenta> listarPorPreventor(String preventorId) {
         if (preventorId == null || preventorId.isBlank()) {
             return List.of();
         }
         return puntoDeVentaRepository.findAllByPreventorIdAndEliminadoFalse(preventorId.trim());
-    }
-
-    @Transactional
-    public PuntoDeVenta obtenerOCrearPorDefectoParaUsuarioMinorista(String usuarioId) {
-        Minorista minorista = minoristaService.obtenerOCrearPorUsuarioId(usuarioId);
-        List<PuntoDeVenta> existentes = puntoDeVentaRepository.findAllByMinoristaIdAndEliminadoFalse(minorista.getId());
-        if (!existentes.isEmpty()) {
-            return existentes.get(0);
-        }
-        Direccion dir = null;
-        if (minorista.getDirecciones() != null) {
-            dir = minorista.getDirecciones().stream()
-                    .filter(d -> !d.isEliminado())
-                    .findFirst()
-                    .orElse(null);
-        }
-        if (dir == null) {
-            dir = direccionService.crearDireccionPorDefecto();
-        }
-        Preventor preventor = null;
-        if (dir.getLatitud() != null && dir.getLongitud() != null) {
-            preventor = empleadoService.buscarPreventorMasCercano(dir.getLatitud(), dir.getLongitud());
-        }
-        String nombreComercio = ("Comercio de " + minorista.getNombre() + " " + minorista.getApellido()).trim();
-        PuntoDeVenta nuevo = PuntoDeVenta.builder()
-                .nombreComercio(nombreComercio)
-                .minorista(minorista)
-                .direccion(dir)
-                .preventor(preventor)
-                .eliminado(false)
-                .build();
-        return puntoDeVentaRepository.save(nuevo);
     }
 
     @Transactional(readOnly = true)
@@ -268,4 +260,3 @@ public class PuntoDeVentaService extends BaseService<PuntoDeVenta, PuntoDeVentaR
         }
     }
 }
-

@@ -234,6 +234,10 @@ export default function Checkout() {
 
   const handleProcessOrder = async (e) => {
     e.preventDefault();
+    if (!selectedPdv?.id) {
+      alert('Debés registrar y seleccionar un punto de venta (comercio) antes de poder realizar un pedido.');
+      return;
+    }
     setIsProcessing(true);
 
     try {
@@ -407,14 +411,16 @@ export default function Checkout() {
             </div>
 
             {puntosDeVenta.length === 0 ? (
-              <div className="p-5 rounded-[14px] bg-[#fafafd] border border-[#ececf2] text-[12px] text-[#6b6b80] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="p-5 rounded-[14px] bg-[#fff0d3]/60 border border-[#f5d08a] text-[12px] text-[#7a520b] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
-                  <p className="font-semibold text-[#2b2b3a]">No tenés puntos de venta registrados aún.</p>
-                  <p className="text-[11px] mt-0.5">Podés agregar uno desde tu perfil o se creará automáticamente para este pedido.</p>
+                  <p className="font-bold text-[#2b2b3a]">No tenés puntos de venta registrados.</p>
+                  <p className="text-[11px] mt-0.5">
+                    Para poder realizar un pedido es obligatorio registrar primero tu comercio con su dirección real desde tu perfil.
+                  </p>
                 </div>
                 <Link to="/perfil?tab=puntos-venta">
-                  <Button secondary className="text-[11px] py-1.5 px-3 whitespace-nowrap">
-                    Gestionar puntos de venta
+                  <Button className="text-[11px] py-2 px-3.5 whitespace-nowrap">
+                    Registrar punto de venta →
                   </Button>
                 </Link>
               </div>
@@ -953,10 +959,12 @@ export default function Checkout() {
 
             <Button
               type="submit"
-              disabled={isProcessing || (paymentMethod === 'mercadopago' && Boolean(pedidoQrId))}
+              disabled={isProcessing || !selectedPdv?.id || (paymentMethod === 'mercadopago' && Boolean(pedidoQrId))}
               className="w-full py-3.5 text-[14px] justify-center cursor-pointer shadow-md"
             >
-              {isProcessing
+              {!selectedPdv?.id
+                ? 'Registrá un punto de venta para continuar'
+                : isProcessing
                 ? 'Procesando pedido...'
                 : paymentMethod === 'mercadopago'
                 ? pedidoQrId

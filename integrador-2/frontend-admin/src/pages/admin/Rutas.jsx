@@ -6,14 +6,40 @@ import { colors } from '../../theme/colors';
 export default function Rutas() {
   const { tab, setTab, agents, loading, selectedAgentId, setSelectedAgentId } = useRutas();
 
-  const mapMarkers = agents.map((a) => ({
+  const sedeCentralLat = -32.889458;
+  const sedeCentralLng = -68.845839;
+  const sedeCentralNombre = 'Dulce Mayor - Sede Central';
+  const sedeCentralDireccion = 'Av. San Martín 1020, Ciudad de Mendoza';
+
+  const sedeCentralMarker = {
+    id: 'sede-central-origen',
+    nombre: sedeCentralNombre,
+    comercio: sedeCentralNombre,
+    direccion: sedeCentralDireccion,
+    zona: 'Centro de Expedición',
+    estado: 'Punto de Partida (Sede Central)',
+    orden: 'S',
+    lat: sedeCentralLat,
+    lng: sedeCentralLng,
+    color: '#247f99',
+    esSucursal: true,
+  };
+
+  const agentMarkers = agents.map((a, idx) => ({
     id: a.id,
     nombre: a.name,
     zona: a.zona,
+    direccion: a.zona,
     estado: `${a.stops} (${a.pct}%)`,
     lat: a.lat,
     lng: a.lng,
+    orden: idx + 1,
   }));
+
+  const mapMarkers =
+    tab === 'distribuidores'
+      ? [sedeCentralMarker, ...agentMarkers]
+      : agentMarkers;
 
   return (
     <div className="space-y-6">
@@ -58,6 +84,34 @@ export default function Rutas() {
         <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[580px]">
           {/* Agent list */}
           <div className="lg:col-span-4 p-4 border-r border-border-subtle space-y-2 bg-[#fdfdfd]">
+            {tab === 'distribuidores' && (
+              <div
+                onClick={() => setSelectedAgentId('sede-central-origen')}
+                className={`flex items-start gap-3 p-3 rounded-[16px] border transition-all cursor-pointer mb-3 ${
+                  selectedAgentId === 'sede-central-origen'
+                    ? 'bg-[#eefaff] border-[#247f99] shadow-xs'
+                    : 'bg-[#f4fbfe] border-[#cdecfb] hover:bg-[#edf8fd]'
+                }`}
+              >
+                <div className="w-9 h-9 rounded-full bg-[#247f99] text-white font-bold text-[12px] flex items-center justify-center shrink-0">
+                  S
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-baseline">
+                    <strong className="text-[12px] text-[#0f344d] block">
+                      {sedeCentralNombre}
+                    </strong>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#247f99] bg-[#d9f7ff] px-2 py-0.5 rounded-full">
+                      Origen Común
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#426c88] mt-0.5">
+                    {sedeCentralDireccion}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <div className="py-10 text-center text-[12px] text-muted">
                 Cargando rutas activas...

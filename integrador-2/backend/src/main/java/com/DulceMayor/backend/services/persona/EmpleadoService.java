@@ -12,6 +12,7 @@ import com.DulceMayor.backend.dtos.persona.EmpleadoResponse;
 import com.DulceMayor.backend.dtos.persona.RolEmpleado;
 import com.DulceMayor.backend.entities.RolUsuario;
 import com.DulceMayor.backend.entities.Usuario;
+import com.DulceMayor.backend.entities.direccion.Direccion;
 import com.DulceMayor.backend.entities.mayorista.Mayorista;
 import com.DulceMayor.backend.entities.persona.Distribuidor;
 import com.DulceMayor.backend.entities.persona.Empleado;
@@ -22,6 +23,8 @@ import com.DulceMayor.backend.services.ContactoService;
 import com.DulceMayor.backend.services.UsuarioService;
 import com.DulceMayor.backend.services.direccion.DireccionService;
 import com.DulceMayor.backend.services.mayorista.MayoristaService;
+import com.DulceMayor.backend.services.ruta.strategy.RutaOptimizerStrategy;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +45,7 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
     private final DireccionService direccionService;
     private final ContactoService contactoService;
     private final MayoristaService mayoristaService;
+    private final RutaOptimizerStrategy rutaOptimizerStrategy;
 
     public EmpleadoService(
             EmpleadoRepository empleadoRepository,
@@ -50,7 +54,8 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
             UsuarioService usuarioService,
             DireccionService direccionService,
             ContactoService contactoService,
-            MayoristaService mayoristaService) {
+            MayoristaService mayoristaService,
+            RutaOptimizerStrategy rutaOptimizerStrategy) {
         super(empleadoRepository, empleadoMapper, "Empleado");
         this.empleadoRepository = empleadoRepository;
         this.empleadoMapper = empleadoMapper;
@@ -59,6 +64,7 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
         this.direccionService = direccionService;
         this.contactoService = contactoService;
         this.mayoristaService = mayoristaService;
+        this.rutaOptimizerStrategy = rutaOptimizerStrategy;
     }
 
     /**
@@ -341,8 +347,8 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
     }
 
     /**
-     * Localiza el preventor cuya sucursal (Mayorista) se encuentra más cercana geodésicamente
-     * a las coordenadas del punto de venta provisto (Fórmula de Haversine).
+     * Localiza el preventor cuya sucursal (Mayorista) se encuentra más cercana por red vial
+     * de OpenStreetMap (OSRM {@code /table/v1/driving/}) a las coordenadas del punto de venta provisto.
      */
     @Transactional(readOnly = true)
     public Preventor buscarPreventorMasCercano(double latitud, double longitud) {
@@ -351,37 +357,46 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
             return null;
         }
 
-        Preventor mejorPreventor = null;
-        double menorDistancia = Double.MAX_VALUE;
+        List<Preventor> candidatos = new ArrayList<>();
+        List<double[]> coordenadasSucursales = new ArrayList<>();
 
         for (Preventor p : preventores) {
-            if (p.getMayorista() != null && p.getMayorista().getDirecciones() != null) {
-                for (com.DulceMayor.backend.entities.direccion.Direccion dir : p.getMayorista().getDirecciones()) {
-                    if (!dir.isEliminado() && dir.getLatitud() != null && dir.getLongitud() != null
-                            && (dir.getLatitud() != 0.0 || dir.getLongitud() != 0.0)) {
-                        double distancia = calcularDistanciaHaversine(latitud, longitud, dir.getLatitud(), dir.getLongitud());
-                        if (distancia < menorDistancia) {
-                            menorDistancia = distancia;
-                            mejorPreventor = p;
+            Mayorista sucursal = p.getMayorista() != null ? p.getMayorista() : mayoristaService.obtenerSedeCentral();
+            if (sucursal != null && sucursal.getDirecciones() != null) {
+                for (Direccion dir : sucursal.getDirecciones()) {
+                    if (!dir.isEliminado()) {
+                        direccionService.asegurarCoordenadas(dir);
+                        if (dir.getLatitud() != null && dir.getLongitud() != null
+                                && (dir.getLatitud() != 0.0 || dir.getLongitud() != 0.0)) {
+                            candidatos.add(p);
+                            coordenadasSucursales.add(new double[]{dir.getLatitud(), dir.getLongitud()});
+                            break;
                         }
                     }
                 }
             }
         }
 
-        return mejorPreventor != null ? mejorPreventor : preventores.get(0);
-    }
+        if (candidatos.isEmpty()) {
+            return preventores.get(0);
+        }
 
-    private double calcularDistanciaHaversine(double lat1, double lon1, double lat2, double lon2) {
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLon = Math.toRadians(lon2 - lon1);
-        double phi1 = Math.toRadians(lat1);
-        double phi2 = Math.toRadians(lat2);
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.cos(phi1) * Math.cos(phi2)
-                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return 6371000.0 * c;
+        if (rutaOptimizerStrategy != null) {
+            double[] distancias = rutaOptimizerStrategy.calcularDistanciasDesdeOrigen(latitud, longitud, coordenadasSucursales);
+            int mejorIndice = -1;
+            double menorDistancia = Double.MAX_VALUE;
+            for (int i = 0; i < distancias.length; i++) {
+                if (distancias[i] < menorDistancia) {
+                    menorDistancia = distancias[i];
+                    mejorIndice = i;
+                }
+            }
+            if (mejorIndice >= 0 && mejorIndice < candidatos.size()) {
+                return candidatos.get(mejorIndice);
+            }
+        }
+
+        return candidatos.get(0);
     }
 
     /**
@@ -391,9 +406,6 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
         return RolUsuario.valueOf(rol.name());
     }
 
-    /**
-     * Valida que ninguno de los campos obligatorios del empleado sea nulo o esté vacío.
-     */
     private void validarFormato(EmpleadoRequest request) {
         if (request == null) {
             throw new ValidacionException("Los datos del empleado son obligatorios");
@@ -414,7 +426,7 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
             throw new ValidacionException("El legajo es obligatorio");
         }
         if (request.nombreUsuario() == null || request.nombreUsuario().isBlank()) {
-            throw new ValidacionException("El nombre de usuario es obligatorio");
+            throw new ValidacionException("El nombre de usuario ya es obligatorio");
         }
         if (request.rol() == null) {
             throw new ValidacionException("El rol es obligatorio");
@@ -424,4 +436,3 @@ public class EmpleadoService extends BaseService<Empleado, EmpleadoRequest, Empl
         }
     }
 }
-

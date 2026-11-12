@@ -1,10 +1,15 @@
 package com.DulceMayor.backend.services.ruta.strategy;
 
+import com.DulceMayor.backend.entities.direccion.Direccion;
 import com.DulceMayor.backend.entities.persona.PuntoDeVenta;
+import com.DulceMayor.backend.services.direccion.adapter.GeocodingPort;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,29 +19,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 /**
- * Estrategia de enrutamiento basada en la API vial de OpenStreetMap (OSRM).
- * Calcula la matriz de distancias reales por calle (asfalto) en lugar de la distancia euclidiana,
- * con fallback transparente a la fórmula de Haversine ante cortes de red o timeouts.
- *
- * el backend le pide a OpenStreetMap una matriz de distancias por calle en metros:
- *
- * "Tengo la Sede Central y 4 comercios. Decime cuántos metros de asfalto hay entre cada uno".
- *
- * Con esos metros reales, el backend ordena la lista de paradas y guarda en la base de datos:
- * Parada 1: Kiosco El Sol
- * Parada 2: Almacén Don Pepe
- * Parada 3: Drugstore Mitre
- * Al frontend solo le envía la lista ordenada (un JSON liviano con 4 elementos).
- *
- * En OSMMap.jsx, el frontend toma esa lista ya ordenada que le dio el backend y le pide a OpenStreetMap:
- *
- * "Ya sé que el orden es Central
- * →
- * → El Sol
- * →
- * → Don Pepe. Ahora dame las coordenadas calle por calle para dibujarle la línea al chofer".
- *
- * OpenStreetMap le devuelve los miles de puntitos que van doblando por las esquinas y avenidas de Mendoza, y Leaflet los pinta sobre el mapa.
+ * Estrategia de enrutamiento que delega íntegramente a OpenStreetMap y OSRM:
+ * <ul>
+ *   <li><b>Optimización de Ruta Más Óptima (TSP):</b> Delegada al servicio {@code /trip/v1/driving/} de OSRM
+ *       con {@code source=first&roundtrip=false}, donde el propio motor de OSRM resuelve el orden óptimo
+ *       de visita sobre la red real de calles y sentidos de circulación de Mendoza.</li>
+ *   <li><b>Matriz de Distancias Viales:</b> Delegada al servicio {@code /table/v1/driving/} de OSRM para
+ *       balanceo de carga de distribuidores y asignación de sucursal más cercana.</li>
+ *   <li><b>Distancia entre Pares:</b> Delegada al servicio {@code /route/v1/driving/} de OSRM.</li>
+ * </ul>
  */
 @Component
 @Primary
@@ -44,19 +35,21 @@ public class OsrmRoutingStrategy implements RutaOptimizerStrategy {
 
     private static final Logger log = LoggerFactory.getLogger(OsrmRoutingStrategy.class);
 
-    private final NearestNeighborStrategy fallbackStrategy;
     private final RestClient restClient;
     private final String osrmBaseUrl;
+    private final GeocodingPort geocodingPort;
 
     public OsrmRoutingStrategy(
-            NearestNeighborStrategy fallbackStrategy,
-            @Value("${app.osm.osrm-url:https://router.project-osrm.org}") String osrmBaseUrl) {
-        this.fallbackStrategy = fallbackStrategy;
-        this.osrmBaseUrl = osrmBaseUrl.endsWith("/") ? osrmBaseUrl.substring(0, osrmBaseUrl.length() - 1) : osrmBaseUrl;
+            @Value("${app.osm.osrm-url:https://router.project-osrm.org}") String osrmBaseUrl,
+            GeocodingPort geocodingPort) {
+        this.osrmBaseUrl = osrmBaseUrl != null && osrmBaseUrl.endsWith("/")
+                ? osrmBaseUrl.substring(0, osrmBaseUrl.length() - 1)
+                : osrmBaseUrl;
+        this.geocodingPort = geocodingPort;
 
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(3000);
-        requestFactory.setReadTimeout(3000);
+        requestFactory.setConnectTimeout(5000);
+        requestFactory.setReadTimeout(5000);
 
         this.restClient = RestClient.builder()
                 .requestFactory(requestFactory)
@@ -65,46 +58,100 @@ public class OsrmRoutingStrategy implements RutaOptimizerStrategy {
 
     @Override
     public List<PuntoDeVenta> optimizarRecorrido(double latitudInicial, double longitudInicial, List<PuntoDeVenta> paradas) {
-        if (paradas == null || paradas.size() <= 1) {
-            return paradas != null ? new ArrayList<>(paradas) : Collections.emptyList();
+        if (paradas == null || paradas.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<PuntoDeVenta> paradasConCoordenadas = new ArrayList<>(paradas.size());
+        List<PuntoDeVenta> paradasSinDireccion = new ArrayList<>();
+
+        for (PuntoDeVenta p : paradas) {
+            Direccion dir = p.getDireccion();
+            if (dir == null) {
+                paradasSinDireccion.add(p);
+                continue;
+            }
+            asegurarCoordenadasEnParada(dir);
+            if (dir.getLatitud() != null && dir.getLongitud() != null
+                    && (dir.getLatitud() != 0.0 || dir.getLongitud() != 0.0)) {
+                paradasConCoordenadas.add(p);
+            } else {
+                paradasSinDireccion.add(p);
+            }
+        }
+
+        if (paradasConCoordenadas.size() <= 1) {
+            List<PuntoDeVenta> resultadoSimple = new ArrayList<>(paradasConCoordenadas);
+            resultadoSimple.addAll(paradasSinDireccion);
+            return resultadoSimple;
+        }
+
+        // Construir coordenadas en formato OSRM: {lonOrigen},{latOrigen};{lon1},{lat1};...
+        StringBuilder coords = new StringBuilder();
+        coords.append(String.format(Locale.US, "%.6f,%.6f", longitudInicial, latitudInicial));
+
+        for (PuntoDeVenta p : paradasConCoordenadas) {
+            Direccion dir = p.getDireccion();
+            coords.append(";")
+                    .append(String.format(Locale.US, "%.6f,%.6f", dir.getLongitud(), dir.getLatitud()));
         }
 
         try {
-            // Construir URL: /table/v1/driving/{lonOrigen},{latOrigen};{lon1},{lat1};...
-            StringBuilder coords = new StringBuilder();
-            coords.append(longitudInicial).append(",").append(latitudInicial);
+            // Delegar el cálculo completo del viaje óptimo (TSP) al servicio /trip/v1/driving/ de OSRM
+            String tripUrl = String.format(
+                    "%s/trip/v1/driving/%s?source=first&roundtrip=false&overview=false",
+                    osrmBaseUrl,
+                    coords
+            );
 
-            for (PuntoDeVenta p : paradas) {
-                if (p.getDireccion() != null && p.getDireccion().getLatitud() != null && p.getDireccion().getLongitud() != null) {
-                    coords.append(";")
-                            .append(p.getDireccion().getLongitud()).append(",")
-                            .append(p.getDireccion().getLatitud());
-                }
-            }
-
-            String url = String.format("%s/table/v1/driving/%s?annotations=distance", osrmBaseUrl, coords);
-
-            OsrmTableResponse response = restClient.get()
-                    .uri(url)
+            OsrmTripResponse response = restClient.get()
+                    .uri(URI.create(tripUrl))
                     .retrieve()
-                    .body(OsrmTableResponse.class);
+                    .body(OsrmTripResponse.class);
 
-            if (response != null && "Ok".equalsIgnoreCase(response.code()) && response.distances() != null) {
-                return ordenarPorMatrizDistancias(paradas, response.distances());
+            if (response != null
+                    && "Ok".equalsIgnoreCase(response.code())
+                    && response.waypoints() != null
+                    && response.waypoints().size() == paradasConCoordenadas.size() + 1) {
+
+                List<Integer> indicesParadas = new ArrayList<>(paradasConCoordenadas.size());
+                for (int i = 0; i < paradasConCoordenadas.size(); i++) {
+                    indicesParadas.add(i);
+                }
+
+                // En OSRM Trip, waypoints.get(0) corresponde al origen (source=first) y
+                // waypoints.get(i + 1) corresponde a paradasConCoordenadas.get(i), indicando en waypoint_index
+                // su posición exacta en el recorrido más óptimo calculado por OSRM.
+                indicesParadas.sort(Comparator
+                        .comparingInt((Integer i) -> response.waypoints().get(i + 1).trips_index())
+                        .thenComparingInt(i -> response.waypoints().get(i + 1).waypoint_index()));
+
+                List<PuntoDeVenta> ordenadosPorOsrm = new ArrayList<>(paradas.size());
+                for (int idx : indicesParadas) {
+                    ordenadosPorOsrm.add(paradasConCoordenadas.get(idx));
+                }
+                ordenadosPorOsrm.addAll(paradasSinDireccion);
+                return ordenadosPorOsrm;
             }
         } catch (Exception e) {
-            log.warn("Fallo o timeout al consultar la API de OpenStreetMap (OSRM). Conmutando a fallback Haversine: {}", e.getMessage());
+            log.warn("Error al consultar OSRM /trip/v1/driving/ ({}): {}", osrmBaseUrl, e.getMessage());
         }
 
-        return fallbackStrategy.optimizarRecorrido(latitudInicial, longitudInicial, paradas);
+        List<PuntoDeVenta> respaldo = new ArrayList<>(paradasConCoordenadas);
+        respaldo.addAll(paradasSinDireccion);
+        return respaldo;
     }
 
     @Override
-    public double calcularDistanciaHaversine(double lat1, double lon1, double lat2, double lon2) {
+    public double calcularDistanciaVial(double lat1, double lon1, double lat2, double lon2) {
         try {
-            String url = String.format("%s/route/v1/driving/%f,%f;%f,%f?overview=false", osrmBaseUrl, lon1, lat1, lon2, lat2);
+            String url = String.format(
+                    Locale.US,
+                    "%s/route/v1/driving/%.6f,%.6f;%.6f,%.6f?overview=false",
+                    osrmBaseUrl, lon1, lat1, lon2, lat2
+            );
             OsrmRouteResponse res = restClient.get()
-                    .uri(url)
+                    .uri(URI.create(url))
                     .retrieve()
                     .body(OsrmRouteResponse.class);
 
@@ -112,48 +159,138 @@ public class OsrmRoutingStrategy implements RutaOptimizerStrategy {
                 return res.routes().get(0).distance();
             }
         } catch (Exception e) {
-            log.debug("Fallback local para distancia entre ({}, {}) y ({}, {}): {}", lat1, lon1, lat2, lon2, e.getMessage());
+            log.debug("No se pudo obtener distancia vial OSRM entre ({}, {}) y ({}, {}): {}", lat1, lon1, lat2, lon2, e.getMessage());
         }
-
-        return fallbackStrategy.calcularDistanciaHaversine(lat1, lon1, lat2, lon2);
+        return Double.MAX_VALUE;
     }
 
-    private List<PuntoDeVenta> ordenarPorMatrizDistancias(List<PuntoDeVenta> paradas, double[][] distances) {
-        List<PuntoDeVenta> ordenados = new ArrayList<>(paradas.size());
-        boolean[] visitados = new boolean[paradas.size()];
-
-        int puntoActualIndiceEnMatriz = 0; // 0 representa el origen (sucursal / central)
-
-        for (int i = 0; i < paradas.size(); i++) {
-            int mejorIndiceParada = -1;
-            double menorDistancia = Double.MAX_VALUE;
-
-            for (int j = 0; j < paradas.size(); j++) {
-                if (!visitados[j]) {
-                    // En la matriz de OSRM, las paradas están desplazadas +1 respecto al origen (0)
-                    int destinoIndiceEnMatriz = j + 1;
-                    if (puntoActualIndiceEnMatriz < distances.length && destinoIndiceEnMatriz < distances[puntoActualIndiceEnMatriz].length) {
-                        double distancia = distances[puntoActualIndiceEnMatriz][destinoIndiceEnMatriz];
-                        if (distancia < menorDistancia) {
-                            menorDistancia = distancia;
-                            mejorIndiceParada = j;
-                        }
-                    }
-                }
-            }
-
-            if (mejorIndiceParada != -1) {
-                visitados[mejorIndiceParada] = true;
-                ordenados.add(paradas.get(mejorIndiceParada));
-                puntoActualIndiceEnMatriz = mejorIndiceParada + 1;
-            }
+    @Override
+    public double[] calcularDistanciasDesdeOrigen(double latOrigen, double lonOrigen, List<double[]> destinos) {
+        if (destinos == null || destinos.isEmpty()) {
+            return new double[0];
         }
 
-        return ordenados;
+        double[] resultado = new double[destinos.size()];
+        StringBuilder coords = new StringBuilder();
+        coords.append(String.format(Locale.US, "%.6f,%.6f", lonOrigen, latOrigen));
+
+        for (double[] d : destinos) {
+            coords.append(";").append(String.format(Locale.US, "%.6f,%.6f", d[1], d[0]));
+        }
+
+        try {
+            String url = String.format(
+                    "%s/table/v1/driving/%s?sources=0&annotations=distance",
+                    osrmBaseUrl,
+                    coords
+            );
+            OsrmTableResponse response = restClient.get()
+                    .uri(URI.create(url))
+                    .retrieve()
+                    .body(OsrmTableResponse.class);
+
+            if (response != null
+                    && "Ok".equalsIgnoreCase(response.code())
+                    && response.distances() != null
+                    && response.distances().length > 0
+                    && response.distances()[0].length >= destinos.size() + 1) {
+                for (int i = 0; i < destinos.size(); i++) {
+                    Double valor = response.distances()[0][i + 1];
+                    resultado[i] = valor != null ? valor : Double.MAX_VALUE;
+                }
+                return resultado;
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo obtener tabla de distancias desde origen en OSRM /table/v1/driving/: {}", e.getMessage());
+        }
+
+        for (int i = 0; i < destinos.size(); i++) {
+            resultado[i] = calcularDistanciaVial(latOrigen, lonOrigen, destinos.get(i)[0], destinos.get(i)[1]);
+        }
+        return resultado;
+    }
+
+    @Override
+    public double[][] calcularMatrizDistancias(List<double[]> coordenadas) {
+        if (coordenadas == null || coordenadas.isEmpty()) {
+            return new double[0][0];
+        }
+        int n = coordenadas.size();
+        if (n == 1) {
+            return new double[][]{{0.0}};
+        }
+
+        StringBuilder coords = new StringBuilder();
+        for (int i = 0; i < n; i++) {
+            if (i > 0) {
+                coords.append(";");
+            }
+            coords.append(String.format(Locale.US, "%.6f,%.6f", coordenadas.get(i)[1], coordenadas.get(i)[0]));
+        }
+
+        try {
+            String url = String.format(
+                    "%s/table/v1/driving/%s?annotations=distance",
+                    osrmBaseUrl,
+                    coords
+            );
+            OsrmTableResponse response = restClient.get()
+                    .uri(URI.create(url))
+                    .retrieve()
+                    .body(OsrmTableResponse.class);
+
+            if (response != null
+                    && "Ok".equalsIgnoreCase(response.code())
+                    && response.distances() != null
+                    && response.distances().length == n) {
+                double[][] matriz = new double[n][n];
+                for (int i = 0; i < n; i++) {
+                    for (int j = 0; j < n; j++) {
+                        Double val = response.distances()[i][j];
+                        matriz[i][j] = val != null ? val : Double.MAX_VALUE;
+                    }
+                }
+                return matriz;
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo obtener matriz completa en OSRM /table/v1/driving/: {}", e.getMessage());
+        }
+
+        double[][] fallback = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                fallback[i][j] = i == j ? 0.0 : Double.MAX_VALUE;
+            }
+        }
+        return fallback;
+    }
+
+    private void asegurarCoordenadasEnParada(Direccion dir) {
+        if (geocodingPort == null) {
+            return;
+        }
+        boolean sinCoordenadas = dir.getLatitud() == null
+                || dir.getLongitud() == null
+                || (dir.getLatitud() == 0.0 && dir.getLongitud() == 0.0);
+        if (sinCoordenadas) {
+            double[] coords = geocodingPort.geocodificarDireccion(
+                    dir.getCalle(),
+                    dir.getNumeracion(),
+                    dir.getLocalidad()
+            );
+            dir.setLatitud(coords[0]);
+            dir.setLongitud(coords[1]);
+        }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record OsrmTableResponse(String code, double[][] distances) {}
+    record OsrmTripResponse(String code, List<OsrmTripWaypoint> waypoints, List<OsrmRoute> trips) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record OsrmTripWaypoint(int waypoint_index, int trips_index, double[] location, double distance) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record OsrmTableResponse(String code, Double[][] distances) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record OsrmRouteResponse(String code, List<OsrmRoute> routes) {}

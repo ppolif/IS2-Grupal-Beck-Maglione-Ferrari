@@ -52,7 +52,7 @@ public class RutaPreventorController {
      */
     @PostMapping({"/rutas-preventor/generar", "/api/v1/rutas-preventor/generar"})
     @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO', 'PREVENTISTA')")
-    public ResponseEntity<RutaResponse> crearRutaPreventor(@RequestBody RutaPreventorGenerarRequest request) {
+    public ResponseEntity<RutaResponse> crearRutaPreventor(@RequestBody(required = false) RutaPreventorGenerarRequest request) {
         RutaResponse creada = rutaPreventorService.generarRuta(request);
         URI uri = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/rutas-preventor/{id}")

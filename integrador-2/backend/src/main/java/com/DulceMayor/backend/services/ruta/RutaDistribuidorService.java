@@ -10,32 +10,33 @@ import com.DulceMayor.backend.dtos.ruta.AvanceRutaResponse;
 import com.DulceMayor.backend.dtos.ruta.AvisoProximaEntregaEvent;
 import com.DulceMayor.backend.dtos.ruta.EntregaRequest;
 import com.DulceMayor.backend.dtos.ruta.ParadaResponse;
-import com.DulceMayor.backend.dtos.ruta.RutaDistribuidorRequest;
 import com.DulceMayor.backend.dtos.ruta.RutaResponse;
 import com.DulceMayor.backend.entities.RolUsuario;
-import com.DulceMayor.backend.entities.contacto.Contacto;
-import com.DulceMayor.backend.entities.contacto.ContactoCorreoElectronico;
 import com.DulceMayor.backend.entities.direccion.Direccion;
 import com.DulceMayor.backend.entities.mayorista.Mayorista;
 import com.DulceMayor.backend.entities.pedido.EstadoPedido;
 import com.DulceMayor.backend.entities.pedido.Pedido;
 import com.DulceMayor.backend.entities.persona.Distribuidor;
-import com.DulceMayor.backend.entities.persona.Minorista;
 import com.DulceMayor.backend.entities.persona.PuntoDeVenta;
 import com.DulceMayor.backend.entities.ruta.RutaDistribuidor;
 import com.DulceMayor.backend.entities.ruta.RutaEstado;
 import com.DulceMayor.backend.repositories.ruta.RutaDistribuidorRepository;
+import com.DulceMayor.backend.services.direccion.DireccionService;
 import com.DulceMayor.backend.services.mail.EmailService;
 import com.DulceMayor.backend.services.mayorista.MayoristaService;
 import com.DulceMayor.backend.services.pedido.PedidoService;
 import com.DulceMayor.backend.services.persona.EmpleadoService;
-import com.DulceMayor.backend.services.ruta.strategy.NearestNeighborStrategy;
+import com.DulceMayor.backend.services.ruta.strategy.OsrmRoutingStrategy;
 import com.DulceMayor.backend.services.ruta.strategy.RutaOptimizerStrategy;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
@@ -46,20 +47,14 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Servicio de lógica de negocio para la gestión integral de rutas de distribución y entrega de pedidos.
  *
- * <p><b>Origen automático desde la Sede Central:</b></p>
- * Los distribuidores inician el recorrido siempre desde la <b>Sede Central</b> de Dulce Mayor.
- * El servicio busca automáticamente la entidad {@link Mayorista} configurada como Sede Central
- * y utiliza las coordenadas de su dirección física (compatibles con <b>OpenStreetMap</b>) como origen geodésico
- * para ordenar las entregas del día.
- *
- * <p><b>Patrón GoF aplicado: Strategy (Comportamiento)</b></p>
- * Utiliza {@link RutaOptimizerStrategy} (instancia concreta {@link NearestNeighborStrategy}) para determinar
- * la secuencia óptima de entrega según la distancia Haversine a los comercios de destino.
- *
- * <p><b>Patrón GoF aplicado: Observer (Comportamiento - Spring Events)</b></p>
- * Cuando se completa una entrega y se detecta una próxima parada en el itinerario, este servicio emite un evento
- * {@link AvisoProximaEntregaEvent} para que los observadores de notificación despachen el aviso al cliente
- * sin acoplar la transacción logística a la pasarela de mensajería/email.
+ * <p><b>Delegación total a OpenStreetMap y OSRM:</b></p>
+ * <ul>
+ *   <li>Obtiene las coordenadas de la <b>Sede Central</b> de Dulce Mayor.</li>
+ *   <li>Utiliza el servicio {@code /table/v1/driving/} de OSRM (vía {@link RutaOptimizerStrategy}) para obtener
+ *       la matriz de distancias viales entre la Sede Central y todos los comercios con pedidos facturados.</li>
+ *   <li>Utiliza el servicio {@code /trip/v1/driving/} de OSRM ({@link OsrmRoutingStrategy}) para resolver el
+ *       Problema del Viajante (TSP) y determinar la secuencia óptima de entrega de cada distribuidor.</li>
+ * </ul>
  */
 @Service
 @RequiredArgsConstructor
@@ -69,6 +64,7 @@ public class RutaDistribuidorService {
     private final EmpleadoService empleadoService;
     private final PedidoService pedidoService;
     private final MayoristaService mayoristaService;
+    private final DireccionService direccionService;
     private final RutaOptimizerStrategy rutaOptimizerStrategy;
     private final RutaMapperHelper rutaMapperHelper;
     private final EmailService emailService;
@@ -113,12 +109,13 @@ public class RutaDistribuidorService {
 
     /**
      * Busca la ruta de reparto del distribuidor logueado para una fecha dada (por defecto hoy).
+     * Si no existe una ruta pero hay pedidos facturados pendientes, auto-genera las rutas del día.
      * Utilizado por la app móvil para renderizar las paradas y el recorrido del día en el mapa.
      *
      * @param fecha Fecha consultada.
      * @return {@link RutaResponse} con pedidos y paradas ordenadas.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public RutaResponse buscarMiRutaDelDia(LocalDate fecha) {
         LocalDate fechaConsulta = fecha != null ? fecha : LocalDate.now();
         UsuarioPrincipal usuarioActual = obtenerPrincipalActual();
@@ -127,10 +124,46 @@ public class RutaDistribuidorService {
         }
         Distribuidor distribuidor = empleadoService.obtenerDistribuidorPorUsuarioId(usuarioActual.getId());
 
-        RutaDistribuidor ruta = rutaDistribuidorRepository.findByResponsableIdAndFechaAndEliminadoFalse(distribuidor.getId(), fechaConsulta)
-                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró una ruta de distribución para la fecha " + fechaConsulta));
+        Optional<RutaDistribuidor> rutaOpt = rutaDistribuidorRepository.findByResponsableIdAndFechaAndEliminadoFalse(distribuidor.getId(), fechaConsulta);
+        if (rutaOpt.isPresent()) {
+            return rutaMapperHelper.aResponse(rutaOpt.get());
+        }
 
-        return rutaMapperHelper.aResponse(ruta);
+        List<Pedido> pedidosFacturados = pedidoService.listarFacturadosPendientes();
+        if (!pedidosFacturados.isEmpty()) {
+            List<RutaResponse> creadas = crearRutasAutomaticas(fechaConsulta);
+            for (RutaResponse r : creadas) {
+                if (r.responsable() != null && distribuidor.getId().equals(r.responsable().id())) {
+                    return r;
+                }
+            }
+        }
+
+        throw new RecursoNoEncontradoException("No hay pedidos facturados pendientes ni ruta asignada para la fecha " + fechaConsulta);
+    }
+
+    /**
+     * Genera la ruta de distribución para el día de hoy y retorna la ruta correspondiente al distribuidor autenticado.
+     */
+    @Transactional
+    public RutaResponse generarRutaParaDistribuidorActual(LocalDate fecha) {
+        LocalDate fechaConsulta = fecha != null ? fecha : LocalDate.now();
+        UsuarioPrincipal usuarioActual = obtenerPrincipalActual();
+        if (usuarioActual == null) {
+            throw new AccesoDenegadoException("Usuario no autenticado");
+        }
+        Distribuidor distribuidor = empleadoService.obtenerDistribuidorPorUsuarioId(usuarioActual.getId());
+
+        Optional<RutaDistribuidor> existente = rutaDistribuidorRepository.findByResponsableIdAndFechaAndEliminadoFalse(distribuidor.getId(), fechaConsulta);
+        if (existente.isPresent()) {
+            return rutaMapperHelper.aResponse(existente.get());
+        }
+
+        List<RutaResponse> creadas = crearRutasAutomaticas(fechaConsulta);
+        return creadas.stream()
+                .filter(r -> r.responsable() != null && distribuidor.getId().equals(r.responsable().id()))
+                .findFirst()
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se asignaron pedidos para el distribuidor actual"));
     }
 
     /**
@@ -156,24 +189,9 @@ public class RutaDistribuidorService {
     }
 
     /**
-     * Genera de forma 100% automática las rutas diarias de distribución y entrega a partir de pedidos facturados.
-     *
-     * <p><b>Algoritmo de clustering, balance de carga y optimización:</b></p>
-     * <ol>
-     *   <li>Obtiene todos los distribuidores activos que no tengan ya una ruta asignada para esa fecha.</li>
-     *   <li>Obtiene todos los pedidos en estado {@link EstadoPedido#FACTURADO}.</li>
-     *   <li>Obtiene las coordenadas geodésicas de la Sede Central (OpenStreetMap).</li>
-     *   <li>Ordena los pedidos de forma ascendente según su distancia a la Sede Central usando TimSort (\(O(n \log n)\)).</li>
-     *   <li>Toma los primeros \(N\) pedidos más cercanos a la central como núcleos/semillas iniciales.</li>
-     *   <li>Mezcla aleatoriamente (shuffle) los distribuidores para asignarles una semilla inicial al azar a cada uno.</li>
-     *   <li>Calcula la cuota equitativa por distribuidor (\(\lceil \text{totalPedidos} / N \rceil\)).</li>
-     *   <li>Para cada pedido restante, lo asigna al distribuidor con cupo disponible cuyo pedido semilla esté más próximo (Haversine).</li>
-     *   <li>Para cada distribuidor con pedidos asignados, optimiza el itinerario mediante {@link RutaOptimizerStrategy}
-     *       partiendo de la Sede Central, transiciona los pedidos a {@link EstadoPedido#EN_REPARTO} y persiste la ruta.</li>
-     * </ol>
-     *
-     * @param fecha Fecha operativa de entrega (si es null, se toma la fecha actual).
-     * @return Lista de {@link RutaResponse} generadas para los distribuidores.
+     * Genera de forma 100% automática las rutas diarias de distribución y entrega a partir de pedidos facturados,
+     * delegando el cálculo de matrices de distancias viales a {@code /table/v1/driving/} de OSRM y la optimización
+     * de cada recorrido al solver TSP {@code /trip/v1/driving/} de OSRM.
      */
     @Transactional
     public List<RutaResponse> crearRutasAutomaticas(LocalDate fecha) {
@@ -184,7 +202,6 @@ public class RutaDistribuidorService {
             throw new ValidacionException("No hay distribuidores activos registrados en el sistema");
         }
 
-        // Distribuidores disponibles sin ruta previa para esa fecha
         List<Distribuidor> distribuidoresDisponibles = new ArrayList<>();
         for (Distribuidor d : todosDistribuidores) {
             if (!rutaDistribuidorRepository.existsByResponsableIdAndFechaAndEliminadoFalse(d.getId(), fechaOperativa)) {
@@ -203,23 +220,46 @@ public class RutaDistribuidorService {
 
         double[] origenCentral = obtenerCoordenadasSedeCentral();
 
-        // Ordenar pedidos por proximidad de su punto de venta a la Sede Central (TimSort O(n log n))
+        // Asegurar que todos los puntos de venta de los pedidos tengan coordenadas geocodificadas en OpenStreetMap
+        List<double[]> coordsPedidos = new ArrayList<>(pedidosFacturados.size());
+        for (Pedido p : pedidosFacturados) {
+            PuntoDeVenta pdv = p.getPuntoDeVenta();
+            if (pdv != null && pdv.getDireccion() != null) {
+                direccionService.asegurarCoordenadas(pdv.getDireccion());
+                Direccion dir = pdv.getDireccion();
+                coordsPedidos.add(new double[]{
+                        dir.getLatitud() != null ? dir.getLatitud() : origenCentral[0],
+                        dir.getLongitud() != null ? dir.getLongitud() : origenCentral[1]
+                });
+            } else {
+                coordsPedidos.add(new double[]{origenCentral[0], origenCentral[1]});
+            }
+        }
+
+        // Consultar a OSRM (/table/v1/driving/) todas las distancias viales desde la Sede Central en una sola llamada
+        double[] distanciasDesdeCentral = rutaOptimizerStrategy.calcularDistanciasDesdeOrigen(
+                origenCentral[0],
+                origenCentral[1],
+                coordsPedidos
+        );
+
+        Map<String, Integer> indicePedidoMap = new HashMap<>();
+        for (int i = 0; i < pedidosFacturados.size(); i++) {
+            indicePedidoMap.put(pedidosFacturados.get(i).getId(), i);
+        }
+
+        // Ordenar pedidos por proximidad vial de su punto de venta a la Sede Central (TimSort O(n log n))
         List<Pedido> pedidosOrdenadosPorCercaniaCentral = new ArrayList<>(pedidosFacturados);
-        pedidosOrdenadosPorCercaniaCentral.sort((p1, p2) -> {
-            double d1 = calcularDistanciaPdv(origenCentral[0], origenCentral[1], p1.getPuntoDeVenta());
-            double d2 = calcularDistanciaPdv(origenCentral[0], origenCentral[1], p2.getPuntoDeVenta());
-            return Double.compare(d1, d2);
-        });
+        pedidosOrdenadosPorCercaniaCentral.sort(Comparator.comparingDouble(p -> {
+            Integer idx = indicePedidoMap.get(p.getId());
+            return idx != null && idx < distanciasDesdeCentral.length ? distanciasDesdeCentral[idx] : Double.MAX_VALUE;
+        }));
 
         int cantidadDistribuidores = Math.min(distribuidoresDisponibles.size(), pedidosFacturados.size());
         List<Distribuidor> distribuidoresAUsar = new ArrayList<>(distribuidoresDisponibles.subList(0, cantidadDistribuidores));
+        Collections.shuffle(distribuidoresAUsar);
 
-        // Mezclar aleatoriamente para asignar los pedidos semilla al azar entre los distribuidores seleccionados
-        java.util.Collections.shuffle(distribuidoresAUsar);
-
-        // Estructuras de asignación: distribuidor -> lista de pedidos
         Map<Distribuidor, List<Pedido>> asignaciones = new LinkedHashMap<>();
-
         for (int i = 0; i < cantidadDistribuidores; i++) {
             Distribuidor dist = distribuidoresAUsar.get(i);
             Pedido pedidoSemilla = pedidosOrdenadosPorCercaniaCentral.get(i);
@@ -228,13 +268,16 @@ public class RutaDistribuidorService {
             asignaciones.put(dist, lista);
         }
 
-        // Cupo objetivo por distribuidor (división con redondeo hacia arriba)
         int cuotaPorDistribuidor = (int) Math.ceil((double) pedidosFacturados.size() / cantidadDistribuidores);
 
-        // Asignar el resto de los pedidos encadenando con el último punto de venta asignado a cada distribuidor
+        // Si quedan pedidos por asignar, obtener la matriz completa de distancias viales en OSRM (/table/v1/driving/)
+        double[][] matrizDistanciasEntrePedidos = pedidosFacturados.size() > cantidadDistribuidores
+                ? rutaOptimizerStrategy.calcularMatrizDistancias(coordsPedidos)
+                : new double[0][0];
+
         for (int i = cantidadDistribuidores; i < pedidosOrdenadosPorCercaniaCentral.size(); i++) {
             Pedido pedidoPendiente = pedidosOrdenadosPorCercaniaCentral.get(i);
-            PuntoDeVenta pdvPendiente = pedidoPendiente.getPuntoDeVenta();
+            Integer idxPendiente = indicePedidoMap.get(pedidoPendiente.getId());
 
             Distribuidor mejorDistribuidor = null;
             double menorDistanciaAUltimoPdv = Double.MAX_VALUE;
@@ -242,12 +285,18 @@ public class RutaDistribuidorService {
             for (Distribuidor dist : distribuidoresAUsar) {
                 List<Pedido> asignados = asignaciones.get(dist);
                 if (asignados.size() >= cuotaPorDistribuidor) {
-                    continue; // Ya alcanzó su cupo máximo
+                    continue;
                 }
 
-                // Se compara con el último punto de venta asignado al distribuidor para encadenar el recorrido
-                PuntoDeVenta ultimoPdv = asignados.get(asignados.size() - 1).getPuntoDeVenta();
-                double distMetros = calcularDistanciaEntrePdvs(ultimoPdv, pdvPendiente);
+                Pedido ultimoPedido = asignados.get(asignados.size() - 1);
+                Integer idxUltimo = indicePedidoMap.get(ultimoPedido.getId());
+
+                double distMetros = Double.MAX_VALUE;
+                if (idxUltimo != null && idxPendiente != null
+                        && idxUltimo < matrizDistanciasEntrePedidos.length
+                        && idxPendiente < matrizDistanciasEntrePedidos[idxUltimo].length) {
+                    distMetros = matrizDistanciasEntrePedidos[idxUltimo][idxPendiente];
+                }
 
                 if (distMetros < menorDistanciaAUltimoPdv) {
                     menorDistanciaAUltimoPdv = distMetros;
@@ -255,31 +304,32 @@ public class RutaDistribuidorService {
                 }
             }
 
-            // Fallback: si todos alcanzaron la cuota teórica (casos de redondeo), se le da al que tenga menos
             if (mejorDistribuidor == null) {
                 mejorDistribuidor = distribuidoresAUsar.stream()
-                        .min(java.util.Comparator.comparingInt(d -> asignaciones.get(d).size()))
+                        .min(Comparator.comparingInt(d -> asignaciones.get(d).size()))
                         .orElse(distribuidoresAUsar.get(0));
             }
 
             asignaciones.get(mejorDistribuidor).add(pedidoPendiente);
         }
 
-        // Armar y persistir cada ruta optimizada
         List<RutaResponse> resultado = new ArrayList<>();
         for (Map.Entry<Distribuidor, List<Pedido>> entry : asignaciones.entrySet()) {
             Distribuidor distribuidor = entry.getKey();
             List<Pedido> pedidosDeDistribuidor = entry.getValue();
 
-            Map<String, Pedido> mapaPuntos = new LinkedHashMap<>();
+            Map<String, List<Pedido>> mapaPuntosAPedidos = new LinkedHashMap<>();
             List<PuntoDeVenta> puntosAVisitar = new ArrayList<>();
             for (Pedido p : pedidosDeDistribuidor) {
                 PuntoDeVenta pdv = p.getPuntoDeVenta();
-                mapaPuntos.put(pdv.getId(), p);
-                puntosAVisitar.add(pdv);
+                if (!mapaPuntosAPedidos.containsKey(pdv.getId())) {
+                    mapaPuntosAPedidos.put(pdv.getId(), new ArrayList<>());
+                    puntosAVisitar.add(pdv);
+                }
+                mapaPuntosAPedidos.get(pdv.getId()).add(p);
             }
 
-            RutaResponse rutaResp = armarYPersistirRuta(distribuidor, fechaOperativa, puntosAVisitar, mapaPuntos);
+            RutaResponse rutaResp = armarYPersistirRuta(distribuidor, fechaOperativa, puntosAVisitar, mapaPuntosAPedidos);
             resultado.add(rutaResp);
         }
 
@@ -287,34 +337,31 @@ public class RutaDistribuidorService {
     }
 
     /**
-     * Secuencia los puntos de venta utilizando {@link RutaOptimizerStrategy}, transiciona los pedidos a EN_REPARTO
-     * y persiste la entidad {@link RutaDistribuidor}.
+     * Secuencia los puntos de venta delegando el cálculo del recorrido óptimo a {@code /trip/v1/driving/} de OSRM,
+     * transiciona los pedidos a EN_REPARTO y persiste la entidad {@link RutaDistribuidor}.
      */
     private RutaResponse armarYPersistirRuta(
             Distribuidor distribuidor,
             LocalDate fecha,
             List<PuntoDeVenta> puntosAVisitar,
-            Map<String, Pedido> mapaPuntosAPedidos) {
+            Map<String, List<Pedido>> mapaPuntosAPedidos) {
 
         double[] origen = obtenerCoordenadasSedeCentral();
 
-        // Optimización del orden de paradas según Vecino Más Cercano (Haversine)
         List<PuntoDeVenta> puntosOrdenados = rutaOptimizerStrategy.optimizarRecorrido(
                 origen[0],
                 origen[1],
                 puntosAVisitar
         );
 
-        // Reordenar la lista de pedidos conforme a la secuencia óptima de paradas calculada
         List<Pedido> pedidosOrdenados = new ArrayList<>();
         for (PuntoDeVenta pdv : puntosOrdenados) {
-            Pedido p = mapaPuntosAPedidos.get(pdv.getId());
-            if (p != null) {
-                pedidosOrdenados.add(p);
+            List<Pedido> pedidosDelPdv = mapaPuntosAPedidos.get(pdv.getId());
+            if (pedidosDelPdv != null) {
+                pedidosOrdenados.addAll(pedidosDelPdv);
             }
         }
 
-        // Transición de pedidos a EN_REPARTO mediante PedidoService
         for (Pedido pedido : pedidosOrdenados) {
             pedidoService.asignarAReparto(
                     pedido.getId(),
@@ -337,58 +384,6 @@ public class RutaDistribuidorService {
         return rutaMapperHelper.aResponse(guardada);
     }
 
-    private double calcularDistanciaPdv(double latOrigen, double lonOrigen, PuntoDeVenta pdv) {
-        if (pdv == null || pdv.getDireccion() == null) {
-            return Double.MAX_VALUE;
-        }
-        Direccion dir = pdv.getDireccion();
-        if (dir.getLatitud() == null || dir.getLongitud() == null
-                || (dir.getLatitud() == 0.0 && dir.getLongitud() == 0.0)) {
-            return Double.MAX_VALUE;
-        }
-        return rutaOptimizerStrategy.calcularDistanciaHaversine(latOrigen, lonOrigen, dir.getLatitud(), dir.getLongitud());
-    }
-
-    private double calcularDistanciaEntrePdvs(PuntoDeVenta pdv1, PuntoDeVenta pdv2) {
-        if (pdv1 == null || pdv1.getDireccion() == null || pdv2 == null || pdv2.getDireccion() == null) {
-            return Double.MAX_VALUE;
-        }
-        Direccion d1 = pdv1.getDireccion();
-        Direccion d2 = pdv2.getDireccion();
-        if (d1.getLatitud() == null || d1.getLongitud() == null
-                || d2.getLatitud() == null || d2.getLongitud() == null
-                || (d1.getLatitud() == 0.0 && d1.getLongitud() == 0.0)
-                || (d2.getLatitud() == 0.0 && d2.getLongitud() == 0.0)) {
-            return Double.MAX_VALUE;
-        }
-        return rutaOptimizerStrategy.calcularDistanciaHaversine(d1.getLatitud(), d1.getLongitud(), d2.getLatitud(), d2.getLongitud());
-    }
-
-    /**
-     * Registra la entrega efectiva de un pedido en su destino según {@code 02-reglas-negocio.md} (§6.3).
-     *
-     * <p><b>Flujo de ejecución:</b></p>
-     * <ol>
-     *   <li>Marca el {@link Pedido} como {@link EstadoPedido#ENTREGADO} delegando en {@link PedidoService#marcarEntregado}.</li>
-     *   <li>Busca en el itinerario cuál es el <i>siguiente pedido</i> que aún se encuentra en reparto.</li>
-     *   <li>Si existe un próximo pedido:
-     *     <ul>
-     *       <li>Actualiza {@code paradaActual} de la ruta con el punto de venta de dicho pedido.</li>
-     *       <li>Dispara de forma asíncrona el evento {@link AvisoProximaEntregaEvent} para notificar al minorista.</li>
-     *     </ul>
-     *   </li>
-     *   <li>Si ya se entregaron todos los pedidos:
-     *     <ul>
-     *       <li>Fija {@code paradaActual = null}.</li>
-     *       <li>Transiciona la ruta automáticamente a {@link RutaEstado#REALIZADA}.</li>
-     *     </ul>
-     *   </li>
-     * </ol>
-     *
-     * @param id      Identificador de la ruta.
-     * @param request Datos de la entrega (pedidoId y observación opcional).
-     * @return {@link AvanceRutaResponse} con el estado de la ruta y la próxima parada sugerida.
-     */
     @Transactional
     public AvanceRutaResponse registrarEntrega(String id, EntregaRequest request) {
         if (request == null || request.pedidoId() == null || request.pedidoId().isBlank()) {
@@ -407,6 +402,21 @@ public class RutaDistribuidorService {
                 .filter(p -> p.getId().equals(request.pedidoId()))
                 .findFirst()
                 .orElseThrow(() -> new RecursoNoEncontradoException("El pedido " + request.pedidoId() + " no forma parte de esta ruta"));
+
+        Pedido primerPendiente = ruta.getPedidos().stream()
+                .filter(p -> p.getEstado() != EstadoPedido.ENTREGADO)
+                .findFirst()
+                .orElse(null);
+
+        if (primerPendiente != null && !primerPendiente.getId().equals(pedidoEntregado.getId())) {
+            String nombreComercioSig = primerPendiente.getPuntoDeVenta() != null
+                    ? primerPendiente.getPuntoDeVenta().getNombreComercio()
+                    : String.valueOf(primerPendiente.getNumeroPedido());
+            throw new ValidacionException(
+                    "Solo puede registrar la entrega de la siguiente parada pendiente en el orden de la ruta ("
+                            + nombreComercioSig + ")"
+            );
+        }
 
         // Marcar pedido entregado usando PedidoService para asegurar coherencia y trazabilidad
         String obs = request.observacion() != null && !request.observacion().isBlank()
@@ -507,9 +517,12 @@ public class RutaDistribuidorService {
         Mayorista central = mayoristaService.obtenerSedeCentral();
         if (central != null && central.getDirecciones() != null) {
             for (Direccion dir : central.getDirecciones()) {
-                if (!dir.isEliminado() && dir.getLatitud() != null && dir.getLongitud() != null
-                        && (dir.getLatitud() != 0.0 || dir.getLongitud() != 0.0)) {
-                    return new double[]{dir.getLatitud(), dir.getLongitud()};
+                if (!dir.isEliminado()) {
+                    direccionService.asegurarCoordenadas(dir);
+                    if (dir.getLatitud() != null && dir.getLongitud() != null
+                            && (dir.getLatitud() != 0.0 || dir.getLongitud() != 0.0)) {
+                        return new double[]{dir.getLatitud(), dir.getLongitud()};
+                    }
                 }
             }
         }

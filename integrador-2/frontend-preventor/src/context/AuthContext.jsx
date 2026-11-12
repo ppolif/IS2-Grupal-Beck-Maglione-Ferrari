@@ -33,8 +33,23 @@ export function AuthProvider({ children }) {
       const data = await authService.obtenerPerfil();
       setPerfil(data);
       localStorage.setItem('dm_preventor_perfil', JSON.stringify(data));
+      if (data?.usuario && typeof data.usuario.claveTemporal === 'boolean') {
+        setUsuario((prev) => {
+          const next = prev ? { ...prev, claveTemporal: data.usuario.claveTemporal } : data.usuario;
+          localStorage.setItem('dm_preventor_usuario', JSON.stringify(next));
+          return next;
+        });
+      }
       return data;
-    } catch {
+    } catch (err) {
+      if (err?.code === 'CAMBIO_CLAVE_REQUERIDO' || err?.status === 403) {
+        setUsuario((prev) => {
+          if (!prev) return prev;
+          const next = { ...prev, claveTemporal: true };
+          localStorage.setItem('dm_preventor_usuario', JSON.stringify(next));
+          return next;
+        });
+      }
       return null;
     } finally {
       setCargandoSesion(false);
@@ -44,13 +59,26 @@ export function AuthProvider({ children }) {
   const login = useCallback(
     async (nombreUsuario, clave) => {
       const authResponse = await authService.login(nombreUsuario, clave);
-      const { token: nuevoToken, usuario: usuarioResp } = authResponse;
+      const {
+        token: nuevoToken,
+        usuario: usuarioResp,
+        requiereCambioClave,
+        debeCambiarClave: debeCambiarResp,
+      } = authResponse;
+      const usuarioNormalizado = usuarioResp
+        ? {
+            ...usuarioResp,
+            claveTemporal: Boolean(
+              debeCambiarResp || requiereCambioClave || usuarioResp.claveTemporal
+            ),
+          }
+        : null;
 
       localStorage.setItem('dm_preventor_token', nuevoToken);
-      localStorage.setItem('dm_preventor_usuario', JSON.stringify(usuarioResp));
+      localStorage.setItem('dm_preventor_usuario', JSON.stringify(usuarioNormalizado));
 
       setToken(nuevoToken);
-      setUsuario(usuarioResp);
+      setUsuario(usuarioNormalizado);
 
       try {
         const perf = await authService.obtenerPerfil();
@@ -88,10 +116,20 @@ export function AuthProvider({ children }) {
     const handleUnauthorized = () => {
       logout();
     };
+    const handleCambioClaveRequerido = () => {
+      setUsuario((prev) => {
+        if (!prev || prev.claveTemporal) return prev;
+        const next = { ...prev, claveTemporal: true };
+        localStorage.setItem('dm_preventor_usuario', JSON.stringify(next));
+        return next;
+      });
+    };
 
     window.addEventListener('dm-preventor-unauthorized', handleUnauthorized);
+    window.addEventListener('dm-preventor-cambio-clave-requerido', handleCambioClaveRequerido);
     return () => {
       window.removeEventListener('dm-preventor-unauthorized', handleUnauthorized);
+      window.removeEventListener('dm-preventor-cambio-clave-requerido', handleCambioClaveRequerido);
     };
   }, [logout]);
 
@@ -134,11 +172,16 @@ export function AuthProvider({ children }) {
     };
   }, [usuario, perfil]);
 
+  const debeCambiarClave = Boolean(
+    usuario?.claveTemporal || perfil?.usuario?.claveTemporal
+  );
+
   const value = {
     token,
     usuario,
     perfil,
     userData,
+    debeCambiarClave,
     cargandoSesion,
     isAuthenticated: Boolean(token),
     login,

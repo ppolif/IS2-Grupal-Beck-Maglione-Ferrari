@@ -21,6 +21,26 @@ export function usePreventorRutas() {
           : 'Preventor';
         setPreventorNombre(resp);
 
+        const sucursalNombre =
+          ruta.sucursalOrigenNombre ||
+          ruta.responsable?.mayoristaRazonSocial ||
+          'Dulce Mayor - Sucursal';
+        const sucDir = ruta.sucursalOrigenDireccion || {};
+        const sucursalItem = {
+          id: 'origen-sucursal',
+          comercio: `Salida: ${sucursalNombre}`,
+          responsable: resp,
+          direccion: `${sucDir.calle || 'Av. San Martín'} ${sucDir.numeracion || '1020'}, ${sucDir.localidadNombre || sucDir.departamentoNombre || 'Mendoza'}`.trim(),
+          preventor: resp,
+          estado: 'Sucursal Origen',
+          hora: 'Punto de Partida (S)',
+          orden: 'S',
+          color: '#3fb8d9',
+          lat: Number(sucDir.latitud) || -32.889458,
+          lng: Number(sucDir.longitud) || -68.845839,
+          esSucursal: true,
+        };
+
         const paradas = Array.isArray(ruta.paradas) ? ruta.paradas : [];
         const mapped = paradas.map((p, idx) => {
           const pdv = p.puntoDeVenta || {};
@@ -41,13 +61,16 @@ export function usePreventorRutas() {
           };
         });
 
-        setVisits(mapped);
+        const itemsConSucursal = [sucursalItem, ...mapped];
+        setVisits(itemsConSucursal);
         if (mapped.length > 0) {
           setSelectedVisit(mapped[0]);
           const firstDir = paradas[0]?.puntoDeVenta?.direccion;
           if (firstDir?.departamentoNombre) {
             setZonaNombre(firstDir.departamentoNombre);
           }
+        } else {
+          setSelectedVisit(sucursalItem);
         }
       } else {
         setVisits([]);

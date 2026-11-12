@@ -30,6 +30,7 @@ import com.DulceMayor.backend.services.direccion.DireccionService;
 import com.DulceMayor.backend.services.mayorista.MayoristaService;
 import com.DulceMayor.backend.services.persona.EmpleadoService;
 import com.DulceMayor.backend.services.persona.PersonaService;
+import com.DulceMayor.backend.services.ruta.strategy.RutaOptimizerStrategy;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,6 +67,9 @@ class EmpleadoServiceTest {
     @Mock
     private MayoristaService mayoristaService;
 
+    @Mock
+    private RutaOptimizerStrategy rutaOptimizerStrategy;
+
     private EmpleadoService empleadoService;
 
     @BeforeEach
@@ -77,7 +81,8 @@ class EmpleadoServiceTest {
                 usuarioService,
                 direccionService,
                 contactoService,
-                mayoristaService
+                mayoristaService,
+                rutaOptimizerStrategy
         );
     }
 

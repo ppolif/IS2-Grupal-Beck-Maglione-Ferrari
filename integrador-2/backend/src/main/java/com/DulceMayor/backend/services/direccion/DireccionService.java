@@ -8,30 +8,40 @@ import com.DulceMayor.backend.entities.direccion.Direccion;
 import com.DulceMayor.backend.entities.direccion.Localidad;
 import com.DulceMayor.backend.repositories.direccion.DireccionRepository;
 import com.DulceMayor.backend.services.BaseService;
+import com.DulceMayor.backend.services.direccion.adapter.GeocodingPort;
+import java.util.Objects;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Servicio interno de dominio para la gestión y validación de {@link Direccion}.
+ * Servicio interno de dominio para la gestión, validación y geocodificación automática de {@link Direccion}.
  * No expone controlador REST propio ya que las direcciones se administran por composición o
  * referencia desde {@code Mayorista}, {@code Empleado}, {@code Minorista} y {@code PuntoDeVenta}.
  * Extiende {@link BaseService} cumpliendo la Regla 1 de ArchUnit al inyectar únicamente
- * {@link DireccionRepository} y delegar la resolución geográfica en {@link LocalidadService}.
+ * {@link DireccionRepository}, delegando la resolución geográfica en {@link LocalidadService}
+ * y la geocodificación vial en {@link GeocodingPort} (OpenStreetMap Nominatim + OSRM).
  */
 @Service
 public class DireccionService extends BaseService<Direccion, DireccionRequest, DireccionResponse> {
 
+    private static final double DEFAULT_LAT_PLACEHOLDER = -32.8895;
+    private static final double DEFAULT_LON_PLACEHOLDER = -68.8458;
+
     private final DireccionRepository direccionRepository;
     private final DireccionMapper direccionMapper;
     private final LocalidadService localidadService;
+    private final GeocodingPort geocodingPort;
 
     public DireccionService(
             DireccionRepository direccionRepository,
             DireccionMapper direccionMapper,
-            LocalidadService localidadService) {
+            LocalidadService localidadService,
+            GeocodingPort geocodingPort) {
         super(direccionRepository, direccionMapper, "Dirección");
         this.direccionRepository = direccionRepository;
         this.direccionMapper = direccionMapper;
         this.localidadService = localidadService;
+        this.geocodingPort = geocodingPort;
     }
 
     @Override
@@ -66,12 +76,13 @@ public class DireccionService extends BaseService<Direccion, DireccionRequest, D
     protected void antesDePersistir(Direccion entidad, DireccionRequest request) {
         Localidad localidad = localidadService.obtenerEntidad(request.localidadId());
         entidad.setLocalidad(localidad);
+        resolverCoordenadasSiCorresponde(entidad, request.latitud(), request.longitud(), false);
     }
 
     /**
-     * Construye, valida y persiste una entidad {@link Direccion} a partir de su DTO de entrada.
-     * esto y construirEntidad se usa cuando se va a hacer el alta de algunas entidades, que si o si tienen que tener
-     * una dirección, para que no sea necesario dar el alta a la direccion antes
+     * Construye, valida, geocodifica en OpenStreetMap/OSRM y persiste una entidad {@link Direccion}
+     * a partir de su DTO de entrada.
+     *
      * @param request datos de la dirección
      * @return entidad persistida en base de datos
      */
@@ -81,31 +92,19 @@ public class DireccionService extends BaseService<Direccion, DireccionRequest, D
         return direccionRepository.save(entidad);
     }
 
-    public Direccion crearDireccionPorDefecto() {
-        Localidad localidad = localidadService.obtenerOCrearPorDefecto();
-        return crearEntidad(new DireccionRequest(
-                "Gran Mendoza",
-                "S/N",
-                "Centro",
-                null,
-                null,
-                "Domicilio comercial a coordinar",
-                -32.8895,
-                -68.8458,
-                localidad.getId()
-        ));
-    }
     public Direccion construirEntidad(DireccionRequest request) {
         DireccionRequest normalizado = prepararRequest(request);
         validarCrear(normalizado);
         Direccion entidad = direccionMapper.aEntidad(normalizado);
         Localidad localidad = localidadService.obtenerEntidad(normalizado.localidadId());
         entidad.setLocalidad(localidad);
+        resolverCoordenadasSiCorresponde(entidad, normalizado.latitud(), normalizado.longitud(), false);
         return entidad;
     }
 
     /**
-     * Actualiza los atributos de una {@link Direccion} existente y sincroniza su {@link Localidad}.
+     * Actualiza los atributos de una {@link Direccion} existente, sincroniza su {@link Localidad}
+     * y re-geocodifica en OpenStreetMap/OSRM si cambiaron los datos postales o carecía de coordenadas.
      *
      * @param entidad dirección existente a actualizar
      * @param request nuevos datos
@@ -113,9 +112,71 @@ public class DireccionService extends BaseService<Direccion, DireccionRequest, D
     public void actualizarEntidad(Direccion entidad, DireccionRequest request) {
         DireccionRequest normalizado = prepararRequest(request);
         validarModificar(entidad.getId(), normalizado, entidad);
+
+        boolean cambioDireccionPostal = !Objects.equals(entidad.getCalle(), normalizado.calle())
+                || !Objects.equals(entidad.getNumeracion(), normalizado.numeracion())
+                || (entidad.getLocalidad() != null && !Objects.equals(entidad.getLocalidad().getId(), normalizado.localidadId()));
+
         direccionMapper.actualizarEntidad(normalizado, entidad);
         Localidad localidad = localidadService.obtenerEntidad(normalizado.localidadId());
         entidad.setLocalidad(localidad);
+        resolverCoordenadasSiCorresponde(entidad, normalizado.latitud(), normalizado.longitud(), cambioDireccionPostal);
+    }
+
+    /**
+     * Garantiza que una entidad {@link Direccion} ya persistida cuente con coordenadas reales geocodificadas
+     * en OpenStreetMap y ajustadas a la red vial de OSRM. Si carecía de ellas, las calcula y persiste.
+     *
+     * @param direccion Dirección a verificar y geocodificar.
+     * @return {@code true} si las coordenadas fueron actualizadas; {@code false} si ya contaba con coordenadas válidas.
+     */
+    @Transactional
+    public boolean asegurarCoordenadas(Direccion direccion) {
+        if (direccion == null) {
+            return false;
+        }
+        if (careceDeCoordenadasReales(direccion.getCalle(), direccion.getLatitud(), direccion.getLongitud())) {
+            double[] coords = geocodingPort.geocodificarDireccion(
+                    direccion.getCalle(),
+                    direccion.getNumeracion(),
+                    direccion.getLocalidad()
+            );
+            direccion.setLatitud(coords[0]);
+            direccion.setLongitud(coords[1]);
+            if (direccion.getId() != null) {
+                direccionRepository.save(direccion);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private void resolverCoordenadasSiCorresponde(
+            Direccion entidad,
+            Double latitudSolicitada,
+            Double longitudSolicitada,
+            boolean forzarPorCambioPostal) {
+
+        if (forzarPorCambioPostal || careceDeCoordenadasReales(entidad.getCalle(), latitudSolicitada, longitudSolicitada)) {
+            double[] coords = geocodingPort.geocodificarDireccion(
+                    entidad.getCalle(),
+                    entidad.getNumeracion(),
+                    entidad.getLocalidad()
+            );
+            entidad.setLatitud(coords[0]);
+            entidad.setLongitud(coords[1]);
+        }
+    }
+
+    private boolean careceDeCoordenadasReales(String calle, Double lat, Double lon) {
+        if (lat == null || lon == null || (lat == 0.0 && lon == 0.0)) {
+            return true;
+        }
+        // Si tiene una calle específica distinta al placeholder "Gran Mendoza", pero trae las coordenadas genéricas por defecto
+        boolean esCalleReal = calle != null && !calle.isBlank() && !"Gran Mendoza".equalsIgnoreCase(calle.trim());
+        boolean esCoordPlaceholder = Math.abs(lat - DEFAULT_LAT_PLACEHOLDER) < 0.0001
+                && Math.abs(lon - DEFAULT_LON_PLACEHOLDER) < 0.0001;
+        return esCalleReal && esCoordPlaceholder;
     }
 
     private void validarFormato(DireccionRequest request) {
@@ -139,4 +200,3 @@ public class DireccionService extends BaseService<Direccion, DireccionRequest, D
         }
     }
 }
-

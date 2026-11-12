@@ -5,47 +5,60 @@
  */
 import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { pedidoService } from '../services/pedidoService';
+import { useAuth } from './AuthContext';
 
 const CartContext = createContext(null);
 
 const STORAGE_KEY = 'dm_preventor_cart';
 const PDV_KEY = 'dm_preventor_active_pdv';
 
+function readJsonFromStorage(key, fallback) {
+  if (!key) return fallback;
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function CartProvider({ children }) {
+  const { usuario } = useAuth();
+  const userScope = usuario?.id || usuario?.nombreUsuario || null;
+  const cartStorageKey = userScope ? `${STORAGE_KEY}_${userScope}` : null;
+  const pdvStorageKey = userScope ? `${PDV_KEY}_${userScope}` : null;
+
   // Ítems en el carrito: [{ id, nombre, precio, cantidad, presentacion, img }]
-  const [items, setItems] = useState(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [items, setItems] = useState(() => readJsonFromStorage(cartStorageKey, []));
 
   // Punto de venta seleccionado para el que se está tomando el pedido
-  const [clienteActual, setClienteActual] = useState(() => {
-    try {
-      const raw = localStorage.getItem(PDV_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [clienteActual, setClienteActual] = useState(() =>
+    readJsonFromStorage(pdvStorageKey, null)
+  );
 
   const [codigoPromo, setCodigoPromo] = useState('');
 
-  // Persistir en localStorage
+  // Recargar carrito y comercio activo cuando cambia el usuario autenticado
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+    setItems(readJsonFromStorage(cartStorageKey, []));
+    setClienteActual(readJsonFromStorage(pdvStorageKey, null));
+    setCodigoPromo('');
+  }, [cartStorageKey, pdvStorageKey]);
+
+  // Persistir en localStorage aislado por usuario
+  useEffect(() => {
+    if (!cartStorageKey) return;
+    localStorage.setItem(cartStorageKey, JSON.stringify(items));
+  }, [cartStorageKey, items]);
 
   useEffect(() => {
+    if (!pdvStorageKey) return;
     if (clienteActual) {
-      localStorage.setItem(PDV_KEY, JSON.stringify(clienteActual));
+      localStorage.setItem(pdvStorageKey, JSON.stringify(clienteActual));
     } else {
-      localStorage.removeItem(PDV_KEY);
+      localStorage.removeItem(pdvStorageKey);
     }
-  }, [clienteActual]);
+  }, [pdvStorageKey, clienteActual]);
 
   /**
    * Agrega un producto o incrementa su cantidad

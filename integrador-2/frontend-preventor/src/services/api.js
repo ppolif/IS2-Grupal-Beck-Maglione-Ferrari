@@ -54,7 +54,11 @@ export async function apiFetch(endpoint, options = {}) {
 
     if (isJson && data) {
       const code = data.codigo || data.code || 'ERROR';
-      const message = data.mensaje || data.message || 'Error en la solicitud';
+      let message = data.mensaje || data.message || 'Error en la solicitud';
+      if (code === 'CAMBIO_CLAVE_REQUERIDO' || (response.status === 403 && typeof message === 'string' && message.toLowerCase().includes('clave'))) {
+        message = 'Cambie su clave para acceder';
+        window.dispatchEvent(new CustomEvent('dm-preventor-cambio-clave-requerido'));
+      }
       const path = data.path || endpoint;
       const errors = data.errores || data.errors || [];
       throw new ApiError(response.status, code, message, path, errors);

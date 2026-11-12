@@ -4,41 +4,60 @@ import com.DulceMayor.backend.entities.persona.PuntoDeVenta;
 import java.util.List;
 
 /**
- * Interfaz Strategy que desacopla el algoritmo de cálculo y optimización del recorrido geográfico
- * de las rutas de preventa y distribución, conforme a {@code 03-arquitectura.md} (§4.2).
+ * Interfaz Strategy que define las operaciones de cálculo y optimización de rutas viales
+ * delegadas al motor de enrutamiento de OpenStreetMap (OSRM).
  *
  * <p><b>Patrón GoF aplicado: Strategy (Comportamiento)</b></p>
  * <ul>
- *   <li><b>Contexto:</b> Servicios de generación de ruta ({@code RutaPreventorService} y {@code RutaDistribuidorService}).</li>
+ *   <li><b>Contexto:</b> Servicios de generación de ruta ({@code RutaPreventorService}, {@code RutaDistribuidorService} y {@code EmpleadoService}).</li>
  *   <li><b>Strategy:</b> Esta interfaz ({@code RutaOptimizerStrategy}).</li>
- *   <li><b>Estrategia concreta por defecto:</b> {@link NearestNeighborStrategy}, que utiliza la fórmula
- *       ortodrómica de Haversine para encontrar secuencialmente el vecino más cercano a partir de coordenadas geodésicas.</li>
- *   <li><b>Ventaja de arquitectura:</b> Permite en el futuro reemplazar o sumar motores externos de optimización
- *       logística (como Google OR-Tools, GraphHopper o el motor de rutas de OpenStreetMap / OSRM) sin modificar
- *       la lógica transaccional de los servicios del negocio.</li>
+ *   <li><b>Estrategia concreta:</b> {@link OsrmRoutingStrategy}, que delega la resolución completa del
+ *       Problema del Viajante (TSP) al servicio {@code /trip/v1/driving/} de OSRM y las matrices de distancia
+ *       vial al servicio {@code /table/v1/driving/} de OSRM.</li>
  * </ul>
  */
 public interface RutaOptimizerStrategy {
 
     /**
-     * Ordena una lista de puntos de venta de forma óptima a partir de una coordenada inicial de partida.
+     * Calcula la secuencia óptima de visita de una lista de puntos de venta partiendo desde una coordenada
+     * inicial (sucursal o sede central), delegando la resolución del TSP en el servicio {@code /trip/v1/driving/} de OSRM.
      *
      * @param latitudInicial  Latitud del punto de salida (ej. sucursal o sede central).
      * @param longitudInicial Longitud del punto de salida.
      * @param paradas         Colección de puntos de venta a secuenciar.
-     * @return Lista reordenada de puntos de venta representando el itinerario óptimo sugerido.
+     * @return Lista reordenada de puntos de venta según el viaje óptimo calculado por OSRM.
      */
     List<PuntoDeVenta> optimizarRecorrido(double latitudInicial, double longitudInicial, List<PuntoDeVenta> paradas);
 
     /**
-     * Calcula la distancia ortodrómica en metros entre dos pares de coordenadas (fórmula de Haversine).
+     * Calcula la distancia vial real en metros por calles de OpenStreetMap entre dos coordenadas
+     * utilizando el servicio {@code /route/v1/driving/} de OSRM.
      *
      * @param lat1 Latitud origen en grados decimales.
      * @param lon1 Longitud origen en grados decimales.
      * @param lat2 Latitud destino en grados decimales.
      * @param lon2 Longitud destino en grados decimales.
-     * @return Distancia en metros.
+     * @return Distancia vial en metros calculada por OSRM.
      */
-    double calcularDistanciaHaversine(double lat1, double lon1, double lat2, double lon2);
-}
+    double calcularDistanciaVial(double lat1, double lon1, double lat2, double lon2);
 
+    /**
+     * Calcula en una sola consulta a {@code /table/v1/driving/} de OSRM las distancias viales en metros
+     * desde un punto de origen hacia múltiples coordenadas de destino.
+     *
+     * @param latOrigen Latitud del origen.
+     * @param lonOrigen Longitud del origen.
+     * @param destinos  Lista de pares {@code [latitud, longitud]} de destino.
+     * @return Arreglo con la distancia vial en metros desde el origen hacia cada destino en el mismo orden.
+     */
+    double[] calcularDistanciasDesdeOrigen(double latOrigen, double lonOrigen, List<double[]> destinos);
+
+    /**
+     * Calcula en una sola consulta a {@code /table/v1/driving/} de OSRM la matriz completa \(N \times N\)
+     * de distancias viales en metros entre todas las coordenadas suministradas.
+     *
+     * @param coordenadas Lista de pares {@code [latitud, longitud]}.
+     * @return Matriz bidimensional de distancias en metros donde {@code matriz[i][j]} es la distancia vial de {@code i} a {@code j}.
+     */
+    double[][] calcularMatrizDistancias(List<double[]> coordenadas);
+}

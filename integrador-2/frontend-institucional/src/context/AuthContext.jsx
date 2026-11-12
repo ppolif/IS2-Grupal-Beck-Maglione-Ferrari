@@ -33,6 +33,7 @@ export function AuthProvider({ children }) {
     setUsuario(null);
     setPerfil(null);
     setDebeCambiarClave(false);
+    window.dispatchEvent(new Event('dm_cart_updated'));
   }, []);
 
   const refrescarPerfil = useCallback(async () => {
@@ -61,6 +62,7 @@ export function AuthProvider({ children }) {
       setToken(nuevoToken);
       setUsuario(usuarioResp);
       setDebeCambiarClave(Boolean(cambioReq));
+      window.dispatchEvent(new Event('dm_cart_updated'));
 
       try {
         const perf = await authService.obtenerMiPerfil();

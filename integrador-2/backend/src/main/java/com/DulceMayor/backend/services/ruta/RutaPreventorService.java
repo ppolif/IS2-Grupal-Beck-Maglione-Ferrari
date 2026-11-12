@@ -5,6 +5,7 @@ import com.DulceMayor.backend.config.ConflictoException;
 import com.DulceMayor.backend.config.RecursoNoEncontradoException;
 import com.DulceMayor.backend.config.UsuarioPrincipal;
 import com.DulceMayor.backend.config.ValidacionException;
+import com.DulceMayor.backend.dtos.persona.PuntoDeVentaCarteraActualizadaEvent;
 import com.DulceMayor.backend.dtos.ruta.AvanceRutaResponse;
 import com.DulceMayor.backend.dtos.ruta.CompletarParadaPreventorRequest;
 import com.DulceMayor.backend.dtos.ruta.ParadaResponse;
@@ -19,14 +20,20 @@ import com.DulceMayor.backend.entities.persona.PuntoDeVenta;
 import com.DulceMayor.backend.entities.ruta.RutaEstado;
 import com.DulceMayor.backend.entities.ruta.RutaPreventor;
 import com.DulceMayor.backend.repositories.ruta.RutaPreventorRepository;
+import com.DulceMayor.backend.services.direccion.DireccionService;
+import com.DulceMayor.backend.services.mayorista.MayoristaService;
 import com.DulceMayor.backend.services.persona.EmpleadoService;
 import com.DulceMayor.backend.services.persona.PuntoDeVentaService;
-import com.DulceMayor.backend.services.ruta.strategy.NearestNeighborStrategy;
+import com.DulceMayor.backend.services.ruta.strategy.OsrmRoutingStrategy;
 import com.DulceMayor.backend.services.ruta.strategy.RutaOptimizerStrategy;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -35,15 +42,12 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Servicio de lógica de negocio para la gestión de rutas diarias de preventores.
  *
- * <p><b>Punto de partida automático y OpenStreetMap:</b></p>
- * En concordancia con los requerimientos, el preventor no necesita ingresar coordenadas manuales de partida.
+ * <p><b>Punto de partida automático y delegación a OSRM / OpenStreetMap:</b></p>
  * El servicio obtiene automáticamente la dirección física de la <b>sucursal</b> a la que pertenece el preventor
- * (mediante su asociación con {@link Mayorista}), extrayendo su latitud y longitud. Estas coordenadas compatibles
- * con <b>OpenStreetMap</b> sirven como punto de origen para alimentar el algoritmo de enrutamiento.
- *
- * <p><b>Patrón GoF aplicado: Strategy (Comportamiento)</b></p>
- * Inyecta {@link RutaOptimizerStrategy} (instancia concreta {@link NearestNeighborStrategy}) para delegar
- * el ordenamiento geodésico de los puntos de venta asignados a la cartera del preventor.
+ * (mediante su asociación con {@link Mayorista}, o la Sede Central por defecto), asegura que todos los comercios
+ * de su cartera tengan coordenadas geocodificadas en OpenStreetMap y delega en {@link RutaOptimizerStrategy}
+ * ({@link OsrmRoutingStrategy}) la resolución completa de la ruta más óptima mediante el servicio
+ * {@code /trip/v1/driving/} de OSRM.
  */
 @Service
 @RequiredArgsConstructor
@@ -52,6 +56,8 @@ public class RutaPreventorService {
     private final RutaPreventorRepository rutaPreventorRepository;
     private final EmpleadoService empleadoService;
     private final PuntoDeVentaService puntoDeVentaService;
+    private final DireccionService direccionService;
+    private final MayoristaService mayoristaService;
     private final RutaOptimizerStrategy rutaOptimizerStrategy;
     private final RutaMapperHelper rutaMapperHelper;
 
@@ -64,7 +70,7 @@ public class RutaPreventorService {
      * @param estado        Filtro opcional por estado de ruta.
      * @return Lista de {@link RutaResponse}.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<RutaResponse> listarRutas(String responsableId, LocalDate fecha, String estado) {
         UsuarioPrincipal usuarioActual = obtenerPrincipalActual();
         String responsableFiltro = responsableId;
@@ -75,8 +81,17 @@ public class RutaPreventorService {
         }
 
         RutaEstado rutaEstado = parsearEstado(estado);
+        List<RutaPreventor> rutas = rutaPreventorRepository.buscarConFiltros(responsableFiltro, fecha, rutaEstado);
 
-        return rutaPreventorRepository.buscarConFiltros(responsableFiltro, fecha, rutaEstado).stream()
+        LocalDate hoy = LocalDate.now();
+        for (RutaPreventor ruta : rutas) {
+            if (ruta.getResponsable() instanceof Preventor prev
+                    && (ruta.getEstado() == RutaEstado.PENDIENTE || !ruta.getFecha().isBefore(hoy))) {
+                sincronizarYReoptimizarSiCambioCartera(ruta, prev);
+            }
+        }
+
+        return rutas.stream()
                 .map(rutaMapperHelper::aResponse)
                 .toList();
     }
@@ -94,12 +109,11 @@ public class RutaPreventorService {
 
     /**
      * Busca la ruta asignada al preventor autenticado para una fecha dada (por defecto hoy).
-     * Utilizado principalmente por la aplicación móvil al iniciar la jornada laboral.
-     *
-     * @param fecha Fecha consultada (opcional, defaults a la fecha actual).
-     * @return {@link RutaResponse} con las paradas del día ordenadas geográficamente.
+     * Si no existía aún pero el preventor posee comercios en su cartera, la genera automáticamente con OSRM.
+     * Si ya existía y se detectan nuevos comercios en la cartera o direcciones sin coordenadas,
+     * los geocodifica y reoptimiza el recorrido con OSRM partiendo de su sucursal.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public RutaResponse buscarMiRutaDelDia(LocalDate fecha) {
         LocalDate fechaConsulta = fecha != null ? fecha : LocalDate.now();
         UsuarioPrincipal usuarioActual = obtenerPrincipalActual();
@@ -108,8 +122,19 @@ public class RutaPreventorService {
         }
         Preventor preventor = empleadoService.obtenerPreventorPorUsuarioId(usuarioActual.getId());
 
-        RutaPreventor ruta = rutaPreventorRepository.findByResponsableIdAndFechaAndEliminadoFalse(preventor.getId(), fechaConsulta)
-                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró una ruta de preventa para la fecha " + fechaConsulta));
+        Optional<RutaPreventor> rutaOpt = rutaPreventorRepository
+                .findByResponsableIdAndFechaAndEliminadoFalse(preventor.getId(), fechaConsulta);
+
+        if (rutaOpt.isEmpty()) {
+            List<PuntoDeVenta> cartera = puntoDeVentaService.listarPorPreventor(preventor.getId());
+            if (cartera.isEmpty()) {
+                throw new RecursoNoEncontradoException("No se encontró una ruta de preventa para la fecha " + fechaConsulta);
+            }
+            return generarRuta(new RutaPreventorGenerarRequest(preventor.getId(), fechaConsulta));
+        }
+
+        RutaPreventor ruta = rutaOpt.get();
+        sincronizarYReoptimizarSiCambioCartera(ruta, preventor);
 
         return rutaMapperHelper.aResponse(ruta);
     }
@@ -138,66 +163,58 @@ public class RutaPreventorService {
     }
 
     /**
-     * Genera la ruta diaria de un preventor.
-     *
-     * <p><b>Reglas de Negocio aplicadas:</b></p>
-     * <ul>
-     *   <li>Verifica que no exista otra ruta para ese mismo empleado en la misma fecha (409 Conflict).</li>
-     *   <li>Recupera la cartera de {@link PuntoDeVenta} asignados a este preventor.</li>
-     *   <li>Obtiene la ubicación de salida automáticamente desde la sucursal del preventor (datos espaciales de OpenStreetMap).</li>
-     *   <li>Aplica el algoritmo del Vecino Más Cercano (Haversine) mediante {@link RutaOptimizerStrategy}.</li>
-     *   <li>Inicializa el estado en {@link RutaEstado#PENDIENTE} y establece {@code paradaActual} en el primer punto.</li>
-     * </ul>
-     *
-     * @param request Solicitud con preventorId y fecha.
-     * @return {@link RutaResponse} generada.
+     * Genera o recalcula la ruta diaria de un preventor delegando el cálculo del recorrido óptimo
+     * al servicio {@code /trip/v1/driving/} de OSRM partiendo desde la sucursal del preventor.
      */
     @Transactional
     public RutaResponse generarRuta(RutaPreventorGenerarRequest request) {
-        if (request == null || request.fecha() == null) {
-            throw new ValidacionException("La fecha es obligatoria para generar la ruta");
-        }
+        LocalDate fechaOperativa = (request != null && request.fecha() != null)
+                ? request.fecha()
+                : LocalDate.now();
 
         UsuarioPrincipal usuarioActual = obtenerPrincipalActual();
-        String preventorId = request.preventorId();
+        String preventorId = request != null ? request.preventorId() : null;
 
         if (usuarioActual != null && usuarioActual.getRol() == RolUsuario.PREVENTISTA) {
             Preventor preventor = empleadoService.obtenerPreventorPorUsuarioId(usuarioActual.getId());
             preventorId = preventor.getId();
-
-            /// esto de aca, igual que lo de indicar la fecha en vez de hacer que siempre sea automaticamente la fecha actual
-            /// es por si algun admin esta haciendo la ruta de un preventor
         } else if (preventorId == null || preventorId.isBlank()) {
             throw new ValidacionException("Debe especificar el ID del preventor");
         }
 
         Preventor preventorEntity = empleadoService.obtenerPreventor(preventorId);
 
-        if (rutaPreventorRepository.existsByResponsableIdAndFechaAndEliminadoFalse(preventorId, request.fecha())) {
-            throw new ConflictoException("Ya existe una ruta registrada para el preventor en la fecha " + request.fecha());
-        }
-
-        /// recordar que un punto de venta tiene un preventor asociado
         List<PuntoDeVenta> cartera = puntoDeVentaService.listarPorPreventor(preventorId);
         if (cartera.isEmpty()) {
             throw new ValidacionException("El preventor no tiene puntos de venta asignados en su cartera");
         }
 
-        // Obtención automática del punto de origen desde la sucursal (Mayorista)
+        for (PuntoDeVenta pdv : cartera) {
+            direccionService.asegurarCoordenadas(pdv.getDireccion());
+        }
+
         double[] origen = obtenerCoordenadasSucursal(preventorEntity);
 
-        // Optimización por vecino más cercano con coordenadas compatibles con OpenStreetMap
         List<PuntoDeVenta> paradasOrdenadas = rutaOptimizerStrategy.optimizarRecorrido(
                 origen[0],
                 origen[1],
                 cartera
         );
 
+        Optional<RutaPreventor> existenteOpt = rutaPreventorRepository
+                .findByResponsableIdAndFechaAndEliminadoFalse(preventorId, fechaOperativa);
+
+        if (existenteOpt.isPresent()) {
+            RutaPreventor existente = existenteOpt.get();
+            reemplazarParadasYActualizarEstado(existente, paradasOrdenadas);
+            RutaPreventor actualizada = rutaPreventorRepository.saveAndFlush(existente);
+            return rutaMapperHelper.aResponse(actualizada);
+        }
+
         PuntoDeVenta primerPunto = paradasOrdenadas.isEmpty() ? null : paradasOrdenadas.get(0);
 
-        /// patron builder papá
         RutaPreventor ruta = RutaPreventor.builder()
-                .fecha(request.fecha())
+                .fecha(fechaOperativa)
                 .estado(RutaEstado.PENDIENTE)
                 .responsable(preventorEntity)
                 .paradaActual(primerPunto)
@@ -205,25 +222,110 @@ public class RutaPreventorService {
                 .visitadosIds(new ArrayList<>())
                 .build();
 
-        RutaPreventor guardada = rutaPreventorRepository.save(ruta);
+        RutaPreventor guardada = rutaPreventorRepository.saveAndFlush(ruta);
         return rutaMapperHelper.aResponse(guardada);
     }
 
     /**
-     * Registra una parada completada por el preventor usando la estrategia de lista cronológica de visitados.
-     *
-     * <p><b>Lógica de avance:</b></p>
-     * <ul>
-     *   <li>Añade el ID del punto visitado a la lista {@code visitadosIds} si aún no figuraba en ella.</li>
-     *   <li>Busca dentro de la lista ordenada de la ruta el siguiente {@link PuntoDeVenta} que todavía no esté en {@code visitadosIds}.</li>
-     *   <li>Si existe un próximo punto, se actualiza {@code paradaActual} con dicho punto.</li>
-     *   <li>Si no restan puntos pendientes por visitar, {@code paradaActual} se fija en null y la ruta pasa a {@link RutaEstado#REALIZADA}.</li>
-     * </ul>
-     *
-     * @param id      Identificador de la ruta.
-     * @param request Datos de la visita (punto de venta ID y pedido ID opcional).
-     * @return {@link AvanceRutaResponse} con la ruta actualizada y la siguiente parada sugerida para el mapa.
+     * Escucha el alta o modificación de un punto de venta en la cartera de un preventor
+     * y reoptimiza automáticamente con OSRM las rutas vigentes del preventor.
      */
+    @EventListener
+    @Transactional
+    public void onPuntoDeVentaCarteraActualizada(PuntoDeVentaCarteraActualizadaEvent event) {
+        if (event == null || event.preventorId() == null || event.preventorId().isBlank()) {
+            return;
+        }
+        List<RutaPreventor> rutasPreventor = rutaPreventorRepository.buscarConFiltros(event.preventorId(), null, null);
+        if (rutasPreventor.isEmpty()) {
+            return;
+        }
+        Preventor preventor = empleadoService.obtenerPreventor(event.preventorId());
+        LocalDate hoy = LocalDate.now();
+
+        for (RutaPreventor ruta : rutasPreventor) {
+            if (ruta.getEstado() == RutaEstado.PENDIENTE || !ruta.getFecha().isBefore(hoy)) {
+                reoptimizarRutaConCarteraActual(ruta, preventor);
+            }
+        }
+    }
+
+    private void sincronizarYReoptimizarSiCambioCartera(RutaPreventor ruta, Preventor preventor) {
+        List<PuntoDeVenta> carteraActual = puntoDeVentaService.listarPorPreventor(preventor.getId());
+        if (carteraActual.isEmpty()) {
+            return;
+        }
+
+        boolean requiereReoptimizar = false;
+        for (PuntoDeVenta pdv : carteraActual) {
+            if (direccionService.asegurarCoordenadas(pdv.getDireccion())) {
+                requiereReoptimizar = true;
+            }
+        }
+
+        Set<String> idsEnRuta = new HashSet<>();
+        if (ruta.getPuntosDeVenta() != null) {
+            for (PuntoDeVenta p : ruta.getPuntosDeVenta()) {
+                idsEnRuta.add(p.getId());
+            }
+        }
+
+        if (idsEnRuta.size() != carteraActual.size()) {
+            requiereReoptimizar = true;
+        } else {
+            for (PuntoDeVenta p : carteraActual) {
+                if (!idsEnRuta.contains(p.getId())) {
+                    requiereReoptimizar = true;
+                    break;
+                }
+            }
+        }
+
+        if (requiereReoptimizar) {
+            reoptimizarRutaConCarteraActual(ruta, preventor);
+        }
+    }
+
+    private void reoptimizarRutaConCarteraActual(RutaPreventor ruta, Preventor preventor) {
+        List<PuntoDeVenta> cartera = puntoDeVentaService.listarPorPreventor(preventor.getId());
+        if (cartera.isEmpty()) {
+            return;
+        }
+        for (PuntoDeVenta pdv : cartera) {
+            direccionService.asegurarCoordenadas(pdv.getDireccion());
+        }
+        double[] origen = obtenerCoordenadasSucursal(preventor);
+        List<PuntoDeVenta> paradasOrdenadas = rutaOptimizerStrategy.optimizarRecorrido(
+                origen[0],
+                origen[1],
+                cartera
+        );
+        reemplazarParadasYActualizarEstado(ruta, paradasOrdenadas);
+        rutaPreventorRepository.saveAndFlush(ruta);
+    }
+
+    private void reemplazarParadasYActualizarEstado(RutaPreventor ruta, List<PuntoDeVenta> paradasOrdenadas) {
+        if (ruta.getPuntosDeVenta() == null) {
+            ruta.setPuntosDeVenta(new ArrayList<>(paradasOrdenadas));
+        } else {
+            ruta.getPuntosDeVenta().clear();
+            ruta.getPuntosDeVenta().addAll(paradasOrdenadas);
+        }
+
+        List<String> visitados = ruta.getVisitadosIds() != null ? ruta.getVisitadosIds() : List.of();
+        PuntoDeVenta siguiente = null;
+        for (PuntoDeVenta pdv : paradasOrdenadas) {
+            if (!visitados.contains(pdv.getId())) {
+                siguiente = pdv;
+                break;
+            }
+        }
+        ruta.setParadaActual(siguiente);
+        if (siguiente != null) {
+            ruta.setEstado(RutaEstado.PENDIENTE);
+        }
+    }
+
     @Transactional
     public AvanceRutaResponse completarParada(String id, CompletarParadaPreventorRequest request) {
         if (request == null || request.puntoDeVentaId() == null || request.puntoDeVentaId().isBlank()) {
@@ -237,11 +339,29 @@ public class RutaPreventorService {
             throw new ConflictoException("La ruta no se encuentra en estado PENDIENTE");
         }
 
+        PuntoDeVenta primeraPendiente = null;
+        for (PuntoDeVenta pdv : ruta.getPuntosDeVenta()) {
+            if (!ruta.getVisitadosIds().contains(pdv.getId())) {
+                primeraPendiente = pdv;
+                break;
+            }
+        }
+
+        if (primeraPendiente == null) {
+            throw new ConflictoException("Todas las paradas de la ruta ya fueron visitadas");
+        }
+
+        if (!primeraPendiente.getId().equals(request.puntoDeVentaId())) {
+            throw new ValidacionException(
+                    "Solo puede marcar como visitada la siguiente parada pendiente en el orden de la ruta ("
+                            + primeraPendiente.getNombreComercio() + ")"
+            );
+        }
+
         if (!ruta.getVisitadosIds().contains(request.puntoDeVentaId())) {
             ruta.getVisitadosIds().add(request.puntoDeVentaId());
         }
 
-        // Buscar el siguiente punto pendiente que no figure en la lista de visitados
         PuntoDeVenta siguientePunto = null;
         for (PuntoDeVenta pdv : ruta.getPuntosDeVenta()) {
             if (!ruta.getVisitadosIds().contains(pdv.getId())) {
@@ -270,23 +390,10 @@ public class RutaPreventorService {
                     .findFirst()
                     .orElse(null);
         }
-        ///Cuando el preventor o distribuidor toca "Completar Parada", la app no solo recibe la ruta actualizada, sino que
-        /// en el campo siguienteParada recibe directamente las coordenadas y datos del próximo local. Con eso, la app centra
-        /// automáticamente el mapa de OpenStreetMap en el próximo destino y muestra la ruta hacia allí sin obligar al frontend
-        /// a buscarlo a mano en la lista.
-        /// GOOOOOOD
 
         return new AvanceRutaResponse(rutaRes, siguienteParadaRes, finalizada);
     }
 
-    /**
-     * Cierra anticipadamente la ruta del preventor (por ejemplo al finalizar la jornada laboral).
-     * Si quedaron puntos sin visitar en la lista de paradas, la ruta pasa a {@link RutaEstado#INCOMPLETA};
-     * caso contrario pasa a {@link RutaEstado#REALIZADA}.
-     *
-     * @param id Identificador de la ruta.
-     * @return {@link RutaResponse} con el estado final de la ruta.
-     */
     @Transactional
     public RutaResponse cerrarRuta(String id) {
         RutaPreventor ruta = rutaPreventorRepository.findByIdAndEliminadoFalse(id)
@@ -308,18 +415,25 @@ public class RutaPreventorService {
 
     /**
      * Obtiene automáticamente las coordenadas GPS (latitud y longitud) de la sucursal
-     * a la que pertenece el preventor, garantizando compatibilidad con OpenStreetMap.
+     * a la que pertenece el preventor (o de la Sede Central si no tuviera sucursal asignada),
+     * garantizando compatibilidad con OpenStreetMap y OSRM.
      */
     private double[] obtenerCoordenadasSucursal(Empleado empleado) {
-        if (empleado.getMayorista() != null && empleado.getMayorista().getDirecciones() != null) {
-            for (Direccion dir : empleado.getMayorista().getDirecciones()) {
-                if (!dir.isEliminado() && dir.getLatitud() != null && dir.getLongitud() != null
-                        && (dir.getLatitud() != 0.0 || dir.getLongitud() != 0.0)) {
-                    return new double[]{dir.getLatitud(), dir.getLongitud()};
+        Mayorista sucursal = empleado != null && empleado.getMayorista() != null
+                ? empleado.getMayorista()
+                : mayoristaService.obtenerSedeCentral();
+
+        if (sucursal != null && sucursal.getDirecciones() != null) {
+            for (Direccion dir : sucursal.getDirecciones()) {
+                if (!dir.isEliminado()) {
+                    direccionService.asegurarCoordenadas(dir);
+                    if (dir.getLatitud() != null && dir.getLongitud() != null
+                            && (dir.getLatitud() != 0.0 || dir.getLongitud() != 0.0)) {
+                        return new double[]{dir.getLatitud(), dir.getLongitud()};
+                    }
                 }
             }
         }
-        // Coordenadas por defecto de Mendoza Centro (Sede Dulce Mayor) si no tiene dirección cargada
         return new double[]{-32.889458, -68.845839};
     }
 

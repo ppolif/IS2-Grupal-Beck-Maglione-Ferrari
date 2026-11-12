@@ -51,10 +51,20 @@ public class RutaDistribuidorController {
      * el itinerario de cada uno desde la Sede Central y pasa los pedidos a EN_REPARTO.
      */
     @PostMapping({"/rutas-distribuidor", "/api/v1/rutas-distribuidor"})
-    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO')")
-    public ResponseEntity<List<RutaResponse>> generarRutasDistribuidor(@RequestBody RutaDistribuidorRequest request) {
+    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO', 'DISTRIBUIDOR')")
+    public ResponseEntity<List<RutaResponse>> generarRutasDistribuidor(@RequestBody(required = false) RutaDistribuidorRequest request) {
         List<RutaResponse> creadas = rutaDistribuidorService.crearRutasAutomaticas(request != null ? request.fecha() : null);
         return ResponseEntity.ok(creadas);
+    }
+
+    /**
+     * Genera o devuelve la ruta de entrega del día para el distribuidor autenticado.
+     */
+    @PostMapping({"/rutas-distribuidor/generar", "/api/v1/rutas-distribuidor/generar"})
+    @PreAuthorize("hasAnyRole('JEFE', 'ADMINISTRATIVO', 'DISTRIBUIDOR')")
+    public ResponseEntity<RutaResponse> generarMiRutaDistribuidor(@RequestBody(required = false) RutaDistribuidorRequest request) {
+        RutaResponse ruta = rutaDistribuidorService.generarRutaParaDistribuidorActual(request != null ? request.fecha() : null);
+        return ResponseEntity.ok(ruta);
     }
 
     /**

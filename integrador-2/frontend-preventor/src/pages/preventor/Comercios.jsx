@@ -28,7 +28,11 @@ export default function Comercios() {
         setComercios(list);
       } catch (err) {
         console.error('Error al listar comercios:', err);
-        setError('No se pudieron obtener los comercios asignados.');
+        setError(
+          err.code === 'CAMBIO_CLAVE_REQUERIDO' || err.status === 403
+            ? 'Cambie su clave para acceder'
+            : 'No se pudieron obtener los comercios asignados.'
+        );
       } finally {
         setCargando(false);
       }
@@ -100,9 +104,27 @@ export default function Comercios() {
       )}
 
       {error && (
-        <div className="p-4 bg-[#ffe8ed] border border-[#ffccd5] rounded-[16px] text-[12px] text-[#e5484d]">
-          {error}
-        </div>
+        error === 'Cambie su clave para acceder' ? (
+          <div className="max-w-md mx-auto my-8 p-8 bg-white rounded-[24px] border border-[#ececf2] text-center space-y-4 shadow-sm">
+            <div className="w-16 h-16 rounded-full bg-[#eefaff] text-[#247f99] flex items-center justify-center mx-auto text-3xl font-bold">
+              🔒
+            </div>
+            <h2 className="text-xl font-bold text-[#2b2b3a]">Cambie su clave para acceder</h2>
+            <p className="text-[13px] text-[#6b6b80] leading-relaxed">
+              Su usuario posee una contraseña temporal por defecto. Por razones de seguridad, debe actualizar su clave antes de operar en esta sección.
+            </p>
+            <Link
+              to="/cambiar-password"
+              className="inline-flex items-center justify-center w-full py-3 px-4 rounded-[14px] bg-[#247f99] text-white font-bold text-[13px] hover:bg-[#1c667b] transition-colors shadow-sm"
+            >
+              Cambiar contraseña ahora →
+            </Link>
+          </div>
+        ) : (
+          <div className="p-4 bg-[#ffe8ed] border border-[#ffccd5] rounded-[16px] text-[12px] text-[#e5484d]">
+            {error}
+          </div>
+        )
       )}
 
       {/* Lista de Comercios */}

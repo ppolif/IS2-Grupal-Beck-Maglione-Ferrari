@@ -20,15 +20,16 @@ export const rutaService = {
   },
 
   /**
-   * Genera la ruta de visitas diaria para el preventor autenticado.
-   * @param {string} [fecha] - Formato YYYY-MM-DD (por defecto hoy)
+   * Genera o recalcula la ruta de visitas diaria para el preventor autenticado.
+   * Si no se indica fecha, el backend utiliza su fecha operativa actual (LocalDate.now()).
+   * @param {string} [fecha] - Formato YYYY-MM-DD opcional
    * @returns {Promise<Object>} RutaResponse
    */
   async generarRutaPreventor(fecha) {
-    const fechaStr = fecha || new Date().toISOString().slice(0, 10);
+    const payload = fecha ? { fecha } : {};
     return apiFetch('/rutas-preventor/generar', {
       method: 'POST',
-      body: JSON.stringify({ fecha: fechaStr }),
+      body: JSON.stringify(payload),
     });
   },
 
@@ -68,6 +69,19 @@ export const rutaService = {
   async obtenerMiRutaDistribuidorDelDia(fecha) {
     const qs = fecha ? `?fecha=${fecha}` : '';
     return apiFetch(`/rutas-distribuidor/mi-ruta-del-dia${qs}`);
+  },
+
+  /**
+   * Genera o recalcula la ruta de reparto diaria para los distribuidores a partir de pedidos facturados.
+   * @param {string} [fecha] - Formato YYYY-MM-DD opcional
+   * @returns {Promise<Object>} RutaResponse
+   */
+  async generarRutaDistribuidor(fecha) {
+    const payload = fecha ? { fecha } : {};
+    return apiFetch('/rutas-distribuidor/generar', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
 
   /**

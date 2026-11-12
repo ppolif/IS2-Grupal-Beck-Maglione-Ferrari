@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Perfil() {
-  const { userData, logout } = useAuth();
+  const { userData, debeCambiarClave, logout } = useAuth();
   const usuarioActivo = userData || {
     nombre: 'Operador',
     avatar: 'OP',
@@ -23,6 +23,21 @@ export default function Perfil() {
         Mi Cuenta
       </span>
       <h1 className="text-2xl font-bold text-[#2b2b3a]">Perfil de Operador</h1>
+
+      {debeCambiarClave && (
+        <div className="p-4 rounded-[16px] bg-[#fff6e0] border border-[#ffd98a] text-[#8a6519] text-[12px] space-y-2">
+          <p className="font-bold">⚠️ Contraseña temporal activa</p>
+          <p>
+            Por razones de seguridad, debés cambiar tu contraseña temporal antes de poder operar en el sistema.
+          </p>
+          <Link
+            to="/cambiar-password"
+            className="inline-block mt-1 bg-[#8a6519] text-white px-3 py-1.5 rounded-[8px] font-semibold text-[11px] hover:bg-[#715214] transition-colors"
+          >
+            Cambiar contraseña ahora →
+          </Link>
+        </div>
+      )}
 
       {/* Profile Card */}
       <div className="text-center bg-white p-6 sm:p-8 rounded-[20px] border border-[#ececf2] shadow-sm">

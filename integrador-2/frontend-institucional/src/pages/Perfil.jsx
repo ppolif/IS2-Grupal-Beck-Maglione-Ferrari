@@ -67,8 +67,6 @@ export default function Perfil() {
     casaDepartamento: '',
     referencia: '',
     localidadId: '',
-    latitud: -32.8895,
-    longitud: -68.8458,
   });
 
   const cargarMisPuntosDeVenta = useCallback(async () => {
@@ -144,8 +142,6 @@ export default function Perfil() {
           manzanaPiso: pdvForm.manzanaPiso.trim() || null,
           casaDepartamento: pdvForm.casaDepartamento.trim() || null,
           referencia: pdvForm.referencia.trim() || null,
-          latitud: pdvForm.latitud ? parseFloat(pdvForm.latitud) : -32.8895,
-          longitud: pdvForm.longitud ? parseFloat(pdvForm.longitud) : -68.8458,
           localidadId: pdvForm.localidadId,
         },
       });
@@ -161,8 +157,6 @@ export default function Perfil() {
         casaDepartamento: '',
         referencia: '',
         localidadId: localidades[0]?.id || '',
-        latitud: -32.8895,
-        longitud: -68.8458,
       });
       await cargarMisPuntosDeVenta();
     } catch (err) {

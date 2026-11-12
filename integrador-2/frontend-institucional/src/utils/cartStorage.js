@@ -1,6 +1,25 @@
 const CART_STORAGE_KEY = 'dm_institucional_cart';
 const PROMO_STORAGE_KEY = 'dm_institucional_promo';
 
+function getActiveUserScope() {
+  try {
+    const raw = localStorage.getItem('dm_institucional_usuario');
+    if (!raw) return 'anon';
+    const parsed = JSON.parse(raw);
+    return parsed?.id || parsed?.nombreUsuario || 'anon';
+  } catch {
+    return 'anon';
+  }
+}
+
+function getCartKey() {
+  return `${CART_STORAGE_KEY}_${getActiveUserScope()}`;
+}
+
+function getPromoKey() {
+  return `${PROMO_STORAGE_KEY}_${getActiveUserScope()}`;
+}
+
 const DEFAULT_IMG =
   'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?auto=format&fit=crop&w=1000&q=85';
 
@@ -31,7 +50,7 @@ export function mapPublicProduct(p) {
 export const cartStorage = {
   getItems() {
     try {
-      const raw = localStorage.getItem(CART_STORAGE_KEY);
+      const raw = localStorage.getItem(getCartKey());
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       return Array.isArray(parsed) ? parsed : [];
@@ -42,7 +61,7 @@ export const cartStorage = {
 
   setItems(items) {
     try {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+      localStorage.setItem(getCartKey(), JSON.stringify(items));
       window.dispatchEvent(new Event('dm_cart_updated'));
     } catch (e) {
       console.error('Error guardando carrito:', e);
@@ -78,14 +97,14 @@ export const cartStorage = {
   },
 
   clear() {
-    localStorage.removeItem(CART_STORAGE_KEY);
-    localStorage.removeItem(PROMO_STORAGE_KEY);
+    localStorage.removeItem(getCartKey());
+    localStorage.removeItem(getPromoKey());
     window.dispatchEvent(new Event('dm_cart_updated'));
   },
 
   getPromo() {
     try {
-      const raw = localStorage.getItem(PROMO_STORAGE_KEY);
+      const raw = localStorage.getItem(getPromoKey());
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
@@ -94,9 +113,9 @@ export const cartStorage = {
 
   setPromo(promo) {
     if (!promo) {
-      localStorage.removeItem(PROMO_STORAGE_KEY);
+      localStorage.removeItem(getPromoKey());
     } else {
-      localStorage.setItem(PROMO_STORAGE_KEY, JSON.stringify(promo));
+      localStorage.setItem(getPromoKey(), JSON.stringify(promo));
     }
     window.dispatchEvent(new Event('dm_cart_updated'));
   },

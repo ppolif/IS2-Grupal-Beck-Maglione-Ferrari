@@ -1,10 +1,11 @@
-import { NavLink, Outlet, Link } from 'react-router-dom';
+import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
 import Logo from '../components/Logo';
 import Icon from '../components/Icon';
 import { useAuth } from '../context/AuthContext';
 
 export default function PreventorLayout({ onLogout }) {
-  const { userData } = useAuth();
+  const { userData, debeCambiarClave } = useAuth();
+  const location = useLocation();
   const usuarioActivo = userData || {
     nombre: 'Operador',
     avatar: 'OP',
@@ -86,9 +87,48 @@ export default function PreventorLayout({ onLogout }) {
         </div>
       </header>
 
+      {/* Aviso global de clave temporal */}
+      {debeCambiarClave && (
+        <div className="bg-[#fff6e0] border-b border-[#ffd98a] text-[#8a6519] px-4 py-2.5 text-[12px] shadow-sm">
+          <div className="max-w-[1280px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-base">⚠️</span>
+              <strong className="font-bold">Cambie su clave para acceder:</strong>
+              <span className="opacity-90">Su usuario posee una contraseña temporal por defecto.</span>
+            </div>
+            {location.pathname !== '/cambiar-password' && (
+              <Link
+                to="/cambiar-password"
+                className="shrink-0 bg-[#8a6519] text-white px-3 py-1 rounded-[8px] font-semibold text-[11px] hover:bg-[#715214] transition-colors"
+              >
+                Cambiar clave ahora →
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Main Content Area */}
       <main className="flex-1 max-w-[1280px] w-full mx-auto p-4 sm:p-6 pb-24 md:pb-8">
-        <Outlet />
+        {debeCambiarClave && location.pathname !== '/cambiar-password' && location.pathname !== '/perfil' ? (
+          <div className="max-w-md mx-auto my-12 p-8 bg-white rounded-[24px] border border-[#ececf2] text-center space-y-4 shadow-sm">
+            <div className="w-16 h-16 rounded-full bg-[#eefaff] text-[#247f99] flex items-center justify-center mx-auto text-3xl font-bold">
+              🔒
+            </div>
+            <h2 className="text-xl font-bold text-[#2b2b3a]">Cambie su clave para acceder</h2>
+            <p className="text-[13px] text-[#6b6b80] leading-relaxed">
+              Su usuario posee una contraseña temporal por defecto. Por razones de seguridad, debe actualizar su clave antes de operar en esta sección.
+            </p>
+            <Link
+              to="/cambiar-password"
+              className="inline-flex items-center justify-center w-full py-3 px-4 rounded-[14px] bg-[#247f99] text-white font-bold text-[13px] hover:bg-[#1c667b] transition-colors shadow-sm"
+            >
+              Cambiar contraseña ahora →
+            </Link>
+          </div>
+        ) : (
+          <Outlet />
+        )}
       </main>
 
       {/* Mobile Bottom Navigation Bar */}

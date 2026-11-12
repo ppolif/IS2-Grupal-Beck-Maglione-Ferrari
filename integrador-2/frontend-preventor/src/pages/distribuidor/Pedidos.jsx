@@ -11,24 +11,44 @@ import { rutaService } from '../../services/rutaService';
 export default function Pedidos() {
   const [ruta, setRuta] = useState(null);
   const [cargando, setCargando] = useState(true);
+  const [generando, setGenerando] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    async function cargarEntregas() {
-      try {
-        setCargando(true);
-        setError(null);
-        const data = await rutaService.obtenerMiRutaDistribuidorDelDia();
-        setRuta(data);
-      } catch (err) {
-        console.error('Error al cargar entregas de distribuidor:', err);
-        setError('No tenés una ruta de reparto asignada para hoy.');
-      } finally {
-        setCargando(false);
-      }
+  const cargarEntregas = async () => {
+    try {
+      setCargando(true);
+      setError(null);
+      const data = await rutaService.obtenerMiRutaDistribuidorDelDia();
+      setRuta(data);
+    } catch (err) {
+      console.error('Error al cargar entregas de distribuidor:', err);
+      setError(
+        err.code === 'CAMBIO_CLAVE_REQUERIDO' || err.status === 403
+          ? 'Cambie su clave para acceder'
+          : err.message || 'No tenés una ruta de reparto asignada para hoy.'
+      );
+    } finally {
+      setCargando(false);
     }
+  };
+
+  useEffect(() => {
     cargarEntregas();
   }, []);
+
+  const handleGenerarRuta = async () => {
+    try {
+      setGenerando(true);
+      setError(null);
+      const data = await rutaService.generarRutaDistribuidor();
+      setRuta(data);
+    } catch (err) {
+      console.error('Error al armar entregas de distribuidor:', err);
+      setError(err.message || 'No hay pedidos facturados pendientes para armar una ruta de reparto.');
+    } finally {
+      setGenerando(false);
+    }
+  };
 
   const paradas = ruta?.paradas || [];
   const pendientes = paradas.filter((p) => !p.completada).length;
@@ -65,11 +85,38 @@ export default function Pedidos() {
       )}
 
       {error && (
-        <div className="p-6 bg-white rounded-[20px] border border-[#ececf2] text-center space-y-2">
-          <span className="text-3xl">🚚</span>
-          <h3 className="font-bold text-[#2b2b3a] text-lg">Sin entregas pendientes</h3>
-          <p className="text-[12px] text-[#6b6b80] max-w-sm mx-auto">{error}</p>
-        </div>
+        error === 'Cambie su clave para acceder' ? (
+          <div className="max-w-md mx-auto my-8 p-8 bg-white rounded-[24px] border border-[#ececf2] text-center space-y-4 shadow-sm">
+            <div className="w-16 h-16 rounded-full bg-[#eefaff] text-[#247f99] flex items-center justify-center mx-auto text-3xl font-bold">
+              🔒
+            </div>
+            <h2 className="text-xl font-bold text-[#2b2b3a]">Cambie su clave para acceder</h2>
+            <p className="text-[13px] text-[#6b6b80] leading-relaxed">
+              Su usuario posee una contraseña temporal por defecto. Por razones de seguridad, debe actualizar su clave antes de operar en esta sección.
+            </p>
+            <Link
+              to="/cambiar-password"
+              className="inline-flex items-center justify-center w-full py-3 px-4 rounded-[14px] bg-[#247f99] text-white font-bold text-[13px] hover:bg-[#1c667b] transition-colors shadow-sm"
+            >
+              Cambiar contraseña ahora →
+            </Link>
+          </div>
+        ) : (
+          <div className="p-8 bg-white rounded-[20px] border border-[#ececf2] text-center space-y-4 max-w-md mx-auto">
+            <span className="text-4xl">🚚</span>
+            <div>
+              <h3 className="font-bold text-[#2b2b3a] text-lg">Sin entregas pendientes</h3>
+              <p className="text-[12px] text-[#6b6b80] mt-1">{error}</p>
+            </div>
+            <Button
+              onClick={handleGenerarRuta}
+              disabled={generando}
+              className="w-full justify-center py-3 text-[13px] cursor-pointer bg-[#3fb8d9] hover:bg-[#2fa3c2]"
+            >
+              {generando ? 'Armando hoja de reparto...' : 'Armar mi hoja de reparto'}
+            </Button>
+          </div>
+        )
       )}
 
       {!cargando && !error && (

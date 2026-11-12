@@ -437,16 +437,17 @@ class PedidoControllerTest {
     }
 
     @Test
-    @DisplayName("Autogestión web: un MINORISTA puede crear un pedido en POST /pedidos y verlo en /mi-cuenta/pedidos y /pedidos")
+    @DisplayName("Autogestión web: un MINORISTA debe registrar un punto de venta antes de crear un pedido en POST /pedidos")
     void minoristaPuedeCrearPedidoDesdePortalYVerloEnMiCuentaYEnAdmin() throws Exception {
+        Usuario preventista = crearUsuario("prev_web", RolUsuario.PREVENTISTA);
         Usuario minorista = crearUsuario("minorista_web", RolUsuario.MINORISTA);
         Usuario admin = crearUsuario("admin_web", RolUsuario.ADMINISTRATIVO);
 
         String tokenMinorista = jwtProvider.generarToken(minorista);
         String tokenAdmin = jwtProvider.generarToken(admin);
 
-        // El minorista crea un pedido sin puntoDeVentaId previo -> el backend inicializa su comercio y guarda el pedido
-        MvcResult createRes = mockMvc.perform(post("/pedidos")
+        // Si el minorista intenta crear un pedido sin indicar puntoDeVentaId -> 400 Bad Request
+        mockMvc.perform(post("/pedidos")
                         .header("Authorization", "Bearer " + tokenMinorista)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new PedidoRequest(
@@ -455,9 +456,23 @@ class PedidoControllerTest {
                                 null,
                                 List.of(new DetallePedidoRequest(productoInicial.id(), 3))
                         ))))
+                .andExpect(status().isBadRequest());
+
+        // Una vez que el minorista tiene su PuntoDeVenta registrado, puede crear el pedido
+        PuntoDeVenta pdv = crearPuntoDeVenta(preventista, minorista, "Kiosco Web", "MIN-WEB-01", "LEG-WEB-01");
+
+        MvcResult createRes = mockMvc.perform(post("/pedidos")
+                        .header("Authorization", "Bearer " + tokenMinorista)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new PedidoRequest(
+                                pdv.getId(),
+                                null,
+                                null,
+                                List.of(new DetallePedidoRequest(productoInicial.id(), 3))
+                        ))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.estado").value("CARGADO"))
-                .andExpect(jsonPath("$.puntoDeVenta.id").exists())
+                .andExpect(jsonPath("$.puntoDeVenta.id").value(pdv.getId()))
                 .andExpect(jsonPath("$.total").value(3000.0))
                 .andReturn();
 

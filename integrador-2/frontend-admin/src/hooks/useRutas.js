@@ -40,6 +40,12 @@ export function useRutas() {
         const zona =
           dirActual?.departamentoNombre || dirActual?.localidadNombre || 'Gran Mendoza';
 
+        const sucursalDir = r.sucursalOrigenDireccion || null;
+        const sucursalNombre = r.sucursalOrigenNombre || (isDist ? 'Dulce Mayor - Sede Central' : 'Dulce Mayor - Sucursal');
+        const sucursalDirTexto = sucursalDir
+          ? `${sucursalDir.calle || 'Av. San Martín'} ${sucursalDir.numeracion || '1020'}, ${sucursalDir.localidadNombre || sucursalDir.departamentoNombre || 'Mendoza'}`.trim()
+          : 'Av. San Martín 1020, Ciudad de Mendoza';
+
         return {
           id: r.id,
           name: respNombre,
@@ -49,6 +55,11 @@ export function useRutas() {
           lat,
           lng,
           estado: r.estado || 'EN_CURSO',
+          sucursalNombre,
+          sucursalDireccion: sucursalDirTexto,
+          sucursalLat: Number(sucursalDir?.latitud) || -32.889458,
+          sucursalLng: Number(sucursalDir?.longitud) || -68.845839,
+          paradas,
         };
       };
 
