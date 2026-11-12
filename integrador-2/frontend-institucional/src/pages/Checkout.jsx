@@ -141,24 +141,33 @@ export default function Checkout() {
     return () => clearInterval(timer);
   }, [paymentMethod]);
 
+  const qrExpirado = timeLeft === 0;
+
   // Polling del estado del QR si ya existe un pedido asociado
   useEffect(() => {
-    if (paymentMethod !== 'mercadopago' || timeLeft === 0 || !pedidoQrId) return;
-    const interval = setInterval(async () => {
+    if (paymentMethod !== 'mercadopago' || qrExpirado || !pedidoQrId) return;
+    let cancelado = false;
+
+    const verificarEstadoPago = async () => {
       try {
         const estado = await pagoService.consultarEstadoQr(pedidoQrId);
         if (
+          !cancelado &&
           estado &&
           (estado.estadoPago === 'APROBADO' ||
             estado.qrData === 'APROBADO' ||
             estado.estado === 'APROBADO' ||
             estado.estado === 'FACTURADO')
         ) {
+          cancelado = true;
+          const detallePedido = await apiFetch(`/pedidos/${pedidoQrId}`).catch(() => null);
+          const nroPedido = detallePedido?.numeroPedido || estado?.numeroPedido;
           cartStorage.clear();
           navigate('/pago/exito', {
             state: {
               id: pedidoQrId,
-              orderId: pedidoQrId,
+              orderId: nroPedido ? `DM-${nroPedido}` : pedidoQrId,
+              facturaId: detallePedido?.facturaId || null,
               total,
               subtotal,
               descuento,
@@ -175,9 +184,14 @@ export default function Checkout() {
       } catch {
         // Silencioso mientras aguarda acreditación
       }
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [paymentMethod, timeLeft, pedidoQrId, navigate, selectedPdv, total, subtotal, descuento]);
+    };
+
+    const interval = setInterval(verificarEstadoPago, 3000);
+    return () => {
+      cancelado = true;
+      clearInterval(interval);
+    };
+  }, [paymentMethod, qrExpirado, pedidoQrId, navigate, selectedPdv, total, subtotal, descuento]);
 
   const formatTimer = (seconds) => {
     const mins = Math.floor(seconds / 60);

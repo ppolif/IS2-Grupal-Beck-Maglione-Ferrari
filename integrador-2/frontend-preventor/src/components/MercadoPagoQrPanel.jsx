@@ -64,9 +64,11 @@ export default function MercadoPagoQrPanel({
     return () => clearInterval(timer);
   }, [pedidoId]);
 
-  // Polling de acreditación cada 4 segundos
+  const qrExpirado = timeLeft === 0;
+
+  // Polling de acreditación cada 3 segundos
   useEffect(() => {
-    if (!pedidoId || timeLeft === 0 || pagoNotificadoRef.current) return;
+    if (!pedidoId || qrExpirado || pagoNotificadoRef.current) return;
 
     const interval = setInterval(async () => {
       try {
@@ -87,10 +89,10 @@ export default function MercadoPagoQrPanel({
       } catch {
         // Silencioso mientras el cliente finaliza el pago
       }
-    }, 4000);
+    }, 3000);
 
     return () => clearInterval(interval);
-  }, [pedidoId, timeLeft]);
+  }, [pedidoId, qrExpirado]);
 
   const formatTimer = (seconds) => {
     const mins = Math.floor(seconds / 60);
