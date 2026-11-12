@@ -13,7 +13,16 @@ export function AuthProvider({ children }) {
     const raw = localStorage.getItem('dm_institucional_perfil');
     return raw ? JSON.parse(raw) : null;
   });
-  const [debeCambiarClave, setDebeCambiarClave] = useState(false);
+  const [debeCambiarClave, setDebeCambiarClave] = useState(() => {
+    const raw = localStorage.getItem('dm_institucional_usuario');
+    if (!raw) return false;
+    try {
+      const u = JSON.parse(raw);
+      return Boolean(u?.claveTemporal);
+    } catch {
+      return false;
+    }
+  });
   const [cargandoSesion, setCargandoSesion] = useState(true);
 
   const logout = useCallback(() => {
@@ -80,6 +89,12 @@ export function AuthProvider({ children }) {
 
   const marcarClaveActualizada = useCallback(() => {
     setDebeCambiarClave(false);
+    setUsuario((prev) => {
+      if (!prev) return prev;
+      const actualizado = { ...prev, claveTemporal: false };
+      localStorage.setItem('dm_institucional_usuario', JSON.stringify(actualizado));
+      return actualizado;
+    });
   }, []);
 
   useEffect(() => {

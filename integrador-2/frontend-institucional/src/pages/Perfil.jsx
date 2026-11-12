@@ -106,9 +106,11 @@ export default function Perfil() {
   }, []);
 
   useEffect(() => {
-    cargarMisPuntosDeVenta();
+    if (!debeCambiarClave) {
+      cargarMisPuntosDeVenta();
+    }
     cargarLocalidades();
-  }, [cargarMisPuntosDeVenta, cargarLocalidades]);
+  }, [cargarMisPuntosDeVenta, cargarLocalidades, debeCambiarClave]);
 
   const handleCrearPuntoDeVenta = async (e) => {
     e.preventDefault();
@@ -216,59 +218,6 @@ export default function Perfil() {
     }
   };
 
-  const handleCambiarClave = async (e) => {
-    e.preventDefault();
-    setErrorClave('');
-
-    if (claveForm.nuevaClave !== claveForm.confirmarClave) {
-      setErrorClave('La nueva contraseña y su confirmación no coinciden.');
-      return;
-    }
-    if (claveForm.nuevaClave.length < 8) {
-      setErrorClave('La nueva contraseña debe tener al menos 8 caracteres.');
-      return;
-    }
-    if (claveForm.nuevaClave.trim().toLowerCase() === 'dulcemayor') {
-      setErrorClave('La nueva contraseña no puede ser la clave por defecto.');
-      return;
-    }
-
-    setGuardandoClave(true);
-
-    try {
-      await authService.cambiarClave(
-        claveForm.claveActual,
-        claveForm.nuevaClave,
-        claveForm.confirmarClave
-      );
-      marcarClaveActualizada();
-      setClaveForm({ claveActual: '', nuevaClave: '', confirmarClave: '' });
-      showToast('¡Contraseña actualizada con éxito!');
-    } catch (err) {
-      setErrorClave(err.message || 'Error al actualizar la contraseña.');
-    } finally {
-      setGuardandoClave(false);
-    }
-  };
-
-  const handleConfirmarEliminacion = async () => {
-    setEliminandoCuenta(true);
-    try {
-      await authService.eliminarMiCuenta();
-      setShowDeleteModal(false);
-      logout();
-      navigate('/login', {
-        replace: true,
-        state: { cuentaEliminada: true },
-      });
-    } catch (err) {
-      showToast(err.message || 'No se pudo eliminar la cuenta.');
-      setShowDeleteModal(false);
-    } finally {
-      setEliminandoCuenta(false);
-    }
-  };
-
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
 
@@ -281,7 +230,7 @@ export default function Perfil() {
       if (lo.id) localPorId[lo.id] = lo;
     });
 
-    Promise.all([
+    return Promise.all([
       apiFetch('/mi-cuenta/pedidos?size=50').catch(() => ({ elementos: [] })),
       apiFetch('/mi-cuenta/facturas?size=50').catch(() => ({ elementos: [] })),
     ])
@@ -352,10 +301,70 @@ export default function Perfil() {
   }, []);
 
   useEffect(() => {
-    cargarPedidos();
+    if (!debeCambiarClave) {
+      cargarPedidos();
+    }
     window.addEventListener('dm-pedido-actualizado', cargarPedidos);
     return () => window.removeEventListener('dm-pedido-actualizado', cargarPedidos);
-  }, [cargarPedidos]);
+  }, [cargarPedidos, debeCambiarClave, activeTab]);
+
+  const handleCambiarClave = async (e) => {
+    e.preventDefault();
+    setErrorClave('');
+
+    if (claveForm.nuevaClave !== claveForm.confirmarClave) {
+      setErrorClave('La nueva contraseña y su confirmación no coinciden.');
+      return;
+    }
+    if (claveForm.nuevaClave.length < 8) {
+      setErrorClave('La nueva contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+    if (claveForm.nuevaClave.trim().toLowerCase() === 'dulcemayor') {
+      setErrorClave('La nueva contraseña no puede ser la clave por defecto.');
+      return;
+    }
+
+    setGuardandoClave(true);
+
+    try {
+      await authService.cambiarClave(
+        claveForm.claveActual,
+        claveForm.nuevaClave,
+        claveForm.confirmarClave
+      );
+      marcarClaveActualizada();
+      setClaveForm({ claveActual: '', nuevaClave: '', confirmarClave: '' });
+      showToast('¡Contraseña actualizada con éxito!');
+      await Promise.all([
+        cargarPedidos(),
+        cargarMisPuntosDeVenta(),
+      ]);
+      setActiveTab('pedidos');
+    } catch (err) {
+      setErrorClave(err.message || 'Error al actualizar la contraseña.');
+    } finally {
+      setGuardandoClave(false);
+    }
+  };
+
+  const handleConfirmarEliminacion = async () => {
+    setEliminandoCuenta(true);
+    try {
+      await authService.eliminarMiCuenta();
+      setShowDeleteModal(false);
+      logout();
+      navigate('/login', {
+        replace: true,
+        state: { cuentaEliminada: true },
+      });
+    } catch (err) {
+      showToast(err.message || 'No se pudo eliminar la cuenta.');
+      setShowDeleteModal(false);
+    } finally {
+      setEliminandoCuenta(false);
+    }
+  };
 
   const handleOpenDetail = (order) => {
     setSelectedOrder(order);
@@ -429,14 +438,23 @@ export default function Perfil() {
       </div>
 
       {debeCambiarClave && (
-        <div className="p-4 rounded-[16px] bg-[#fff6e0] border border-[#ffd98a] text-[#8a6519] text-[12px] flex items-center gap-3">
-          <span className="text-lg font-bold">⚠️</span>
-          <div>
-            <p className="font-bold">Debe cambiar su contraseña temporal</p>
-            <p className="text-[11px] opacity-90">
-              Por motivos de seguridad, debe actualizar su clave en la pestaña "Seguridad y Clave" antes de realizar pedidos.
-            </p>
+        <div className="p-4 rounded-[16px] bg-[#fff6e0] border border-[#ffd98a] text-[#8a6519] text-[12px] flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">⚠️</span>
+            <div>
+              <p className="font-bold text-[13px]">Debe cambiar su contraseña temporal</p>
+              <p className="text-[11px] opacity-90 mt-0.5">
+                Por motivos de seguridad, debe actualizar su clave en la pestaña &quot;Seguridad y Clave&quot; para desbloquear sus pedidos y operar en el sistema.
+              </p>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab('seguridad')}
+            className="shrink-0 bg-[#8a6519] text-white px-3.5 py-1.5 rounded-[10px] font-semibold text-[11px] hover:bg-[#715214] transition-colors cursor-pointer"
+          >
+            Cambiar clave ahora →
+          </button>
         </div>
       )}
 
@@ -517,38 +535,9 @@ export default function Perfil() {
             </div>
           </div>
 
-          {debeCambiarClave && (
-            <div className="p-4 rounded-[16px] bg-[#fff6e0] border border-[#ffd98a] text-[#8a6519] text-[12px] flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <span className="text-xl">⚠️</span>
-                <div>
-                  <p className="font-bold text-[13px]">No podés ver tu historial de pedidos ni operar</p>
-                  <p className="text-[11px] opacity-90 mt-0.5">
-                    Tu usuario fue dado de alta con una contraseña temporal. Por seguridad, debés modificarla en la pestaña "Seguridad y Clave" para desbloquear tus pedidos y comprobantes.
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveTab('seguridad')}
-                className="shrink-0 bg-[#8a6519] text-white px-3.5 py-1.5 rounded-[10px] font-semibold text-[11px] hover:bg-[#715214] transition-colors cursor-pointer"
-              >
-                Cambiar clave ahora →
-              </button>
-            </div>
-          )}
-
           {loadingOrders ? (
             <div className="py-10 text-center text-[12px] text-[#6b6b80]">
               Cargando historial de pedidos...
-            </div>
-          ) : debeCambiarClave ? (
-            <div className="py-10 text-center text-[13px] text-[#6b6b80] space-y-2">
-              <span className="text-3xl block">🔒</span>
-              <p className="font-semibold text-[#2b2b3a]">Historial de pedidos bloqueado temporalmente</p>
-              <p className="text-[12px] max-w-md mx-auto">
-                Para consultar los pedidos tomados en tu comercio y descargar tus facturas, primero cambiá tu clave en la pestaña <strong>Seguridad y Clave</strong>.
-              </p>
             </div>
           ) : orders.length === 0 ? (
             <div className="py-10 text-center text-[13px] text-[#6b6b80]">
