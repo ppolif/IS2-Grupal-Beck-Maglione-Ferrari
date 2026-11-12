@@ -12,7 +12,10 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import javax.crypto.Mac;
@@ -89,28 +92,28 @@ public class MercadoPagoAdapter implements MercadoPagoPort {
                 String endpointInstore = String.format("%s/instore/orders/qr/seller/collectors/%s/pos/%s/qrs",
                         apiUrl, userId, DEFAULT_POS_ID);
 
-                String jsonInstore = String.format(Locale.US, """
-                        {
-                          "external_reference": "%s",
-                          "title": "%s",
-                          "description": "%s",
-                          "total_amount": %.2f,
-                          "items": [
-                            {
-                              "title": "%s",
-                              "unit_price": %.2f,
-                              "quantity": 1,
-                              "unit_measure": "unit",
-                              "total_amount": %.2f
-                            }
-                          ]
-                        }
-                        """, externalReference, titulo, titulo, monto, titulo, monto, monto);
+                double montoRedondeado = Math.round(monto * 100.0) / 100.0;
+                Map<String, Object> itemInstore = new LinkedHashMap<>();
+                itemInstore.put("title", titulo);
+                itemInstore.put("unit_price", montoRedondeado);
+                itemInstore.put("quantity", 1);
+                itemInstore.put("unit_measure", "unit");
+                itemInstore.put("total_amount", montoRedondeado);
+
+                Map<String, Object> bodyInstore = new LinkedHashMap<>();
+                bodyInstore.put("external_reference", externalReference);
+                bodyInstore.put("title", titulo);
+                bodyInstore.put("description", titulo);
+                bodyInstore.put("total_amount", montoRedondeado);
+                bodyInstore.put("items", List.of(itemInstore));
+
+                String jsonInstore = objectMapper.writeValueAsString(bodyInstore);
 
                 HttpRequest requestInstore = HttpRequest.newBuilder()
                         .uri(URI.create(endpointInstore))
                         .header("Authorization", "Bearer " + accessToken)
                         .header("Content-Type", "application/json")
+                        .header("X-Idempotency-Key", UUID.randomUUID().toString())
                         .timeout(Duration.ofSeconds(8))
                         .POST(HttpRequest.BodyPublishers.ofString(jsonInstore, StandardCharsets.UTF_8))
                         .build();
@@ -138,24 +141,19 @@ public class MercadoPagoAdapter implements MercadoPagoPort {
         // =========================================================================
         try {
             String endpointPref = apiUrl + "/checkout/preferences";
-            String jsonPref = String.format(Locale.US, """
-                    {
-                      "items": [
-                        {
-                          "title": "%s",
-                          "quantity": 1,
-                          "currency_id": "ARS",
-                          "unit_price": %.2f
-                        }
-                      ],
-                      "external_reference": "%s",
-                      "back_urls": {
-                        "success": "http://localhost:3001/pago/exito",
-                        "pending": "http://localhost:3001/pago/pendiente",
-                        "failure": "http://localhost:3001/checkout"
-                      }
-                    }
-                    """, titulo, monto, externalReference);
+            double montoRedondeado = Math.round(monto * 100.0) / 100.0;
+
+            Map<String, Object> itemPref = new LinkedHashMap<>();
+            itemPref.put("title", titulo);
+            itemPref.put("quantity", 1);
+            itemPref.put("currency_id", "ARS");
+            itemPref.put("unit_price", montoRedondeado);
+
+            Map<String, Object> bodyPref = new LinkedHashMap<>();
+            bodyPref.put("items", List.of(itemPref));
+            bodyPref.put("external_reference", externalReference);
+
+            String jsonPref = objectMapper.writeValueAsString(bodyPref);
 
             HttpRequest requestPref = HttpRequest.newBuilder()
                     .uri(URI.create(endpointPref))

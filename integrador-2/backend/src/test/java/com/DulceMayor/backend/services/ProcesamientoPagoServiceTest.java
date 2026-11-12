@@ -2,12 +2,16 @@ package com.DulceMayor.backend.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.DulceMayor.backend.config.AccesoDenegadoException;
 
 import com.DulceMayor.backend.dtos.facturacion.AprobarTransferenciaRequest;
 import com.DulceMayor.backend.dtos.facturacion.InformarTransferenciaRequest;
@@ -340,5 +344,23 @@ class ProcesamientoPagoServiceTest {
         verify(pagoService).guardarPago(any(Pago.class));
         verify(facturaService).emitirFacturaConPagoAprobado(pedido);
         verify(pedidoService).marcarEntregado(eq("ped-600"), anyString());
+    }
+
+    @Test
+    @DisplayName("iniciarPagoQr y consultarEstadoQr: validan acceso del preventista al pedido")
+    void qrValidaAccesoPedido() {
+        Pedido pedidoAjeno = Pedido.builder()
+                .id("ped-999")
+                .estado(EstadoPedido.CARGADO)
+                .build();
+
+        when(pedidoService.obtenerEntidad("ped-999")).thenReturn(pedidoAjeno);
+        doThrow(new AccesoDenegadoException("No tiene permisos para acceder a un pedido asignado a otro preventista"))
+                .when(pedidoService).validarAccesoPedido(pedidoAjeno);
+
+        assertThrows(AccesoDenegadoException.class, () -> service.iniciarPagoQr("ped-999"));
+        assertThrows(AccesoDenegadoException.class, () -> service.consultarEstadoQr("ped-999"));
+        verify(pagoStrategyFactory, never()).obtenerEstrategia(any());
+        verify(pagoService, never()).buscarEntidadesPorPedido(anyString());
     }
 }

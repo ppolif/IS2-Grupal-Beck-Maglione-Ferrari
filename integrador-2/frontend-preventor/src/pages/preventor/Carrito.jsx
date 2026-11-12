@@ -1,12 +1,14 @@
 /**
  * Carrito de Compras y Cierre de Pedido para el Preventista.
- * Conectado con CartContext y el endpoint /api/v1/pedidos del backend.
+ * Conectado con CartContext, /api/v1/pedidos y /api/v1/pedidos/{id}/pagos/qr/iniciar.
  */
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Icon from '../../components/Icon';
+import MercadoPagoQrPanel from '../../components/MercadoPagoQrPanel';
 import { useCart } from '../../context/CartContext';
+import { pagoService } from '../../services/pagoService';
 import { DATOS_BANCARIOS } from '../../utils/paymentConstants';
 
 export default function Carrito() {
@@ -21,11 +23,12 @@ export default function Carrito() {
     confirmarPedido,
   } = useCart();
 
-  const [confirmed, setConfirmed] = useState(false);
+  // Estados del flujo: 'CART' | 'WAITING_QR' | 'CONFIRMED'
+  const [flowStep, setFlowStep] = useState('CART');
   const [confirmedOrderData, setConfirmedOrderData] = useState(null);
+  const [initialQrData, setInitialQrData] = useState(null);
   const [promoCodeInput, setPromoCodeInput] = useState(codigoPromo || '');
   const [appliedPromo, setAppliedPromo] = useState(null);
-  const [promoError, setPromoError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const navigate = useNavigate();
@@ -33,31 +36,22 @@ export default function Carrito() {
   // Método de pago: 'mercadopago' | 'transferencia' | 'efectivo'
   const [paymentMethod, setPaymentMethod] = useState('efectivo');
 
-  // Estado para Transferencia Bancaria
+  // Datos bancarios oficiales
+  const [datosBancarios, setDatosBancarios] = useState(DATOS_BANCARIOS);
   const [transferenciaData, setTransferenciaData] = useState({
     numeroComprobante: '',
     bancoEmisor: 'Banco Santander',
-    confirmadoPorCliente: true,
   });
   const [copiadoKey, setCopiadoKey] = useState(null);
 
-  // Estado para QR de Mercado Pago
-  const [qrTimeLeft, setQrTimeLeft] = useState(900); // 15 minutos en segundos
-  const [qrSimuladoAprobado, setQrSimuladoAprobado] = useState(false);
-
   useEffect(() => {
-    if (paymentMethod !== 'mercadopago') return;
-    const timer = setInterval(() => {
-      setQrTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [paymentMethod]);
-
-  const formatTimer = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+    pagoService
+      .obtenerDatosBancarios()
+      .then((res) => {
+        if (res && res.cbu) setDatosBancarios(res);
+      })
+      .catch(() => null);
+  }, []);
 
   const handleCopy = (text, key) => {
     navigator.clipboard?.writeText(text);
@@ -72,7 +66,6 @@ export default function Carrito() {
 
     setCodigoPromo(clean);
     setAppliedPromo({ code: clean, descripcion: `Código aplicado: ${clean}` });
-    setPromoError('');
   };
 
   const handleRemovePromo = () => {
@@ -104,34 +97,64 @@ export default function Carrito() {
       setIsSubmitting(true);
       setSubmitError(null);
 
-      // Llamada real al backend para registrar la orden
+      // 1. Registrar pedido en el backend (deja estado CARGADO y vacía el carrito)
       const nuevoPedido = await confirmarPedido();
 
-      const orderPayload = {
-        orderId: nuevoPedido?.id || `ORD-${Date.now().toString().slice(-4)}`,
+      const dir = clienteActual.direccion;
+      const direccionStr = dir
+        ? `${dir.calle || ''} ${dir.numeracion || dir.numero || ''}`.trim() || 'Mendoza'
+        : 'Mendoza';
+
+      const baseOrderPayload = {
+        orderId: nuevoPedido?.id,
+        numeroPedido: nuevoPedido?.numeroPedido,
+        etiquetaPedido: nuevoPedido?.numeroPedido
+          ? `DM-${nuevoPedido.numeroPedido}`
+          : `#${String(nuevoPedido?.id || '').slice(-6)}`,
         cliente: clienteActual.nombreComercio || 'Comercio Minorista',
-        direccion: clienteActual.direccion
-          ? `${clienteActual.direccion.calle || ''} ${clienteActual.direccion.numero || ''}`
-          : 'Mendoza',
-        total: nuevoPedido?.total || total,
-        medioPago:
-          paymentMethod === 'mercadopago'
-            ? 'Mercado Pago QR (Escaneado en mostrador)'
-            : paymentMethod === 'transferencia'
-            ? 'Transferencia Bancaria'
-            : 'Efectivo contra entrega',
-        estadoPago:
-          paymentMethod === 'mercadopago'
-            ? 'Aprobado automáticamente'
-            : paymentMethod === 'transferencia'
-            ? 'Marcado como pago por preventor (Comprobante informado)'
-            : 'Pendiente de cobro por distribuidor en entrega',
+        direccion: direccionStr,
+        total: Number(nuevoPedido?.total ?? total),
+        subtotal: Number(nuevoPedido?.subtotal ?? subtotal),
+        descuento: Number(nuevoPedido?.descuento ?? 0),
         comprobante: transferenciaData.numeroComprobante || null,
-        fecha: new Date().toLocaleDateString('es-AR') + ' ' + new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+        fecha: new Date().toLocaleString('es-AR'),
       };
 
-      setConfirmedOrderData(orderPayload);
-      setConfirmed(true);
+      // 2. Bifurcar según modalidad de cobro
+      if (paymentMethod === 'mercadopago' && nuevoPedido?.id) {
+        const qrResp = await pagoService.iniciarPagoQr(nuevoPedido.id).catch(() => null);
+        setInitialQrData(qrResp);
+        setConfirmedOrderData({
+          ...baseOrderPayload,
+          medioPago: 'Mercado Pago QR',
+          estadoPago: 'Aguardando acreditación de pago',
+          pagoAprobado: false,
+        });
+        setFlowStep('WAITING_QR');
+        return;
+      }
+
+      if (paymentMethod === 'transferencia' && nuevoPedido?.id) {
+        await pagoService
+          .informarTransferencia(nuevoPedido.id, {
+            comprobante: transferenciaData.numeroComprobante.trim(),
+            bancoEmisor: transferenciaData.bancoEmisor || 'Transferencia CBU',
+            observacion: 'Comprobante informado por preventor en visita comercial',
+          })
+          .catch(() => null);
+      }
+
+      setConfirmedOrderData({
+        ...baseOrderPayload,
+        medioPago:
+          paymentMethod === 'transferencia' ? 'Transferencia Bancaria' : 'Efectivo contra entrega',
+        estadoPago:
+          paymentMethod === 'transferencia'
+            ? 'Informado por preventor (pendiente de verificación administrativa)'
+            : 'Pendiente de cobro por distribuidor en entrega',
+        pagoAprobado: false,
+      });
+      setFlowStep('CONFIRMED');
     } catch (err) {
       console.error('Error al registrar pedido:', err);
       setSubmitError(err.message || 'Error al procesar el pedido con el servidor.');
@@ -162,7 +185,42 @@ export default function Carrito() {
       </div>
 
       <div className="bg-white rounded-[22px] p-5 sm:p-6 border border-[#ececf2] shadow-sm">
-        {confirmed ? (
+        {flowStep === 'WAITING_QR' && confirmedOrderData ? (
+          <div className="space-y-4">
+            <div className="p-3.5 bg-[#eaf8fc] border border-[#3fb8d9] rounded-[14px] text-[12px] text-[#0f344d]">
+              <strong className="block">
+                Pedido {confirmedOrderData.etiquetaPedido} registrado para {confirmedOrderData.cliente}
+              </strong>
+              <span className="text-[#3a6888] text-[11px]">
+                Mostrá el QR al comerciante para completar el cobro en el acto.
+              </span>
+            </div>
+
+            <MercadoPagoQrPanel
+              pedidoId={confirmedOrderData.orderId}
+              numeroPedido={confirmedOrderData.numeroPedido}
+              nombreComercio={confirmedOrderData.cliente}
+              monto={confirmedOrderData.total}
+              qrInicial={initialQrData}
+              onPagoAprobado={() => {
+                setConfirmedOrderData((prev) => ({
+                  ...prev,
+                  estadoPago: 'Cobro acreditado por Mercado Pago',
+                  pagoAprobado: true,
+                }));
+                setFlowStep('CONFIRMED');
+              }}
+              onPosponerPago={() => {
+                setConfirmedOrderData((prev) => ({
+                  ...prev,
+                  estadoPago: 'Pendiente de cobro QR (podés reabrirlo en Mis Pedidos)',
+                  pagoAprobado: false,
+                }));
+                setFlowStep('CONFIRMED');
+              }}
+            />
+          </div>
+        ) : flowStep === 'CONFIRMED' && confirmedOrderData ? (
           <div className="p-6 bg-[#dff8e9] rounded-[20px] text-[#235839] space-y-4">
             <div className="w-12 h-12 rounded-full bg-white text-[#39855b] flex items-center justify-center mx-auto shadow-sm">
               <Icon name="check" className="w-6 h-6" />
@@ -170,27 +228,35 @@ export default function Carrito() {
 
             <div className="text-center">
               <h2 className="text-xl font-bold text-[#1f4e33]">
-                ¡Pedido #{confirmedOrderData?.orderId} Confirmado!
+                ¡Pedido {confirmedOrderData.etiquetaPedido} Confirmado!
               </h2>
               <p className="text-[12px] text-[#2e744c] mt-1">
-                El pedido fue enviado exitosamente al sistema central y asignado para preparación en depósito.
+                {confirmedOrderData.pagoAprobado
+                  ? 'El pago con Mercado Pago fue acreditado y el pedido avanzó a preparación en depósito.'
+                  : 'El pedido fue enviado exitosamente al sistema central.'}
               </p>
             </div>
 
             <div className="bg-white/80 rounded-[14px] p-3 text-[11px] space-y-1.5 border border-[#bfeecf]">
               <div className="flex justify-between">
                 <span className="text-[#6b6b80]">Cliente:</span>
-                <strong className="text-[#2b2b3a]">{confirmedOrderData?.cliente}</strong>
+                <strong className="text-[#2b2b3a]">{confirmedOrderData.cliente}</strong>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#6b6b80]">Total Facturado:</span>
+                <span className="text-[#6b6b80]">Total del Pedido:</span>
                 <strong className="text-[#2b2b3a] font-bold">
-                  ${confirmedOrderData?.total?.toLocaleString('es-AR')}
+                  ${confirmedOrderData.total?.toLocaleString('es-AR')}
                 </strong>
               </div>
               <div className="flex justify-between">
                 <span className="text-[#6b6b80]">Medio de Cobro:</span>
-                <span className="font-medium text-[#2b2b3a]">{confirmedOrderData?.medioPago}</span>
+                <span className="font-medium text-[#2b2b3a]">{confirmedOrderData.medioPago}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-[#6b6b80]">Estado de Pago:</span>
+                <span className="font-semibold text-[#1f4e33] text-right">
+                  {confirmedOrderData.estadoPago}
+                </span>
               </div>
             </div>
 
@@ -203,7 +269,11 @@ export default function Carrito() {
               <Link to="/tienda" className="flex-1">
                 <button
                   type="button"
-                  onClick={() => setConfirmed(false)}
+                  onClick={() => {
+                    setFlowStep('CART');
+                    setInitialQrData(null);
+                    setConfirmedOrderData(null);
+                  }}
                   className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-[#2b2b3a] border border-[#bfeecf] rounded-[12px] text-[12px] font-bold transition-colors cursor-pointer"
                 >
                   Nuevo Pedido
@@ -289,21 +359,35 @@ export default function Carrito() {
             </div>
 
             {/* Código Promocional */}
-            <form onSubmit={handleApplyPromo} className="flex gap-2">
-              <input
-                type="text"
-                value={promoCodeInput}
-                onChange={(e) => setPromoCodeInput(e.target.value)}
-                placeholder="Código promocional (opcional)"
-                className="flex-1 border border-[#ececf2] rounded-[12px] px-3 py-2 text-[12px] uppercase focus:outline-none focus:border-[#e86bc4]"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-[#f0f2f7] hover:bg-[#e4e7f0] text-[#2b2b3a] rounded-[12px] text-[12px] font-bold cursor-pointer transition-colors"
-              >
-                Aplicar
-              </button>
-            </form>
+            <div className="space-y-2">
+              <form onSubmit={handleApplyPromo} className="flex gap-2">
+                <input
+                  type="text"
+                  value={promoCodeInput}
+                  onChange={(e) => setPromoCodeInput(e.target.value)}
+                  placeholder="Código promocional (opcional)"
+                  className="flex-1 border border-[#ececf2] rounded-[12px] px-3 py-2 text-[12px] uppercase focus:outline-none focus:border-[#e86bc4]"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-[#f0f2f7] hover:bg-[#e4e7f0] text-[#2b2b3a] rounded-[12px] text-[12px] font-bold cursor-pointer transition-colors"
+                >
+                  Aplicar
+                </button>
+              </form>
+              {appliedPromo && (
+                <div className="flex items-center justify-between text-[11px] bg-[#fff0fb] border border-[#f8c6ea] text-[#9b2c7c] px-3 py-1.5 rounded-[10px]">
+                  <span>{appliedPromo.descripcion}</span>
+                  <button
+                    type="button"
+                    onClick={handleRemovePromo}
+                    className="font-bold underline cursor-pointer"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Totales */}
             <div className="bg-[#f8f9fc] rounded-[16px] p-4 border border-[#ececf2] space-y-2">
@@ -312,7 +396,7 @@ export default function Carrito() {
                 <span className="font-mono font-medium">${subtotal.toLocaleString('es-AR')}</span>
               </div>
               <div className="flex justify-between text-[15px] font-bold text-[#2b2b3a] pt-2 border-t border-[#ececf2]">
-                <span>Total a Facturar</span>
+                <span>Total del Pedido</span>
                 <span className="font-mono text-[#e86bc4]">${total.toLocaleString('es-AR')}</span>
               </div>
             </div>
@@ -364,15 +448,39 @@ export default function Carrito() {
                 </button>
               </div>
 
+              {/* Previsualización informativa Efectivo */}
+              {paymentMethod === 'efectivo' && (
+                <div className="p-3.5 rounded-[14px] bg-[#f9fdfa] border border-[#d2f3e2] text-[11px] text-[#356649]">
+                  El preventista no recibe dinero en efectivo. El cobro se diferirá al chofer distribuidor contra entrega en el comercio.
+                </div>
+              )}
+
+              {/* Previsualización informativa Mercado Pago QR */}
+              {paymentMethod === 'mercadopago' && (
+                <div className="p-4 rounded-[14px] bg-[#f4fbfe] border border-[#cdecfb] flex items-start gap-3 text-[11px] text-[#0f344d]">
+                  <div className="w-9 h-9 rounded-[10px] bg-[#009ee3]/15 text-[#009ee3] flex items-center justify-center shrink-0">
+                    <Icon name="qr" className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <strong className="block text-[12px]">
+                      QR Dinámico oficial de Mercado Pago
+                    </strong>
+                    <p className="text-[#426c88]">
+                      Al confirmar el pedido se generará el código QR oficial para que el comerciante lo escanee en el mostrador por <strong>${total.toLocaleString('es-AR')}</strong> (vigencia de 15 minutos con verificación automática).
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Detalle Transferencia */}
               {paymentMethod === 'transferencia' && (
                 <div className="p-4 rounded-[14px] bg-[#f8f9fc] border border-[#ececf2] space-y-3 text-[11px]">
                   <div className="flex justify-between items-center">
                     <span className="text-[#6b6b80]">Alias CBU:</span>
-                    <strong className="font-mono text-[#2b2b3a]">{DATOS_BANCARIOS.alias}</strong>
+                    <strong className="font-mono text-[#2b2b3a]">{datosBancarios.alias}</strong>
                     <button
                       type="button"
-                      onClick={() => handleCopy(DATOS_BANCARIOS.alias, 'alias')}
+                      onClick={() => handleCopy(datosBancarios.alias, 'alias')}
                       className="text-[#e86bc4] font-bold ml-2 cursor-pointer"
                     >
                       {copiadoKey === 'alias' ? 'Copiado!' : 'Copiar'}
@@ -401,7 +509,11 @@ export default function Carrito() {
               disabled={isSubmitting}
               className="w-full py-3.5 text-[13px] justify-center shadow-md cursor-pointer"
             >
-              {isSubmitting ? 'Enviando Pedido al Servidor...' : 'Confirmar Pedido de Preventa'}
+              {isSubmitting
+                ? 'Enviando Pedido al Servidor...'
+                : paymentMethod === 'mercadopago'
+                ? 'Confirmar Pedido y Generar QR'
+                : 'Confirmar Pedido de Preventa'}
             </Button>
           </div>
         )}
