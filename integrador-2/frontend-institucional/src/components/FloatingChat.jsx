@@ -128,7 +128,7 @@ export default function FloatingChat() {
           {/* Header del Chat */}
           <div className="bg-[#2b2b3a] text-white p-4 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <span className="candy-mark"><i /><b /></span>
+              <img src="/logo.png" alt="Dulce Mayor" className="w-6 h-6 object-contain shrink-0 rounded" />
               <div>
                 <h3 className="font-bold text-[13px] leading-tight">
                   Cotizador IA Dulce Mayor

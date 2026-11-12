@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
 
-export default function Logo({ light = false }) {
+export default function Logo({ light = false, className = '' }) {
   return (
-    <Link to="/" className={`inline-flex items-center gap-2.5 font-bold tracking-tight select-none text-[18px] ${light ? 'text-white' : 'text-[#2b2b3a]'}`}>
-      <span className="candy-mark" aria-hidden="true">
-        <i />
-        <b />
-      </span>
+    <Link to="/" className={`inline-flex items-center gap-2.5 font-bold tracking-tight select-none text-[18px] ${light ? 'text-white' : 'text-[#2b2b3a]'} ${className}`}>
+      <img
+        src="/logo.png"
+        alt="Dulce Mayor"
+        className="w-8 h-8 object-contain shrink-0 rounded"
+      />
       <span className="font-bold">Dulce Mayor</span>
     </Link>
   );

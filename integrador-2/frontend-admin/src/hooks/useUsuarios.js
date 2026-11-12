@@ -129,9 +129,10 @@ export function useUsuarios() {
     }
     if (telefono.trim()) {
       contactos.push({
-        medio: 'TELEFONO',
+        medio: 'TELEFONICO',
         tipoContacto: 'LABORAL',
         telefono: telefono.trim(),
+        tipoTelefono: 'CELULAR',
       });
     }
 
@@ -173,7 +174,7 @@ export function useUsuarios() {
     setEditNombreUsuario(emp.usuario?.nombreUsuario || '');
 
     const correo = emp.contactos?.find((c) => c.medio === 'CORREO')?.email || '';
-    const tel = emp.contactos?.find((c) => c.medio === 'TELEFONO')?.telefono || '';
+    const tel = emp.contactos?.find((c) => c.medio === 'TELEFONICO' || c.medio === 'TELEFONO')?.telefono || '';
     setEditEmail(correo);
     setEditTelefono(tel);
     setEditRol(emp.usuario?.rol || 'PREVENTISTA');
@@ -198,9 +199,10 @@ export function useUsuarios() {
     }
     if (editTelefono.trim()) {
       contactos.push({
-        medio: 'TELEFONO',
+        medio: 'TELEFONICO',
         tipoContacto: 'LABORAL',
         telefono: editTelefono.trim(),
+        tipoTelefono: 'CELULAR',
       });
     }
 
@@ -274,13 +276,15 @@ export function useUsuarios() {
     const docStr = (emp.numeroDocumento || '').toLowerCase();
     const userStr = (emp.usuario?.nombreUsuario || '').toLowerCase();
     const emailStr = (emp.contactos?.find((c) => c.medio === 'CORREO')?.email || '').toLowerCase();
+    const telStr = (emp.contactos?.find((c) => c.medio === 'TELEFONICO' || c.medio === 'TELEFONO')?.telefono || '').toLowerCase();
 
     const coincideBusqueda =
       nombreCompleto.includes(term) ||
       legajoStr.includes(term) ||
       docStr.includes(term) ||
       userStr.includes(term) ||
-      emailStr.includes(term);
+      emailStr.includes(term) ||
+      telStr.includes(term);
 
     return coincideRol && coincideBusqueda;
   });

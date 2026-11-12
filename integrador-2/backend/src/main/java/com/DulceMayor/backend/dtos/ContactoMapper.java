@@ -117,7 +117,8 @@ public interface ContactoMapper extends BaseMapper<Contacto, ContactoRequest, Co
             throw new ValidacionException("El tipo de contacto es obligatorio");
         }
 
-        String medioNormalizado = request.medio().trim().toUpperCase();
+        String medioRaw = request.medio().trim().toUpperCase(java.util.Locale.ROOT);
+        String medioNormalizado = "TELEFONO".equals(medioRaw) ? Contacto.MEDIO_TELEFONICO : medioRaw;
         String observacionNormalizada = request.observacion() != null && !request.observacion().isBlank()
                 ? request.observacion().trim()
                 : null;
@@ -150,9 +151,9 @@ public interface ContactoMapper extends BaseMapper<Contacto, ContactoRequest, Co
             if (request.telefono() == null || request.telefono().isBlank()) {
                 throw new ValidacionException("El teléfono es obligatorio cuando el medio de contacto es TELEFONICO");
             }
-            if (request.tipoTelefono() == null) {
-                throw new ValidacionException("El tipo de teléfono es obligatorio cuando el medio de contacto es TELEFONICO");
-            }
+            com.DulceMayor.backend.entities.contacto.TipoTelefono tipoTelefonoNormalizado = request.tipoTelefono() != null
+                    ? request.tipoTelefono()
+                    : com.DulceMayor.backend.entities.contacto.TipoTelefono.CELULAR;
             String telefonoNormalizado = request.telefono().trim();
             if (telefonoNormalizado.length() > 30) {
                 throw new ValidacionException("El teléfono no puede superar los 30 caracteres");
@@ -163,7 +164,7 @@ public interface ContactoMapper extends BaseMapper<Contacto, ContactoRequest, Co
                     observacionNormalizada,
                     null,
                     telefonoNormalizado,
-                    request.tipoTelefono()
+                    tipoTelefonoNormalizado
             );
         }
 

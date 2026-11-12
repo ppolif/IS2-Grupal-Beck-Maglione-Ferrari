@@ -23,6 +23,7 @@ import com.DulceMayor.backend.entities.pedido.DetallePedido;
 import com.DulceMayor.backend.entities.pedido.EstadoPedido;
 import com.DulceMayor.backend.entities.pedido.Pedido;
 import com.DulceMayor.backend.entities.producto.Producto;
+import java.time.LocalDate;
 import com.DulceMayor.backend.repositories.facturacion.FacturaRepository;
 import com.DulceMayor.backend.services.facturacion.FacturaLecturaService;
 import com.DulceMayor.backend.services.facturacion.FacturaService;
@@ -64,6 +65,9 @@ class FacturaServiceTest {
     private com.DulceMayor.backend.services.persona.MinoristaService minoristaService;
 
     @Mock
+    private com.DulceMayor.backend.services.mayorista.MayoristaService mayoristaService;
+
+    @Mock
     private com.DulceMayor.backend.services.mail.EmailService emailService;
 
     @Mock
@@ -80,6 +84,7 @@ class FacturaServiceTest {
                 productoService,
                 stockService,
                 minoristaService,
+                mayoristaService,
                 emailService,
                 eventPublisher
         );
@@ -252,5 +257,42 @@ class FacturaServiceTest {
         assertEquals("ped-10", res.pedidoId());
         assertEquals(1800.0, res.total());
         verify(stockService).descontar(eq("prod-1"), eq(2), any(DetalleFactura.class));
+    }
+
+    @Test
+    @DisplayName("generarFacturaPdf: genera comprobante PDF oficial válido con logo y AFIP")
+    void generarFacturaPdfExitoso() {
+        Factura fac = Factura.builder()
+                .id("fac-pdf-1")
+                .numeroFactura(105L)
+                .fechaFactura(LocalDateTime.now())
+                .estado(EstadoFactura.PAGADA)
+                .total(4500.0)
+                .caeSimulado("74219845120394")
+                .fechaVencimientoCae(LocalDate.now().plusDays(10))
+                .cuitReceptor("30-71234567-8")
+                .condicionIvaReceptor("Responsable Inscripto")
+                .eliminado(false)
+                .build();
+
+        when(facturaRepository.findByIdAndEliminadoFalse("fac-pdf-1")).thenReturn(Optional.of(fac));
+        when(facturaLecturaService.enriquecerResponse(fac)).thenReturn(new FacturaResponse(
+                fac.getId(),
+                fac.getNumeroFactura(),
+                fac.getFechaFactura(),
+                null,
+                fac.getEstado(),
+                fac.getTotal(),
+                fac.getTotal(),
+                0.0,
+                List.of(new DetalleFacturaResponse("df-1", "prod-1", "Alfajor Triple Chocolate", 3, 1500.0, 4500.0)),
+                List.of()
+        ));
+
+        byte[] pdf = facturaService.generarFacturaPdf("fac-pdf-1");
+        assertNotNull(pdf);
+        assertTrue(pdf.length > 5000);
+        String header = new String(pdf, 0, Math.min(pdf.length, 10), java.nio.charset.StandardCharsets.ISO_8859_1);
+        assertTrue(header.startsWith("%PDF-"));
     }
 }

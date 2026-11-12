@@ -213,7 +213,7 @@ export default function Usuarios() {
                 {empleadosFiltrados.map((emp) => {
                   const rolUsuario = emp.usuario?.rol;
                   const emailContacto = emp.contactos?.find((c) => c.medio === 'CORREO')?.email;
-                  const telContacto = emp.contactos?.find((c) => c.medio === 'TELEFONO')?.telefono;
+                  const telContacto = emp.contactos?.find((c) => c.medio === 'TELEFONICO' || c.medio === 'TELEFONO')?.telefono;
 
                   return (
                     <tr key={emp.id} className="hover:bg-slate-50/70 transition-colors">
@@ -224,6 +224,11 @@ export default function Usuarios() {
                         <div className="font-semibold text-ink">
                           {emp.nombre} {emp.apellido}
                         </div>
+                        {(emailContacto || telContacto) && (
+                          <div className="text-[10px] text-muted-light">
+                            {[emailContacto, telContacto].filter(Boolean).join(' • ')}
+                          </div>
+                        )}
                       </td>
                       <td className="py-3 px-3 text-[11px] text-muted">
                         {emp.mayoristaRazonSocial || 'Sede Central'}

@@ -20,7 +20,7 @@ import jakarta.validation.constraints.Size;
 public record ContactoRequest(
         @NotBlank(message = "El medio de contacto es obligatorio")
         @Pattern(
-                regexp = "^(CORREO|TELEFONICO)$",
+                regexp = "^(CORREO|TELEFONICO|TELEFONO)$",
                 message = "El medio de contacto debe ser CORREO o TELEFONICO"
         )
         String medio,
