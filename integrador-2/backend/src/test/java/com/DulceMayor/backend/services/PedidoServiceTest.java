@@ -28,6 +28,7 @@ import com.DulceMayor.backend.entities.persona.PuntoDeVenta;
 import com.DulceMayor.backend.entities.producto.Producto;
 import com.DulceMayor.backend.entities.producto.Promocion;
 import com.DulceMayor.backend.repositories.pedido.PedidoRepository;
+import com.DulceMayor.backend.services.facturacion.FormaDePagoService;
 import com.DulceMayor.backend.services.pedido.HistorialEstadoPedidoService;
 import com.DulceMayor.backend.services.pedido.PedidoLecturaService;
 import com.DulceMayor.backend.services.pedido.PedidoService;
@@ -87,6 +88,9 @@ class PedidoServiceTest {
     private MinoristaService minoristaService;
 
     @Mock
+    private FormaDePagoService formaDePagoService;
+
+    @Mock
     private ApplicationEventPublisher eventPublisher;
 
     private PedidoService pedidoService;
@@ -104,6 +108,7 @@ class PedidoServiceTest {
                 puntoDeVentaService,
                 empleadoService,
                 minoristaService,
+                formaDePagoService,
                 eventPublisher
         );
         lenient().when(pedidoMapper.aEntidad(any(PedidoRequest.class))).thenAnswer(inv -> Pedido.builder().build());
@@ -162,6 +167,7 @@ class PedidoServiceTest {
                     p.getDescuento(),
                     p.getTotal(),
                     List.of(new DetallePedidoResponse("dp-1", "prod-1", "Alfajor Triple", "Caja x24", 3, 1000.0, 3000.0)),
+                    null,
                     null
             );
         });
@@ -266,7 +272,7 @@ class PedidoServiceTest {
         when(pedidoLecturaService.enriquecerResponse(any(Pedido.class))).thenAnswer(inv -> {
             Pedido p = inv.getArgument(0);
             return new PedidoResponse(p.getId(), p.getNumeroPedido(), p.getFechaHoraCarga(), p.getEstado(),
-                    null, null, null, null, 1000.0, 0.0, 1000.0, List.of(), null);
+                    null, null, null, null, 1000.0, 0.0, 1000.0, List.of(), null, null);
         });
 
         PedidoResponse anulado = pedidoService.anularPedido("ped-1", new AnularPedidoRequest("Cancelado por cliente"));

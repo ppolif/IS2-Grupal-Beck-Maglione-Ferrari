@@ -97,8 +97,14 @@ export default function Carrito() {
       setIsSubmitting(true);
       setSubmitError(null);
 
-      // 1. Registrar pedido en el backend (deja estado CARGADO y vacía el carrito)
-      const nuevoPedido = await confirmarPedido();
+      // 1. Registrar pedido en el backend (deja estado CARGADO, guarda el medio de pago y vacía el carrito)
+      const tipoPagoApi =
+        paymentMethod === 'mercadopago'
+          ? 'BILLETERA_VIRTUAL'
+          : paymentMethod === 'transferencia'
+          ? 'TRANSFERENCIA'
+          : 'EFECTIVO';
+      const nuevoPedido = await confirmarPedido(tipoPagoApi);
 
       const dir = clienteActual.direccion;
       const direccionStr = dir

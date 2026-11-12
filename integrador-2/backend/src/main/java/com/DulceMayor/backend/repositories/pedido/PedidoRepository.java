@@ -26,6 +26,23 @@ public interface PedidoRepository extends BaseRepository<Pedido> {
 
     @Query("""
             SELECT p FROM Pedido p
+            LEFT JOIN p.formaDePago fp
+            WHERE p.eliminado = false
+              AND p.distribuidor IS NULL
+              AND (
+                p.estado = com.DulceMayor.backend.entities.pedido.EstadoPedido.FACTURADO
+                OR (
+                  p.estado = com.DulceMayor.backend.entities.pedido.EstadoPedido.CARGADO
+                  AND fp IS NOT NULL
+                  AND fp.tipoPago = com.DulceMayor.backend.entities.facturacion.TipoPago.EFECTIVO
+                )
+              )
+            ORDER BY p.fechaHoraCarga ASC
+            """)
+    List<Pedido> buscarPendientesDeReparto();
+
+    @Query("""
+            SELECT p FROM Pedido p
             JOIN p.puntoDeVenta pdv
             LEFT JOIN p.preventor pr
             LEFT JOIN p.distribuidor d

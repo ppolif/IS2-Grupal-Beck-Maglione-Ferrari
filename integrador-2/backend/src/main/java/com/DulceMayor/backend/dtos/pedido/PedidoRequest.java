@@ -1,5 +1,6 @@
 package com.DulceMayor.backend.dtos.pedido;
 
+import com.DulceMayor.backend.entities.facturacion.TipoPago;
 import java.util.List;
 
 /**
@@ -11,7 +12,15 @@ public record PedidoRequest(
         String puntoDeVentaId,
         String preventorId,
         String codigoPromocion,
-        List<DetallePedidoRequest> detalles
+        List<DetallePedidoRequest> detalles,
+        TipoPago tipoPago
 ) {
+    public PedidoRequest(
+            String puntoDeVentaId,
+            String preventorId,
+            String codigoPromocion,
+            List<DetallePedidoRequest> detalles) {
+        this(puntoDeVentaId, preventorId, codigoPromocion, detalles, null);
+    }
 }
 

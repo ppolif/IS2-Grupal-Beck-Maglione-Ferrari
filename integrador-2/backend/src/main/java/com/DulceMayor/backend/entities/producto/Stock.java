@@ -54,7 +54,7 @@ public class Stock extends EntidadBase {
      * Stock no tiene atributo 'producto' directo; se relaciona con DetalleFactura,
      * y desde allí navega al Producto correspondiente (Stock -> DetalleFactura -> Producto).
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "detalle_factura_id")
     private DetalleFactura detalleFactura;
 

@@ -130,14 +130,36 @@ public class ProcesamientoPagoService {
     }
 
     /**
-     * Consulta el estado de pago del QR para un pedido.
+     * Consulta el estado de pago del QR para un pedido y retorna la imagen Base64 del QR real de Mercado Pago.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public IniciarPagoQrResponse consultarEstadoQr(String pedidoId) {
         Pedido pedido = pedidoService.obtenerEntidad(pedidoId);
         pedidoService.validarAccesoPedido(pedido);
         List<Pago> pagos = pagoService.buscarEntidadesPorPedido(pedidoId);
-        boolean estaAprobado = pagos.stream().anyMatch(p -> p.getEstadoPago() == EstadoPago.APROBADO);
+        boolean estaAprobado = pagos.stream().anyMatch(p -> p.getEstadoPago() == EstadoPago.APROBADO)
+                || pedido.getEstado() == EstadoPedido.FACTURADO
+                || pedido.getEstado() == EstadoPedido.EN_REPARTO
+                || pedido.getEstado() == EstadoPedido.ENTREGADO;
+
+        String qrDataReal = pedido.getQrData();
+        if ((qrDataReal == null || qrDataReal.isBlank()) && mercadoPagoPort != null) {
+            String titulo = "Pedido #" + pedido.getNumeroPedido() + " - Dulce Mayor";
+            var ordenMp = mercadoPagoPort.crearOrdenQrDinamica(
+                    pedido.getId(),
+                    titulo,
+                    pedido.getTotal(),
+                    15
+            );
+            if (ordenMp != null && ordenMp.qrData() != null && !ordenMp.qrData().isBlank()) {
+                qrDataReal = ordenMp.qrData();
+                pedido.setQrData(qrDataReal);
+            }
+        }
+
+        String qrImagenBase64 = (qrDataReal != null && !qrDataReal.isBlank())
+                ? QrCodeGeneratorHelper.generarQrBase64(qrDataReal)
+                : null;
 
         LocalDateTime exp = pedido.getFechaExpiracionPago();
         long segundos = (exp != null) ? ChronoUnit.SECONDS.between(LocalDateTime.now(), exp) : 0;
@@ -147,7 +169,7 @@ public class ProcesamientoPagoService {
                 pedido.getNumeroPedido(),
                 pedido.getTotal(),
                 estaAprobado ? "APROBADO" : "PENDIENTE",
-                null,
+                qrImagenBase64,
                 exp,
                 Math.max(0, segundos)
         );
@@ -379,7 +401,17 @@ public class ProcesamientoPagoService {
                 .build();
         pagoService.guardarPago(pago);
 
-        pedidoService.marcarEntregado(pedido.getId(), "Cobro en efectivo registrado en el punto de venta por: " + usuarioDistribuidor);
+        pedidoService.marcarFacturado(
+                pedido,
+                "Pedido facturado en efectivo por distribuidor: " + usuarioDistribuidor
+        );
+
+        pedidoService.marcarEntregado(
+                pedido.getId(),
+                request.observacion() != null && !request.observacion().isBlank()
+                        ? request.observacion()
+                        : "Pedido entregado y cobrado en efectivo en punto de venta"
+        );
 
         eventPublisher.publishEvent(new PagoAprobadoEvent(
                 pago.getId(),

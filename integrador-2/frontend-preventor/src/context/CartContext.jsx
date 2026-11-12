@@ -138,7 +138,7 @@ export function CartProvider({ children }) {
   /**
    * Confirma y envía el pedido al backend
    */
-  const confirmarPedido = useCallback(async () => {
+  const confirmarPedido = useCallback(async (tipoPago = 'EFECTIVO') => {
     if (!clienteActual?.id) {
       throw new Error('Debes seleccionar un comercio o punto de venta para asignar el pedido.');
     }
@@ -149,6 +149,7 @@ export function CartProvider({ children }) {
     const payload = {
       puntoDeVentaId: clienteActual.id,
       codigoPromocion: codigoPromo.trim() || null,
+      tipoPago,
       detalles: items.map((item) => ({
         productoId: item.id,
         cantidad: item.cantidad,

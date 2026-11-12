@@ -28,8 +28,16 @@ export function usePedidos() {
           const preventorNombre = p.preventor
             ? `${p.preventor.nombre || ''} ${p.preventor.apellido || ''}`.trim()
             : 'Venta Directa / Web';
-          const facturado =
-            p.estado === 'FACTURADO' || p.estado === 'EN_REPARTO' || p.estado === 'ENTREGADO';
+          const esEfectivo = p.tipoPago === 'EFECTIVO';
+          const facturado = Boolean(p.facturaId) || p.estado === 'FACTURADO' || p.estado === 'ENTREGADO';
+          const medioPagoLabel =
+            p.tipoPago === 'EFECTIVO'
+              ? 'Efectivo contra entrega'
+              : p.tipoPago === 'BILLETERA_VIRTUAL'
+              ? 'Billetera Virtual (QR)'
+              : p.tipoPago === 'TRANSFERENCIA'
+              ? 'Transferencia Bancaria'
+              : 'Sin especificar';
 
           const items = (p.detalles || []).map((d) => ({
             nombre: d.productoNombre || d.producto?.nombre || 'Producto',
@@ -45,6 +53,9 @@ export function usePedidos() {
             monto: `$${(p.total || 0).toLocaleString('es-AR')}`,
             montoNum: p.total || 0,
             estado: p.estado,
+            tipoPago: p.tipoPago || null,
+            medioPago: medioPagoLabel,
+            esEfectivo,
             facturado,
             facturaId: p.facturaId,
             fecha: p.fechaHoraCarga ? new Date(p.fechaHoraCarga).toLocaleString('es-AR') : '',

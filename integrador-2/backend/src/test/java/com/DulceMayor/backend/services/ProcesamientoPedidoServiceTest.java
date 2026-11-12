@@ -90,7 +90,7 @@ class ProcesamientoPedidoServiceTest {
         );
         when(pedidoService.marcarSinStock(eq(pedido), any(String.class))).thenReturn(
                 new PedidoResponse("ped-1", 1L, LocalDateTime.now(), EstadoPedido.SIN_STOCK,
-                        null, null, null, null, 5000.0, 0.0, 5000.0, List.of(), null)
+                        null, null, null, null, 5000.0, 0.0, 5000.0, List.of(), null, null)
         );
 
         ProcesamientoPedidoResponse res = procesamientoPedidoService.procesarPedido("ped-1");
@@ -139,7 +139,7 @@ class ProcesamientoPedidoServiceTest {
         when(facturaService.generarDesdePedido(pedido)).thenReturn(facturaGenerada);
         when(pedidoService.marcarFacturado(eq(pedido), any(String.class))).thenReturn(
                 new PedidoResponse("ped-1", 2L, LocalDateTime.now(), EstadoPedido.FACTURADO,
-                        null, null, null, null, 2000.0, 0.0, 2000.0, List.of(), "fac-1")
+                        null, null, null, null, 2000.0, 0.0, 2000.0, List.of(), "fac-1", null)
         );
 
         ProcesamientoPedidoResponse res = procesamientoPedidoService.procesarPedido("ped-1");
@@ -163,6 +163,25 @@ class ProcesamientoPedidoServiceTest {
         when(pedidoService.obtenerEntidad("ped-1")).thenReturn(yaFacturado);
 
         assertThrows(ConflictoException.class, () -> procesamientoPedidoService.procesarPedido("ped-1"));
+    }
+
+    @Test
+    @DisplayName("procesarPedido: lanza 409 ConflictoException si el pedido es con pago en EFECTIVO")
+    void procesarPedidoEnEfectivoLanza409() {
+        Pedido enEfectivo = Pedido.builder()
+                .id("ped-efe")
+                .estado(EstadoPedido.CARGADO)
+                .formaDePago(com.DulceMayor.backend.entities.facturacion.FormaDePago.builder()
+                        .tipoPago(com.DulceMayor.backend.entities.facturacion.TipoPago.EFECTIVO)
+                        .build())
+                .detalles(List.of())
+                .eliminado(false)
+                .build();
+
+        when(pedidoService.obtenerEntidad("ped-efe")).thenReturn(enEfectivo);
+
+        assertThrows(ConflictoException.class, () -> procesamientoPedidoService.procesarPedido("ped-efe"));
+        verify(facturaService, never()).generarDesdePedido(any());
     }
 }
 

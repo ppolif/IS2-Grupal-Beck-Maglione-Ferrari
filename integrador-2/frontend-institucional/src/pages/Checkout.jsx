@@ -241,10 +241,18 @@ export default function Checkout() {
     setIsProcessing(true);
 
     try {
+      const tipoPagoApi =
+        paymentMethod === 'mercadopago'
+          ? 'BILLETERA_VIRTUAL'
+          : paymentMethod === 'transferencia'
+          ? 'TRANSFERENCIA'
+          : 'EFECTIVO';
+
       const requestBody = {
         puntoDeVentaId: selectedPdv?.id || null,
         preventorId: null,
         codigoPromocion: appliedPromo?.code || appliedPromo?.codigo || null,
+        tipoPago: tipoPagoApi,
         detalles: cartItems.map((it) => ({
           productoId: it.producto.id,
           cantidad: Number(it.cantidad || 1),
@@ -295,6 +303,7 @@ export default function Checkout() {
         total: totalCalc,
         subtotal: subtotalCalc,
         descuento: descuentoCalc,
+        tipoPago: creado?.tipoPago || tipoPagoApi,
         metodoPago: medioPagoLabel,
         medioPago: medioPagoLabel,
         comprobante: transferenciaData.numeroComprobante || null,
@@ -329,6 +338,7 @@ export default function Checkout() {
         }
         pedidoClienteService.guardarPedido({
           ...orderPayload,
+          qrImagenBase64: qrResp?.qrImagenBase64 || null,
           total: `$${totalCalc.toLocaleString('es-AR')}`,
           subtotal: `$${subtotalCalc.toLocaleString('es-AR')}`,
           descuento: `$${descuentoCalc.toLocaleString('es-AR')}`,

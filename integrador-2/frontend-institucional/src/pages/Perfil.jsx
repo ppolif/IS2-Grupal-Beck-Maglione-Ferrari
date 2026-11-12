@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
 import { apiFetch } from '../services/api';
 import { pedidoClienteService } from '../services/pedidoClienteService';
+import { pagoService } from '../services/pagoService';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
@@ -20,6 +21,8 @@ export default function Perfil() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [qrModalData, setQrModalData] = useState(null);
+  const [loadingQrModal, setLoadingQrModal] = useState(false);
   const [copiedAlias, setCopiedAlias] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
@@ -247,6 +250,28 @@ export default function Perfil() {
             ? `${dir.calle || ''} ${dir.numeracion || ''}, ${dir.localidadNombre || dir.departamentoNombre || 'Mendoza'}`.trim()
             : p.puntoDeVenta?.nombreComercio || 'Mendoza';
 
+          const tipoPagoVal = p.tipoPago || localMatch?.tipoPago || null;
+          const medioPagoStr =
+            tipoPagoVal === 'BILLETERA_VIRTUAL'
+              ? 'Billetera Virtual (Mercado Pago QR)'
+              : tipoPagoVal === 'TRANSFERENCIA'
+              ? 'Transferencia Bancaria'
+              : tipoPagoVal === 'EFECTIVO'
+              ? 'Efectivo contra entrega'
+              : localMatch?.medioPago || localMatch?.metodoPago || 'Efectivo contra entrega';
+
+          const esBilleteraVirtual = tipoPagoVal
+            ? tipoPagoVal === 'BILLETERA_VIRTUAL'
+            : Boolean(
+                localMatch?.medioPago?.toLowerCase().includes('mercado pago') ||
+                  localMatch?.medioPago?.toLowerCase().includes('billetera') ||
+                  localMatch?.metodoPago?.toLowerCase().includes('mercado pago') ||
+                  localMatch?.metodoPago?.toLowerCase().includes('billetera')
+              );
+
+          const fueEntregado =
+            p.estado === 'ENTREGADO' || (p.estado === 'FACTURADO' && Boolean(p.distribuidor));
+
           return {
             id: p.numeroPedido || p.id,
             rawId: p.id,
@@ -259,7 +284,10 @@ export default function Perfil() {
             facturaNum: factura?.numeroFactura
               ? `FA-${String(factura.numeroFactura).padStart(8, '0')}`
               : 'Pendiente de emisión',
-            medioPago: localMatch?.medioPago || localMatch?.metodoPago || 'Mayorista',
+            tipoPago: tipoPagoVal,
+            medioPago: medioPagoStr,
+            esBilleteraVirtual,
+            qrImagenBase64: localMatch?.qrImagenBase64 || null,
             direccionEntrega,
             items: (p.detalles || []).map((d) => ({
               nombre: d.productoNombre || d.producto?.nombre || 'Producto',
@@ -276,13 +304,13 @@ export default function Perfil() {
               },
               {
                 estado: 'En Reparto con Distribuidor',
-                fecha: p.estado === 'EN_REPARTO' || p.estado === 'ENTREGADO' ? 'Completado' : 'Pendiente',
-                done: p.estado === 'EN_REPARTO' || p.estado === 'ENTREGADO',
+                fecha: p.estado === 'EN_REPARTO' || fueEntregado ? 'Completado' : 'Pendiente',
+                done: p.estado === 'EN_REPARTO' || fueEntregado,
               },
               {
                 estado: 'Entregado en Comercio',
-                fecha: p.estado === 'ENTREGADO' ? 'Completado' : 'Pendiente',
-                done: p.estado === 'ENTREGADO',
+                fecha: fueEntregado ? 'Completado' : 'Pendiente',
+                done: fueEntregado,
               },
             ],
           };
@@ -365,9 +393,26 @@ export default function Perfil() {
     setShowDetailModal(true);
   };
 
-  const handleOpenQr = (order) => {
+  const handleOpenQr = async (order) => {
     setSelectedOrder(order);
+    setQrModalData(order?.qrImagenBase64 ? { qrImagenBase64: order.qrImagenBase64 } : null);
     setShowQrModal(true);
+    if (!order?.rawId) return;
+    setLoadingQrModal(true);
+    try {
+      let estadoResp = await pagoService.consultarEstadoQr(order.rawId).catch(() => null);
+      if ((!estadoResp || !estadoResp.qrImagenBase64) && order.estado === 'CARGADO') {
+        const iniciado = await pagoService.iniciarPagoQr(order.rawId).catch(() => null);
+        if (iniciado) {
+          estadoResp = iniciado;
+        }
+      }
+      if (estadoResp) {
+        setQrModalData(estadoResp);
+      }
+    } finally {
+      setLoadingQrModal(false);
+    }
   };
 
   const handleDownloadPdf = async (order) => {
@@ -591,14 +636,16 @@ export default function Perfil() {
                       >
                         <span>PDF</span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenQr(p)}
-                        className="px-3 py-1.5 rounded-[10px] text-[12px] font-semibold text-white bg-[#e86bc4] hover:bg-[#d456b0] transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-                        title="Ver QR de pago"
-                      >
-                        <span>QR</span>
-                      </button>
+                      {p.esBilleteraVirtual && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenQr(p)}
+                          className="px-3 py-1.5 rounded-[10px] text-[12px] font-semibold text-white bg-[#e86bc4] hover:bg-[#d456b0] transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                          title="Ver QR de Mercado Pago"
+                        >
+                          <span>QR</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1109,27 +1156,29 @@ export default function Perfil() {
               >
                 <span>Descargar Factura PDF</span>
               </Button>
-              <Button
-                onClick={() => {
-                  setShowDetailModal(false);
-                  setShowQrModal(true);
-                }}
-                className="text-[12px] py-2"
-              >
-                <span>Pagar con Código QR</span>
-              </Button>
+              {selectedOrder.esBilleteraVirtual && (
+                <Button
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    handleOpenQr(selectedOrder);
+                  }}
+                  className="text-[12px] py-2"
+                >
+                  <span>Ver Código QR de Mercado Pago</span>
+                </Button>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL 2: VER QR DE PAGO */}
-      {showQrModal && selectedOrder && (
+      {/* MODAL 2: VER QR DE PAGO (BILLETERA VIRTUAL / MERCADO PAGO) */}
+      {showQrModal && selectedOrder && selectedOrder.esBilleteraVirtual && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white rounded-[22px] p-6 sm:p-7 shadow-[0_22px_80px_rgba(32,30,50,0.28)] border border-[#ececf2] w-full max-w-sm text-center space-y-4">
             <div className="flex justify-between items-center pb-2 border-b border-[#f0f0f4]">
-              <span className="text-[10px] font-bold tracking-[0.14em] uppercase text-[#e86bc4]">
-                Billetera Virtual
+              <span className="text-[10px] font-bold tracking-[0.14em] uppercase text-[#009ee3]">
+                Billetera Virtual · Mercado Pago
               </span>
               <button
                 type="button"
@@ -1141,112 +1190,66 @@ export default function Perfil() {
             </div>
 
             <h3 className="text-xl font-bold text-[#2b2b3a]">
-              Código QR de Pago
+              Código QR de Mercado Pago
             </h3>
             <p className="text-[11px] text-[#6b6b80]">
-              Escaneá con Mercado Pago o tu app bancaria para abonar el Pedido #{selectedOrder.id}.
+              Código QR oficial de Mercado Pago asociado al Pedido #{selectedOrder.id}.
             </p>
 
-            {/* Simulated QR Code Component */}
-            <div className="p-4 bg-white border-2 border-dashed border-[#e86bc4] rounded-[18px] inline-block shadow-inner">
-              <svg
-                className="w-48 h-48 mx-auto"
-                viewBox="0 0 200 200"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect width="200" height="200" fill="#ffffff" />
-                <rect x="15" y="15" width="45" height="45" rx="6" fill="#2b2b3a" />
-                <rect x="23" y="23" width="29" height="29" rx="3" fill="#ffffff" />
-                <rect x="29" y="29" width="17" height="17" rx="2" fill="#e86bc4" />
-
-                <rect x="140" y="15" width="45" height="45" rx="6" fill="#2b2b3a" />
-                <rect x="148" y="23" width="29" height="29" rx="3" fill="#ffffff" />
-                <rect x="154" y="29" width="17" height="17" rx="2" fill="#3fb8d9" />
-
-                <rect x="15" y="140" width="45" height="45" rx="6" fill="#2b2b3a" />
-                <rect x="23" y="148" width="29" height="29" rx="3" fill="#ffffff" />
-                <rect x="29" y="154" width="17" height="17" rx="2" fill="#e86bc4" />
-
-                <rect x="70" y="20" width="12" height="12" rx="2" fill="#2b2b3a" />
-                <rect x="90" y="20" width="12" height="12" rx="2" fill="#2b2b3a" />
-                <rect x="110" y="20" width="12" height="12" rx="2" fill="#2b2b3a" />
-
-                <rect x="70" y="40" width="12" height="12" rx="2" fill="#2b2b3a" />
-                <rect x="110" y="40" width="12" height="12" rx="2" fill="#e86bc4" />
-                <rect x="90" y="60" width="12" height="12" rx="2" fill="#2b2b3a" />
-
-                <rect x="20" y="75" width="12" height="12" rx="2" fill="#2b2b3a" />
-                <rect x="40" y="75" width="12" height="12" rx="2" fill="#3fb8d9" />
-                <rect x="70" y="80" width="12" height="12" rx="2" fill="#2b2b3a" />
-                <rect x="90" y="80" width="20" height="20" rx="3" fill="#e86bc4" />
-                <rect x="120" y="80" width="12" height="12" rx="2" fill="#2b2b3a" />
-                <rect x="145" y="75" width="12" height="12" rx="2" fill="#2b2b3a" />
-                <rect x="165" y="75" width="12" height="12" rx="2" fill="#2b2b3a" />
-
-                <rect x="20" y="95" width="12" height="12" rx="2" fill="#2b2b3a" />
-                <rect x="40" y="95" width="12" height="12" rx="2" fill="#2b2b3a" />
-                <rect x="70" y="110" width="12" height="12" rx="2" fill="#3fb8d9" />
-                <rect x="120" y="110" width="12" height="12" rx="2" fill="#2b2b3a" />
-                <rect x="145" y="95" width="12" height="12" rx="2" fill="#3fb8d9" />
-                <rect x="165" y="95" width="12" height="12" rx="2" fill="#2b2b3a" />
-
-                <rect x="70" y="140" width="12" height="12" rx="2" fill="#2b2b3a" />
-                <rect x="90" y="140" width="12" height="12" rx="2" fill="#2b2b3a" />
-                <rect x="110" y="140" width="12" height="12" rx="2" fill="#e86bc4" />
-                <rect x="140" y="140" width="20" height="20" rx="3" fill="#2b2b3a" />
-                <rect x="170" y="140" width="12" height="12" rx="2" fill="#2b2b3a" />
-
-                <rect x="70" y="165" width="20" height="12" rx="2" fill="#2b2b3a" />
-                <rect x="100" y="165" width="12" height="12" rx="2" fill="#3fb8d9" />
-                <rect x="120" y="165" width="12" height="12" rx="2" fill="#2b2b3a" />
-                <rect x="150" y="165" width="30" height="12" rx="2" fill="#2b2b3a" />
-              </svg>
+            {/* Real Mercado Pago QR Code Component */}
+            <div className="p-4 bg-white border-2 border-dashed border-[#009ee3] rounded-[18px] inline-block shadow-inner min-w-[216px] min-h-[216px] flex items-center justify-center mx-auto">
+              {loadingQrModal ? (
+                <div className="w-48 h-48 flex flex-col items-center justify-center gap-2 text-[#6b6b80]">
+                  <div className="w-8 h-8 border-3 border-[#009ee3] border-t-transparent rounded-full animate-spin" />
+                  <span className="text-[11px] font-medium">Cargando QR de Mercado Pago...</span>
+                </div>
+              ) : qrModalData?.qrImagenBase64 || selectedOrder?.qrImagenBase64 ? (
+                <img
+                  src={qrModalData?.qrImagenBase64 || selectedOrder?.qrImagenBase64}
+                  alt="Código QR de Mercado Pago"
+                  className="w-48 h-48 mx-auto object-contain"
+                />
+              ) : (
+                <div className="w-48 h-48 flex flex-col items-center justify-center gap-2 text-[#8c8b9c] px-3">
+                  <span className="text-[12px] font-semibold text-[#2b2b3a]">QR no disponible</span>
+                  <span className="text-[11px]">
+                    No se encontró una orden QR de Mercado Pago asociada a este pedido.
+                  </span>
+                </div>
+              )}
             </div>
 
+            {qrModalData?.qrData && (
+              <div className="flex justify-center">
+                <span
+                  className={`px-3 py-1 rounded-full text-[11px] font-bold ${
+                    qrModalData.qrData === 'APROBADO' || selectedOrder.estado !== 'CARGADO'
+                      ? 'bg-[#e6f9ed] text-[#1f9d55]'
+                      : 'bg-[#fff8e6] text-[#b7791f]'
+                  }`}
+                >
+                  {qrModalData.qrData === 'APROBADO' || selectedOrder.estado !== 'CARGADO'
+                    ? '✓ Pago acreditado con Mercado Pago'
+                    : '⏳ Pendiente de acreditación'}
+                </span>
+              </div>
+            )}
+
             <div className="bg-[#fafafd] p-3 rounded-[14px] border border-[#ececf2]">
-              <span className="text-[11px] text-[#6b6b80] block">Importe exacto a transferir:</span>
+              <span className="text-[11px] text-[#6b6b80] block">Importe del pedido:</span>
               <strong className="text-2xl font-bold text-[#e86bc4]">
                 {selectedOrder.total}
               </strong>
             </div>
 
-            <div className="p-3 bg-[#f8f9fc] rounded-[14px] border border-[#ececf2] text-[11px] text-left space-y-1">
-              <span className="text-[#6b6b80] block font-semibold text-[10px] uppercase">
-                O transferí directamente por Alias:
-              </span>
-              <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-[8px] border border-[#ececf2]">
-                <code className="font-mono font-bold text-[#2b2b3a]">DULCE.MAYOR.PAGO</code>
-                <button
-                  type="button"
-                  onClick={handleCopyAlias}
-                  className="text-[10px] font-bold text-[#3fb8d9] hover:underline cursor-pointer"
-                >
-                  {copiedAlias ? '¡Copiado!' : 'Copiar'}
-                </button>
-              </div>
-              <span className="text-[10px] text-[#aaa9ba] block pt-0.5">
-                CBU: 0000003100012345678901 · Titular: Dulce Mayor S.A.
-              </span>
-            </div>
-
             <div className="pt-2 flex flex-col gap-2">
               <Button
-                onClick={() => {
-                  setShowQrModal(false);
-                  showToast('¡Pago informado! Lo validaremos a la brevedad.');
-                }}
+                secondary
+                onClick={() => setShowQrModal(false)}
                 className="w-full justify-center text-[13px]"
               >
-                Ya realicé la transferencia
+                Cerrar
               </Button>
-              <button
-                type="button"
-                onClick={() => setShowQrModal(false)}
-                className="text-[11px] text-[#6b6b80] hover:text-[#2b2b3a] py-1 cursor-pointer"
-              >
-                Volver
-              </button>
             </div>
           </div>
         </div>

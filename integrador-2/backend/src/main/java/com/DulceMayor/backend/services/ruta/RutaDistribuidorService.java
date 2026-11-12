@@ -5,6 +5,7 @@ import com.DulceMayor.backend.config.ConflictoException;
 import com.DulceMayor.backend.config.RecursoNoEncontradoException;
 import com.DulceMayor.backend.config.UsuarioPrincipal;
 import com.DulceMayor.backend.config.ValidacionException;
+import com.DulceMayor.backend.dtos.facturacion.RegistrarCobroEfectivoRequest;
 import com.DulceMayor.backend.dtos.pedido.PedidoResponse;
 import com.DulceMayor.backend.dtos.ruta.AvanceRutaResponse;
 import com.DulceMayor.backend.dtos.ruta.AvisoProximaEntregaEvent;
@@ -13,6 +14,7 @@ import com.DulceMayor.backend.dtos.ruta.ParadaResponse;
 import com.DulceMayor.backend.dtos.ruta.RutaResponse;
 import com.DulceMayor.backend.entities.RolUsuario;
 import com.DulceMayor.backend.entities.direccion.Direccion;
+import com.DulceMayor.backend.entities.facturacion.TipoPago;
 import com.DulceMayor.backend.entities.mayorista.Mayorista;
 import com.DulceMayor.backend.entities.pedido.EstadoPedido;
 import com.DulceMayor.backend.entities.pedido.Pedido;
@@ -22,6 +24,7 @@ import com.DulceMayor.backend.entities.ruta.RutaDistribuidor;
 import com.DulceMayor.backend.entities.ruta.RutaEstado;
 import com.DulceMayor.backend.repositories.ruta.RutaDistribuidorRepository;
 import com.DulceMayor.backend.services.direccion.DireccionService;
+import com.DulceMayor.backend.services.facturacion.ProcesamientoPagoService;
 import com.DulceMayor.backend.services.mail.EmailService;
 import com.DulceMayor.backend.services.mayorista.MayoristaService;
 import com.DulceMayor.backend.services.pedido.PedidoService;
@@ -68,6 +71,7 @@ public class RutaDistribuidorService {
     private final RutaOptimizerStrategy rutaOptimizerStrategy;
     private final RutaMapperHelper rutaMapperHelper;
     private final EmailService emailService;
+    private final ProcesamientoPagoService procesamientoPagoService;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
@@ -404,7 +408,7 @@ public class RutaDistribuidorService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("El pedido " + request.pedidoId() + " no forma parte de esta ruta"));
 
         Pedido primerPendiente = ruta.getPedidos().stream()
-                .filter(p -> p.getEstado() != EstadoPedido.ENTREGADO)
+                .filter(p -> p.getEstado() == EstadoPedido.EN_REPARTO)
                 .findFirst()
                 .orElse(null);
 
@@ -418,14 +422,26 @@ public class RutaDistribuidorService {
             );
         }
 
-        // Marcar pedido entregado usando PedidoService para asegurar coherencia y trazabilidad
         String obs = request.observacion() != null && !request.observacion().isBlank()
                 ? request.observacion()
                 : "Entrega completada por el distribuidor";
-        PedidoResponse entregaRes = pedidoService.marcarEntregado(pedidoEntregado.getId(), obs);
 
-        // Refrescar el estado en la instancia en memoria
-        pedidoEntregado.setEstado(EstadoPedido.ENTREGADO);
+        boolean esEfectivo = pedidoEntregado.getFormaDePago() != null
+                && pedidoEntregado.getFormaDePago().getTipoPago() == TipoPago.EFECTIVO;
+
+        if (esEfectivo) {
+            UsuarioPrincipal up = obtenerPrincipalActual();
+            String usuarioDist = up != null ? up.getUsername() : "distribuidor";
+            procesamientoPagoService.registrarCobroEfectivoEnEntrega(
+                    new RegistrarCobroEfectivoRequest(pedidoEntregado.getId(), pedidoEntregado.getTotal(), obs),
+                    usuarioDist
+            );
+            pedidoEntregado.setEstado(EstadoPedido.ENTREGADO);
+        } else {
+            // Marcar pedido entregado usando PedidoService para asegurar coherencia y trazabilidad
+            pedidoService.marcarEntregado(pedidoEntregado.getId(), obs);
+            pedidoEntregado.setEstado(EstadoPedido.ENTREGADO);
+        }
 
         // Determinar el próximo pedido pendiente en el itinerario
         Pedido siguientePedido = null;
@@ -481,7 +497,7 @@ public class RutaDistribuidorService {
         }
 
         boolean todosEntregados = ruta.getPedidos().stream()
-                .allMatch(p -> p.getEstado() == EstadoPedido.ENTREGADO);
+                .allMatch(p -> p.getEstado() == EstadoPedido.ENTREGADO || p.getEstado() == EstadoPedido.FACTURADO);
 
         ruta.setEstado(todosEntregados ? RutaEstado.REALIZADA : RutaEstado.INCOMPLETA);
         ruta.setParadaActual(null);

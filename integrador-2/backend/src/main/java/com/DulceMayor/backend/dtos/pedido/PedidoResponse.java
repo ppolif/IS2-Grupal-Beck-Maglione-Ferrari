@@ -3,13 +3,14 @@ package com.DulceMayor.backend.dtos.pedido;
 import com.DulceMayor.backend.dtos.Identificable;
 import com.DulceMayor.backend.dtos.persona.EmpleadoResumen;
 import com.DulceMayor.backend.dtos.persona.PuntoDeVentaResponse;
+import com.DulceMayor.backend.entities.facturacion.TipoPago;
 import com.DulceMayor.backend.entities.pedido.EstadoPedido;
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
  * DTO de salida que representa un pedido con sus detalles, totales, comercio,
- * preventor/distribuidor asignados y el identificador de factura asociada
+ * preventor/distribuidor asignados, identificador de factura asociada y medio de pago
  * según {@code 04-openapi.yaml}.
  */
 public record PedidoResponse(
@@ -25,6 +26,7 @@ public record PedidoResponse(
         Double descuento,
         Double total,
         List<DetallePedidoResponse> detalles,
-        String facturaId
+        String facturaId,
+        TipoPago tipoPago
 ) implements Identificable {
 }

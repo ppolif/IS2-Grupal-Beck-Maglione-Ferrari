@@ -52,6 +52,7 @@ export default function Pedidos() {
                   <th className="pb-3 px-3">Pedido</th>
                   <th className="pb-3 px-3">Comercio</th>
                   <th className="pb-3 px-3">Preventor</th>
+                  <th className="pb-3 px-3">Medio de Pago</th>
                   <th className="pb-3 px-3">Monto Total</th>
                   <th className="pb-3 px-3">Estado</th>
                   <th className="pb-3 px-3">Facturación</th>
@@ -68,6 +69,7 @@ export default function Pedidos() {
                       {o.comercio}
                     </td>
                     <td className="py-3.5 px-3 text-muted">{o.preventor}</td>
+                    <td className="py-3.5 px-3 text-muted">{o.medioPago}</td>
                     <td className="py-3.5 px-3 font-bold text-ink">
                       {o.monto}
                     </td>
@@ -92,6 +94,10 @@ export default function Pedidos() {
                           <Icon name="check" className="w-3.5 h-3.5" />
                           Facturado
                         </span>
+                      ) : o.esEfectivo ? (
+                        <span className="text-[11px] text-muted font-medium">
+                          En entrega (Distribuidor)
+                        </span>
                       ) : (
                         <span className="text-[11px] text-brand-error font-semibold">
                           Sin facturar
@@ -105,7 +111,7 @@ export default function Pedidos() {
                       >
                         Detalle
                       </button>
-                      {!o.facturado && (
+                      {!o.facturado && !o.esEfectivo && o.estado !== 'ANULADO' && (
                         <button
                           onClick={() => handleInvoiceOrder(o.id)}
                           className="bg-primary text-white px-2.5 py-1 rounded-[8px] text-[10px] font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
@@ -145,11 +151,21 @@ export default function Pedidos() {
                 <span className="text-muted">Fecha y hora:</span>
                 <span className="text-ink">{selectedOrder.fecha}</span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-muted">Medio de pago:</span>
+                <span className="font-medium text-ink">{selectedOrder.medioPago}</span>
+              </div>
               <div className="flex justify-between pt-1 border-t border-divider">
                 <span className="text-muted">Estado:</span>
                 <span className="font-semibold text-primary">{selectedOrder.estado}</span>
               </div>
             </div>
+
+            {!selectedOrder.facturado && selectedOrder.esEfectivo && (
+              <div className="p-3 rounded-[12px] bg-warning-bg text-warning-text text-[11px] font-medium">
+                Este pedido tiene pago en <strong>Efectivo</strong>. Únicamente el distribuidor puede facturarlo al marcar el paquete como entregado.
+              </div>
+            )}
 
             <div>
               <h4 className="text-[12px] font-bold text-ink mb-2 uppercase tracking-wider">
@@ -179,7 +195,7 @@ export default function Pedidos() {
               <Button secondary type="button" onClick={() => setIsDetailModalOpen(false)}>
                 Cerrar
               </Button>
-              {!selectedOrder.facturado ? (
+              {!selectedOrder.facturado && !selectedOrder.esEfectivo && selectedOrder.estado !== 'ANULADO' ? (
                 <Button disabled={actionLoading} onClick={() => handleInvoiceOrder(selectedOrder.id)}>
                   {actionLoading ? 'Facturando...' : 'Facturar pedido ahora'}
                 </Button>

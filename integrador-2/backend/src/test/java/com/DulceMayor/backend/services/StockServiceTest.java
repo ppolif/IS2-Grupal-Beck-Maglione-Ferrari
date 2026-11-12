@@ -86,7 +86,7 @@ class StockServiceTest {
     void modificarStockAjuste() {
         StockAjusteRequest req = new StockAjusteRequest(30, "Conteo físico mensual");
         when(productoService.obtenerEntidad("prod-1")).thenReturn(productoMock);
-        when(stockRepository.findFirstByEliminadoFalseOrderByFechaHoraDescIdDesc())
+        when(stockRepository.findFirstByDetalleFacturaProductoIdAndEliminadoFalseOrderByFechaHoraDescIdDesc("prod-1"))
                 .thenReturn(Optional.of(stockMock));
         when(stockRepository.save(any(Stock.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -95,6 +95,7 @@ class StockServiceTest {
         assertNotNull(res);
         assertEquals(30, res.cantidadActual());
         assertEquals("Conteo físico mensual", res.observacion());
+        assertEquals("prod-1", res.productoId());
         assertNotNull(res.fechaHora());
     }
 
@@ -103,7 +104,7 @@ class StockServiceTest {
     void reponerStockSumaCantidad() {
         StockReposicionRequest req = new StockReposicionRequest(25, "Llegada de proveedor");
         when(productoService.obtenerEntidad("prod-1")).thenReturn(productoMock);
-        when(stockRepository.findFirstByEliminadoFalseOrderByFechaHoraDescIdDesc())
+        when(stockRepository.findFirstByDetalleFacturaProductoIdAndEliminadoFalseOrderByFechaHoraDescIdDesc("prod-1"))
                 .thenReturn(Optional.of(stockMock));
         when(stockRepository.save(any(Stock.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -112,12 +113,13 @@ class StockServiceTest {
         assertNotNull(res);
         assertEquals(75, res.cantidadActual()); // 50 + 25
         assertEquals("Llegada de proveedor", res.observacion());
+        assertEquals("prod-1", res.productoId());
     }
 
     @Test
     @DisplayName("descontar: genera un nuevo registro de egreso con la cantidad descontada")
     void descontarExitoso() {
-        when(stockRepository.findFirstByEliminadoFalseOrderByFechaHoraDescIdDesc())
+        when(stockRepository.findFirstByDetalleFacturaProductoIdAndEliminadoFalseOrderByFechaHoraDescIdDesc("prod-1"))
                 .thenReturn(Optional.of(stockMock));
 
         stockService.descontar("prod-1", 20);
@@ -132,7 +134,7 @@ class StockServiceTest {
     @Test
     @DisplayName("descontar: stock insuficiente lanza ConflictoException")
     void descontarInsuficienteLanzaConflicto() {
-        when(stockRepository.findFirstByEliminadoFalseOrderByFechaHoraDescIdDesc())
+        when(stockRepository.findFirstByDetalleFacturaProductoIdAndEliminadoFalseOrderByFechaHoraDescIdDesc("prod-1"))
                 .thenReturn(Optional.of(stockMock));
 
         ConflictoException ex = assertThrows(ConflictoException.class, () -> stockService.descontar("prod-1", 100));
@@ -142,7 +144,7 @@ class StockServiceTest {
     @Test
     @DisplayName("hayStock: verifica disponibilidad sobre el último movimiento")
     void hayStockVerificacion() {
-        when(stockRepository.findFirstByEliminadoFalseOrderByFechaHoraDescIdDesc())
+        when(stockRepository.findFirstByDetalleFacturaProductoIdAndEliminadoFalseOrderByFechaHoraDescIdDesc("prod-1"))
                 .thenReturn(Optional.of(stockMock));
 
         assertTrue(stockService.hayStock("prod-1", 50));

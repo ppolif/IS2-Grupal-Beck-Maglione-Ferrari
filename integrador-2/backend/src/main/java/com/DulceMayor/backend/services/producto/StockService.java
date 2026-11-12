@@ -9,6 +9,7 @@ import com.DulceMayor.backend.dtos.producto.StockPage;
 import com.DulceMayor.backend.dtos.producto.StockReposicionRequest;
 import com.DulceMayor.backend.dtos.producto.StockResponse;
 import com.DulceMayor.backend.entities.facturacion.DetalleFactura;
+import com.DulceMayor.backend.entities.producto.Producto;
 import com.DulceMayor.backend.entities.producto.Stock;
 import com.DulceMayor.backend.repositories.producto.StockRepository;
 import java.time.LocalDateTime;
@@ -64,13 +65,20 @@ public class StockService {
     @Transactional
     public void alCrearProducto(ProductoCreadoEvent event) {
         if (event != null) {
-            productoService.obtenerEntidad(event.productoId());
+            Producto producto = productoService.obtenerEntidad(event.productoId());
             int inicial = event.stockInicial() != null ? event.stockInicial() : 0;
+            DetalleFactura detalleInicial = DetalleFactura.builder()
+                    .producto(producto)
+                    .cantidad(inicial)
+                    .precioUnitario(event.precioInicial() != null ? event.precioInicial() : 0.0)
+                    .subtotal(0.0)
+                    .eliminado(false)
+                    .build();
             Stock stockInicial = Stock.builder()
                     .cantidadActual(inicial)
                     .fechaHora(LocalDateTime.now())
                     .observacion("Ingreso - Stock inicial al crear el producto")
-                    // .detalleFactura(...) // En el nuevo modelo se asociará a través de DetalleFactura
+                    .detalleFactura(detalleInicial)
                     .eliminado(false)
                     .build();
             stockRepository.save(stockInicial);
@@ -93,25 +101,34 @@ public class StockService {
      */
     @Transactional
     public StockResponse modificarStock(String productoId, StockAjusteRequest request) {
-        productoService.obtenerEntidad(productoId);
-        Optional<Stock> ultimoOpt = stockRepository.findFirstByEliminadoFalseOrderByFechaHoraDescIdDesc();
+        Producto producto = productoService.obtenerEntidad(productoId);
+        Optional<Stock> ultimoOpt = stockRepository
+                .findFirstByDetalleFacturaProductoIdAndEliminadoFalseOrderByFechaHoraDescIdDesc(productoId);
 
+        int anterior = ultimoOpt.map(Stock::getCantidadActual).orElse(0);
         String observacion;
         if (request.observacion() != null && !request.observacion().isBlank()) {
             observacion = request.observacion().trim();
         } else {
-            int anterior = ultimoOpt.map(Stock::getCantidadActual).orElse(0);
             observacion = request.cantidadActual() >= anterior
                     ? "Ingreso - Ajuste de inventario"
                     : "Egreso - Ajuste de inventario";
         }
 
+        DetalleFactura detalleAjuste = DetalleFactura.builder()
+                .producto(producto)
+                .cantidad(Math.abs(request.cantidadActual() - anterior))
+                .precioUnitario(0.0)
+                .subtotal(0.0)
+                .eliminado(false)
+                .build();
+
         Stock nuevoMovimiento = Stock.builder()
                 .cantidadActual(request.cantidadActual())
                 .fechaHora(LocalDateTime.now())
                 .observacion(observacion)
+                .detalleFactura(detalleAjuste)
                 .eliminado(false)
-                // .detalleFactura(...) // Se asociará cuando se implemente DetalleFactura
                 .build();
 
         Stock guardado = stockRepository.save(nuevoMovimiento);
@@ -124,8 +141,9 @@ public class StockService {
      */
     @Transactional
     public StockResponse reponerStock(String productoId, StockReposicionRequest request) {
-        productoService.obtenerEntidad(productoId);
-        int cantidadActualPrevia = stockRepository.findFirstByEliminadoFalseOrderByFechaHoraDescIdDesc()
+        Producto producto = productoService.obtenerEntidad(productoId);
+        int cantidadActualPrevia = stockRepository
+                .findFirstByDetalleFacturaProductoIdAndEliminadoFalseOrderByFechaHoraDescIdDesc(productoId)
                 .map(Stock::getCantidadActual)
                 .orElse(0);
 
@@ -134,12 +152,20 @@ public class StockService {
                 ? request.observacion().trim()
                 : "Ingreso - Reposición de mercadería";
 
+        DetalleFactura detalleReposicion = DetalleFactura.builder()
+                .producto(producto)
+                .cantidad(request.cantidad())
+                .precioUnitario(0.0)
+                .subtotal(0.0)
+                .eliminado(false)
+                .build();
+
         Stock nuevoMovimiento = Stock.builder()
                 .cantidadActual(nuevaCantidad)
                 .fechaHora(LocalDateTime.now())
                 .observacion(observacion)
+                .detalleFactura(detalleReposicion)
                 .eliminado(false)
-                // .detalleFactura(...) // Se asociará cuando se implemente DetalleFactura
                 .build();
 
         Stock guardado = stockRepository.save(nuevoMovimiento);
@@ -170,7 +196,8 @@ public class StockService {
      */
     @Transactional(readOnly = true)
     public Integer obtenerStockActual(String productoId) {
-        return stockRepository.findFirstByEliminadoFalseOrderByFechaHoraDescIdDesc()
+        return stockRepository
+                .findFirstByDetalleFacturaProductoIdAndEliminadoFalseOrderByFechaHoraDescIdDesc(productoId)
                 .map(Stock::getCantidadActual)
                 .orElse(0);
     }
@@ -180,7 +207,8 @@ public class StockService {
      */
     @Transactional(readOnly = true)
     public boolean hayStock(String productoId, int cantidad) {
-        return stockRepository.findFirstByEliminadoFalseOrderByFechaHoraDescIdDesc()
+        return stockRepository
+                .findFirstByDetalleFacturaProductoIdAndEliminadoFalseOrderByFechaHoraDescIdDesc(productoId)
                 .map(s -> s.getCantidadActual() >= cantidad)
                 .orElse(false);
     }
@@ -209,11 +237,25 @@ public class StockService {
         }
         int nuevaCantidad = ultimoStock.getCantidadActual() - cantidad;
 
+        DetalleFactura detalleAsociado = detalleFactura;
+        if (detalleAsociado == null) {
+            Producto producto = ultimoStock.getDetalleFactura() != null && ultimoStock.getDetalleFactura().getProducto() != null
+                    ? ultimoStock.getDetalleFactura().getProducto()
+                    : productoService.obtenerEntidad(productoId);
+            detalleAsociado = DetalleFactura.builder()
+                    .producto(producto)
+                    .cantidad(cantidad)
+                    .precioUnitario(0.0)
+                    .subtotal(0.0)
+                    .eliminado(false)
+                    .build();
+        }
+
         Stock egreso = Stock.builder()
                 .cantidadActual(nuevaCantidad)
                 .fechaHora(LocalDateTime.now())
                 .observacion("Egreso - Descuento por venta")
-                .detalleFactura(detalleFactura)
+                .detalleFactura(detalleAsociado)
                 .eliminado(false)
                 .build();
 
@@ -224,11 +266,8 @@ public class StockService {
      * Obtiene la entidad del último registro de stock (o lanza 404 si no existe).
      */
     public Stock obtenerEntidadPorProducto(String productoId) {
-        /*
-         * TODO: Al implementar DetalleFactura:
-         * return stockRepository.findFirstByDetalleFacturaProductoIdAndEliminadoFalseOrderByFechaHoraDescIdDesc(productoId)...
-         */
-        return stockRepository.findFirstByEliminadoFalseOrderByFechaHoraDescIdDesc()
+        return stockRepository
+                .findFirstByDetalleFacturaProductoIdAndEliminadoFalseOrderByFechaHoraDescIdDesc(productoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Stock no encontrado para el producto con id: " + productoId));
     }
 }

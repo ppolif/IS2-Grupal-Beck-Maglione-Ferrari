@@ -46,6 +46,7 @@ public class QrMercadoPagoStrategy implements PagoStrategy {
                 pedido.getTotal(),
                 minutosExpiracion
         );
+        pedido.setQrData(ordenMp.qrData());
 
         String imagenBase64 = QrCodeGeneratorHelper.generarQrBase64(ordenMp.qrData());
         long segundosRestantes = ChronoUnit.SECONDS.between(LocalDateTime.now(), expiracion);

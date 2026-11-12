@@ -93,7 +93,10 @@ export default function Recorrido() {
       });
 
       setIsCashModalOpen(false);
-      alert(`✓ Entrega a "${selectedParada.puntoDeVenta?.nombreComercio}" registrada con éxito.\n✓ Se notificó por correo al siguiente comercio de la ruta.`);
+      alert(
+        `✓ Entrega a "${selectedParada.puntoDeVenta?.nombreComercio}" registrada con éxito.\n` +
+        `✓ Si el pedido tenía pago en efectivo, se generó la factura, pasó a estado FACTURADO y luego a ENTREGADO, y se envió automáticamente por correo al cliente.`
+      );
     } catch (err) {
       alert(err.message || 'Error al registrar la entrega.');
     } finally {

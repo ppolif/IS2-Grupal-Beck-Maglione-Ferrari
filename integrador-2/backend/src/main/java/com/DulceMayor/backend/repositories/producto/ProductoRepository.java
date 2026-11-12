@@ -43,11 +43,16 @@ public interface ProductoRepository extends BaseRepository<Producto> {
               AND (:enOferta IS NULL OR p.enOferta = :enOferta)
               AND (
                    :soloConStock IS NULL OR :soloConStock = false
-                   OR EXISTS (
-                       SELECT s FROM Stock s
+                   OR (
+                       SELECT COALESCE(MAX(s.cantidadActual), 0) FROM Stock s
                        WHERE s.eliminado = false
-                         AND s.cantidadActual > 0
-                   )
+                         AND s.detalleFactura.producto.id = p.id
+                         AND s.fechaHora = (
+                             SELECT MAX(s2.fechaHora) FROM Stock s2
+                             WHERE s2.eliminado = false
+                               AND s2.detalleFactura.producto.id = p.id
+                         )
+                   ) > 0
               )
             """)
     Page<Producto> buscarConFiltros(

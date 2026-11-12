@@ -252,7 +252,7 @@ export default function Pedidos() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        {order.estado === 'CARGADO' && (
+                        {order.estado === 'CARGADO' && order.tipoPago === 'BILLETERA_VIRTUAL' && (
                           <button
                             type="button"
                             onClick={() => abrirModalQr(order)}
@@ -332,7 +332,7 @@ export default function Pedidos() {
             </div>
 
             <div className="pt-2 flex flex-col sm:flex-row gap-2">
-              {selectedOrder.estado === 'CARGADO' && (
+              {selectedOrder.estado === 'CARGADO' && selectedOrder.tipoPago === 'BILLETERA_VIRTUAL' && (
                 <button
                   type="button"
                   onClick={() => {

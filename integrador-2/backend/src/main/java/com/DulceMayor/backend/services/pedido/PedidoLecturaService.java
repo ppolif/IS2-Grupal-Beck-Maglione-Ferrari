@@ -58,6 +58,11 @@ public class PedidoLecturaService {
                         .orElse(null)
                 : null;
 
+        com.DulceMayor.backend.entities.facturacion.TipoPago tipoPago = base.tipoPago();
+        if (tipoPago == null && pedido.getFormaDePago() != null) {
+            tipoPago = pedido.getFormaDePago().getTipoPago();
+        }
+
         return new PedidoResponse(
                 base.id(),
                 base.numeroPedido(),
@@ -71,7 +76,8 @@ public class PedidoLecturaService {
                 base.descuento(),
                 base.total(),
                 base.detalles() != null ? base.detalles() : List.of(),
-                facturaId
+                facturaId,
+                tipoPago
         );
     }
 

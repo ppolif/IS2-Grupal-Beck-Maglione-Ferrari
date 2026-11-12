@@ -32,6 +32,9 @@ public interface PedidoMapper extends BaseMapper<Pedido, PedidoRequest, PedidoRe
     @Mapping(target = "preventor", ignore = true)
     @Mapping(target = "distribuidor", ignore = true)
     @Mapping(target = "promocion", ignore = true)
+    @Mapping(target = "formaDePago", ignore = true)
+    @Mapping(target = "fechaExpiracionPago", ignore = true)
+    @Mapping(target = "qrData", ignore = true)
     @Mapping(target = "detalles", ignore = true)
     Pedido aEntidad(PedidoRequest request);
 
@@ -48,12 +51,16 @@ public interface PedidoMapper extends BaseMapper<Pedido, PedidoRequest, PedidoRe
     @Mapping(target = "preventor", ignore = true)
     @Mapping(target = "distribuidor", ignore = true)
     @Mapping(target = "promocion", ignore = true)
+    @Mapping(target = "formaDePago", ignore = true)
+    @Mapping(target = "fechaExpiracionPago", ignore = true)
+    @Mapping(target = "qrData", ignore = true)
     @Mapping(target = "detalles", ignore = true)
     void actualizarEntidad(PedidoRequest request, @MappingTarget Pedido entidad);
 
     @Override
     @Mapping(target = "codigoPromocion", source = "promocion.codigo")
     @Mapping(target = "facturaId", ignore = true)
+    @Mapping(target = "tipoPago", source = "formaDePago.tipoPago")
     @Mapping(target = "puntoDeVenta", source = "puntoDeVenta")
     @Mapping(target = "preventor", source = "preventor")
     @Mapping(target = "distribuidor", source = "distribuidor")

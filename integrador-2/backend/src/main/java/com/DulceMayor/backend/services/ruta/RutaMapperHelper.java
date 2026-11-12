@@ -151,7 +151,8 @@ public class RutaMapperHelper {
 
         for (int i = 0; i < pedidos.size(); i++) {
             Pedido pedido = pedidos.get(i);
-            boolean completada = pedido.getEstado() == EstadoPedido.ENTREGADO;
+            boolean completada = pedido.getEstado() == EstadoPedido.ENTREGADO
+                    || pedido.getEstado() == EstadoPedido.FACTURADO;
             resultado.add(new ParadaResponse(
                     i + 1,
                     completada,

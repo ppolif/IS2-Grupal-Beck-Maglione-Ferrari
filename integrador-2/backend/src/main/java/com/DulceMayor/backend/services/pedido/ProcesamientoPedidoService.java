@@ -64,6 +64,14 @@ public class ProcesamientoPedidoService {
             );
         }
 
+        if (pedido.getFormaDePago() != null
+                && pedido.getFormaDePago().getTipoPago() == com.DulceMayor.backend.entities.facturacion.TipoPago.EFECTIVO) {
+            throw new ConflictoException(
+                    "CONFLICTO",
+                    "Los pedidos con pago en efectivo solo pueden ser facturados por el distribuidor al momento de la entrega"
+            );
+        }
+
         // Agrupa cantidades requeridas por producto para contemplar pedidos con múltiples líneas del mismo artículo
         Map<String, AcumuladoProducto> requeridosPorProducto = new LinkedHashMap<>();
         for (DetallePedido detalle : pedido.getDetalles()) {

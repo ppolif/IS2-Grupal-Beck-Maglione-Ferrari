@@ -103,6 +103,9 @@ public class Pedido extends EntidadBase {
     @Column(name = "fecha_expiracion_pago")
     private LocalDateTime fechaExpiracionPago;
 
+    @Column(name = "qr_data", length = 2000)
+    private String qrData;
+
     /**
      * Composición 1 — 1..* hacia {@link DetallePedido}: el pedido es dueño de sus líneas de detalle.
      */

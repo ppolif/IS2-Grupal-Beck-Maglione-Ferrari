@@ -16,6 +16,8 @@ import com.DulceMayor.backend.dtos.pedido.PedidoResponse;
 import com.DulceMayor.backend.dtos.pedido.PedidoUpdateRequest;
 import com.DulceMayor.backend.dtos.producto.VigenciaPrecioResponse;
 import com.DulceMayor.backend.entities.RolUsuario;
+import com.DulceMayor.backend.entities.facturacion.FormaDePago;
+import com.DulceMayor.backend.entities.facturacion.TipoPago;
 import com.DulceMayor.backend.entities.pedido.DetallePedido;
 import com.DulceMayor.backend.entities.pedido.EstadoPedido;
 import com.DulceMayor.backend.entities.pedido.Pedido;
@@ -27,6 +29,7 @@ import com.DulceMayor.backend.entities.producto.Producto;
 import com.DulceMayor.backend.entities.producto.Promocion;
 import com.DulceMayor.backend.repositories.pedido.PedidoRepository;
 import com.DulceMayor.backend.services.BaseService;
+import com.DulceMayor.backend.services.facturacion.FormaDePagoService;
 import com.DulceMayor.backend.services.persona.EmpleadoService;
 import com.DulceMayor.backend.services.persona.MinoristaService;
 import com.DulceMayor.backend.services.persona.PuntoDeVentaService;
@@ -61,6 +64,7 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     private final PuntoDeVentaService puntoDeVentaService;
     private final EmpleadoService empleadoService;
     private final MinoristaService minoristaService;
+    private final FormaDePagoService formaDePagoService;
     private final ApplicationEventPublisher eventPublisher;
 
     public PedidoService(
@@ -74,6 +78,7 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
             PuntoDeVentaService puntoDeVentaService,
             EmpleadoService empleadoService,
             MinoristaService minoristaService,
+            FormaDePagoService formaDePagoService,
             ApplicationEventPublisher eventPublisher) {
         super(pedidoRepository, pedidoMapper, "Pedido");
         this.pedidoRepository = pedidoRepository;
@@ -85,6 +90,7 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         this.puntoDeVentaService = puntoDeVentaService;
         this.empleadoService = empleadoService;
         this.minoristaService = minoristaService;
+        this.formaDePagoService = formaDePagoService;
         this.eventPublisher = eventPublisher;
     }
 
@@ -142,17 +148,29 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
         entidad.setTotal(calculo.total());
         entidad.setEstado(EstadoPedido.CARGADO);
         entidad.setDetalles(calculo.detalles());
+        if (request.tipoPago() != null) {
+            FormaDePago formaDePago = formaDePagoService.obtenerOCrearPorTipo(request.tipoPago());
+            entidad.setFormaDePago(formaDePago);
+        }
     }
 
     /**
-     * Lista todos los pedidos en estado {@link EstadoPedido#FACTURADO} que están pendientes
-     * de asignación y armado de hoja de ruta logística.
+     * Lista todos los pedidos pendientes de asignación y armado de hoja de ruta logística:
+     * pedidos en estado {@link EstadoPedido#FACTURADO} sin distribuidor asignado, así como pedidos
+     * en estado {@link EstadoPedido#CARGADO} con modalidad de pago en {@link TipoPago#EFECTIVO}
+     * (cuya facturación se realiza por el distribuidor al momento de la entrega).
      *
-     * @return Lista de {@link Pedido} facturados no eliminados ordenados por fecha de carga ascendente.
+     * @return Lista de {@link Pedido} pendientes de reparto no eliminados ordenados por fecha de carga ascendente.
      */
     @Transactional(readOnly = true)
     public List<Pedido> listarFacturadosPendientes() {
-        return pedidoRepository.findAllByEstadoAndEliminadoFalseOrderByFechaHoraCargaAsc(EstadoPedido.FACTURADO);
+        List<Pedido> pendientes = pedidoRepository.buscarPendientesDeReparto();
+        if (pendientes != null && !pendientes.isEmpty()) {
+            return pendientes;
+        }
+        return pedidoRepository.findAllByEstadoAndEliminadoFalseOrderByFechaHoraCargaAsc(EstadoPedido.FACTURADO).stream()
+                .filter(p -> p.getDistribuidor() == null)
+                .toList();
     }
 
     /**
@@ -314,10 +332,13 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
             throw new ValidacionException("El identificador del distribuidor es obligatorio para pasar a EN_REPARTO");
         }
         Pedido pedido = obtenerEntidad(id);
-        if (pedido.getEstado() != EstadoPedido.FACTURADO) {
+        boolean esEfectivoCargado = pedido.getEstado() == EstadoPedido.CARGADO
+                && pedido.getFormaDePago() != null
+                && pedido.getFormaDePago().getTipoPago() == TipoPago.EFECTIVO;
+        if (pedido.getEstado() != EstadoPedido.FACTURADO && !esEfectivoCargado) {
             throw new ConflictoException(
                     "TRANSICION_INVALIDA",
-                    "Solo un pedido FACTURADO puede pasar a EN_REPARTO. Estado actual: " + pedido.getEstado()
+                    "Solo un pedido FACTURADO o en EFECTIVO pendiente de cobro puede pasar a EN_REPARTO. Estado actual: " + pedido.getEstado()
             );
         }
 
@@ -351,10 +372,10 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     @Transactional
     public PedidoResponse marcarEntregado(String id, String observacion) {
         Pedido pedido = obtenerEntidad(id);
-        if (pedido.getEstado() != EstadoPedido.EN_REPARTO) {
+        if (pedido.getEstado() != EstadoPedido.EN_REPARTO && pedido.getEstado() != EstadoPedido.FACTURADO) {
             throw new ConflictoException(
                     "TRANSICION_INVALIDA",
-                    "Solo un pedido EN_REPARTO puede marcarse como ENTREGADO. Estado actual: " + pedido.getEstado()
+                    "Solo un pedido EN_REPARTO o recién FACTURADO en entrega puede marcarse como ENTREGADO. Estado actual: " + pedido.getEstado()
             );
         }
 

@@ -343,7 +343,29 @@ class ProcesamientoPagoServiceTest {
 
         verify(pagoService).guardarPago(any(Pago.class));
         verify(facturaService).emitirFacturaConPagoAprobado(pedido);
+        verify(pedidoService).marcarFacturado(eq(pedido), anyString());
         verify(pedidoService).marcarEntregado(eq("ped-600"), anyString());
+    }
+
+    @Test
+    @DisplayName("consultarEstadoQr: retorna qrImagenBase64 del QR real de Mercado Pago asociado al pedido")
+    void consultarEstadoQrDevuelveImagenBase64Real() {
+        Pedido pedido = Pedido.builder()
+                .id("ped-qr-700")
+                .numeroPedido(700L)
+                .total(12500.0)
+                .estado(EstadoPedido.FACTURADO)
+                .qrData("00020101021243650016com.mercadopago0136ped-qr-700")
+                .build();
+
+        when(pedidoService.obtenerEntidad("ped-qr-700")).thenReturn(pedido);
+        when(pagoService.buscarEntidadesPorPedido("ped-qr-700")).thenReturn(java.util.List.of());
+
+        IniciarPagoQrResponse res = service.consultarEstadoQr("ped-qr-700");
+
+        assertNotNull(res);
+        assertEquals("APROBADO", res.qrData());
+        assertNotNull(res.qrImagenBase64());
     }
 
     @Test

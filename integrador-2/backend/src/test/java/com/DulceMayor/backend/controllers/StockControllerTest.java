@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.DulceMayor.backend.config.JwtProvider;
 import com.DulceMayor.backend.dtos.producto.StockAjusteRequest;
 import com.DulceMayor.backend.dtos.producto.StockReposicionRequest;
+import com.DulceMayor.backend.entities.facturacion.DetalleFactura;
 import com.DulceMayor.backend.entities.producto.Categoria;
 import com.DulceMayor.backend.entities.producto.Producto;
 import com.DulceMayor.backend.entities.ProveedorAuth;
@@ -112,6 +113,13 @@ class StockControllerTest {
         stockRepository.save(Stock.builder()
                 .cantidadActual(40)
                 .observacion("Stock inicial")
+                .detalleFactura(DetalleFactura.builder()
+                        .producto(producto)
+                        .cantidad(40)
+                        .precioUnitario(0.0)
+                        .subtotal(0.0)
+                        .eliminado(false)
+                        .build())
                 .eliminado(false)
                 .build());
     }
