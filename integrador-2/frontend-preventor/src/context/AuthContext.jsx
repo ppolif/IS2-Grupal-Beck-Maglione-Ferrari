@@ -57,13 +57,32 @@ export function AuthProvider({ children }) {
         setPerfil(perf);
         localStorage.setItem('dm_preventor_perfil', JSON.stringify(perf));
       } catch {
-        // En caso de que no tenga perfil extendido aún
+        // En caso de que no tenga perfil extendido aún o tenga clave temporal
       }
 
       return authResponse;
     },
     []
   );
+
+  const cambiarClave = useCallback(async (claveActual, nuevaClave, confirmarClave) => {
+    await authService.cambiarClave(claveActual, nuevaClave, confirmarClave);
+    setUsuario((prev) => {
+      const actualizado = prev ? { ...prev, claveTemporal: false } : prev;
+      if (actualizado) {
+        localStorage.setItem('dm_preventor_usuario', JSON.stringify(actualizado));
+      }
+      return actualizado;
+    });
+    // Ahora que la clave ya no es temporal, podemos traer el perfil completo
+    try {
+      const perf = await authService.obtenerPerfil();
+      setPerfil(perf);
+      localStorage.setItem('dm_preventor_perfil', JSON.stringify(perf));
+    } catch {
+      // Ignorar si falla
+    }
+  }, []);
 
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -124,6 +143,7 @@ export function AuthProvider({ children }) {
     isAuthenticated: Boolean(token),
     login,
     logout,
+    cambiarClave,
     refrescarPerfil,
   };
 

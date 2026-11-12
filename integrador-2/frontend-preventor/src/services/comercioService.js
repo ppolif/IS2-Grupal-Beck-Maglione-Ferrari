@@ -33,6 +33,14 @@ export const comercioService = {
   },
 
   /**
+   * Obtiene la lista de localidades disponibles en el sistema.
+   * @returns {Promise<Array>}
+   */
+  async listarLocalidades() {
+    return apiFetch('/localidades');
+  },
+
+  /**
    * Registra un nuevo comercio minorista junto a sus direcciones y contactos.
    * @param {Object} minoristaData - Datos del formulario de alta
    * @returns {Promise<Object>}

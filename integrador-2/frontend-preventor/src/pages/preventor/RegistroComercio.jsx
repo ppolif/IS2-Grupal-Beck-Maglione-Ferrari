@@ -2,7 +2,7 @@
  * Formulario de Alta y Registro de Comercios Minoristas en Ruta.
  * Conectado con los endpoints /minoristas y /puntos-de-venta del backend.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import { comercioService } from '../../services/comercioService';
@@ -12,6 +12,8 @@ export default function RegistroComercio() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [localidades, setLocalidades] = useState([]);
+  const [cargandoLocalidades, setCargandoLocalidades] = useState(true);
 
   const [formData, setFormData] = useState({
     nombreComercio: '',
@@ -23,8 +25,29 @@ export default function RegistroComercio() {
     email: '',
     calle: '',
     numero: '',
-    localidad: 'Godoy Cruz',
+    localidadId: '',
   });
+
+  useEffect(() => {
+    async function cargarLocalidades() {
+      try {
+        const data = await comercioService.listarLocalidades();
+        const lista = Array.isArray(data) ? data : data?.content || [];
+        setLocalidades(lista);
+        if (lista.length > 0) {
+          setFormData((prev) => ({
+            ...prev,
+            localidadId: prev.localidadId || lista[0].id,
+          }));
+        }
+      } catch (err) {
+        console.warn('No se pudieron cargar localidades dinámicas:', err);
+      } finally {
+        setCargandoLocalidades(false);
+      }
+    }
+    cargarLocalidades();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -35,43 +58,68 @@ export default function RegistroComercio() {
     setLoading(true);
     setError(null);
 
+    const emailLimpio = formData.email.trim();
+    if (!emailLimpio) {
+      setError('El correo electrónico es obligatorio para crear el usuario del cliente.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // 1. Registrar Minorista
+      const selectedLocId = formData.localidadId || (localidades.length > 0 ? localidades[0].id : null);
+
+      // 1. Contactos con medio conforme al backend (CORREO y TELEFONICO)
+      const contactos = [
+        {
+          medio: 'CORREO',
+          tipoContacto: 'LABORAL',
+          email: emailLimpio,
+        },
+      ];
+
+      if (formData.telefono.trim()) {
+        contactos.push({
+          medio: 'TELEFONICO',
+          tipoContacto: 'LABORAL',
+          telefono: formData.telefono.trim(),
+          tipoTelefono: 'CELULAR',
+        });
+      }
+
+      // 2. Registrar Minorista
       const minoristaPayload = {
         nombre: formData.nombre.trim(),
         apellido: formData.apellido.trim(),
         tipoDocumento: formData.tipoDocumento,
         numeroDocumento: formData.numeroDocumento.trim(),
-        contactos: [
-          ...(formData.telefono ? [{ tipo: 'TELEFONO', valor: formData.telefono.trim() }] : []),
-          ...(formData.email ? [{ tipo: 'EMAIL', valor: formData.email.trim() }] : []),
-        ],
-        direcciones: [
-          {
-            calle: formData.calle.trim(),
-            numero: formData.numero.trim() || 'S/N',
-            pisoDpto: '',
-            observaciones: formData.nombreComercio.trim(),
-            localidadId: 'loc-01', // Localidad por defecto Gran Mendoza
-          },
-        ],
+        contactos,
+        direcciones: selectedLocId
+          ? [
+              {
+                calle: formData.calle.trim(),
+                numeracion: formData.numero.trim() || 'S/N',
+                barrio: 'Centro',
+                referencia: formData.nombreComercio.trim(),
+                localidadId: selectedLocId,
+              },
+            ]
+          : [],
       };
 
       const minoristaCreado = await comercioService.registrarMinorista(minoristaPayload);
 
-      // 2. Si se devuelve ID de minorista, vincular su punto de venta
-      if (minoristaCreado?.id) {
+      // 3. Crear Punto de Venta vinculado
+      if (minoristaCreado?.id && selectedLocId) {
         await comercioService.crearPuntoDeVenta({
           nombreComercio: formData.nombreComercio.trim(),
           minoristaId: minoristaCreado.id,
           direccion: {
             calle: formData.calle.trim(),
-            numero: formData.numero.trim() || 'S/N',
-            pisoDpto: '',
-            localidadId: 'loc-01',
+            numeracion: formData.numero.trim() || 'S/N',
+            barrio: 'Centro',
+            referencia: formData.nombreComercio.trim(),
+            localidadId: selectedLocId,
           },
-        }).catch(() => {
-          // Si el endpoint de minoristas ya generó el punto de venta automáticamente
         });
       }
 
@@ -214,6 +262,28 @@ export default function RegistroComercio() {
 
               <div className="space-y-1">
                 <label className="block text-[11px] font-semibold text-[#2b2b3a]">
+                  Localidad *
+                </label>
+                {cargandoLocalidades ? (
+                  <p className="text-[11px] text-[#6b6b80]">Cargando localidades...</p>
+                ) : (
+                  <select
+                    name="localidadId"
+                    value={formData.localidadId}
+                    onChange={handleChange}
+                    className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                  >
+                    {localidades.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.nombre} {loc.codigoPostal ? `(CP: ${loc.codigoPostal})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-[#2b2b3a]">
                   Teléfono de Contacto
                 </label>
                 <input
@@ -228,16 +298,20 @@ export default function RegistroComercio() {
 
               <div className="space-y-1">
                 <label className="block text-[11px] font-semibold text-[#2b2b3a]">
-                  Correo Electrónico
+                  Correo Electrónico (Usuario del Cliente) *
                 </label>
                 <input
                   type="email"
+                  required
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="comercio@ejemplo.com"
                   className="w-full border border-[#ececf2] rounded-[12px] p-2.5 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
                 />
+                <p className="text-[10px] text-[#6b6b80]">
+                  Este correo se utilizará para crear la cuenta de acceso del minorista con clave inicial temporal.
+                </p>
               </div>
             </div>
 

@@ -15,28 +15,47 @@ export default function Recorrido() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [procesando, setProcesando] = useState(false);
+  const [generando, setGenerando] = useState(false);
 
   // Carga la ruta de hoy desde el backend
-  useEffect(() => {
-    async function cargarRuta() {
-      try {
-        setCargando(true);
-        setError(null);
-        const data = await rutaService.obtenerMiRutaPreventorDelDia();
-        setRuta(data);
-        if (data?.paradas && data.paradas.length > 0) {
-          const primeraIncompleta = data.paradas.find((p) => !p.completada) || data.paradas[0];
-          setSelectedVisit(primeraIncompleta);
-        }
-      } catch (err) {
-        console.error('Error al cargar la ruta del preventor:', err);
-        setError('No tenés una ruta de preventa generada para hoy.');
-      } finally {
-        setCargando(false);
+  const cargarRuta = async () => {
+    try {
+      setCargando(true);
+      setError(null);
+      const data = await rutaService.obtenerMiRutaPreventorDelDia();
+      setRuta(data);
+      if (data?.paradas && data.paradas.length > 0) {
+        const primeraIncompleta = data.paradas.find((p) => !p.completada) || data.paradas[0];
+        setSelectedVisit(primeraIncompleta);
       }
+    } catch (err) {
+      console.error('Error al cargar la ruta del preventor:', err);
+      setError('No tenés una ruta de preventa generada para hoy.');
+    } finally {
+      setCargando(false);
     }
+  };
+
+  useEffect(() => {
     cargarRuta();
   }, []);
+
+  const handleGenerarRuta = async () => {
+    try {
+      setGenerando(true);
+      setError(null);
+      const nuevaRuta = await rutaService.generarRutaPreventor();
+      setRuta(nuevaRuta);
+      if (nuevaRuta?.paradas && nuevaRuta.paradas.length > 0) {
+        setSelectedVisit(nuevaRuta.paradas[0]);
+      }
+    } catch (err) {
+      console.error('Error al generar la ruta:', err);
+      setError(err.message || 'No se pudo generar la ruta. Verificá tener comercios en tu cartera.');
+    } finally {
+      setGenerando(false);
+    }
+  };
 
   const handleMarcarParada = async (parada) => {
     if (!ruta?.id || !parada?.puntoDeVenta?.id) return;
@@ -115,10 +134,19 @@ export default function Recorrido() {
       )}
 
       {error && (
-        <div className="p-6 bg-white rounded-[20px] border border-[#ececf2] text-center space-y-2">
-          <span className="text-3xl">📍</span>
-          <h3 className="font-bold text-[#2b2b3a] text-lg">Sin ruta asignada</h3>
-          <p className="text-[12px] text-[#6b6b80] max-w-sm mx-auto">{error}</p>
+        <div className="p-8 bg-white rounded-[20px] border border-[#ececf2] text-center space-y-4 max-w-md mx-auto">
+          <span className="text-4xl">📍</span>
+          <div>
+            <h3 className="font-bold text-[#2b2b3a] text-lg">Sin ruta asignada</h3>
+            <p className="text-[12px] text-[#6b6b80] mt-1">{error}</p>
+          </div>
+          <Button
+            onClick={handleGenerarRuta}
+            disabled={generando}
+            className="w-full justify-center py-3 text-[13px] cursor-pointer"
+          >
+            {generando ? 'Generando ruta diaria...' : 'Generar mi ruta del día'}
+          </Button>
         </div>
       )}
 

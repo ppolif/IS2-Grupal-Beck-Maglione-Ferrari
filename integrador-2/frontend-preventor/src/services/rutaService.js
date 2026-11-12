@@ -20,6 +20,19 @@ export const rutaService = {
   },
 
   /**
+   * Genera la ruta de visitas diaria para el preventor autenticado.
+   * @param {string} [fecha] - Formato YYYY-MM-DD (por defecto hoy)
+   * @returns {Promise<Object>} RutaResponse
+   */
+  async generarRutaPreventor(fecha) {
+    const fechaStr = fecha || new Date().toISOString().slice(0, 10);
+    return apiFetch('/rutas-preventor/generar', {
+      method: 'POST',
+      body: JSON.stringify({ fecha: fechaStr }),
+    });
+  },
+
+  /**
    * Registra una visita concretada en un punto de venta.
    * @param {string} rutaId - Identificador de la ruta del día
    * @param {Object} data - { puntoDeVentaId, pedidoId }

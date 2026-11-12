@@ -76,7 +76,8 @@ public class NearestNeighborStrategy implements RutaOptimizerStrategy {
                 PuntoDeVenta candidato = candidatos.get(i);
                 Direccion dir = candidato.getDireccion();
 
-                if (dir == null || dir.getLatitud() == 0.0 && dir.getLongitud() == 0.0) {
+                if (dir == null || dir.getLatitud() == null || dir.getLongitud() == null
+                        || (dir.getLatitud() == 0.0 && dir.getLongitud() == 0.0)) {
                     continue;
                 }
 
@@ -96,7 +97,9 @@ public class NearestNeighborStrategy implements RutaOptimizerStrategy {
             PuntoDeVenta siguientePunto = candidatos.remove(mejorIndice);
             recorridoOrdenado.add(siguientePunto);
 
-            if (siguientePunto.getDireccion() != null) {
+            if (siguientePunto.getDireccion() != null
+                    && siguientePunto.getDireccion().getLatitud() != null
+                    && siguientePunto.getDireccion().getLongitud() != null) {
                 latActual = siguientePunto.getDireccion().getLatitud();
                 lonActual = siguientePunto.getDireccion().getLongitud();
             }

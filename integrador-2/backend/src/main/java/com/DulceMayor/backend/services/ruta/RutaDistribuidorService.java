@@ -342,7 +342,8 @@ public class RutaDistribuidorService {
             return Double.MAX_VALUE;
         }
         Direccion dir = pdv.getDireccion();
-        if (dir.getLatitud() == 0.0 && dir.getLongitud() == 0.0) {
+        if (dir.getLatitud() == null || dir.getLongitud() == null
+                || (dir.getLatitud() == 0.0 && dir.getLongitud() == 0.0)) {
             return Double.MAX_VALUE;
         }
         return rutaOptimizerStrategy.calcularDistanciaHaversine(latOrigen, lonOrigen, dir.getLatitud(), dir.getLongitud());
@@ -354,7 +355,10 @@ public class RutaDistribuidorService {
         }
         Direccion d1 = pdv1.getDireccion();
         Direccion d2 = pdv2.getDireccion();
-        if ((d1.getLatitud() == 0.0 && d1.getLongitud() == 0.0) || (d2.getLatitud() == 0.0 && d2.getLongitud() == 0.0)) {
+        if (d1.getLatitud() == null || d1.getLongitud() == null
+                || d2.getLatitud() == null || d2.getLongitud() == null
+                || (d1.getLatitud() == 0.0 && d1.getLongitud() == 0.0)
+                || (d2.getLatitud() == 0.0 && d2.getLongitud() == 0.0)) {
             return Double.MAX_VALUE;
         }
         return rutaOptimizerStrategy.calcularDistanciaHaversine(d1.getLatitud(), d1.getLongitud(), d2.getLatitud(), d2.getLongitud());

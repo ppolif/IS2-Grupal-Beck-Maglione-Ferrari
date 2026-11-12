@@ -2,6 +2,7 @@ package com.DulceMayor.backend.config;
 
 import com.DulceMayor.backend.entities.RolUsuario;
 import com.DulceMayor.backend.entities.direccion.Departamento;
+import com.DulceMayor.backend.entities.direccion.Direccion;
 import com.DulceMayor.backend.entities.direccion.Localidad;
 import com.DulceMayor.backend.entities.direccion.Pais;
 import com.DulceMayor.backend.entities.direccion.Provincia;
@@ -15,6 +16,8 @@ import com.DulceMayor.backend.repositories.direccion.ProvinciaRepository;
 import com.DulceMayor.backend.repositories.mayorista.ConfiguracionCorreoMayoristaRepository;
 import com.DulceMayor.backend.repositories.mayorista.MayoristaRepository;
 import com.DulceMayor.backend.services.UsuarioService;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -86,10 +89,26 @@ public class DataInitializer implements CommandLineRunner {
         inicializarGeografiaSiEsNecesario();
 
         if (mayoristaRepository.count() == 0) {
+            Localidad locCiudad = localidadRepository.findAllByEliminadoFalseOrderByNombreAsc().stream()
+                    .filter(l -> "Ciudad de Mendoza".equalsIgnoreCase(l.getNombre()))
+                    .findFirst()
+                    .orElse(null);
+
             Mayorista mayorista = Mayorista.builder()
                     .razonSocial("Dulce Mayor S.A. - Casa Central")
                     .cuit("30-71234567-9")
                     .tipoEmpresa(TipoEmpresa.SEDE_CENTRAL)
+                    .direcciones(locCiudad != null ? new ArrayList<>(List.of(
+                            Direccion.builder()
+                                    .calle("Av. San Martín")
+                                    .numeracion("1020")
+                                    .barrio("Centro")
+                                    .localidad(locCiudad)
+                                    .latitud(-32.889458)
+                                    .longitud(-68.845839)
+                                    .eliminado(false)
+                                    .build()
+                    )) : new ArrayList<>())
                     .eliminado(false)
                     .build();
             Mayorista guardado = mayoristaRepository.save(mayorista);
@@ -105,6 +124,92 @@ public class DataInitializer implements CommandLineRunner {
                         .eliminado(false)
                         .build();
                 configuracionCorreoRepository.save(configMail);
+            }
+        }
+
+        inicializarSucursalesSiEsNecesario();
+    }
+
+    private void inicializarSucursalesSiEsNecesario() {
+        if (mayoristaRepository.findAllByTipoEmpresaAndEliminadoFalse(TipoEmpresa.SUCURSAL).isEmpty()) {
+            List<Localidad> localidades = localidadRepository.findAllByEliminadoFalseOrderByNombreAsc();
+            Localidad locGodoyCruz = localidades.stream()
+                    .filter(l -> "Godoy Cruz".equalsIgnoreCase(l.getNombre()))
+                    .findFirst()
+                    .orElse(null);
+            Localidad locGuaymallen = localidades.stream()
+                    .filter(l -> "Villa Nueva".equalsIgnoreCase(l.getNombre()) || "Dorrego".equalsIgnoreCase(l.getNombre()))
+                    .findFirst()
+                    .orElse(null);
+            Localidad locLasHeras = localidades.stream()
+                    .filter(l -> "Las Heras".equalsIgnoreCase(l.getNombre()))
+                    .findFirst()
+                    .orElse(null);
+
+            // 1. Sucursal Godoy Cruz
+            if (locGodoyCruz != null && !mayoristaRepository.existsByCuitAndEliminadoFalse("30-71234567-1")) {
+                Mayorista sucGodoyCruz = Mayorista.builder()
+                        .razonSocial("Dulce Mayor - Sucursal Godoy Cruz")
+                        .cuit("30-71234567-1")
+                        .tipoEmpresa(TipoEmpresa.SUCURSAL)
+                        .direcciones(new ArrayList<>(List.of(
+                                Direccion.builder()
+                                        .calle("Belgrano")
+                                        .numeracion("1250")
+                                        .barrio("Godoy Cruz Centro")
+                                        .localidad(locGodoyCruz)
+                                        .latitud(-32.925000)
+                                        .longitud(-68.844000)
+                                        .eliminado(false)
+                                        .build()
+                        )))
+                        .eliminado(false)
+                        .build();
+                mayoristaRepository.save(sucGodoyCruz);
+            }
+
+            // 2. Sucursal Guaymallén
+            if (locGuaymallen != null && !mayoristaRepository.existsByCuitAndEliminadoFalse("30-71234567-2")) {
+                Mayorista sucGuaymallen = Mayorista.builder()
+                        .razonSocial("Dulce Mayor - Sucursal Guaymallén")
+                        .cuit("30-71234567-2")
+                        .tipoEmpresa(TipoEmpresa.SUCURSAL)
+                        .direcciones(new ArrayList<>(List.of(
+                                Direccion.builder()
+                                        .calle("Bandera de los Andes")
+                                        .numeracion("4300")
+                                        .barrio("Villa Nueva")
+                                        .localidad(locGuaymallen)
+                                        .latitud(-32.898000)
+                                        .longitud(-68.785000)
+                                        .eliminado(false)
+                                        .build()
+                        )))
+                        .eliminado(false)
+                        .build();
+                mayoristaRepository.save(sucGuaymallen);
+            }
+
+            // 3. Sucursal Las Heras
+            if (locLasHeras != null && !mayoristaRepository.existsByCuitAndEliminadoFalse("30-71234567-3")) {
+                Mayorista sucLasHeras = Mayorista.builder()
+                        .razonSocial("Dulce Mayor - Sucursal Las Heras")
+                        .cuit("30-71234567-3")
+                        .tipoEmpresa(TipoEmpresa.SUCURSAL)
+                        .direcciones(new ArrayList<>(List.of(
+                                Direccion.builder()
+                                        .calle("Av. San Martín Norte")
+                                        .numeracion("2800")
+                                        .barrio("Las Heras")
+                                        .localidad(locLasHeras)
+                                        .latitud(-32.852000)
+                                        .longitud(-68.835000)
+                                        .eliminado(false)
+                                        .build()
+                        )))
+                        .eliminado(false)
+                        .build();
+                mayoristaRepository.save(sucLasHeras);
             }
         }
     }
