@@ -3,13 +3,17 @@
  * Conectado con /api/v1/rutas-preventor/mi-ruta-del-dia del backend.
  */
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import OSMMap from '../../components/OSMMap';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
 import { colors } from '../../theme/colors';
 import { rutaService } from '../../services/rutaService';
+import { useCart } from '../../context/CartContext';
 
 export default function Recorrido() {
+  const navigate = useNavigate();
+  const { seleccionarCliente } = useCart();
   const [ruta, setRuta] = useState(null);
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -192,7 +196,7 @@ export default function Recorrido() {
             </div>
 
             {selectedVisit && (
-              <div className="bg-white rounded-[20px] p-4 border border-[#ececf2] shadow-sm flex items-center justify-between gap-4">
+              <div className="bg-white rounded-[20px] p-4 border border-[#ececf2] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <span className="text-[10px] font-bold text-[#e86bc4] uppercase">
                     Parada #{selectedVisit.orden} Seleccionada
@@ -205,13 +209,28 @@ export default function Recorrido() {
                   </p>
                 </div>
 
-                <Button
-                  onClick={() => handleMarcarParada(selectedVisit)}
-                  disabled={procesando || selectedVisit.completada}
-                  className={`text-[12px] cursor-pointer ${selectedVisit.completada ? 'opacity-50' : ''}`}
-                >
-                  {selectedVisit.completada ? 'Completada ✓' : 'Marcar Visitada'}
-                </Button>
+                <div className="flex items-center gap-2">
+                  {selectedVisit.puntoDeVenta && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        seleccionarCliente(selectedVisit.puntoDeVenta);
+                        navigate('/tienda');
+                      }}
+                      className="px-3.5 py-2 rounded-[12px] bg-[#eaf8fc] hover:bg-[#d7f1fa] text-[#009ee3] border border-[#cdecfb] text-[12px] font-bold cursor-pointer transition-colors"
+                    >
+                      Tomar Pedido
+                    </button>
+                  )}
+
+                  <Button
+                    onClick={() => handleMarcarParada(selectedVisit)}
+                    disabled={procesando || selectedVisit.completada}
+                    className={`text-[12px] cursor-pointer ${selectedVisit.completada ? 'opacity-50' : ''}`}
+                  >
+                    {selectedVisit.completada ? 'Completada ✓' : 'Marcar Visitada'}
+                  </Button>
+                </div>
               </div>
             )}
           </div>

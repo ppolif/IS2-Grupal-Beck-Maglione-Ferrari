@@ -104,6 +104,7 @@ public class ProcesamientoPagoService {
     @Transactional
     public IniciarPagoQrResponse iniciarPagoQr(String pedidoId) {
         Pedido pedido = pedidoService.obtenerEntidad(pedidoId);
+        pedidoService.validarAccesoPedido(pedido);
 
         if (pedido.getEstado() == EstadoPedido.ANULADO) {
             throw new ConflictoException("CONFLICTO", "No se puede iniciar el pago de un pedido anulado");
@@ -134,6 +135,7 @@ public class ProcesamientoPagoService {
     @Transactional(readOnly = true)
     public IniciarPagoQrResponse consultarEstadoQr(String pedidoId) {
         Pedido pedido = pedidoService.obtenerEntidad(pedidoId);
+        pedidoService.validarAccesoPedido(pedido);
         List<Pago> pagos = pagoService.buscarEntidadesPorPedido(pedidoId);
         boolean estaAprobado = pagos.stream().anyMatch(p -> p.getEstadoPago() == EstadoPago.APROBADO);
 
@@ -230,6 +232,7 @@ public class ProcesamientoPagoService {
     @Transactional
     public void informarTransferencia(String pedidoId, InformarTransferenciaRequest request, String usuarioActual) {
         Pedido pedido = pedidoService.obtenerEntidad(pedidoId);
+        pedidoService.validarAccesoPedido(pedido);
 
         if (pedido.getEstado() == EstadoPedido.ANULADO || pedido.getEstado() == EstadoPedido.FACTURADO) {
             throw new ConflictoException("CONFLICTO", "El pedido no se encuentra disponible para registrar pagos");

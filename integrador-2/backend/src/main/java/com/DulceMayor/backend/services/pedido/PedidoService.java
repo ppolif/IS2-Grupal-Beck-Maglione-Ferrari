@@ -396,6 +396,16 @@ public class PedidoService extends BaseService<Pedido, PedidoRequest, PedidoResp
     }
 
     /**
+     * Valida que el usuario autenticado tenga permisos para acceder u operar sobre el pedido.
+     *
+     * @param pedido Entidad del pedido a verificar.
+     */
+    @Transactional(readOnly = true)
+    public void validarAccesoPedido(Pedido pedido) {
+        verificarAcceso(pedido);
+    }
+
+    /**
      * Recupera la línea de tiempo completa y cronológica de cambios de estado que atravesó un pedido.
      *
      * <p><b>Cuándo se usa:</b> Es invocado por el endpoint {@code GET /pedidos/{id}/historial} para auditoría,
