@@ -9,7 +9,7 @@ export default function FloatingChat() {
     {
       id: 'msg-1',
       sender: 'bot',
-      text: '¡Hola! Soy el asistente inteligente de Dulce Mayor 🍬. Escribime en lenguaje natural qué productos y cantidades necesitás y te calculo el presupuesto con precios y stock reales.',
+      text: '¡Hola! Soy el asistente inteligente de Dulce Mayor. Escribime en lenguaje natural qué productos y cantidades necesitás y te calculo el presupuesto con precios y stock reales.',
       budget: null,
       advertencias: [],
     },
@@ -170,7 +170,7 @@ export default function FloatingChat() {
                   {m.advertencias && m.advertencias.length > 0 && (
                     <div className="mt-2.5 p-2 rounded-[10px] bg-amber-50 border border-amber-200 text-amber-800 text-[11px] space-y-1">
                       {m.advertencias.map((adv, idx) => (
-                        <p key={idx} className="leading-snug">⚠️ {adv}</p>
+                        <p key={idx} className="leading-snug">Aviso: {adv}</p>
                       ))}
                     </div>
                   )}
@@ -203,7 +203,7 @@ export default function FloatingChat() {
                         onClick={() => handleApplyToCart(m.budget)}
                         className="w-full mt-2 py-2 px-3 bg-[#7ed6a5] hover:bg-[#68c692] text-white font-bold rounded-[10px] text-[11px] text-center transition-colors cursor-pointer shadow-xs"
                       >
-                        🛒 Cargar este pedido al Carrito
+                        Cargar este pedido al Carrito
                       </button>
                     </div>
                   )}
@@ -239,9 +239,9 @@ export default function FloatingChat() {
             <button
               type="submit"
               disabled={!inputText.trim()}
-              className="w-9 h-9 rounded-[10px] bg-[#e86bc4] hover:bg-[#d456b0] disabled:opacity-40 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+              className="w-9 h-9 rounded-[10px] bg-[#e86bc4] hover:bg-[#d456b0] disabled:opacity-40 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0 font-bold"
             >
-              ➤
+              →
             </button>
           </form>
         </div>
@@ -254,7 +254,7 @@ export default function FloatingChat() {
             onClick={() => setOpen(true)}
             className="hidden sm:inline-block bg-white text-[#2b2b3a] font-bold text-[11px] px-3.5 py-2.5 rounded-[14px] shadow-[0_14px_40px_rgba(56,52,84,0.14)] border border-[#ececf2] cursor-pointer hover:bg-slate-50 transition-colors"
           >
-            💬 ¿Te armo un presupuesto?
+            ¿Te armo un presupuesto?
           </span>
         )}
         <button

@@ -119,7 +119,7 @@ export default function OSMMap({
         <div style="font-family: inherit; font-size: 12px; line-height: 1.4; padding: 2px;">
           <strong style="font-size: 13px; color: ${colors.ink}; display: block; margin-bottom: 2px;">${m.nombre || m.comercio || 'Punto'}</strong>
           ${m.direccion ? `<div style="color: ${colors.muted.DEFAULT}; margin-bottom: 4px;">${m.direccion}</div>` : ''}
-          ${m.distancia ? `<div style="color: ${colors.secondary.DEFAULT}; font-weight: 500; font-size: 11px;">📍 ${m.distancia}</div>` : ''}
+          ${m.distancia ? `<div style="color: ${colors.secondary.DEFAULT}; font-weight: 500; font-size: 11px;">Distancia: ${m.distancia}</div>` : ''}
           ${m.estado ? `<span style="display: inline-block; background: ${colors.primary.light}; color: ${colors.primary.DEFAULT}; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-top: 4px;">${m.estado}</span>` : ''}
         </div>
       `;

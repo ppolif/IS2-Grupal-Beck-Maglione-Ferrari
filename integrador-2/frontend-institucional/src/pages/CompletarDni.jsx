@@ -65,7 +65,7 @@ export default function CompletarDni() {
 
       <div className="bg-white p-6 rounded-[20px] border border-[#ececf2] shadow-sm space-y-4">
         <div className="p-3.5 rounded-[12px] bg-[#fff6e0] border border-[#ffd98a] text-[#8a6519] text-[11px] leading-relaxed">
-          <strong className="font-bold block mb-0.5">⚠️ Importante:</strong>
+          <strong className="font-bold block mb-0.5">Importante:</strong>
           Este dato se solicita por única vez para asociar tus pedidos y facturación. Una vez confirmado, tu DNI quedará fijado y no podrá volver a modificarse.
         </div>
 

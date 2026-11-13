@@ -89,7 +89,7 @@ export default function DistribuidorLayout({ onLogout }) {
         <div className="bg-[#fff6e0] border-b border-[#ffd98a] text-[#8a6519] px-4 py-2.5 text-[12px] shadow-sm">
           <div className="max-w-[1280px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-base">⚠️</span>
+              <span className="font-bold uppercase tracking-wider text-[10px] bg-[#8a6519] text-white px-2 py-0.5 rounded-md">Aviso</span>
               <strong className="font-bold">Cambie su clave para acceder:</strong>
               <span className="opacity-90">Su usuario posee una contraseña temporal por defecto.</span>
             </div>
@@ -109,8 +109,8 @@ export default function DistribuidorLayout({ onLogout }) {
       <main className="flex-1 max-w-[1280px] w-full mx-auto p-4 sm:p-6 pb-24 md:pb-8">
         {debeCambiarClave && location.pathname !== '/cambiar-password' && location.pathname !== '/perfil' ? (
           <div className="max-w-md mx-auto my-12 p-8 bg-white rounded-[24px] border border-[#ececf2] text-center space-y-4 shadow-sm">
-            <div className="w-16 h-16 rounded-full bg-[#eefaff] text-[#247f99] flex items-center justify-center mx-auto text-3xl font-bold">
-              🔒
+            <div className="w-16 h-16 rounded-full bg-[#eefaff] text-[#247f99] flex items-center justify-center mx-auto shadow-xs">
+              <Icon name="key" className="w-8 h-8" />
             </div>
             <h2 className="text-xl font-bold text-[#2b2b3a]">Cambie su clave para acceder</h2>
             <p className="text-[13px] text-[#6b6b80] leading-relaxed">

@@ -487,7 +487,7 @@ export default function Perfil() {
       {debeCambiarClave && !esUsuarioSocial && (
         <div className="p-4 rounded-[16px] bg-[#fff6e0] border border-[#ffd98a] text-[#8a6519] text-[12px] flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="text-xl">⚠️</span>
+            <span className="font-bold uppercase tracking-wider text-[10px] bg-[#8a6519] text-white px-2 py-0.5 rounded-md">Aviso</span>
             <div>
               <p className="font-bold text-[13px]">Debe cambiar su contraseña temporal</p>
               <p className="text-[11px] opacity-90 mt-0.5">
@@ -895,7 +895,7 @@ export default function Perfil() {
           ) : puntosDeVenta.length === 0 ? (
             <div className="py-12 px-4 text-center rounded-[16px] bg-[#fafafd] border border-[#ececf2] space-y-3">
               <div className="w-12 h-12 rounded-full bg-[#ffe2f7] text-[#e86bc4] flex items-center justify-center mx-auto text-xl font-bold">
-                🏪
+                <Icon name="box" className="w-6 h-6" />
               </div>
               <h4 className="text-[14px] font-bold text-[#2b2b3a]">No tenés puntos de venta registrados</h4>
               <p className="text-[12px] text-[#6b6b80] max-w-md mx-auto">
@@ -968,7 +968,7 @@ export default function Perfil() {
           {esUsuarioSocial ? (
             <div className="bg-white rounded-[22px] p-6 sm:p-8 border border-[#bfdbfe] shadow-sm space-y-4 max-w-lg bg-gradient-to-br from-white to-[#f0f7ff]">
               <div className="w-12 h-12 rounded-full bg-[#dbeafe] text-[#2563eb] flex items-center justify-center text-xl font-bold">
-                🔒
+                <Icon name="lock" className="w-6 h-6" />
               </div>
               <div>
                 <span className="text-[10px] font-bold tracking-[0.14em] uppercase text-[#2563eb] block">
@@ -1287,7 +1287,7 @@ export default function Perfil() {
                 >
                   {qrModalData.qrData === 'APROBADO' || selectedOrder.estado !== 'CARGADO'
                     ? '✓ Pago acreditado con Mercado Pago'
-                    : '⏳ Pendiente de acreditación'}
+                    : 'Pendiente de acreditación'}
                 </span>
               </div>
             )}

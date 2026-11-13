@@ -227,7 +227,7 @@ export default function Minoristas() {
                       <span className="text-[#aaa9ba]">{m.email}</span>
                     </td>
                     <td className="py-3 px-3 font-medium text-[#2b2b3a]">
-                      💼 {m.preventorAsignado}
+                      {m.preventorAsignado}
                     </td>
                     <td className="py-3 px-3 text-center font-bold text-[#2b2b3a]">
                       {m.pedidosHistoricos}

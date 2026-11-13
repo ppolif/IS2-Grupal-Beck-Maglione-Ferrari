@@ -122,21 +122,7 @@ export default function MercadoPagoQrPanel({
   return (
     <div className="p-4 sm:p-5 rounded-[18px] bg-[#f4fbfe] border border-[#cdecfb] space-y-4">
       {/* Cabecera */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d2ecfa]">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-[10px] bg-[#009ee3] text-white font-extrabold text-xs flex items-center justify-center shrink-0">
-            MP
-          </div>
-          <div>
-            <h3 className="text-[14px] font-bold text-[#0f344d]">
-              Cobro QR Mercado Pago
-            </h3>
-            <p className="text-[11px] text-[#426c88]">
-              Pedido {etiquetaPedido} · Total: <strong>${montoFormateado}</strong>
-            </p>
-          </div>
-        </div>
-
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d2ecfa]">  
         <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-[#d2ecfa] text-[11px] text-[#009ee3] font-semibold self-start sm:self-auto">
           <Icon name="clock" className="w-3.5 h-3.5" />
           <span>
@@ -223,15 +209,6 @@ export default function MercadoPagoQrPanel({
 
         {/* Instrucciones y acciones de campo */}
         <div className="flex-1 w-full space-y-3 text-[12px] text-[#426c88]">
-          <div className="p-3 bg-white rounded-[12px] border border-[#d2ecfa] space-y-1.5">
-            <div className="flex items-center gap-2 text-[#39855b] font-semibold text-[11px]">
-              <span className="w-2 h-2 rounded-full bg-[#39855b] animate-ping" />
-              <span>Verificación en tiempo real activa</span>
-            </div>
-            <p className="text-[11px] text-[#6b6b80]">
-              Mostrá este QR al comerciante. Apenas confirme el pago, la orden pasará automáticamente a facturación.
-            </p>
-          </div>
 
           {isCheckoutLink && (
             <div className="p-3 bg-white rounded-[12px] border border-[#d2ecfa] space-y-2">

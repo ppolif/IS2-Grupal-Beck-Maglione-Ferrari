@@ -2,6 +2,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import FloatingChat from '../components/FloatingChat';
+import Icon from '../components/Icon';
 import { useAuth } from '../context/AuthContext';
 
 export default function ClienteLayout() {
@@ -18,7 +19,7 @@ export default function ClienteLayout() {
         <div className="bg-[#fff6e0] border-b border-[#ffd98a] text-[#8a6519] px-4 py-2.5 text-[12px] shadow-sm">
           <div className="max-w-[1440px] mx-auto px-4 sm:px-8 md:px-14 flex flex-col sm:flex-row items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-base">⚠️</span>
+              <span className="font-bold uppercase tracking-wider text-[10px] bg-[#8a6519] text-white px-2 py-0.5 rounded-md">Aviso</span>
               <strong className="font-bold">Complete su DNI para acceder:</strong>
               <span className="opacity-90">
                 Su cuenta fue creada con acceso rápido social. Debe registrar su DNI real (por única vez) para operar.
@@ -40,8 +41,8 @@ export default function ClienteLayout() {
       <main className="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 py-6">
         {debeCompletarDni && location.pathname !== '/completar-dni' ? (
           <div className="max-w-md mx-auto my-12 p-8 bg-white rounded-[24px] border border-[#ececf2] text-center space-y-4 shadow-sm">
-            <div className="w-16 h-16 rounded-full bg-[#eefaff] text-[#247f99] flex items-center justify-center mx-auto text-3xl font-bold">
-              🔒
+            <div className="w-16 h-16 rounded-full bg-[#eefaff] text-[#247f99] flex items-center justify-center mx-auto shadow-xs">
+              <Icon name="user" className="w-8 h-8" />
             </div>
             <h2 className="text-xl font-bold text-[#2b2b3a]">Complete su DNI para acceder</h2>
             <p className="text-[13px] text-[#6b6b80] leading-relaxed">

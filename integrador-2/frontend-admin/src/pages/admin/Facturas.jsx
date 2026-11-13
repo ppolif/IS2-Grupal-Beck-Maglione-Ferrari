@@ -423,9 +423,10 @@ export default function Facturas() {
               <button
                 type="button"
                 onClick={() => handleReenviarCorreo(selectedInvoice.id, selectedInvoice.numeroFactura)}
-                className="text-[11px] font-bold text-[#3fb8d9] hover:underline flex items-center gap-1"
+                className="text-[11px] font-bold text-[#3fb8d9] hover:underline flex items-center gap-1.5"
               >
-                ✉ Reenviar por correo
+                <Icon name="mail" className="w-3.5 h-3.5" />
+                <span>Reenviar por correo</span>
               </button>
               <Button onClick={() => setSelectedInvoice(null)}>Cerrar</Button>
             </div>
@@ -512,7 +513,7 @@ export default function Facturas() {
         >
           <form onSubmit={handleConfirmarAnulacion} className="space-y-4">
             <div className="p-3 bg-[#fdf2f4] rounded-[10px] border border-[#fbd3db] text-[12px] text-[#c95569]">
-              ⚠️ <strong>Atención:</strong> Al anular la factura se revertirá el saldo adeudado del minorista.
+              <strong>Atención:</strong> Al anular la factura se revertirá el saldo adeudado del minorista.
             </div>
 
             <div>
