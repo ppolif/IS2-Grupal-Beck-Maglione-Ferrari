@@ -2,6 +2,7 @@ package com.DulceMayor.backend.controllers.persona;
 
 import com.DulceMayor.backend.config.UsuarioPrincipal;
 import com.DulceMayor.backend.dtos.persona.ActualizarPerfilMinoristaRequest;
+import com.DulceMayor.backend.dtos.persona.CompletarDniRequest;
 import com.DulceMayor.backend.dtos.persona.MinoristaPage;
 import com.DulceMayor.backend.dtos.persona.MinoristaRequest;
 import com.DulceMayor.backend.dtos.persona.MinoristaResponse;
@@ -87,6 +88,14 @@ public class MinoristaController {
             @AuthenticationPrincipal UsuarioPrincipal principal,
             @Valid @RequestBody ActualizarPerfilMinoristaRequest request) {
         return ResponseEntity.ok(minoristaService.actualizarMiPerfil(principal.getId(), request));
+    }
+
+    @PostMapping({"/mi-cuenta/completar-dni", "/api/v1/mi-cuenta/completar-dni"})
+    @PreAuthorize("hasRole('MINORISTA')")
+    public ResponseEntity<MinoristaResponse> completarMiDni(
+            @AuthenticationPrincipal UsuarioPrincipal principal,
+            @Valid @RequestBody CompletarDniRequest request) {
+        return ResponseEntity.ok(minoristaService.completarDniExterno(principal.getId(), request));
     }
 
     @DeleteMapping({"/mi-cuenta/perfil", "/api/v1/mi-cuenta/perfil"})

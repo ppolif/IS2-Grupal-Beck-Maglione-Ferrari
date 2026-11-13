@@ -112,8 +112,8 @@ class PedidoServiceTest {
                 puntoDeVentaService,
                 empleadoService,
                 minoristaService,
-                formaDePagoService,
                 pagoService,
+                formaDePagoService,
                 eventPublisher
         );
         lenient().when(pedidoMapper.aEntidad(any(PedidoRequest.class))).thenAnswer(inv -> Pedido.builder().build());

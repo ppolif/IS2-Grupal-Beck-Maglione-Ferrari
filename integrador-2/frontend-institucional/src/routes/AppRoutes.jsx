@@ -10,6 +10,7 @@ import PagoPendiente from '../pages/pago/PagoPendiente';
 import Sucursales from '../pages/Sucursales';
 import Contacto from '../pages/Contacto';
 import Perfil from '../pages/Perfil';
+import CompletarDni from '../pages/CompletarDni';
 import Login from '../pages/Login';
 import Registro from '../pages/Registro';
 import RutaProtegida from '../components/RutaProtegida';
@@ -39,6 +40,14 @@ export default function AppRoutes() {
           element={
             <RutaProtegida>
               <Perfil />
+            </RutaProtegida>
+          }
+        />
+        <Route
+          path="/completar-dni"
+          element={
+            <RutaProtegida>
+              <CompletarDni />
             </RutaProtegida>
           }
         />

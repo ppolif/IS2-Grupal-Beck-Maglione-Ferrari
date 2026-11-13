@@ -38,6 +38,7 @@ export default function Navbar() {
   const iniciales = perfil
     ? `${perfil.nombre?.[0] || ''}${perfil.apellido?.[0] || ''}`.toUpperCase()
     : (usuario?.nombreUsuario?.[0] || 'U').toUpperCase();
+  const avatarUrl = usuario?.picture;
 
   const handleLogout = () => {
     logout();
@@ -90,9 +91,17 @@ export default function Navbar() {
                 className="flex items-center gap-2 hover:opacity-85 transition-opacity"
                 title="Mi perfil"
               >
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#ffcef3] to-[#a1eafb] text-[#2b2b3a] font-bold text-[12px] flex items-center justify-center shadow-sm">
-                  {iniciales}
-                </div>
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={nombreDisplay}
+                    className="w-9 h-9 rounded-full object-cover shadow-sm border border-[#ececf2]"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#ffcef3] to-[#a1eafb] text-[#2b2b3a] font-bold text-[12px] flex items-center justify-center shadow-sm">
+                    {iniciales}
+                  </div>
+                )}
                 <div className="hidden lg:flex flex-col text-left">
                   <span className="text-[12px] font-bold text-[#2b2b3a] leading-tight max-w-[150px] truncate">
                     {nombreDisplay}
