@@ -209,6 +209,7 @@ public class ProcesamientoPagoService {
         procesarWebhookMercadoPago(xSignature, xRequestId, null, null, null, null, payload);
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void procesarWebhookMercadoPago(
             String xSignature,
             String xRequestId,
