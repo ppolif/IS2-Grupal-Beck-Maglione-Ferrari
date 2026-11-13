@@ -39,7 +39,7 @@ export default function PagoFallo() {
           <li>Operación cancelada por el usuario desde la aplicación móvil.</li>
         </ul>
         <div className="p-3 bg-[#fdf2f4] rounded-[12px] border border-[#fbd3db] text-[11px] text-[#c95569] mt-3">
-          💡 <strong>Tip:</strong> Tu pedido sigue reservado en el carrito. Podés volver a intentarlo o elegir transferencia bancaria directa sin comisión.
+          <strong>Tip:</strong> Tu pedido sigue reservado en el carrito. Podés volver a intentarlo o elegir transferencia bancaria directa sin comisión.
         </div>
       </div>
 

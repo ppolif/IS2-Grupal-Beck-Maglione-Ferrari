@@ -447,11 +447,19 @@ export default function Perfil() {
     showToast('¡Alias copiado al portapapeles!');
   };
 
-  const nombreCompleto = perfil ? `${perfil.nombre} ${perfil.apellido}` : 'Cliente Mayorista';
+  const nombreCompleto = perfil ? `${perfil.nombre} ${perfil.apellido}`.trim() : 'Cliente Mayorista';
   const emailLogin = usuario?.nombreUsuario || '';
   const iniciales = perfil
     ? `${perfil.nombre?.[0] || ''}${perfil.apellido?.[0] || ''}`.toUpperCase()
     : 'CM';
+  const avatarUrl = usuario?.picture;
+  const esUsuarioSocial = Boolean(usuario?.proveedorAuth && usuario.proveedorAuth !== 'LOCAL');
+  const nombreProveedor =
+    usuario?.proveedorAuth === 'GOOGLE'
+      ? 'Google'
+      : usuario?.proveedorAuth === 'FACEBOOK'
+      ? 'Facebook'
+      : 'Auth0';
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto relative px-4 sm:px-0">
@@ -476,10 +484,10 @@ export default function Perfil() {
         </p>
       </div>
 
-      {debeCambiarClave && (
+      {debeCambiarClave && !esUsuarioSocial && (
         <div className="p-4 rounded-[16px] bg-[#fff6e0] border border-[#ffd98a] text-[#8a6519] text-[12px] flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="text-xl">⚠️</span>
+            <span className="font-bold uppercase tracking-wider text-[10px] bg-[#8a6519] text-white px-2 py-0.5 rounded-md">Aviso</span>
             <div>
               <p className="font-bold text-[13px]">Debe cambiar su contraseña temporal</p>
               <p className="text-[11px] opacity-90 mt-0.5">
@@ -499,18 +507,33 @@ export default function Perfil() {
 
       {/* Profile Overview Card */}
       <div className="bg-white rounded-[22px] p-6 sm:p-8 border border-[#ececf2] shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#ffcef3] to-[#a1eafb] text-[#2b2b3a] font-bold text-2xl flex items-center justify-center shadow-md shrink-0">
-          {iniciales}
-        </div>
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={nombreCompleto}
+            className="w-20 h-20 rounded-full object-cover shadow-md shrink-0 border border-[#ececf2]"
+          />
+        ) : (
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#ffcef3] to-[#a1eafb] text-[#2b2b3a] font-bold text-2xl flex items-center justify-center shadow-md shrink-0">
+            {iniciales}
+          </div>
+        )}
         <div className="flex-1 space-y-1">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h2 className="text-2xl font-bold text-[#2b2b3a]">{nombreCompleto}</h2>
               <p className="text-[13px] font-semibold text-[#e86bc4]">{emailLogin}</p>
             </div>
-            <span className="inline-block bg-[#dff8e9] text-[#39855b] text-[11px] font-semibold px-3 py-1 rounded-full self-center sm:self-auto">
-              Cliente Mayorista Activo
-            </span>
+            <div className="flex items-center gap-2 flex-wrap self-center sm:self-auto">
+              {esUsuarioSocial && (
+                <span className="inline-block bg-[#eaf3ff] text-[#2563eb] text-[11px] font-semibold px-3 py-1 rounded-full border border-[#bfdbfe]">
+                  Vinculado con {nombreProveedor}
+                </span>
+              )}
+              <span className="inline-block bg-[#dff8e9] text-[#39855b] text-[11px] font-semibold px-3 py-1 rounded-full">
+                Cliente Mayorista Activo
+              </span>
+            </div>
           </div>
           <p className="text-[12px] text-[#6b6b80] pt-1">
             {perfil?.tipoDocumento || 'Doc'}: {perfil?.numeroDocumento || 'Sin registrar'} · Zona Mendoza
@@ -782,12 +805,22 @@ export default function Perfil() {
                     onChange={(e) => setDatosForm({ ...datosForm, email: e.target.value })}
                     autoComplete="username"
                     spellCheck={false}
-                    disabled={guardandoDatos}
-                    className="w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] text-[#2b2b3a] bg-white focus:outline-none focus:border-[#e86bc4]"
+                    disabled={guardandoDatos || esUsuarioSocial}
+                    className={`w-full border border-[#ececf2] rounded-[12px] p-3 text-[12px] ${
+                      esUsuarioSocial
+                        ? 'bg-[#f4f5f8] text-[#8c8b9c] cursor-not-allowed'
+                        : 'bg-white text-[#2b2b3a] focus:outline-none focus:border-[#e86bc4]'
+                    }`}
                   />
-                  <span className="text-[10px] text-[#6b6b80] mt-1 block">
-                    Al modificar este mail, se actualizará tu usuario para iniciar sesión.
-                  </span>
+                  {esUsuarioSocial ? (
+                    <span className="text-[10px] text-[#2563eb] mt-1 block font-medium">
+                      Cuenta vinculada con {nombreProveedor}. El correo está gestionado por tu proveedor social y no puede cambiarse aquí.
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-[#6b6b80] mt-1 block">
+                      Al modificar este mail, se actualizará tu usuario para iniciar sesión.
+                    </span>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="edit-tel" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1.5">
@@ -862,7 +895,7 @@ export default function Perfil() {
           ) : puntosDeVenta.length === 0 ? (
             <div className="py-12 px-4 text-center rounded-[16px] bg-[#fafafd] border border-[#ececf2] space-y-3">
               <div className="w-12 h-12 rounded-full bg-[#ffe2f7] text-[#e86bc4] flex items-center justify-center mx-auto text-xl font-bold">
-                🏪
+                <Icon name="box" className="w-6 h-6" />
               </div>
               <h4 className="text-[14px] font-bold text-[#2b2b3a]">No tenés puntos de venta registrados</h4>
               <p className="text-[12px] text-[#6b6b80] max-w-md mx-auto">
@@ -931,72 +964,96 @@ export default function Perfil() {
       {/* Tab content: Seguridad y Clave + Zona de Baja de Cuenta */}
       {activeTab === 'seguridad' && (
         <div className="space-y-6">
-          {/* Card Cambio de Clave */}
-          <div className="bg-white rounded-[22px] p-6 sm:p-8 border border-[#ececf2] shadow-sm space-y-4 max-w-lg">
-            <h3 className="text-[16px] font-bold text-[#2b2b3a]">Cambiar Contraseña</h3>
-            <p className="text-[11px] text-[#6b6b80]">
-              Ingresá tu contraseña actual y definí tu nueva clave secreta de al menos 8 caracteres.
-            </p>
-
-            {errorClave && (
-              <div className="p-3 bg-[#ffe8ed] text-[#ff8fa3] rounded-[12px] text-[12px] font-medium border border-[#ff8fa3]/30">
-                {errorClave}
-              </div>
-            )}
-
-            <form onSubmit={handleCambiarClave} className="space-y-3">
-              <div>
-                <label htmlFor="sec-actual" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
-                  Contraseña Actual *
-                </label>
-                <PasswordInput
-                  id="sec-actual"
-                  required
-                  value={claveForm.claveActual}
-                  onChange={(e) => setClaveForm({ ...claveForm, claveActual: e.target.value })}
-                  autoComplete="current-password"
-                  disabled={guardandoClave}
-                />
+          {/* Card Cambio de Clave / Autenticación Externa */}
+          {esUsuarioSocial ? (
+            <div className="bg-white rounded-[22px] p-6 sm:p-8 border border-[#bfdbfe] shadow-sm space-y-4 max-w-lg bg-gradient-to-br from-white to-[#f0f7ff]">
+              <div className="w-12 h-12 rounded-full bg-[#dbeafe] text-[#2563eb] flex items-center justify-center text-xl font-bold">
+                <Icon name="lock" className="w-6 h-6" />
               </div>
               <div>
-                <label htmlFor="sec-nueva" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
-                  Nueva Contraseña *
-                </label>
-                <PasswordInput
-                  id="sec-nueva"
-                  required
-                  value={claveForm.nuevaClave}
-                  onChange={(e) => setClaveForm({ ...claveForm, nuevaClave: e.target.value })}
-                  placeholder="Mínimo 8 caracteres"
-                  autoComplete="new-password"
-                  disabled={guardandoClave}
-                />
-              </div>
-              <div>
-                <label htmlFor="sec-confirmar" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
-                  Confirmar Nueva Contraseña *
-                </label>
-                <PasswordInput
-                  id="sec-confirmar"
-                  required
-                  value={claveForm.confirmarClave}
-                  onChange={(e) => setClaveForm({ ...claveForm, confirmarClave: e.target.value })}
-                  placeholder="Repetir nueva contraseña"
-                  autoComplete="new-password"
-                  disabled={guardandoClave}
-                />
+                <span className="text-[10px] font-bold tracking-[0.14em] uppercase text-[#2563eb] block">
+                  Autenticación Gestionada
+                </span>
+                <h3 className="text-[17px] font-bold text-[#2b2b3a] mt-0.5">
+                  Seguridad con {nombreProveedor}
+                </h3>
+                <p className="text-[12px] text-[#4b5563] mt-2 leading-relaxed">
+                  Iniciás sesión de forma segura y amigable a través de tu cuenta de <strong>{nombreProveedor} (Auth0)</strong>. No poseés una contraseña local en Dulce Mayor, por lo que tus credenciales, verificación en dos pasos (2FA) y recuperación de acceso se gestionan directamente desde tu cuenta de {nombreProveedor}.
+                </p>
               </div>
               <div className="pt-2">
-                <Button
-                  type="submit"
-                  disabled={guardandoClave}
-                  className="text-[13px] py-2.5 px-6"
-                >
-                  {guardandoClave ? 'Actualizando...' : 'Actualizar contraseña'}
-                </Button>
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#16a34a] bg-[#dcfce7] px-3 py-1.5 rounded-[10px]">
+                  <span>✓</span> Sesión protegida y cifrada por OAuth2 / Auth0
+                </span>
               </div>
-            </form>
-          </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-[22px] p-6 sm:p-8 border border-[#ececf2] shadow-sm space-y-4 max-w-lg">
+              <h3 className="text-[16px] font-bold text-[#2b2b3a]">Cambiar Contraseña</h3>
+              <p className="text-[11px] text-[#6b6b80]">
+                Ingresá tu contraseña actual y definí tu nueva clave secreta de al menos 8 caracteres.
+              </p>
+
+              {errorClave && (
+                <div className="p-3 bg-[#ffe8ed] text-[#ff8fa3] rounded-[12px] text-[12px] font-medium border border-[#ff8fa3]/30">
+                  {errorClave}
+                </div>
+              )}
+
+              <form onSubmit={handleCambiarClave} className="space-y-3">
+                <div>
+                  <label htmlFor="sec-actual" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+                    Contraseña Actual *
+                  </label>
+                  <PasswordInput
+                    id="sec-actual"
+                    required
+                    value={claveForm.claveActual}
+                    onChange={(e) => setClaveForm({ ...claveForm, claveActual: e.target.value })}
+                    autoComplete="current-password"
+                    disabled={guardandoClave}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="sec-nueva" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+                    Nueva Contraseña *
+                  </label>
+                  <PasswordInput
+                    id="sec-nueva"
+                    required
+                    value={claveForm.nuevaClave}
+                    onChange={(e) => setClaveForm({ ...claveForm, nuevaClave: e.target.value })}
+                    placeholder="Mínimo 8 caracteres"
+                    autoComplete="new-password"
+                    disabled={guardandoClave}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="sec-confirmar" className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+                    Confirmar Nueva Contraseña *
+                  </label>
+                  <PasswordInput
+                    id="sec-confirmar"
+                    required
+                    value={claveForm.confirmarClave}
+                    onChange={(e) => setClaveForm({ ...claveForm, confirmarClave: e.target.value })}
+                    placeholder="Repetir nueva contraseña"
+                    autoComplete="new-password"
+                    disabled={guardandoClave}
+                  />
+                </div>
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    disabled={guardandoClave}
+                    className="text-[13px] py-2.5 px-6"
+                  >
+                    {guardandoClave ? 'Actualizando...' : 'Actualizar contraseña'}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
 
           {/* Card Zona de Peligro: Baja de Cuenta */}
           <div className="bg-white rounded-[22px] p-6 sm:p-8 border border-[#ff8fa3]/40 shadow-sm space-y-4 max-w-lg">
@@ -1230,7 +1287,7 @@ export default function Perfil() {
                 >
                   {qrModalData.qrData === 'APROBADO' || selectedOrder.estado !== 'CARGADO'
                     ? '✓ Pago acreditado con Mercado Pago'
-                    : '⏳ Pendiente de acreditación'}
+                    : 'Pendiente de acreditación'}
                 </span>
               </div>
             )}

@@ -1,3 +1,5 @@
+import Icon from './Icon';
+
 export default function MapPlaceholder({ className = "h-full w-full" }) {
   return (
     <div
@@ -22,8 +24,8 @@ export default function MapPlaceholder({ className = "h-full w-full" }) {
 
       {/* Center Pin & Mandatory text */}
       <div className="relative z-10 flex flex-col items-center">
-        <div className="w-10 h-10 rounded-full bg-[#e86bc4] text-white flex items-center justify-center shadow-md mb-2 text-lg">
-          📍
+        <div className="w-10 h-10 rounded-full bg-[#e86bc4] text-white flex items-center justify-center shadow-md mb-2">
+          <Icon name="mapPin" className="w-5 h-5" />
         </div>
         <span className="font-bold text-[13px] text-[#2b2b3a] bg-white/95 px-3.5 py-1.5 rounded-full shadow-sm border border-[#ececf2] mb-1">
           usar api de openstreetmap

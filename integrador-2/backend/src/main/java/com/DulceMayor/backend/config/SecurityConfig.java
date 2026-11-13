@@ -69,6 +69,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(HttpMethod.POST, "/auth/login", "/api/v1/auth/login").permitAll();
+                    auth.requestMatchers(HttpMethod.POST, "/auth/login-externo", "/api/v1/auth/login-externo").permitAll();
                     auth.requestMatchers(HttpMethod.POST, "/auth/registro", "/api/v1/auth/registro").permitAll();
                     auth.requestMatchers(HttpMethod.POST, "/pagos/webhook/**", "/api/v1/pagos/webhook/**").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/pagos/datos-bancarios", "/api/v1/pagos/datos-bancarios").permitAll();

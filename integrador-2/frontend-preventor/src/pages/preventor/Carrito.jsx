@@ -10,6 +10,7 @@ import Icon from '../../components/Icon';
 import MercadoPagoQrPanel from '../../components/MercadoPagoQrPanel';
 import { useCart } from '../../context/CartContext';
 import { pagoService } from '../../services/pagoService';
+import { pedidoService } from '../../services/pedidoService';
 import { comercioService } from '../../services/comercioService';
 import { DATOS_BANCARIOS } from '../../utils/paymentConstants';
 
@@ -76,7 +77,9 @@ export default function Carrito() {
     }
 
     cargarDatosIniciales();
-    return () => { cancel = true; };
+    return () => {
+      cancel = true;
+    };
   }, []);
 
   const handlePdvChange = (e) => {
@@ -127,7 +130,7 @@ export default function Carrito() {
     }
 
     if (paymentMethod === 'transferencia' && !transferenciaData.numeroComprobante.trim()) {
-      alert('Por favor ingresá el número de comprobante o transacción de la transferencia bancaria realizada por el cliente.');
+      setSubmitError('Por favor ingresá el número de comprobante o transacción de la transferencia bancaria realizada por el cliente.');
       return;
     }
 
@@ -229,15 +232,13 @@ export default function Carrito() {
           Pedido en Curso
         </span>
         <h1 className="text-2xl font-bold text-[#2b2b3a] mt-1">
-          Carga de Pedido de Preventa
+          Carga de Pedido
         </h1>
         <p className="text-[12px] text-[#6b6b80] mt-0.5">
           {clienteActual ? (
             <span>Punto de Venta seleccionado: <strong className="text-[#2b2b3a]">{clienteActual.nombreComercio}</strong></span>
           ) : (
-            <span className="text-[#e86bc4] font-medium">
-              Elegí un punto de venta a continuación para completar la orden.
-            </span>
+            <span>Seleccioná el Punto de Venta minorista para tomar el pedido</span>
           )}
         </p>
       </div>
@@ -245,15 +246,6 @@ export default function Carrito() {
       <div className="bg-white rounded-[22px] p-5 sm:p-6 border border-[#ececf2] shadow-sm">
         {flowStep === 'WAITING_QR' && confirmedOrderData ? (
           <div className="space-y-4">
-            <div className="p-3.5 bg-[#eaf8fc] border border-[#3fb8d9] rounded-[14px] text-[12px] text-[#0f344d]">
-              <strong className="block">
-                Pedido {confirmedOrderData.etiquetaPedido} registrado para {confirmedOrderData.cliente}
-              </strong>
-              <span className="text-[#3a6888] text-[11px]">
-                Mostrá el QR al comerciante para completar el cobro en el acto.
-              </span>
-            </div>
-
             <MercadoPagoQrPanel
               pedidoId={confirmedOrderData.orderId}
               numeroPedido={confirmedOrderData.numeroPedido}
@@ -354,8 +346,8 @@ export default function Carrito() {
             {submitError && (
               submitError === 'Cambie su clave para acceder' ? (
                 <div className="max-w-md mx-auto my-4 p-8 bg-white rounded-[24px] border border-[#ececf2] text-center space-y-4 shadow-sm">
-                  <div className="w-16 h-16 rounded-full bg-[#eefaff] text-[#247f99] flex items-center justify-center mx-auto text-3xl font-bold">
-                    🔒
+                  <div className="w-16 h-16 rounded-full bg-[#eefaff] text-[#247f99] flex items-center justify-center mx-auto text-2xl font-bold">
+                    <Icon name="key" />
                   </div>
                   <h2 className="text-xl font-bold text-[#2b2b3a]">Cambie su clave para acceder</h2>
                   <p className="text-[13px] text-[#6b6b80] leading-relaxed">
@@ -374,6 +366,91 @@ export default function Carrito() {
                 </div>
               )
             )}
+
+            {/* Selector de Punto de Venta */}
+            <div className="p-3.5 bg-[#fbfbfe] rounded-[16px] border border-[#ececf2] space-y-2">
+              <label
+                htmlFor="pdv-select"
+                className="block text-[12px] font-bold text-[#2b2b3a] flex items-center justify-between"
+              >
+                <span>Punto de Venta Destino *</span>
+                <span className="text-[10px] text-[#e86bc4] font-medium">Requerido</span>
+              </label>
+
+              {cargandoPdv ? (
+                <div className="flex items-center gap-2 text-[12px] text-[#6b6b80] py-1">
+                  <div className="w-4 h-4 border-2 border-[#e86bc4] border-t-transparent rounded-full animate-spin"></div>
+                  <span>Cargando puntos de venta...</span>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  <select
+                    id="pdv-select"
+                    value={clienteActual?.id || ''}
+                    onChange={handlePdvChange}
+                    className={`w-full bg-white border rounded-[12px] px-3 py-2.5 text-[12px] text-[#2b2b3a] focus:outline-none transition-colors cursor-pointer ${
+                      !clienteActual
+                        ? 'border-[#e86bc4] font-semibold text-[#6b6b80]'
+                        : 'border-[#ececf2] focus:border-[#e86bc4]'
+                    }`}
+                  >
+                    <option value="">-- Seleccionar Punto de Venta para completar el pedido --</option>
+                    {puntosDeVenta.map((pdv) => {
+                      const dir = pdv.direccion;
+                      const dirTxt = dir
+                        ? `${dir.calle || ''} ${dir.numero || dir.numeracion || ''}${
+                            dir.localidad?.nombre ? `, ${dir.localidad.nombre}` : ''
+                          }`.trim()
+                        : '';
+                      return (
+                        <option key={pdv.id} value={pdv.id}>
+                          {pdv.nombreComercio} {dirTxt ? `(${dirTxt})` : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+
+                  {clienteActual ? (
+                    <div className="p-3 bg-white rounded-[12px] border border-[#ececf2] text-[11px] space-y-1 shadow-xs">
+                      <div className="flex justify-between items-center">
+                        <strong className="text-[12px] text-[#2b2b3a]">
+                          {clienteActual.nombreComercio}
+                        </strong>
+                        {clienteActual.minorista && (
+                          <span className="text-[#6b6b80]">
+                            Titular: {clienteActual.minorista.nombre || ''}{' '}
+                            {clienteActual.minorista.apellido || ''}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[#6b6b80] flex items-center gap-1.5">
+                        <Icon name="mapPin" className="w-3.5 h-3.5 text-[#3fb8d9]" />
+                        <span>
+                          {clienteActual.direccion?.calle || 'Sin calle'}{' '}
+                          {clienteActual.direccion?.numero ||
+                            clienteActual.direccion?.numeracion ||
+                            ''}
+                          {clienteActual.direccion?.localidad?.nombre
+                            ? `, ${clienteActual.direccion.localidad.nombre}`
+                            : ''}
+                        </span>
+                      </div>
+                      {clienteActual.direccion?.telefono && (
+                        <div className="text-[#6b6b80] flex items-center gap-1.5">
+                          <Icon name="phone" className="w-3.5 h-3.5 text-[#7ed6a5]" />
+                          <span>{clienteActual.direccion.telefono}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-[#e5484d] flex items-center gap-1.5 font-medium pt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#e5484d]"></span>
+                      <span>Debés elegir un punto de venta para poder confirmar y enviar el pedido.</span>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Selección Obligatoria de Punto de Venta */}
             <div
@@ -590,7 +667,7 @@ export default function Carrito() {
                       : 'border-[#ececf2] hover:bg-slate-50 text-[#6b6b80]'
                   }`}
                 >
-                  <span className="text-sm block mb-1">💵</span>
+                  <Icon name="truck" className="w-4 h-4 mb-1 text-[#e86bc4]" />
                   <span className="text-[11px] block">Contra Entrega</span>
                 </button>
 
@@ -603,7 +680,7 @@ export default function Carrito() {
                       : 'border-[#ececf2] hover:bg-slate-50 text-[#6b6b80]'
                   }`}
                 >
-                  <span className="text-sm block mb-1">📱</span>
+                  <Icon name="qr" className="w-4 h-4 mb-1 text-[#3fb8d9]" />
                   <span className="text-[11px] block">Mercado Pago QR</span>
                 </button>
 
@@ -616,7 +693,7 @@ export default function Carrito() {
                       : 'border-[#ececf2] hover:bg-slate-50 text-[#6b6b80]'
                   }`}
                 >
-                  <span className="text-sm block mb-1">🏦</span>
+                  <Icon name="box" className="w-4 h-4 mb-1 text-[#5e35b1]" />
                   <span className="text-[11px] block">Transferencia</span>
                 </button>
               </div>

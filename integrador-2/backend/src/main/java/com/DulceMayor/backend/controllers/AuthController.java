@@ -3,9 +3,11 @@ package com.DulceMayor.backend.controllers;
 import com.DulceMayor.backend.config.UsuarioPrincipal;
 import com.DulceMayor.backend.dtos.AuthResponse;
 import com.DulceMayor.backend.dtos.CambiarClaveRequest;
+import com.DulceMayor.backend.dtos.LoginExternoRequest;
 import com.DulceMayor.backend.dtos.LoginRequest;
 import com.DulceMayor.backend.dtos.PerfilResponse;
 import com.DulceMayor.backend.dtos.persona.RegistroMinoristaRequest;
+import com.DulceMayor.backend.entities.Usuario;
 import com.DulceMayor.backend.services.UsuarioService;
 import com.DulceMayor.backend.services.persona.MinoristaService;
 import com.DulceMayor.backend.services.persona.PersonaService;
@@ -45,6 +47,14 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(usuarioService.login(request));
+    }
+
+    @PostMapping("/login-externo")
+    public ResponseEntity<AuthResponse> loginExterno(@Valid @RequestBody LoginExternoRequest request) {
+        UsuarioService.DatosTokenExterno datos = usuarioService.parsearTokenExterno(request.tokenExterno());
+        Usuario usuario = usuarioService.loginExterno(request.proveedor(), request.tokenExterno());
+        minoristaService.obtenerOCrearMinoristaExterno(usuario, datos.nombre(), datos.apellido(), datos.email());
+        return ResponseEntity.ok(usuarioService.generarAuthResponse(usuario));
     }
 
     @PostMapping("/registro")

@@ -15,6 +15,13 @@ export const authService = {
     });
   },
 
+  async loginExterno(proveedor, tokenExterno) {
+    return apiFetch('/auth/login-externo', {
+      method: 'POST',
+      body: JSON.stringify({ proveedor, tokenExterno }),
+    });
+  },
+
   async obtenerMiPerfil() {
     return apiFetch('/mi-cuenta/perfil', {
       method: 'GET',
@@ -25,6 +32,13 @@ export const authService = {
     return apiFetch('/mi-cuenta/perfil', {
       method: 'PUT',
       body: JSON.stringify(datos),
+    });
+  },
+
+  async completarDni(numeroDocumento, confirmarNumeroDocumento) {
+    return apiFetch('/mi-cuenta/completar-dni', {
+      method: 'POST',
+      body: JSON.stringify({ numeroDocumento, confirmarNumeroDocumento }),
     });
   },
 

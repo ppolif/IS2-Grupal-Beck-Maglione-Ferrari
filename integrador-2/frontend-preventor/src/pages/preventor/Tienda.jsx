@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../../components/Icon';
 import Button from '../../components/Button';
+import ProductDetailModal from '../../components/ProductDetailModal';
 import { productoService } from '../../services/productoService';
 import { useCart } from '../../context/CartContext';
 
@@ -18,7 +19,7 @@ export default function Tienda() {
   const [category, setCategory] = useState('Todos');
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
-  const [toast, setToast] = useState(null);
+  const [detailProduct, setDetailProduct] = useState(null);
 
   // Carga inicial de datos desde el backend
   useEffect(() => {
@@ -54,11 +55,10 @@ export default function Tienda() {
     cargarDatos();
   }, []);
 
-  // Manejo de notificación flotante al agregar al carrito
-  const handleAgregar = (item) => {
-    agregarItem(item, 1);
-    setToast(`Agregado: ${item.nombre}`);
-    setTimeout(() => setToast(null), 2000);
+  // Manejo de adición de productos al carrito
+  const handleAgregar = (item, cant = 1) => {
+    agregarItem(item, cant);
+    alert(`Se agregaron ${cant} bulto(s) de "${item.nombre}" al carrito.`);
   };
 
   // Filtrado dinámico por texto y categoría seleccionada
@@ -75,12 +75,6 @@ export default function Tienda() {
 
   return (
     <div className="space-y-6">
-      {/* Toast Notificación */}
-      {toast && (
-        <div className="fixed bottom-20 right-6 z-50 bg-[#2b2b3a] text-white text-[12px] px-4 py-2.5 rounded-full shadow-lg animate-bounce">
-          ✓ {toast}
-        </div>
-      )}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -149,8 +143,8 @@ export default function Tienda() {
       {error && (
         error === 'Cambie su clave para acceder' ? (
           <div className="max-w-md mx-auto my-8 p-8 bg-white rounded-[24px] border border-[#ececf2] text-center space-y-4 shadow-sm">
-            <div className="w-16 h-16 rounded-full bg-[#eefaff] text-[#247f99] flex items-center justify-center mx-auto text-3xl font-bold">
-              🔒
+            <div className="w-16 h-16 rounded-full bg-[#eefaff] text-[#247f99] flex items-center justify-center mx-auto text-2xl font-bold">
+              <Icon name="key" />
             </div>
             <h2 className="text-xl font-bold text-[#2b2b3a]">Cambie su clave para acceder</h2>
             <p className="text-[13px] text-[#6b6b80] leading-relaxed">
@@ -190,15 +184,18 @@ export default function Tienda() {
                 return (
                   <article
                     key={item.id}
-                    className="border border-[#ececf2] rounded-[18px] p-3 bg-white shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
+                    onClick={() => setDetailProduct(item)}
+                    className="border border-[#ececf2] rounded-[18px] p-3 bg-white shadow-sm flex flex-col justify-between hover:shadow-md transition-all cursor-pointer group"
                   >
                     <div>
                       {item.imagenUrl ? (
-                        <img
-                          src={item.imagenUrl}
-                          alt={item.nombre}
-                          className="w-full h-32 object-cover rounded-[12px] mb-2.5 bg-slate-50"
-                        />
+                        <div className="overflow-hidden rounded-[12px] mb-2.5 bg-slate-50">
+                          <img
+                            src={item.imagenUrl}
+                            alt={item.nombre}
+                            className="w-full h-32 object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </div>
                       ) : (
                         <div className="w-full h-32 rounded-[12px] mb-2.5 bg-gradient-to-br from-[#ffeefb] to-[#edf0f8] flex items-center justify-center text-[#e86bc4]">
                           <Icon name="box" className="w-10 h-10 opacity-40" />
@@ -207,7 +204,7 @@ export default function Tienda() {
                       <span className="text-[10px] font-bold tracking-wider text-[#e86bc4] uppercase block">
                         {item.categoria?.nombre || 'Mayorista'}
                       </span>
-                      <h3 className="font-semibold text-[14px] text-[#2b2b3a] leading-tight mt-0.5">
+                      <h3 className="font-semibold text-[14px] text-[#2b2b3a] leading-tight mt-0.5 group-hover:text-[#e86bc4] transition-colors">
                         {item.nombre}
                       </h3>
                       <p className="text-[11px] text-[#6b6b80] mt-0.5 line-clamp-2">
@@ -220,7 +217,11 @@ export default function Tienda() {
                         {formattedPrecio}
                       </strong>
                       <button
-                        onClick={() => handleAgregar(item)}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDetailProduct(item);
+                        }}
                         className="w-8 h-8 rounded-[10px] bg-[#e86bc4] hover:bg-[#d456b0] text-white text-[18px] flex items-center justify-center cursor-pointer shadow-sm active:scale-95 transition-all"
                         title="Agregar al pedido"
                       >
@@ -233,6 +234,15 @@ export default function Tienda() {
             </div>
           )}
         </>
+      )}
+
+      {/* Modal Ficha Detalle de Producto */}
+      {detailProduct && (
+        <ProductDetailModal
+          product={detailProduct}
+          onClose={() => setDetailProduct(null)}
+          onAddToCart={(prod, cant) => handleAgregar(prod, cant)}
+        />
       )}
     </div>
   );

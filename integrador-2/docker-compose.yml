@@ -59,7 +59,14 @@ services:
       - backend
 
   frontend-institucional:
-    build: ./frontend-institucional
+    build:
+      context: ./frontend-institucional
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api/v1}
+        VITE_AUTH0_DOMAIN: ${VITE_AUTH0_DOMAIN}
+        VITE_AUTH0_CLIENT_ID: ${VITE_AUTH0_CLIENT_ID}
+        VITE_AUTH0_CALLBACK_URL: ${VITE_AUTH0_CALLBACK_URL:-http://localhost:3001/login}
+        VITE_AUTH0_AUDIENCE: ${VITE_AUTH0_AUDIENCE}
     container_name: dulcemayor-institucional
     restart: always
     ports:

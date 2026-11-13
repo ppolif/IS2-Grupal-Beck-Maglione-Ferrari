@@ -20,6 +20,7 @@ import com.DulceMayor.backend.entities.contacto.TipoContacto;
 import com.DulceMayor.backend.entities.contacto.TipoTelefono;
 import com.DulceMayor.backend.entities.persona.Minorista;
 import com.DulceMayor.backend.dtos.persona.ActualizarPerfilMinoristaRequest;
+import com.DulceMayor.backend.dtos.persona.CompletarDniRequest;
 import com.DulceMayor.backend.dtos.persona.MinoristaEliminadoEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import com.DulceMayor.backend.repositories.persona.MinoristaRepository;
@@ -306,6 +307,62 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
     }
 
     /**
+     * Obtiene el minorista asociado al usuario o crea uno nuevo con los datos obtenidos
+     * desde el proveedor de autenticación externo (Google / Auth0 / Facebook).
+     */
+    @Transactional
+    public Minorista obtenerOCrearMinoristaExterno(Usuario usuario, String nombre, String apellido, String email) {
+        Optional<Minorista> existente = minoristaRepository.findByUsuarioIdAndEliminadoFalse(usuario.getId());
+        if (existente.isPresent()) {
+            Minorista minorista = existente.get();
+            boolean tieneCorreo = minorista.getContactos() != null && minorista.getContactos().stream()
+                    .anyMatch(c -> c instanceof ContactoCorreoElectronico && !c.isEliminado());
+            if (!tieneCorreo && email != null && !email.isBlank()) {
+                if (minorista.getContactos() == null) {
+                    minorista.setContactos(new ArrayList<>());
+                }
+                minorista.getContactos().add(ContactoCorreoElectronico.builder()
+                        .tipoContacto(TipoContacto.PERSONAL)
+                        .email(email.trim().toLowerCase())
+                        .eliminado(false)
+                        .build());
+                minoristaRepository.save(minorista);
+            }
+            return minorista;
+        }
+
+        String sufijoDoc = usuario.getId().replace("-", "");
+        if (sufijoDoc.length() > 8) {
+            sufijoDoc = sufijoDoc.substring(0, 8);
+        }
+
+        List<Contacto> contactos = new ArrayList<>();
+        if (email != null && !email.isBlank()) {
+            contactos.add(ContactoCorreoElectronico.builder()
+                    .tipoContacto(TipoContacto.PERSONAL)
+                    .email(email.trim().toLowerCase())
+                    .eliminado(false)
+                    .build());
+        }
+
+        String nom = (nombre != null && !nombre.isBlank()) ? nombre.trim() : "Cliente";
+        String ape = (apellido != null && !apellido.isBlank()) ? apellido.trim() : "Mayorista";
+
+        Minorista nuevo = Minorista.builder()
+                .nombre(nom)
+                .apellido(ape)
+                .tipoDocumento(com.DulceMayor.backend.entities.persona.TipoDocumento.DNI)
+                .numeroDocumento("EXT-" + sufijoDoc)
+                .usuario(usuario)
+                .contactos(contactos)
+                .direcciones(new ArrayList<>())
+                .eliminado(false)
+                .build();
+
+        return minoristaRepository.save(nuevo);
+    }
+
+    /**
      * Proyecta el perfil personal del minorista autenticado a DTO de respuesta.
      *
      * <p><b>Cuándo se usa:</b> En el endpoint {@code GET /mi-cuenta/perfil} del portal del cliente.</p>
@@ -380,6 +437,62 @@ public class MinoristaService extends BaseService<Minorista, MinoristaRequest, M
 
         Minorista guardado = minoristaRepository.save(minorista);
         return mapper.aResponse(guardado);
+    }
+
+    /**
+     * Completa por única vez el DNI real de un cliente minorista creado mediante autenticación externa (Auth0).
+     * Solo se permite si el minorista aún conserva su documento provisorio generado automáticamente ({@code EXT-*}).
+     *
+     * <p><b>Cuándo se usa:</b> En el endpoint {@code POST /mi-cuenta/completar-dni} del portal del cliente.</p>
+     */
+    @Transactional
+    public MinoristaResponse completarDniExterno(String usuarioId, CompletarDniRequest request) {
+        if (request == null || request.numeroDocumento() == null || request.numeroDocumento().isBlank()) {
+            throw new ValidacionException("El número de DNI es obligatorio");
+        }
+
+        String dniIngresado = request.numeroDocumento().replace(".", "").replace("-", "").trim();
+        if (request.confirmarNumeroDocumento() != null && !request.confirmarNumeroDocumento().isBlank()) {
+            String confirmarLimpio = request.confirmarNumeroDocumento().replace(".", "").replace("-", "").trim();
+            if (!dniIngresado.equals(confirmarLimpio)) {
+                throw new ValidacionException("El número de DNI y su confirmación no coinciden");
+            }
+        }
+
+        if (!dniIngresado.matches("^\\d{7,8}$")) {
+            throw new ValidacionException("El DNI debe contener entre 7 y 8 dígitos numéricos");
+        }
+
+        Minorista minorista = obtenerPorUsuarioId(usuarioId);
+        if (!esDocumentoExternoTemporal(minorista.getNumeroDocumento())) {
+            throw new ValidacionException(
+                    "El documento de identidad ya fue registrado previamente y no puede volver a modificarse"
+            );
+        }
+
+        personaService.validarDocumentoUnicoExcluyendoId(
+                com.DulceMayor.backend.entities.persona.TipoDocumento.DNI,
+                dniIngresado,
+                minorista.getId()
+        );
+
+        minorista.setTipoDocumento(com.DulceMayor.backend.entities.persona.TipoDocumento.DNI);
+        minorista.setNumeroDocumento(dniIngresado);
+
+        Minorista guardado = minoristaRepository.save(minorista);
+        return mapper.aResponse(guardado);
+    }
+
+    /**
+     * Determina si un número de documento corresponde a un identificador temporal
+     * asignado automáticamente en el primer ingreso por proveedor externo.
+     */
+    public boolean esDocumentoExternoTemporal(String numeroDocumento) {
+        if (numeroDocumento == null || numeroDocumento.isBlank()) {
+            return true;
+        }
+        String normalizado = numeroDocumento.trim().toUpperCase();
+        return normalizado.startsWith("EXT-") || "AUTENTICADO".equals(normalizado);
     }
 
     /**
