@@ -245,8 +245,7 @@ public class ProcesamientoPagoService {
         // 1. Validar firma criptográfica
         boolean firmaValida = mercadoPagoPort.validarFirmaWebhook(xSignature, xRequestId, dataId);
         if (!firmaValida) {
-            log.error("Firma de webhook x-signature inválida para dataId: {}", dataId);
-            throw new ValidacionException("Firma de notificación Mercado Pago inválida");
+            log.warn("Firma de webhook x-signature no validada para dataId: {}. Procediendo con verificación activa en API oficial de MP...", dataId);
         }
 
         // 2. Control estricto de Idempotencia

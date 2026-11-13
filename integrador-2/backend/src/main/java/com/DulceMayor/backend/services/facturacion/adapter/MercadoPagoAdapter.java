@@ -384,10 +384,11 @@ public class MercadoPagoAdapter implements MercadoPagoPort {
                 return false;
             }
 
-            long timestampMs = Long.parseLong(ts);
+            long timestampRaw = Long.parseLong(ts);
+            long timestampMs = ts.length() <= 10 ? timestampRaw * 1000L : timestampRaw;
             long nowMs = System.currentTimeMillis();
             if (Math.abs(nowMs - timestampMs) > MAX_SIGNATURE_AGE_MS) {
-                log.warn("Timestamp de x-signature expirado (ts: {}, now: {})", timestampMs, nowMs);
+                log.warn("Timestamp de x-signature fuera de rango (ts: {}, now: {})", timestampMs, nowMs);
                 return false;
             }
 
