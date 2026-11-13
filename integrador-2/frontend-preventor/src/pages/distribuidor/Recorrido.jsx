@@ -77,24 +77,48 @@ export default function Recorrido() {
 
   const handleConfirmarEntrega = async (observacion = '') => {
     if (!ruta?.id || !selectedParada?.pedidoId) return;
+    const comercioEntregado = selectedParada.puntoDeVenta?.nombreComercio;
+    const ordenEntregado = selectedParada.orden;
     try {
       setProcesando(true);
-      await rutaService.registrarEntregaDistribuidor(ruta.id, {
+      const avance = await rutaService.registrarEntregaDistribuidor(ruta.id, {
         pedidoId: selectedParada.pedidoId,
         observacion: observacion || 'Entrega confirmada por distribuidor',
       });
 
-      setRuta((prev) => {
-        if (!prev) return prev;
-        const nextParadas = prev.paradas.map((p) =>
-          p.orden === selectedParada.orden ? { ...p, completada: true } : p
-        );
-        return { ...prev, paradas: nextParadas };
-      });
+      if (avance?.ruta) {
+        setRuta(avance.ruta);
+        if (avance.siguienteParada) {
+          setSelectedParada(avance.siguienteParada);
+        } else {
+          const siguientePendiente = avance.ruta.paradas?.find((p) => !p.completada);
+          if (siguientePendiente) {
+            setSelectedParada(siguientePendiente);
+          } else {
+            const actualizada = avance.ruta.paradas?.find((p) => p.orden === ordenEntregado);
+            if (actualizada) setSelectedParada(actualizada);
+          }
+        }
+      } else {
+        setRuta((prev) => {
+          if (!prev) return prev;
+          const nextParadas = prev.paradas.map((p) =>
+            p.orden === ordenEntregado ? { ...p, completada: true } : p
+          );
+          const siguiente = nextParadas.find((p) => !p.completada);
+          if (siguiente) {
+            setSelectedParada(siguiente);
+          } else {
+            const actualCompletada = nextParadas.find((p) => p.orden === ordenEntregado);
+            if (actualCompletada) setSelectedParada(actualCompletada);
+          }
+          return { ...prev, paradas: nextParadas };
+        });
+      }
 
       setIsCashModalOpen(false);
       alert(
-        `✓ Entrega a "${selectedParada.puntoDeVenta?.nombreComercio}" registrada con éxito.\n` +
+        `✓ Entrega a "${comercioEntregado}" registrada con éxito.\n` +
         `✓ Si el pedido tenía pago en efectivo, se generó la factura, pasó a estado FACTURADO y luego a ENTREGADO, y se envió automáticamente por correo al cliente.`
       );
     } catch (err) {
@@ -137,7 +161,7 @@ export default function Recorrido() {
     const direccionLegible = formatearDireccion(pdv?.direccion);
     const nombreComercio = pdv?.nombreComercio || `Parada #${p.orden}`;
     return {
-      id: pdv?.id || p.orden,
+      id: p.pedidoId || pdv?.id || p.orden,
       lat,
       lng,
       nombre: nombreComercio,
@@ -309,7 +333,7 @@ export default function Recorrido() {
                   activeMarkerId={
                     selectedParada?.id === 'origen-sucursal'
                       ? 'origen-sucursal'
-                      : selectedParada?.puntoDeVenta?.id || selectedParada?.orden
+                      : selectedParada?.pedidoId || selectedParada?.puntoDeVenta?.id || selectedParada?.orden
                   }
                   showRoute={true}
                   routeColor={colors.secondary.DEFAULT}
@@ -317,7 +341,11 @@ export default function Recorrido() {
                     if (m.id === 'origen-sucursal' || m.esSucursal) {
                       setSelectedParada({ id: 'origen-sucursal', esSucursal: true });
                     } else {
-                      const found = paradas.find((p) => String(p.puntoDeVenta?.id) === String(m.id));
+                      const found = paradas.find(
+                        (p) =>
+                          String(p.pedidoId || p.puntoDeVenta?.id || p.orden) === String(m.id) ||
+                          String(p.orden) === String(m.orden)
+                      );
                       if (found) setSelectedParada(found);
                     }
                   }}
