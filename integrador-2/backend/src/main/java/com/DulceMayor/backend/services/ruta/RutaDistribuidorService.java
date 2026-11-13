@@ -130,10 +130,6 @@ public class RutaDistribuidorService {
 
         Optional<RutaDistribuidor> rutaOpt = rutaDistribuidorRepository.findByResponsableIdAndFechaAndEliminadoFalse(distribuidor.getId(), fechaConsulta);
         if (rutaOpt.isPresent()) {
-            RutaDistribuidor rutaActual = incorporarPedidosPendientesSiExisten(rutaOpt.get(), distribuidor);
-            // --- COMPORTAMIENTO ORIGINAL (PRODUCCIÓN): Una sola ruta fija por día ---
-            // return rutaMapperHelper.aResponse(rutaActual);
-
             // --- MODO PRESENTACIÓN / DEMO: Recalcular ruta e incorporar nuevos pedidos cada vez que ingresa a la pestaña ---
             return recalcularRutaParaPresentacion(rutaOpt.get(), distribuidor);
         }
@@ -165,7 +161,8 @@ public class RutaDistribuidorService {
 
         Optional<RutaDistribuidor> existente = rutaDistribuidorRepository.findByResponsableIdAndFechaAndEliminadoFalse(distribuidor.getId(), fechaConsulta);
         if (existente.isPresent()) {
-            return rutaMapperHelper.aResponse(existente.get());
+            // --- MODO PRESENTACIÓN / DEMO: Recalcular ruta e incorporar nuevos pedidos ---
+            return recalcularRutaParaPresentacion(existente.get(), distribuidor);
         }
 
         List<RutaResponse> creadas = crearRutasAutomaticas(fechaConsulta);
@@ -173,6 +170,102 @@ public class RutaDistribuidorService {
                 .filter(r -> r.responsable() != null && distribuidor.getId().equals(r.responsable().id()))
                 .findFirst()
                 .orElseThrow(() -> new RecursoNoEncontradoException("No se asignaron pedidos para el distribuidor actual"));
+    }
+
+    /**
+     * Recalcula en vivo la ruta existente del distribuidor para fines de presentación/demostración:
+     * conserva los pedidos ya entregados, incorpora cualquier nuevo pedido facturado pendiente de reparto
+     * y vuelve a optimizar el recorrido de paradas pendientes con OSRM desde la Sede Central.
+     */
+    private RutaResponse recalcularRutaParaPresentacion(RutaDistribuidor rutaExistente, Distribuidor distribuidor) {
+        List<Pedido> pedidosEntregados = new ArrayList<>();
+        List<Pedido> pedidosPendientesEnRuta = new ArrayList<>();
+        Map<String, Boolean> idsYaEnRuta = new HashMap<>();
+
+        if (rutaExistente.getPedidos() != null) {
+            for (Pedido p : rutaExistente.getPedidos()) {
+                idsYaEnRuta.put(p.getId(), true);
+                if (p.getEstado() == EstadoPedido.ENTREGADO) {
+                    pedidosEntregados.add(p);
+                } else if (p.getEstado() == EstadoPedido.EN_REPARTO) {
+                    pedidosPendientesEnRuta.add(p);
+                }
+            }
+        }
+
+        // Incorporar nuevos pedidos facturados (o en efectivo cargados) que hayan ingresado durante la demostración
+        List<Pedido> nuevosFacturados = pedidoService.listarFacturadosPendientes();
+        for (Pedido nuevo : nuevosFacturados) {
+            if (!idsYaEnRuta.containsKey(nuevo.getId())) {
+                pedidoService.asignarAReparto(
+                        nuevo.getId(),
+                        distribuidor.getId(),
+                        "Incorporado en vivo a ruta de entrega del distribuidor " + distribuidor.getNombre() + " " + distribuidor.getApellido()
+                );
+                nuevo.setEstado(EstadoPedido.EN_REPARTO);
+                nuevo.setDistribuidor(distribuidor);
+                pedidosPendientesEnRuta.add(nuevo);
+                idsYaEnRuta.put(nuevo.getId(), true);
+            }
+        }
+
+        List<Pedido> pedidosPendientesOrdenados = new ArrayList<>();
+        if (!pedidosPendientesEnRuta.isEmpty()) {
+            Map<String, List<Pedido>> mapaPuntosAPedidos = new LinkedHashMap<>();
+            List<PuntoDeVenta> puntosAVisitar = new ArrayList<>();
+
+            for (Pedido p : pedidosPendientesEnRuta) {
+                PuntoDeVenta pdv = p.getPuntoDeVenta();
+                if (pdv != null) {
+                    if (pdv.getDireccion() != null) {
+                        direccionService.asegurarCoordenadas(pdv.getDireccion());
+                    }
+                    if (!mapaPuntosAPedidos.containsKey(pdv.getId())) {
+                        mapaPuntosAPedidos.put(pdv.getId(), new ArrayList<>());
+                        puntosAVisitar.add(pdv);
+                    }
+                    mapaPuntosAPedidos.get(pdv.getId()).add(p);
+                }
+            }
+
+            double[] origen = obtenerCoordenadasSedeCentral();
+            List<PuntoDeVenta> puntosOrdenados = rutaOptimizerStrategy.optimizarRecorrido(
+                    origen[0],
+                    origen[1],
+                    puntosAVisitar
+            );
+
+            for (PuntoDeVenta pdv : puntosOrdenados) {
+                List<Pedido> pedidosDelPdv = mapaPuntosAPedidos.get(pdv.getId());
+                if (pedidosDelPdv != null) {
+                    pedidosPendientesOrdenados.addAll(pedidosDelPdv);
+                }
+            }
+        }
+
+        List<Pedido> listaFinal = new ArrayList<>(pedidosEntregados.size() + pedidosPendientesOrdenados.size());
+        listaFinal.addAll(pedidosEntregados);
+        listaFinal.addAll(pedidosPendientesOrdenados);
+
+        if (rutaExistente.getPedidos() == null) {
+            rutaExistente.setPedidos(new ArrayList<>(listaFinal));
+        } else {
+            rutaExistente.getPedidos().clear();
+            rutaExistente.getPedidos().addAll(listaFinal);
+        }
+
+        if (!pedidosPendientesOrdenados.isEmpty()) {
+            rutaExistente.setParadaActual(pedidosPendientesOrdenados.get(0).getPuntoDeVenta());
+            rutaExistente.setEstado(RutaEstado.PENDIENTE);
+        } else {
+            rutaExistente.setParadaActual(null);
+            if (!pedidosEntregados.isEmpty()) {
+                rutaExistente.setEstado(RutaEstado.REALIZADA);
+            }
+        }
+
+        RutaDistribuidor actualizada = rutaDistribuidorRepository.saveAndFlush(rutaExistente);
+        return rutaMapperHelper.aResponse(actualizada);
     }
 
     /**
