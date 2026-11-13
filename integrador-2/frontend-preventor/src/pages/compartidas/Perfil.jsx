@@ -63,7 +63,7 @@ export default function Perfil() {
 
       {debeCambiarClave && (
         <div className="p-4 rounded-[16px] bg-[#fff6e0] border border-[#ffd98a] text-[#8a6519] text-[12px] space-y-2">
-          <p className="font-bold">⚠️ Contraseña temporal activa</p>
+          <p className="font-bold">Contraseña temporal activa</p>
           <p>
             Por razones de seguridad, debés cambiar tu contraseña temporal antes de poder operar en el sistema.
           </p>

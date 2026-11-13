@@ -98,8 +98,8 @@ export default function Comercios() {
       {error && (
         error === 'Cambie su clave para acceder' ? (
           <div className="max-w-md mx-auto my-8 p-8 bg-white rounded-[24px] border border-[#ececf2] text-center space-y-4 shadow-sm">
-            <div className="w-16 h-16 rounded-full bg-[#eefaff] text-[#247f99] flex items-center justify-center mx-auto text-3xl font-bold">
-              🔒
+            <div className="w-16 h-16 rounded-full bg-[#eefaff] text-[#247f99] flex items-center justify-center mx-auto text-2xl font-bold">
+              <Icon name="key" />
             </div>
             <h2 className="text-xl font-bold text-[#2b2b3a]">Cambie su clave para acceder</h2>
             <p className="text-[13px] text-[#6b6b80] leading-relaxed">

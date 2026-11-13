@@ -14,7 +14,12 @@ import com.DulceMayor.backend.entities.ProveedorAuth;
 import com.DulceMayor.backend.entities.RolUsuario;
 import com.DulceMayor.backend.entities.Usuario;
 import com.DulceMayor.backend.repositories.UsuarioRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -34,6 +39,7 @@ public class UsuarioService implements UserDetailsService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final ObjectMapper objectMapper;
 
     public UsuarioService(
             UsuarioRepository usuarioRepository,
@@ -42,6 +48,7 @@ public class UsuarioService implements UserDetailsService {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtProvider = jwtProvider;
+        this.objectMapper = new ObjectMapper();
     }
 
     /// metodo de UserDetailsService
@@ -110,6 +117,105 @@ public class UsuarioService implements UserDetailsService {
             throw new CredencialesInvalidasException();
         }
         return usuario;
+    }
+
+    public record DatosTokenExterno(String email, String nombre, String apellido, String sub) {}
+
+    public DatosTokenExterno parsearTokenExterno(String tokenExterno) {
+        if (tokenExterno == null || tokenExterno.isBlank()) {
+            throw new ValidacionException("El token de autenticación externo es obligatorio");
+        }
+        String tokenLimpio = tokenExterno.trim();
+        String payloadJson = null;
+
+        if (tokenLimpio.contains(".")) {
+            String[] partes = tokenLimpio.split("\\.");
+            if (partes.length >= 2) {
+                try {
+                    byte[] decoded = Base64.getUrlDecoder().decode(partes[1]);
+                    payloadJson = new String(decoded, StandardCharsets.UTF_8);
+                } catch (IllegalArgumentException e) {
+                    payloadJson = null;
+                }
+            }
+        }
+
+        if (payloadJson == null) {
+            payloadJson = tokenLimpio;
+        }
+
+        String email = null;
+        String nombre = "Cliente";
+        String apellido = "";
+        String sub = null;
+
+        try {
+            JsonNode node = objectMapper.readTree(payloadJson);
+            if (node.hasNonNull("email")) {
+                email = node.get("email").asText().trim().toLowerCase();
+            } else if (node.hasNonNull("name") && node.get("name").asText().contains("@")) {
+                email = node.get("name").asText().trim().toLowerCase();
+            }
+            if (node.hasNonNull("given_name")) {
+                nombre = node.get("given_name").asText().trim();
+            } else if (node.hasNonNull("name")) {
+                String fullName = node.get("name").asText().trim();
+                String[] words = fullName.split("\\s+", 2);
+                nombre = words[0];
+                if (words.length > 1) {
+                    apellido = words[1];
+                }
+            }
+            if (node.hasNonNull("family_name")) {
+                apellido = node.get("family_name").asText().trim();
+            }
+            if (node.hasNonNull("sub")) {
+                sub = node.get("sub").asText().trim();
+            }
+        } catch (Exception e) {
+            if (payloadJson.contains("@") && !payloadJson.contains(" ")) {
+                email = payloadJson.trim().toLowerCase();
+            }
+        }
+
+        if (email == null || email.isBlank()) {
+            throw new ValidacionException("No se pudo obtener el correo electrónico a partir del token del proveedor externo");
+        }
+
+        return new DatosTokenExterno(email, nombre, apellido, sub);
+    }
+
+    @Transactional
+    public Usuario loginExterno(ProveedorAuth proveedor, String tokenExterno) {
+        if (proveedor == null) {
+            throw new ValidacionException("El proveedor de autenticación es obligatorio");
+        }
+        DatosTokenExterno datos = parsearTokenExterno(tokenExterno);
+        String email = datos.email();
+
+        Optional<Usuario> existente = usuarioRepository.findByNombreUsuario(email);
+        if (existente.isPresent()) {
+            Usuario usuario = existente.get();
+            if (usuario.isEliminado()) {
+                throw new CredencialesInvalidasException();
+            }
+            if (usuario.getProveedorAuth() == null || usuario.getProveedorAuth() != ProveedorAuth.LOCAL) {
+                usuario.setProveedorAuth(proveedor);
+                usuarioRepository.save(usuario);
+            }
+            return usuario;
+        }
+
+        Usuario nuevo = Usuario.builder()
+                .nombreUsuario(email)
+                .clave(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .rol(RolUsuario.MINORISTA)
+                .claveTemporal(false)
+                .proveedorAuth(proveedor)
+                .eliminado(false)
+                .build();
+
+        return usuarioRepository.save(nuevo);
     }
 
     @Transactional(readOnly = true)

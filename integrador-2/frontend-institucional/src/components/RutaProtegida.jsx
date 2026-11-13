@@ -2,7 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function RutaProtegida({ children }) {
-  const { isLogged, cargandoSesion, debeCambiarClave } = useAuth();
+  const { isLogged, cargandoSesion, debeCambiarClave, debeCompletarDni } = useAuth();
   const location = useLocation();
 
   if (cargandoSesion) {
@@ -18,6 +18,10 @@ export default function RutaProtegida({ children }) {
 
   if (!isLogged) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (debeCompletarDni && location.pathname !== '/completar-dni') {
+    return <Navigate to="/completar-dni" replace />;
   }
 
   if (debeCambiarClave && location.pathname !== '/perfil') {
