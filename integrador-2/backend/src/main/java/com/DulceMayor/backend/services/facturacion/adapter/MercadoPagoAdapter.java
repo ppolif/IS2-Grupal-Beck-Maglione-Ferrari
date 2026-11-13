@@ -250,13 +250,100 @@ public class MercadoPagoAdapter implements MercadoPagoPort {
                         dateApproved != null ? dateApproved : LocalDateTime.now()
                 ));
             } else {
-                log.warn("Mercado Pago Payments API devolvió HTTP {} para paymentId {}: {}",
-                        response.statusCode(), paymentId, response.body());
+                log.info("Mercado Pago Payments API devolvió HTTP {} para id {}. Consultando como Merchant Order...",
+                        response.statusCode(), paymentId);
+                return consultarMerchantOrder(paymentId);
             }
         } catch (Exception ex) {
             log.error("Excepción al consultar pago {} en Mercado Pago: {}", paymentId, ex.getMessage());
+            return consultarMerchantOrder(paymentId);
         }
+    }
 
+    /**
+     * Consulta una orden de comerciante (Merchant Order) cuando la notificación corresponde
+     * a topic_merchant_order_wh o In-Store Orders.
+     */
+    private Optional<MercadoPagoPaymentDto> consultarMerchantOrder(String merchantOrderId) {
+        if (merchantOrderId == null || merchantOrderId.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            String endpoint = apiUrl + "/merchant_orders/" + merchantOrderId.trim();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(endpoint))
+                    .header("Authorization", "Bearer " + accessToken)
+                    .header("Accept", "application/json")
+                    .timeout(Duration.ofSeconds(8))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            if (response.statusCode() == 200) {
+                JsonNode root = objectMapper.readTree(response.body());
+                String orderStatus = root.path("order_status").asText();
+                String status = root.path("status").asText();
+                String externalReference = root.path("external_reference").asText(null);
+
+                // 1. Buscar un pago aprobado en el arreglo payments
+                JsonNode paymentsNode = root.path("payments");
+                if (paymentsNode.isArray() && !paymentsNode.isEmpty()) {
+                    for (JsonNode pNode : paymentsNode) {
+                        String pStatus = pNode.path("status").asText();
+                        if ("approved".equalsIgnoreCase(pStatus)) {
+                            String paymentId = pNode.path("id").asText();
+                            String statusDetail = pNode.path("status_detail").asText("accredited");
+                            Double amount = pNode.path("transaction_amount").isNumber()
+                                    ? pNode.path("transaction_amount").asDouble()
+                                    : root.path("total_amount").asDouble(0.0);
+                            String dateApprovedStr = pNode.path("date_approved").asText(null);
+                            LocalDateTime dateApproved = LocalDateTime.now();
+                            if (dateApprovedStr != null && !dateApprovedStr.isBlank()) {
+                                try {
+                                    dateApproved = OffsetDateTime.parse(dateApprovedStr).toLocalDateTime();
+                                } catch (Exception ignored) {
+                                }
+                            }
+
+                            log.info("Pago aprobado encontrado en Merchant Order {}: paymentId={}, externalReference={}",
+                                    merchantOrderId, paymentId, externalReference);
+                            return Optional.of(new MercadoPagoPaymentDto(
+                                    paymentId,
+                                    "approved",
+                                    statusDetail,
+                                    amount,
+                                    "ARS",
+                                    externalReference,
+                                    dateApproved
+                            ));
+                        }
+                    }
+                }
+
+                // 2. Si la orden está pagada o cerrada según order_status/status
+                if ("paid".equalsIgnoreCase(orderStatus) || "closed".equalsIgnoreCase(status)) {
+                    Double totalAmount = root.path("total_amount").isNumber()
+                            ? root.path("total_amount").asDouble()
+                            : 0.0;
+                    log.info("Merchant Order {} en estado pagada/cerrada. externalReference={}",
+                            merchantOrderId, externalReference);
+                    return Optional.of(new MercadoPagoPaymentDto(
+                            merchantOrderId,
+                            "approved",
+                            "accredited",
+                            totalAmount,
+                            "ARS",
+                            externalReference,
+                            LocalDateTime.now()
+                    ));
+                }
+            } else {
+                log.warn("Mercado Pago Merchant Orders API devolvió HTTP {} para orderId {}: {}",
+                        response.statusCode(), merchantOrderId, response.body());
+            }
+        } catch (Exception ex) {
+            log.error("Excepción al consultar Merchant Order {} en Mercado Pago: {}", merchantOrderId, ex.getMessage());
+        }
         return Optional.empty();
     }
 
@@ -268,8 +355,13 @@ public class MercadoPagoAdapter implements MercadoPagoPort {
             return true;
         }
 
-        if (xSignature == null || xSignature.isBlank() || dataId == null || dataId.isBlank()) {
-            log.warn("Cabecera x-signature o data.id ausente en la notificación");
+        if (xSignature == null || xSignature.isBlank()) {
+            log.info("Notificación sin cabecera x-signature (WebHook v1 o topic_merchant_order). Se aplicará verificación activa contra la API de MP.");
+            return true;
+        }
+
+        if (dataId == null || dataId.isBlank()) {
+            log.warn("Cabecera data.id ausente en la notificación");
             return false;
         }
 

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -54,9 +55,15 @@ public class PagoOperacionController {
     public ResponseEntity<Void> recibirWebhookMercadoPago(
             @RequestHeader(value = "x-signature", required = false) String xSignature,
             @RequestHeader(value = "x-request-id", required = false) String xRequestId,
+            @RequestParam(value = "data.id", required = false) String dataIdParam,
+            @RequestParam(value = "id", required = false) String idParam,
+            @RequestParam(value = "type", required = false) String typeParam,
+            @RequestParam(value = "topic", required = false) String topicParam,
             @RequestBody(required = false) MercadoPagoWebhookPayload payload) {
 
-        procesamientoPagoService.procesarWebhookMercadoPago(xSignature, xRequestId, payload);
+        procesamientoPagoService.procesarWebhookMercadoPago(
+                xSignature, xRequestId, dataIdParam, idParam, typeParam, topicParam, payload
+        );
         return ResponseEntity.ok().build();
     }
 

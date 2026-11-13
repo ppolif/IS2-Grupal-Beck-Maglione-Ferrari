@@ -206,13 +206,41 @@ public class ProcesamientoPagoService {
             String xSignature,
             String xRequestId,
             MercadoPagoWebhookPayload payload) {
+        procesarWebhookMercadoPago(xSignature, xRequestId, null, null, null, null, payload);
+    }
 
-        if (payload == null || payload.data() == null || payload.data().id() == null) {
+    public void procesarWebhookMercadoPago(
+            String xSignature,
+            String xRequestId,
+            String dataIdParam,
+            String idParam,
+            String typeParam,
+            String topicParam,
+            MercadoPagoWebhookPayload payload) {
+
+        String dataId = null;
+        if (dataIdParam != null && !dataIdParam.isBlank()) {
+            dataId = dataIdParam.trim();
+        } else if (idParam != null && !idParam.isBlank()) {
+            dataId = idParam.trim();
+        } else if (payload != null && payload.data() != null && payload.data().id() != null) {
+            dataId = payload.data().id().trim();
+        } else if (payload != null && payload.id() != null) {
+            dataId = String.valueOf(payload.id());
+        }
+
+        if (dataId == null || dataId.isBlank()) {
             log.warn("Webhook de Mercado Pago recibido con payload o data.id vacío");
             return;
         }
 
-        String dataId = payload.data().id().trim();
+        String action = payload != null && payload.action() != null
+                ? payload.action()
+                : (topicParam != null ? topicParam : "payment.updated");
+        String type = typeParam != null && !typeParam.isBlank()
+                ? typeParam
+                : (payload != null && payload.type() != null ? payload.type() : topicParam);
+        String rawBody = payload != null ? payload.toString() : ("data.id=" + dataId + ", type=" + type);
 
         // 1. Validar firma criptográfica
         boolean firmaValida = mercadoPagoPort.validarFirmaWebhook(xSignature, xRequestId, dataId);
@@ -228,7 +256,7 @@ public class ProcesamientoPagoService {
         }
 
         WebhookNotificationLog logEntry = webhookNotificationLogService.registrarRecibido(
-                dataId, xRequestId, payload.action(), payload.type(), xSignature, payload.toString()
+                dataId, xRequestId, action, type, xSignature, rawBody
         );
 
         // 3. Verificación Activa: Consulta obligatoria a la API oficial de Mercado Pago
