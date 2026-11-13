@@ -1,0 +1,709 @@
+<diagram program="umletino" version="15.1"><zoom_level>6</zoom_level><help_text>&lt;&lt;enumeration&gt;&gt;
+TipoRuta
+--
+PREVENTOR
+DISTRIBUIDOR
+</help_text><element><id>UMLClass</id><coordinates><x>102</x><y>12</y><w>270</w><h>180</h></coordinates><panel_attributes>Pais
+--
+-id:String
+-nombre:String
+-eliminado:boolean
+--
++crearPais(nombre:String):void
++validar(nombre:String):void
++buscarPais(id:String):Pais
++buscarPaisPorNombre(nombre:String):Pais
++modificarPais(id:String, nombre:String):void
++eliminarPais(id:String):void
++listarPais():Collection&lt;Pais&gt;
++listarPaisActivo():Collection&lt;Pais&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>510</x><y>12</y><w>384</w><h>180</h></coordinates><panel_attributes>Provincia
+--
+-id:String
+-nombre:String
+-eliminado:boolean
+--
++crearProvincia(nombre:String, idPais:String):void
++validar(nombre:String, idPais:String):void
++buscarProvincia(id:String):Provincia
++buscarProvinciaPorNombre(nombre:String):Provincia
++modificarProvincia(id:String, nombre:String, idPais:String):void
++eliminarProvincia(id:String):void
++listarProvincia(idPais:String):Collection&lt;Provincia&gt;
++listarProvinciaActivo(idPais:String):Collection&lt;Provincia&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>972</x><y>12</y><w>426</w><h>180</h></coordinates><panel_attributes>Departamento
+--
+-id:String
+-nombre:String
+-eliminado:boolean
+--
++crearDepartamento(nombre:String, idProvincia:String):void
++validar(nombre:String, idProvincia:String):void
++buscarDepartamento(id:String):Departamento
++buscarDepartamentoPorNombre(nombre:String):Departamento
++modificarDepartamento(id:String, nombre:String, idProvincia:String):void
++eliminarDepartamento(id:String):void
++listarDepartamento(idProvincia:String):Collection&lt;Departamento&gt;
++listarDepartamentoActivo(idProvincia:String):Collection&lt;Departamento&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1458</x><y>0</y><w>420</w><h>228</h></coordinates><panel_attributes>Localidad
+--
+-id:String
+-nombre:String
+-codigoPostal:String
+-eliminado:boolean
+--
++crearLocalidad(nombre:String, codigoPostal:String,
+      idDepartamento:String):void
++validar(nombre:String, codigoPostal:String, idDepartamento:String):void
++buscarLocalidad(id:String):Localidad
++buscarLocalidadPorNombre(nombre:String):Localidad
++buscarLocalidadPorCodigoPostal(codigoPostal:String):Localidad
++modificarLocalidad(id:String, nombre:String, codigoPostal:String,
+      idDepartamento:String):void
++eliminarLocalidad(id:String):void
++listarLocalidad(idDepartamento:String):Collection&lt;Localidad&gt;
++listarLocalidadActivo(idDepartamento:String):Collection&lt;Localidad&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1458</x><y>330</y><w>450</w><h>324</h></coordinates><panel_attributes>Direccion
+--
+-id:String
+-calle:String
+-numeracion:String
+-barrio:String
+-manzanaPiso:String
+-casaDepartamento:String
+-referencia:String
+-latitud:double
+-longitud:double
+-eliminado:boolean
+--
++crearDireccion(calle:String, numeracion:String, barrio:String,
+      manzanaPiso:String, casaDepartamento:String, referencia:String,
+      latitud:double, longitud:double, idLocalidad:String):Direccion
++validar(calle:String, numeracion:String, barrio:String, manzanaPiso:String,
+      casaDepartamento:String, referencia:String, latitud:double,
+      longitud:double, idLocalidad:String):void
++buscarDireccion(id:String):Direccion
++buscarDireccionPorCalleNumeracion(calle:String, numeracion:String):Direccion
++modificarDireccion(id:String, calle:String, numeracion:String,
+      barrio:String, manzanaPiso:String, casaDepartamento:String,
+      referencia:String, latitud:double, longitud:double,
+      idLocalidad:String):void
++eliminarDireccion(id:String):void
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>906</x><y>318</y><w>444</w><h>216</h></coordinates><panel_attributes>Mayorista
+--
+-id:String
+-razonSocial:String
+-cuit:String
+-tipoEmpresa:TipoEmpresa
+-eliminado:boolean
+--
++crearMayorista(razonSocial:String, cuit:String, tipoEmpresa:TipoEmpresa):void
++validar(razonSocial:String, cuit:String, tipoEmpresa:TipoEmpresa):void
++buscarMayorista(id:String):Mayorista
++buscarMayoristaPorRazonSocial(razonSocial:String):Mayorista
++modificarMayorista(id:String, razonSocial:String, cuit:String,
+      tipoEmpresa:TipoEmpresa):void
++eliminarMayorista(id:String):void
++listarMayorista():Collection&lt;Mayorista&gt;
++listarMayoristaActivo():Collection&lt;Mayorista&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>192</x><y>312</y><w>510</w><h>240</h></coordinates><panel_attributes>ConfiguracionCorreoMayorista
+--
+-id:String
+-correo:String
+-clave:String
+-puerto:String
+-smtp:String
+-tls:boolean
+-eliminado:boolean
+--
++crearConfiguracionCorreoMayorista(correo:String, clave:String, puerto:String,
+      smtp:String, tls:boolean, idMayorista:String):void
++validar(correo:String, clave:String, puerto:String, smtp:String,
+      tls:boolean, idMayorista:String):void
++modificarConfiguracionCorreoMayorista(id:String, correo:String, clave:String,
+      puerto:String, smtp:String, tls:boolean, idMayorista:String):void
++buscarConfiguracionCorreoMayorista(id:String):ConfiguracionCorreoMayorista
++buscarConfiguracionCorreoMayoristaPorMayorista(idMayorista:String):ConfiguracionCorreoMayorista
++eliminarConfiguracionCorreoMayorista(id:String):void
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>828</x><y>660</y><w>216</w><h>120</h></coordinates><panel_attributes>Contacto
+--
+-id:String
+-tipoContacto:TipoContacto
+-observacion:String
+-eliminado:boolean
+--
++buscarContacto(id:String):Contacto
++eliminarContacto(id:String):void
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>0</x><y>666</y><w>456</w><h>144</h></coordinates><panel_attributes>ContactoCorreoElectronico
+--
+-email:String
+--
++crearContactoCorreoElectronico(email:String, tipoContacto:TipoContacto,
+      observacion:String):void
++validar(email:String, tipoContacto:TipoContacto, observacion:String):void
++modificarContactoCorreoElectronico(id:String, email:String,
+      tipoContacto:TipoContacto, observacion:String):void
++listarContactoCorreoElectronico():Collection&lt;ContactoCorreoElectronico&gt;
++listarContactoCorreoElectronicoActivo():Collection&lt;ContactoCorreoElectronico&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>288</x><y>900</y><w>402</w><h>180</h></coordinates><panel_attributes>ContactoTelefonico
+--
+-telefono:String
+-tipoTelefono:TipoTelefono
+--
++crearContactoTelefonico(telefono:String, tipoTelefono:TipoTelefono,
+      tipoContacto:TipoContacto, observacion:String):void
++validar(telefono:String, tipoTelefono:TipoTelefono,
+      tipoContacto:TipoContacto, observacion:String):void
++modificarContactoTelefonico(id:String, telefono:String,
+      tipoTelefono:TipoTelefono, tipoContacto:TipoContacto,
+      observacion:String):void
++listarContactoTelefonico():Collection&lt;ContactoTelefonico&gt;
++listarContactoTelefonicoActivo():Collection&lt;ContactoTelefonico&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>906</x><y>240</y><w>102</w><h>72</h></coordinates><panel_attributes>&lt;&lt;enumeration&gt;&gt;
+TipoEmpresa
+--
+SEDE_CENTRAL
+SUCURSAL
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>828</x><y>552</y><w>102</w><h>84</h></coordinates><panel_attributes>&lt;&lt;enumeration&gt;&gt;
+TipoContacto
+--
+PERSONAL
+LABORAL
+EMPRESA
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>174</x><y>912</y><w>102</w><h>72</h></coordinates><panel_attributes>&lt;&lt;enumeration&gt;&gt;
+TipoTelefono
+--
+FIJO
+CELULAR
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1464</x><y>702</y><w>348</w><h>168</h></coordinates><panel_attributes>Persona
+--
+-id:String
+-nombre:String
+-apellido:String
+-fechaNacimiento:Date
+-tipoDocumento:TipoDocumento
+-numeroDocumento:String
+-eliminado:boolean
+--
++buscarPersona(id:String):Persona
++eliminarPersona(id:String):void
++asociarUsuarioPersona(id:String, idUsuario:String):Persona
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1986</x><y>348</y><w>438</w><h>300</h></coordinates><panel_attributes>Usuario
+--
+-id:String
+-nombreUsuario:String
+-clave:String (encriptada)
+-rol:RolUsuario
+-claveTemporal:boolean
+-proveedorAuth:ProveedorAuth
+-eliminado:boolean
+--
++crearUsuario(nombreUsuario:String,
+      rol:RolUsuario):void  (asigna clave por defecto y claveTemporal=true)
++modificarUsuario(id:String, nombreUsuario:String, rol:RolUsuario):void
++validar(nombreUsuario:String, clave:String, rol:RolUsuario):void
++eliminarUsuario(id:String):void
++buscarUsuario(id:String):Usuario
++buscarUsuarioPorNombre(nombreUsuario:String):Usuario
++listarUsuario():Collection&lt;Usuario&gt;
++listarUsuarioActivo():Collection&lt;Usuario&gt;
++login(nombreUsuario:String, clave:String):Usuario
++loginExterno(proveedor:ProveedorAuth, tokenExterno:String):Usuario
++requiereCambioClave(id:String):boolean
++modificarClave(id:String, claveActual:String, nuevaClave:String,
+      confirmarClave:String):void
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>936</x><y>978</y><w>402</w><h>216</h></coordinates><panel_attributes>Empleado
+--
+Legajo: String
+--
++crearEmpleado(nombre:String, apellido:String, fechaNacimiento:Date,
+      tipoDocumento:TipoDocumento, numeroDocumento:String,
+      idUsuario:String, legajo:String):void
++validar(nombre:String, apellido:String, fechaNacimiento:Date,
+      tipoDocumento:TipoDocumento, numeroDocumento:String,
+      idUsuario:String):void
++modificarEmpleado(id:String, nombre:String, apellido:String,
+      fechaNacimiento:Date, tipoDocumento:TipoDocumento,
+      numeroDocumento:String,legajo:String):void
++buscarEmpleado(id:String):Empleado
++listarEmpleado():Collection&lt;Empleado&gt;
++listarEmpleadoActivo():Collection&lt;Empleado&gt;
++listarEmpleadoPorRol(rol:RolUsuario):Collection&lt;Empleado&gt;
++asociarEmpleadoUsuario(empleado:Empleado, usuario:Usuario):void
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1668</x><y>1044</y><w>396</w><h>192</h></coordinates><panel_attributes>Minorista
+--
+--
++crearMinorista(nombre:String, apellido:String, fechaNacimiento:Date,
+      tipoDocumento:TipoDocumento, numeroDocumento:String):void
++validar(nombre:String, apellido:String, fechaNacimiento:Date,
+      tipoDocumento:TipoDocumento, numeroDocumento:String):void
++modificarMinorista(id:String, nombre:String, apellido:String,
+      fechaNacimiento:Date, tipoDocumento:TipoDocumento,
+      numeroDocumento:String):void
++buscarMinorista(id:String): Minorista
++buscarMinoristaPorDocumento(numeroDocumento:String):Minorista
++listarMinorista():Collection&lt;Minorista&gt;
++listarMinoristaActivo():Collection&lt;Minorista&gt;
++asociarMinoristaUsuario(minorista:Minorista, usuario:Usuario):void
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>2058</x><y>738</y><w>468</w><h>240</h></coordinates><panel_attributes>PuntoDeVenta
+--
+-id:String
+-nombreComercio:String
+-eliminado:boolean
+--
++crearPuntoDeVenta(nombreComercio:String, idMinorista:String,
+      idDireccion:String, idPreventista:String):void
++validar(nombreComercio:String, idMinorista:String, idDireccion:String,
+      idPreventista:String):void
++buscarPuntoDeVenta(id:String):PuntoDeVenta
++buscarPuntoDeVentaPorNombre(nombreComercio:String):PuntoDeVenta
++modificarPuntoDeVenta(id:String, nombreComercio:String, idMinorista:String,
+      idDireccion:String, idPreventista:String):void
++eliminarPuntoDeVenta(id:String):void
++listarPuntoDeVenta():Collection&lt;PuntoDeVenta&gt;
++listarPuntoDeVentaActivo():Collection&lt;PuntoDeVenta&gt;
++listarPuntoDeVentaPorPreventista(idPreventista:String):Collection&lt;PuntoDeVenta&gt;
++listarPuntoDeVentaPorMinorista(idMinorista:String):Collection&lt;PuntoDeVenta&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1824</x><y>750</y><w>102</w><h>84</h></coordinates><panel_attributes>&lt;&lt;enumeration&gt;&gt;
+TipoDocumento
+--
+DNI
+CUIT
+PASAPORTE
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>2478</x><y>390</y><w>102</w><h>96</h></coordinates><panel_attributes>&lt;&lt;enumeration&gt;&gt;
+RolUsuario
+--
+ADMINISTRATIVO
+JEFE
+PREVENTISTA
+MINORISTA
+DISTRIBUIDOR
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>2478</x><y>510</y><w>102</w><h>84</h></coordinates><panel_attributes>&lt;&lt;enumeration&gt;&gt;
+ProveedorAuth
+--
+LOCAL
+GOOGLE
+FACEBOOK
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1920</x><y>6</y><w>438</w><h>192</h></coordinates><panel_attributes>Imagen
+--
+-id:String
+-nombre:String
+-mime:String
+-contenido:byte[]
+-tipoImagen:TipoImagen
+-eliminado:boolean
+--
++crearImagen(nombre:String, contenido:byte[], tipoImagen:TipoImagen):Imagen
++validar(nombre:String, contenido:byte[], tipoImagen:TipoImagen):void
++buscarImagen(id:String):Imagen
++modificarImagen(id:String, nombre:String, contenido:byte[],
+      tipoImagen:TipoImagen):Imagen
++eliminarImagen(id:String):void
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>2370</x><y>24</y><w>102</w><h>72</h></coordinates><panel_attributes>&lt;&lt;enumeration&gt;&gt;
+TipoImagen
+--
+PRODUCTO
+SUCURSAL
+LOGO_EMPRESA
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>2742</x><y>12</y><w>300</w><h>180</h></coordinates><panel_attributes>Categoria
+--
+-id:String
+-nombre:String
+-eliminado:boolean
+--
++crearCategoria(nombre:String):void
++validar(nombre:String):void
++buscarCategoria(id:String):Categoria
++buscarCategoriaPorNombre(nombre:String):Categoria
++modificarCategoria(id:String, nombre:String):void
++eliminarCategoria(id:String):void
++listarCategoria():Collection&lt;Categoria&gt;
++listarCategoriaActivo():Collection&lt;Categoria&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>2742</x><y>270</y><w>426</w><h>180</h></coordinates><panel_attributes>SubCategoria
+--
+-id:String
+-nombre:String
+-eliminado:boolean
+--
++crearSubCategoria(nombre:String, idCategoria:String):void
++validar(nombre:String, idCategoria:String):void
++buscarSubCategoria(id:String):SubCategoria
++buscarSubCategoriaPorNombre(nombre:String):SubCategoria
++modificarSubCategoria(id:String, nombre:String, idCategoria:String):void
++eliminarSubCategoria(id:String):void
++listarSubCategoria(idCategoria:String):Collection&lt;SubCategoria&gt;
++listarSubCategoriaActivo(idCategoria:String):Collection&lt;SubCategoria&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>2742</x><y>528</y><w>414</w><h>348</h></coordinates><panel_attributes>Producto
+--
+-id:String
+-codigo:String
+-nombre:String
+-descripcion:String
+-presentacion:String (ej. Pack x12)
+-unidadesPorBulto:int
+-enOferta:boolean
+-eliminado:boolean
+--
++crearProducto(codigo:String, nombre:String, descripcion:String,
+      presentacion:String, unidadesPorBulto:int, enOferta:boolean,
+      idImagen:String, idSubCategoria:String):void
++validarProducto(codigo:String, nombre:String, descripcion:String,
+      presentacion:String, unidadesPorBulto:int, enOferta:boolean,
+      idImagen:String, idSubCategoria:String):void
++modificarProducto(id:String, nombre:String, descripcion:String,
+      presentacion:String, unidadesPorBulto:int, enOferta:boolean,
+      idImagen:String, idSubCategoria:String):void
++eliminarProducto(id:String):void
++buscarProducto(id:String):Producto
++buscarProductoPorNombre(nombre:String):Producto
++buscarProductoPorCodigo(codigo:String):Producto
++listarProducto():Collection&lt;Producto&gt;
++listarProductoActivo():Collection&lt;Producto&gt;
++listarProductoCatalogo():Collection&lt;Producto&gt;  (activos con stock &gt; 0)
++listarProductoEnOferta():Collection&lt;Producto&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>3240</x><y>312</y><w>408</w><h>240</h></coordinates><panel_attributes>VigenciaPrecio
+--
+-id:String
+-fechaDesde:Date
+-fechaHasta:Date
+-precio:double
+-eliminado:boolean
+--
++crearVigenciaPrecio(fechaDesde:Date, fechaHasta:Date, precio:double,
+      idProducto:String):void
++validar(fechaDesde:Date, fechaHasta:Date, precio:double,
+      idProducto:String):void
++buscarVigenciaPrecio(id:String):VigenciaPrecio
++modificarVigenciaPrecio(id:String, fechaDesde:Date, fechaHasta:Date,
+      precio:double, idProducto:String):void
++eliminarVigenciaPrecio(id:String):void
++listarVigenciaPrecio():Collection&lt;VigenciaPrecio&gt;
++listarVigenciaPrecioActivo():Collection&lt;VigenciaPrecio&gt;
++buscarVigenciaPrecioVigente(idProducto:String):VigenciaPrecio
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLNote</id><coordinates><x>3240</x><y>12</y><w>426</w><h>114</h></coordinates><panel_attributes>Note..
+bg=blue
+
+Para saber el precio actual de un producto la fechaHasta va a ser nula.
+Ej.: Alfajor caja x24
+1/7/2026 al NULL        $15000
+1/4/2026 al 30/6/2026 $13000
+1/1/2026 al 31/3/2026 $10000
+El precio vigente es $15000 al momento de cargar el pedido.
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>3378</x><y>1536</y><w>414</w><h>216</h></coordinates><panel_attributes>Stock
+--
+-id:String
+-cantidadActual:int
+-observacion:String
+-fechaHora:LocalDateTime
+-eliminado:boolean
+--
++crearStock(idProducto:String, cantidadInicial:int):void
++validar(idProducto:String, cantidadInicial:int):void
++buscarStock(id:String):Stock
++buscarStockPorProducto(idProducto:String):Stock
++modificarStock(id:String, cantidadActual:int, observacion:String):void
++hayStock(idProducto:String, cantidad:int):boolean
++descontar(idProducto:String, cantidad:int):void
++reponer(idProducto:String, cantidad:int):void
++eliminarStock(id:String):void
++listarStock():Collection&lt;Stock&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>3240</x><y>888</y><w>414</w><h>312</h></coordinates><panel_attributes>Promocion
+--
+-id:String
+-codigo:String
+-descripcion:String
+-porcentajeDescuento:double
+-cantidadMinima:int (opcional, descuento por volumen)
+-fechaDesde:Date
+-fechaHasta:Date
+-eliminado:boolean
+--
++crearPromocion(codigo:String, descripcion:String,
+      porcentajeDescuento:double, cantidadMinima:int, fechaDesde:Date,
+      fechaHasta:Date, idProducto:String):void
++validar(codigo:String, descripcion:String, porcentajeDescuento:double,
+      cantidadMinima:int, fechaDesde:Date, fechaHasta:Date,
+      idProducto:String):void
++buscarPromocion(id:String):Promocion
++buscarPromocionVigentePorCodigo(codigo:String):Promocion
++modificarPromocion(id:String, descripcion:String,
+      porcentajeDescuento:double, cantidadMinima:int, fechaDesde:Date,
+      fechaHasta:Date, idProducto:String):void
++eliminarPromocion(id:String):void
++listarPromocion():Collection&lt;Promocion&gt;
++listarPromocionActiva():Collection&lt;Promocion&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>2388</x><y>1458</y><w>450</w><h>360</h></coordinates><panel_attributes>Pedido
+--
+-id:String
+-numeroPedido:long
+-fechaHoraCarga:Date
+-subtotal:double
+-descuento:double
+-total:double
+-estado:EstadoPedido
+-fechaExpiracionPago:LocalDateTime
+-qrData:String
+-eliminado:boolean
+--
++crearPedido(idPuntoDeVenta:String, idPreventista:String,
+      codigoPromocion:String, detalle:Collection&lt;DetallePedido&gt;):void
++validar(idPuntoDeVenta:String, idPreventista:String, codigoPromocion:String,
+      detalle:Collection&lt;DetallePedido&gt;):void
++modificarPedido(id:String, codigoPromocion:String,
+      detalle:Collection&lt;DetallePedido&gt;):void   (solo en estado CARGADO)
++anularPedido(id:String):void
++buscarPedido(id:String):Pedido
++cambiarEstado(id:String, estado:EstadoPedido, idUsuario:String):void
++listarPedido():Collection&lt;Pedido&gt;
++listarPedidoPorEstado(estado:EstadoPedido):Collection&lt;Pedido&gt;
++listarPedidoPorPreventista(idPreventista:String):Collection&lt;Pedido&gt;
++listarPedidoPorCliente(idCliente:String):Collection&lt;Pedido&gt;
++crearDetallePedido(idProducto:String, cantidad:int):DetallePedido
++buscarDetallePedido(id:String):DetallePedido
++modificarDetallePedido(idDetallePedido:String, idProducto:String,
+      cantidad:int):DetallePedido
++eliminarDetallePedido(idDetallePedido:String):void
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>2940</x><y>1458</y><w>144</w><h>108</h></coordinates><panel_attributes>DetallePedido
+--
+-id:String
+-cantidad:int
+-precioUnitario:double
+-subtotal:double
+-eliminado:boolean
+--
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>2850</x><y>1614</y><w>102</w><h>120</h></coordinates><panel_attributes>&lt;&lt;enumeration&gt;&gt;
+EstadoPedido
+--
+CARGADO
+SIN_STOCK
+FACTURADO
+EN_REPARTO
+ENTREGADO
+ANULADO
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1734</x><y>1614</y><w>444</w><h>132</h></coordinates><panel_attributes>HistorialEstadoPedido
+--
+-id:String
+-estado:EstadoPedido
+-fechaHora:Date
+-observacion:String
+-usuario:String
+--
++registrarEstado(idPedido:String, estado:EstadoPedido, idUsuario:String,
+      observacion:String):void
++listarHistorialPorPedido(idPedido:String):Collection&lt;HistorialEstadoPedido&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>2388</x><y>1908</y><w>576</w><h>240</h></coordinates><panel_attributes>Factura
+--
+-id:String
+-numeroFactura:long
+-fechaFactura:Date
+-total:double
+-estado:EstadoFactura
+-caeSimulado:String
+-fechaVencimientoCae:LocalDate
+-cuitReceptor:String
+-condicionIvaReceptor:String
+-eliminado:boolean
+--
++crearFactura(idPedido:String):void   (genera los DetalleFactura desde el pedido y descuenta stock)
++validar(idPedido:String):void
++buscarFactura(id:String):Factura
++buscarFacturaPorPedido(idPedido:String):Factura
++anularFactura(id:String):void
++eliminarFactura(id:String):void
++listarFactura():Collection&lt;Factura&gt;
++listarFacturaActivo():Collection&lt;Factura&gt;
++listarFacturaPorEstado(estado:EstadoFactura):Collection&lt;Factura&gt;
++listarFacturaPorMinorista(idCliente:String):Collection&lt;Factura&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>3342</x><y>1908</y><w>144</w><h>108</h></coordinates><panel_attributes>DetalleFactura
+--
+-id:String
+-cantidad:int
+-precioUnitario:double
+-subtotal:double
+-eliminado:boolean
+--
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>2976</x><y>2004</y><w>102</w><h>84</h></coordinates><panel_attributes>&lt;&lt;enumeration&gt;&gt;
+EstadoFactura
+--
+PENDIENTE_PAGO
+PAGADA
+ANULADA
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1890</x><y>2112</y><w>402</w><h>204</h></coordinates><panel_attributes>Pago
+--
+-id:String
+-monto:double
+-fechaPago:Date
+-referencia:String (alias / QR)
+-observacion:String
+-estadoPago:EstadoPago
+-mpPaymentId:String
+-mpStatus:String
+-usuarioAuditor:String
+-eliminado:boolean
+--
++registrarPago(idFactura:String, idFormaDePago:String, monto:double,
+      referencia:String):void
++validar(idFactura:String, idFormaDePago:String, monto:double,
+      referencia:String):void
++buscarPago(id:String):Pago
++eliminarPago(id:String):void
++listarPagoPorFactura(idFactura:String):Collection&lt;Pago&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1290</x><y>2112</y><w>444</w><h>156</h></coordinates><panel_attributes>FormaDePago
+--
+-id:String
+-tipoPago:TipoPago
+-observacion:String (alias bancario)
+-eliminado:boolean
+--
++crearFormaDePago(tipoPago:TipoPago, observacion:String):void
++modificarFormaDePago(id:String, tipoPago:TipoPago, observacion:String):void
++eliminarFormaDePago(id:String):void
++listarFormaDePago():Collection&lt;FormaDePago&gt;
++listarFormaDePagoActivo():Collection&lt;FormaDePago&gt;
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1290</x><y>2022</y><w>114</w><h>84</h></coordinates><panel_attributes>&lt;&lt;enumeration&gt;&gt;
+TipoPago
+--
+EFECTIVO
+TRANSFERENCIA
+BILLETERA_VIRTUAL
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>696</x><y>414</y><w>222</w><h>36</h></coordinates><panel_attributes>lt=-
+m1=1
+m2=1</panel_attributes><additional_attributes>346;30;10;12</additional_attributes></element><element><id>Relation</id><coordinates><x>450</x><y>708</y><w>390</w><h>84</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>624;10;10;119</additional_attributes></element><element><id>Relation</id><coordinates><x>678</x><y>774</y><w>162</w><h>138</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>250;10;17;209</additional_attributes></element><element><id>Relation</id><coordinates><x>1260</x><y>864</y><w>216</w><h>126</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>339;10;10;190</additional_attributes></element><element><id>Relation</id><coordinates><x>1746</x><y>864</y><w>18</w><h>192</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;300</additional_attributes></element><element><id>Relation</id><coordinates><x>2832</x><y>1518</y><w>120</w><h>42</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;&lt;-
+m1=1
+m2=1..*</panel_attributes><additional_attributes>10;51;177;10</additional_attributes></element><element><id>Relation</id><coordinates><x>2172</x><y>1602</y><w>234</w><h>102</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;&lt;-
+m1=1
+m2=1..*</panel_attributes><additional_attributes>363;16;10;150</additional_attributes></element><element><id>Relation</id><coordinates><x>2958</x><y>1968</y><w>402</w><h>36</h></coordinates><panel_attributes>lt=&lt;&lt;&lt;&lt;-
+m1=1
+m2=1..*</panel_attributes><additional_attributes>10;34;644;10</additional_attributes></element><element><id>UMLClass</id><coordinates><x>1110</x><y>1302</y><w>402</w><h>216</h></coordinates><panel_attributes>Distribuidor
+--
+id: String
+--
++crearDistribuidor(nombre:String, apellido:String, fechaNacimiento:Date,
+      tipoDocumento:TipoDocumento, numeroDocumento:String,
+      idUsuario:String, legajo:String):void
++validar(nombre:String, apellido:String, fechaNacimiento:Date,
+      tipoDocumento:TipoDocumento, numeroDocumento:String,
+      idUsuario:String, legajo:String):void
++modificarDistribuidor(id:String, nombre:String, apellido:String,
+      fechaNacimiento:Date, tipoDocumento:TipoDocumento,
+      numeroDocumento:String, legajo:String):void
++buscarDistribuidor(legajo:String):Distribuidor
++listarDistribuidor():Collection&lt;Distribuidor&gt;
++listarDistribuidorActivo():Collection&lt;Distribuidor&gt;
++listarDistribuidorPorRol(rol:RolUsuario):Collection&lt;Distribuidor&gt;
++asociarDistribuidorUsuario(distribuidor:Distribuidor, usuario:Usuario):void
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>1266</x><y>1194</y><w>24</w><h>120</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;20;180</additional_attributes></element><element><id>Relation</id><coordinates><x>1806</x><y>624</y><w>192</w><h>114</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;170;300;10</additional_attributes></element><element><id>Relation</id><coordinates><x>1038</x><y>696</y><w>438</w><h>78</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;710;110</additional_attributes></element><element><id>Relation</id><coordinates><x>1002</x><y>528</y><w>72</w><h>144</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;220;100;10</additional_attributes></element><element><id>Relation</id><coordinates><x>1344</x><y>192</y><w>654</w><h>144</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>1060;10;1000;180;10;220</additional_attributes></element><element><id>Relation</id><coordinates><x>1344</x><y>438</y><w>126</w><h>60</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>190;80;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>1902</x><y>636</y><w>168</w><h>120</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;260;180</additional_attributes></element><element><id>Relation</id><coordinates><x>2028</x><y>972</y><w>42</w><h>84</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;120;50;10</additional_attributes></element><element><id>Relation</id><coordinates><x>2352</x><y>186</y><w>402</w><h>354</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;390;90;650;570</additional_attributes></element><element><id>Relation</id><coordinates><x>2922</x><y>444</y><w>30</w><h>96</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;10;140</additional_attributes></element><element><id>Relation</id><coordinates><x>2976</x><y>186</y><w>30</w><h>96</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;10;140</additional_attributes></element><element><id>Relation</id><coordinates><x>3150</x><y>480</y><w>102</w><h>78</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;110;150;10</additional_attributes></element><element><id>Relation</id><coordinates><x>3150</x><y>870</y><w>102</w><h>60</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;150;80</additional_attributes></element><element><id>Relation</id><coordinates><x>3054</x><y>870</y><w>306</w><h>1050</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;490;1730</additional_attributes></element><element><id>Relation</id><coordinates><x>2952</x><y>870</y><w>78</w><h>600</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;110;980</additional_attributes></element><element><id>Relation</id><coordinates><x>2832</x><y>1194</y><w>420</w><h>276</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>680;10;10;440</additional_attributes></element><element><id>Relation</id><coordinates><x>2400</x><y>972</y><w>114</w><h>498</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;170;810</additional_attributes></element><element><id>Relation</id><coordinates><x>1728</x><y>2172</y><w>174</w><h>24</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;270;10</additional_attributes></element><element><id>Relation</id><coordinates><x>2286</x><y>2142</y><w>132</w><h>66</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;90;200;10</additional_attributes></element><element><id>Relation</id><coordinates><x>2628</x><y>1812</y><w>30</w><h>108</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;10;160</additional_attributes></element><element><id>Relation</id><coordinates><x>1506</x><y>1488</y><w>894</w><h>24</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;1470;10</additional_attributes></element><element><id>Relation</id><coordinates><x>1734</x><y>222</y><w>30</w><h>120</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;20;180</additional_attributes></element><element><id>Relation</id><coordinates><x>1392</x><y>186</y><w>78</w><h>36</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;110;40</additional_attributes></element><element><id>Relation</id><coordinates><x>888</x><y>132</y><w>96</w><h>30</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;20;140;10</additional_attributes></element><element><id>Relation</id><coordinates><x>366</x><y>138</y><w>156</w><h>24</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;240;10</additional_attributes></element><element><id>UMLClass</id><coordinates><x>624</x><y>1302</y><w>402</w><h>216</h></coordinates><panel_attributes>Preventor
+--
+id: String
+--
++crearPreventor(nombre:String, apellido:String, fechaNacimiento:Date,
+      tipoDocumento:TipoDocumento, numeroDocumento:String,
+      idUsuario:String, legajo:String):void
++validar(nombre:String, apellido:String, fechaNacimiento:Date,
+      tipoDocumento:TipoDocumento, numeroDocumento:String,
+      idUsuario:String, legajo:String):void
++modificarPreventor(id:String, nombre:String, apellido:String,
+      fechaNacimiento:Date, tipoDocumento:TipoDocumento,
+      numeroDocumento:String, legajo:String):void
++buscarPreventor(legajo:String):Preventor
++listarPreventor():Collection&lt;Preventor&gt;
++listarPreventorActivo():Collection&lt;Preventor&gt;
++listarPreventorPorRol(rol:RolUsuario):Collection&lt;Preventor&gt;
++asociarPreventorUsuario(preventor:Preventor, usuario:Usuario):void
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>972</x><y>1188</y><w>18</w><h>126</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;190</additional_attributes></element><element><id>UMLClass</id><coordinates><x>594</x><y>1668</y><w>444</w><h>132</h></coordinates><panel_attributes>RutaPreventor
+--
+- visitadosIds:List&lt;String&gt;
+--
++crearRutaPreventor(fecha:LocalDate, idPreventor:String, puntosDeVenta:Collection&lt;PuntoDeVenta&gt;):void
++getPreventor():Preventor
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>834</x><y>1872</y><w>444</w><h>132</h></coordinates><panel_attributes>Ruta
+--
+-id:String
+-fecha: Date
+-estado: RutaEstado
+-paradaActual: PuntoDeVenta
+--
++crearRuta
++buscarRuta
++cambiarEstado
++listarRutaPorFecha(fecha)
++registrarParadaCompletada(idRuta)
++ getTipoRuta(): TipoRuta
+
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>1254</x><y>1794</y><w>18</w><h>90</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;130;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>894</x><y>1794</y><w>18</w><h>90</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;130;10;10</additional_attributes></element><element><id>UMLClass</id><coordinates><x>1110</x><y>1668</y><w>432</w><h>132</h></coordinates><panel_attributes>RutaDistribuidor
+--
+
+--
++crearRutaDistribuidor(fecha:LocalDate, idDistribuidor:String, pedidos:Collection&lt;Pedido&gt;):void
++getDistribuidor():Distribuidor</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>834</x><y>2010</y><w>114</w><h>84</h></coordinates><panel_attributes>&lt;&lt;enumeration&gt;&gt;
+RutaEstado
+--
+REALIZADA
+PENDIENTE
+INCOMPLETA
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>1488</x><y>1560</y><w>912</w><h>120</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>1500;10;10;90;10;180</additional_attributes></element><element><id>Relation</id><coordinates><x>828</x><y>1512</y><w>30</w><h>168</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;10;10;260</additional_attributes></element><element><id>Relation</id><coordinates><x>1020</x><y>948</y><w>1050</w><h>378</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n</panel_attributes><additional_attributes>10;600;870;480;780;40;1730;10</additional_attributes></element><element><id>UMLClass</id><coordinates><x>1890</x><y>2022</y><w>114</w><h>84</h></coordinates><panel_attributes>&lt;&lt;enumeration&gt;&gt;
+EstadoPago
+--
+PENDIENTE
+APROBADO
+RECHAZADO
+DEVUELTO
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>960</x><y>2010</y><w>114</w><h>84</h></coordinates><panel_attributes>&lt;&lt;enumeration&gt;&gt;
+TipoRuta
+--
+PREVENTOR
+DISTRIBUIDOR</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>516</x><y>1188</y><w>438</w><h>714</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n
+m2=1
+responsable</panel_attributes><additional_attributes>710;10;130;110;10;560;80;1090;520;1160</additional_attributes></element><element><id>Relation</id><coordinates><x>1134</x><y>528</y><w>126</w><h>462</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n
+m2=1
+mayorista</panel_attributes><additional_attributes>10;10;150;400;170;750</additional_attributes></element><element><id>Relation</id><coordinates><x>1716</x><y>1764</y><w>678</w><h>354</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n
+m2=0..1
+formaDePago</panel_attributes><additional_attributes>10;570;450;260;1110;10</additional_attributes></element><element><id>Relation</id><coordinates><x>1014</x><y>1500</y><w>1374</w><h>348</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n
+m2=0..1
+preventor</panel_attributes><additional_attributes>10;10;470;210;830;220;1080;470;1600;560;2270;360</additional_attributes></element><element><id>Relation</id><coordinates><x>2166</x><y>1806</y><w>234</w><h>312</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n
+m2=0..1
+pedido</panel_attributes><additional_attributes>360;10;10;500</additional_attributes></element><element><id>Relation</id><coordinates><x>1596</x><y>648</y><w>54</w><h>66</h></coordinates><panel_attributes>lt=&lt;-
+m1=1
+m2=0..n
+direcciones</panel_attributes><additional_attributes>10;10;10;90</additional_attributes></element><element><id>Relation</id><coordinates><x>912</x><y>972</y><w>1248</w><h>708</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n
+m2=1..*
+puntosDeVenta</panel_attributes><additional_attributes>2040;10;1980;500;1200;880;740;1040;10;1150</additional_attributes></element><element><id>Relation</id><coordinates><x>3426</x><y>1740</y><w>66</w><h>174</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n
+m2=1
+detalleFactura</panel_attributes><additional_attributes>10;270;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>1273</x><y>976</y><w>1038</w><h>960</h></coordinates><panel_attributes>lt=&lt;-
+m1=0..n
+m2=0..1
+paradaActual</panel_attributes><additional_attributes>1700;10;1490;600;660;990;500;1450;10;1580</additional_attributes></element></diagram>
