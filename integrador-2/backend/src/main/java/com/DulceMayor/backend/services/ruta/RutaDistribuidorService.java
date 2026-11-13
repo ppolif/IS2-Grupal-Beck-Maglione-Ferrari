@@ -130,7 +130,8 @@ public class RutaDistribuidorService {
 
         Optional<RutaDistribuidor> rutaOpt = rutaDistribuidorRepository.findByResponsableIdAndFechaAndEliminadoFalse(distribuidor.getId(), fechaConsulta);
         if (rutaOpt.isPresent()) {
-            return rutaMapperHelper.aResponse(rutaOpt.get());
+            RutaDistribuidor rutaActual = incorporarPedidosPendientesSiExisten(rutaOpt.get(), distribuidor);
+            return rutaMapperHelper.aResponse(rutaActual);
         }
 
         List<Pedido> pedidosFacturados = pedidoService.listarFacturadosPendientes();
@@ -160,7 +161,8 @@ public class RutaDistribuidorService {
 
         Optional<RutaDistribuidor> existente = rutaDistribuidorRepository.findByResponsableIdAndFechaAndEliminadoFalse(distribuidor.getId(), fechaConsulta);
         if (existente.isPresent()) {
-            return rutaMapperHelper.aResponse(existente.get());
+            RutaDistribuidor rutaActual = incorporarPedidosPendientesSiExisten(existente.get(), distribuidor);
+            return rutaMapperHelper.aResponse(rutaActual);
         }
 
         List<RutaResponse> creadas = crearRutasAutomaticas(fechaConsulta);
@@ -168,6 +170,47 @@ public class RutaDistribuidorService {
                 .filter(r -> r.responsable() != null && distribuidor.getId().equals(r.responsable().id()))
                 .findFirst()
                 .orElseThrow(() -> new RecursoNoEncontradoException("No se asignaron pedidos para el distribuidor actual"));
+    }
+
+    /**
+     * Incorpora a la ruta del día cualquier pedido nuevo pendiente de reparto (incluyendo pedidos en EFECTIVO
+     * cargados durante la jornada) que aún no tenga distribuidor asignado.
+     */
+    private RutaDistribuidor incorporarPedidosPendientesSiExisten(RutaDistribuidor ruta, Distribuidor distribuidor) {
+        List<Pedido> nuevosPendientes = pedidoService.listarFacturadosPendientes();
+        if (nuevosPendientes == null || nuevosPendientes.isEmpty()) {
+            return ruta;
+        }
+
+        boolean huboCambios = false;
+        for (Pedido nuevo : nuevosPendientes) {
+            boolean yaEnRuta = ruta.getPedidos().stream()
+                    .anyMatch(p -> p.getId().equals(nuevo.getId()));
+            if (!yaEnRuta) {
+                pedidoService.asignarAReparto(
+                        nuevo.getId(),
+                        distribuidor.getId(),
+                        "Incorporado a ruta activa del distribuidor " + distribuidor.getNombre() + " " + distribuidor.getApellido()
+                );
+                nuevo.setEstado(EstadoPedido.EN_REPARTO);
+                nuevo.setDistribuidor(distribuidor);
+                ruta.getPedidos().add(nuevo);
+                huboCambios = true;
+            }
+        }
+
+        if (huboCambios) {
+            ruta.setEstado(RutaEstado.PENDIENTE);
+            if (ruta.getParadaActual() == null) {
+                ruta.getPedidos().stream()
+                        .filter(p -> p.getEstado() == EstadoPedido.EN_REPARTO)
+                        .findFirst()
+                        .ifPresent(p -> ruta.setParadaActual(p.getPuntoDeVenta()));
+            }
+            return rutaDistribuidorRepository.save(ruta);
+        }
+
+        return ruta;
     }
 
     /**

@@ -8,8 +8,10 @@ import OSMMap from '../../components/OSMMap';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
 import Modal from '../../components/Modal';
+import Icon from '../../components/Icon';
 import { colors } from '../../theme/colors';
 import { rutaService } from '../../services/rutaService';
+import { recorridoService, esParadaEfectivo } from '../../services/recorridoService';
 
 function formatearDireccion(dir) {
   if (!dir) return 'Mendoza';
@@ -18,6 +20,19 @@ function formatearDireccion(dir) {
     .join(' ');
   const zona = dir.localidadNombre || dir.departamentoNombre || 'Mendoza';
   return calleAltura ? `${calleAltura}, ${zona}` : zona;
+}
+
+function formatearMedioPago(parada) {
+  if (esParadaEfectivo(parada)) {
+    return parada.completada ? 'Efectivo (Facturado y Cobrado)' : 'Efectivo contra entrega';
+  }
+  if (parada?.tipoPago === 'BILLETERA_VIRTUAL') {
+    return 'Mercado Pago QR (Facturado)';
+  }
+  if (parada?.tipoPago === 'TRANSFERENCIA') {
+    return 'Transferencia Bancaria (Facturado)';
+  }
+  return 'Facturado previamente';
 }
 
 export default function Recorrido() {
@@ -30,6 +45,7 @@ export default function Recorrido() {
   const [generando, setGenerando] = useState(false);
   const [error, setError] = useState(null);
   const [procesando, setProcesando] = useState(false);
+  const [toastMensaje, setToastMensaje] = useState(null);
 
   const cargarRutaDistribuidor = async () => {
     try {
@@ -37,6 +53,7 @@ export default function Recorrido() {
       setError(null);
       const data = await rutaService.obtenerMiRutaDistribuidorDelDia();
       setRuta(data);
+      recorridoService.sincronizarRuta(data);
       if (data?.paradas && data.paradas.length > 0) {
         const pendiente = data.paradas.find((p) => !p.completada) || data.paradas[0];
         setSelectedParada(pendiente);
@@ -63,6 +80,7 @@ export default function Recorrido() {
       setError(null);
       const data = await rutaService.generarRutaDistribuidor();
       setRuta(data);
+      recorridoService.sincronizarRuta(data);
       if (data?.paradas && data.paradas.length > 0) {
         const pendiente = data.paradas.find((p) => !p.completada) || data.paradas[0];
         setSelectedParada(pendiente);
@@ -75,28 +93,85 @@ export default function Recorrido() {
     }
   };
 
+  const handleAbrirAccionEntrega = (parada) => {
+    if (!parada) return;
+    if (esParadaEfectivo(parada)) {
+      const nroRef = parada.numeroPedido || parada.orden || '1001';
+      setReciboNumero(`REC-${nroRef}`);
+      setObservacionesCobro('');
+      setIsCashModalOpen(true);
+    } else {
+      handleConfirmarEntrega('Entrega confirmada por distribuidor');
+    }
+  };
+
+  const handleConfirmarCobroEfectivoSubmit = async (e) => {
+    e.preventDefault();
+    const obsTexto = [
+      `Cobro en efectivo contra entrega (Recibo ${reciboNumero.trim() || 'S/N'})`,
+      observacionesCobro.trim() ? observacionesCobro.trim() : null,
+    ]
+      .filter(Boolean)
+      .join(' - ');
+    await handleConfirmarEntrega(obsTexto);
+  };
+
   const handleConfirmarEntrega = async (observacion = '') => {
     if (!ruta?.id || !selectedParada?.pedidoId) return;
+    const paradaActualEntregada = selectedParada;
+    const eraEfectivo = esParadaEfectivo(paradaActualEntregada);
+    const montoCobrado = Number(paradaActualEntregada.totalPedido || 0);
+
     try {
       setProcesando(true);
-      await rutaService.registrarEntregaDistribuidor(ruta.id, {
-        pedidoId: selectedParada.pedidoId,
+      const avance = await rutaService.registrarEntregaDistribuidor(ruta.id, {
+        pedidoId: paradaActualEntregada.pedidoId,
         observacion: observacion || 'Entrega confirmada por distribuidor',
       });
 
-      setRuta((prev) => {
-        if (!prev) return prev;
-        const nextParadas = prev.paradas.map((p) =>
-          p.orden === selectedParada.orden ? { ...p, completada: true } : p
+      let rutaActualizada = avance?.ruta;
+      if (!rutaActualizada) {
+        const nextParadas = (ruta.paradas || []).map((p) =>
+          p.orden === paradaActualEntregada.orden ? { ...p, completada: true } : p
         );
-        return { ...prev, paradas: nextParadas };
-      });
+        const nuevoRecaudado = nextParadas
+          .filter((p) => p.completada && esParadaEfectivo(p))
+          .reduce((acc, p) => acc + Number(p.totalPedido || 0), 0);
+        const nuevoPendiente = nextParadas
+          .filter((p) => !p.completada && esParadaEfectivo(p))
+          .reduce((acc, p) => acc + Number(p.totalPedido || 0), 0);
+        rutaActualizada = {
+          ...ruta,
+          paradas: nextParadas,
+          dineroRecaudadoEfectivo: nuevoRecaudado,
+          dineroPendienteEfectivo: nuevoPendiente,
+        };
+      }
 
+      setRuta(rutaActualizada);
+      const resumenNuevo = recorridoService.sincronizarRuta(rutaActualizada);
+
+      const siguiente =
+        avance?.siguienteParada ||
+        (rutaActualizada.paradas || []).find((p) => !p.completada) ||
+        (rutaActualizada.paradas || []).find((p) => p.orden === paradaActualEntregada.orden) ||
+        null;
+      setSelectedParada(siguiente);
       setIsCashModalOpen(false);
-      alert(
-        `✓ Entrega a "${selectedParada.puntoDeVenta?.nombreComercio}" registrada con éxito.\n` +
-        `✓ Si el pedido tenía pago en efectivo, se generó la factura, pasó a estado FACTURADO y luego a ENTREGADO, y se envió automáticamente por correo al cliente.`
-      );
+
+      if (eraEfectivo) {
+        setToastMensaje(
+          `✓ Cobro en efectivo de $${montoCobrado.toLocaleString('es-AR')} registrado y facturado para "${
+            paradaActualEntregada.puntoDeVenta?.nombreComercio || 'Comercio'
+          }". Total recaudado hoy: $${Number(resumenNuevo.recaudadoEfectivo || 0).toLocaleString('es-AR')}.`
+        );
+      } else {
+        setToastMensaje(
+          `✓ Entrega a "${
+            paradaActualEntregada.puntoDeVenta?.nombreComercio || 'Comercio'
+          }" registrada con éxito.`
+        );
+      }
     } catch (err) {
       alert(err.message || 'Error al registrar la entrega.');
     } finally {
@@ -105,8 +180,15 @@ export default function Recorrido() {
   };
 
   const paradas = ruta?.paradas || [];
-  const entregadosCount = paradas.filter((p) => p.completada).length;
-  const pendientesCount = paradas.filter((p) => !p.completada).length;
+  const resumen = recorridoService.calcularResumenDesdeRuta(ruta);
+  const {
+    entregadosCount,
+    pendientesCount,
+    recaudadoEfectivo,
+    pendienteEfectivo,
+    entregasEfectivoCount,
+    pendientesEfectivoCount,
+  } = resumen;
   const siguienteParadaPendiente = paradas.find((p) => !p.completada) || null;
 
   const sucursalNombre =
@@ -132,12 +214,13 @@ export default function Recorrido() {
 
   const paradasMarkers = paradas.map((p) => {
     const pdv = p.puntoDeVenta;
-    const lat = Number(pdv?.direccion?.latitud) || -32.8900;
-    const lng = Number(pdv?.direccion?.longitud) || -68.8450;
+    const lat = Number(pdv?.direccion?.latitud) || -32.89;
+    const lng = Number(pdv?.direccion?.longitud) || -68.845;
     const direccionLegible = formatearDireccion(pdv?.direccion);
     const nombreComercio = pdv?.nombreComercio || `Parada #${p.orden}`;
     return {
-      id: pdv?.id || p.orden,
+      id: `parada-${p.orden}`,
+      pdvId: pdv?.id,
       lat,
       lng,
       nombre: nombreComercio,
@@ -155,8 +238,8 @@ export default function Recorrido() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      {/* Header & Contadores de Recaudación */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
           <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#3fb8d9]">
             Itinerario de Entrega
@@ -165,15 +248,49 @@ export default function Recorrido() {
             Ruta y Paradas de Reparto
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Contador en tiempo real de Dinero Recaudado en Efectivo */}
+          <div className="flex items-center gap-2 bg-[#f0fdf4] border border-[#bbf7d0] px-3.5 py-1.5 rounded-full text-[12px] text-[#15803d] font-bold shadow-xs">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e] animate-pulse" />
+            <span>Dinero recaudado en efectivo:</span>
+            <strong className="text-[14px] text-[#166534] font-extrabold font-mono">
+              ${recaudadoEfectivo.toLocaleString('es-AR')}
+            </strong>
+          </div>
+
+          {pendienteEfectivo > 0 && (
+            <div className="flex items-center gap-1.5 bg-[#fffbeb] border border-[#fde68a] px-3 py-1.5 rounded-full text-[11px] text-[#92400e] font-semibold">
+              <span>Por cobrar en efectivo:</span>
+              <strong className="font-mono font-bold">
+                ${pendienteEfectivo.toLocaleString('es-AR')}
+              </strong>
+            </div>
+          )}
+
           <Chip variant="blue">
             {entregadosCount} de {paradas.length} paradas realizadas
           </Chip>
-          <span className="text-[12px] text-[#6b6b80] hidden sm:inline">
+
+          <span className="text-[11px] font-medium bg-white text-[#6b6b80] px-2.5 py-1 rounded-full border border-[#ececf2]">
             {pendientesCount} pendientes
           </span>
         </div>
       </div>
+
+      {/* Notificación de entrega y cobro */}
+      {toastMensaje && (
+        <div className="p-3.5 rounded-[16px] bg-[#f0fdf4] border border-[#bbf7d0] text-[#166534] text-[12px] font-medium flex items-center justify-between gap-3 shadow-xs">
+          <span>{toastMensaje}</span>
+          <button
+            type="button"
+            onClick={() => setToastMensaje(null)}
+            className="text-[11px] font-bold text-[#15803d] hover:underline shrink-0 cursor-pointer"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
 
       {cargando && (
         <div className="flex justify-center items-center py-16">
@@ -220,6 +337,30 @@ export default function Recorrido() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Listado de paradas */}
           <div className="lg:col-span-5 space-y-3 order-2 lg:order-1">
+            {/* Tarjeta de Caja / Recaudación en Efectivo */}
+            <div className="bg-gradient-to-br from-[#f2fdf7] to-[#e6f9ef] border border-[#bbf7d0] rounded-[20px] p-4 shadow-xs">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#15803d] block">
+                    Caja del Distribuidor · Efectivo Recaudado
+                  </span>
+                  <strong className="text-2xl font-extrabold text-[#166534] font-mono mt-0.5 block">
+                    ${recaudadoEfectivo.toLocaleString('es-AR')}
+                  </strong>
+                </div>
+                <div className="text-right text-[11px] text-[#2c6343]">
+                  <span className="block font-semibold">
+                    {entregasEfectivoCount} cobro{entregasEfectivoCount === 1 ? '' : 's'} en efectivo
+                  </span>
+                  <span className="text-[10px] opacity-85">
+                    {pendientesEfectivoCount > 0
+                      ? `${pendientesEfectivoCount} pendiente${pendientesEfectivoCount === 1 ? '' : 's'} ($${pendienteEfectivo.toLocaleString('es-AR')})`
+                      : 'Sin cobros pendientes'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <div className="bg-white rounded-[20px] p-4 border border-[#ececf2] shadow-sm">
               <h2 className="text-[14px] font-bold text-[#2b2b3a] mb-3 pb-2 border-b border-[#f0f0f4] flex items-center justify-between">
                 <span>Itinerario de Entrega ({paradas.length})</span>
@@ -262,6 +403,8 @@ export default function Recorrido() {
                 {paradas.map((p) => {
                   const isSelected = selectedParada?.orden === p.orden;
                   const pdv = p.puntoDeVenta;
+                  const esEfectivo = esParadaEfectivo(p);
+                  const montoNum = Number(p.totalPedido || 0);
 
                   return (
                     <div
@@ -276,7 +419,8 @@ export default function Recorrido() {
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <span className="text-[10px] font-bold text-[#3fb8d9] uppercase">
-                            Parada #{p.orden}
+                            Parada #{p.orden}{' '}
+                            {p.numeroPedido ? `· Pedido #DM-${p.numeroPedido}` : ''}
                           </span>
                           <h3 className="font-bold text-[14px] text-[#2b2b3a] leading-tight">
                             {pdv?.nombreComercio}
@@ -286,12 +430,36 @@ export default function Recorrido() {
                           </p>
                         </div>
                         <span
-                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
                             p.completada ? 'bg-[#dff8e9] text-[#39855b]' : 'bg-[#fff0d3] text-[#986b16]'
                           }`}
                         >
                           {p.completada ? 'Entregado' : 'Pendiente'}
                         </span>
+                      </div>
+
+                      <div className="mt-2 pt-2 border-t border-[#ececf2]/70 flex items-center justify-between text-[11px]">
+                        <span
+                          className={`font-semibold px-2 py-0.5 rounded-full text-[10px] ${
+                            esEfectivo
+                              ? p.completada
+                                ? 'bg-[#dcfce7] text-[#166534]'
+                                : 'bg-[#fef3c7] text-[#92400e]'
+                              : 'bg-[#eefaff] text-[#247f99]'
+                          }`}
+                        >
+                          {esEfectivo
+                            ? p.completada
+                              ? `Efectivo Recaudado: +$${montoNum.toLocaleString('es-AR')}`
+                              : `Cobrar en Efectivo: $${montoNum.toLocaleString('es-AR')}`
+                            : `${formatearMedioPago(p)}`}
+                        </span>
+
+                        {montoNum > 0 && (
+                          <strong className="font-mono text-[#2b2b3a]">
+                            ${montoNum.toLocaleString('es-AR')}
+                          </strong>
+                        )}
                       </div>
                     </div>
                   );
@@ -309,7 +477,7 @@ export default function Recorrido() {
                   activeMarkerId={
                     selectedParada?.id === 'origen-sucursal'
                       ? 'origen-sucursal'
-                      : selectedParada?.puntoDeVenta?.id || selectedParada?.orden
+                      : `parada-${selectedParada?.orden}`
                   }
                   showRoute={true}
                   routeColor={colors.secondary.DEFAULT}
@@ -317,7 +485,9 @@ export default function Recorrido() {
                     if (m.id === 'origen-sucursal' || m.esSucursal) {
                       setSelectedParada({ id: 'origen-sucursal', esSucursal: true });
                     } else {
-                      const found = paradas.find((p) => String(p.puntoDeVenta?.id) === String(m.id));
+                      const found = paradas.find(
+                        (p) => `parada-${p.orden}` === String(m.id) || String(p.orden) === String(m.orden)
+                      );
                       if (found) setSelectedParada(found);
                     }
                   }}
@@ -352,45 +522,167 @@ export default function Recorrido() {
                 !selectedParada.completada &&
                 siguienteParadaPendiente &&
                 selectedParada.orden === siguienteParadaPendiente.orden;
+              const esEfectivo = esParadaEfectivo(selectedParada);
+              const montoNum = Number(selectedParada.totalPedido || 0);
 
               return (
-                <div className="bg-white rounded-[20px] p-4 border border-[#ececf2] shadow-sm flex items-center justify-between gap-4">
-                  <div>
-                    <span className="text-[10px] font-bold text-[#3fb8d9] uppercase">
-                      Parada #{selectedParada.orden} en destino
-                      {esSiguienteParada ? ' · Siguiente Entrega' : ''}
-                    </span>
-                    <h4 className="font-bold text-[15px] text-[#2b2b3a]">
-                      {selectedParada.puntoDeVenta?.nombreComercio}
-                    </h4>
-                    <p className="text-[11px] text-[#6b6b80]">
-                      {formatearDireccion(selectedParada.puntoDeVenta?.direccion)}
-                    </p>
+                <div className="bg-white rounded-[20px] p-5 border border-[#ececf2] shadow-sm space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="text-[10px] font-bold text-[#3fb8d9] uppercase">
+                        Parada #{selectedParada.orden} en destino
+                        {esSiguienteParada ? ' · Siguiente Entrega' : ''}
+                      </span>
+                      <h4 className="font-bold text-[16px] text-[#2b2b3a]">
+                        {selectedParada.puntoDeVenta?.nombreComercio}
+                      </h4>
+                      <p className="text-[12px] text-[#6b6b80]">
+                        {formatearDireccion(selectedParada.puntoDeVenta?.direccion)}
+                      </p>
+                    </div>
+
+                    {selectedParada.completada ? (
+                      <span className="px-3.5 py-2 rounded-[12px] bg-[#dff8e9] text-[#39855b] text-[12px] font-bold self-start sm:self-auto">
+                        {esEfectivo
+                          ? `Entregado y Cobrado ($${montoNum.toLocaleString('es-AR')}) ✓`
+                          : 'Entregado ✓'}
+                      </span>
+                    ) : esSiguienteParada ? (
+                      <Button
+                        onClick={() => handleAbrirAccionEntrega(selectedParada)}
+                        disabled={procesando}
+                        className={`text-[12px] cursor-pointer ${
+                          esEfectivo
+                            ? 'bg-[#16a34a] hover:bg-[#15803d] text-white'
+                            : 'bg-[#3fb8d9] hover:bg-[#2fa3c2]'
+                        }`}
+                      >
+                        {procesando
+                          ? 'Registrando...'
+                          : esEfectivo
+                          ? `Cobrar en Efectivo ($${montoNum.toLocaleString('es-AR')}) y Entregar`
+                          : 'Marcar Entregado'}
+                      </Button>
+                    ) : (
+                      <span className="px-3 py-2 rounded-[12px] bg-[#fff0d3] text-[#986b16] text-[11px] font-semibold">
+                        Entregá primero la Parada #{siguienteParadaPendiente?.orden}
+                      </span>
+                    )}
                   </div>
 
-                  {selectedParada.completada ? (
-                    <span className="px-3.5 py-2 rounded-[12px] bg-[#dff8e9] text-[#39855b] text-[12px] font-bold">
-                      Entregado ✓
-                    </span>
-                  ) : esSiguienteParada ? (
-                    <Button
-                      onClick={() => handleConfirmarEntrega()}
-                      disabled={procesando}
-                      className="text-[12px] bg-[#3fb8d9] hover:bg-[#2fa3c2] cursor-pointer"
-                    >
-                      {procesando ? 'Registrando...' : 'Marcar Entregado'}
-                    </Button>
-                  ) : (
-                    <span className="px-3 py-2 rounded-[12px] bg-[#fff0d3] text-[#986b16] text-[11px] font-semibold">
-                      Entregá primero la Parada #{siguienteParadaPendiente?.orden}
-                    </span>
-                  )}
+                  {/* Detalle financiero del pedido en la parada */}
+                  <div className="bg-[#fafafd] border border-[#ececf2] rounded-[14px] p-3 text-[12px] flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-[#6b6b80]">
+                        Pedido {selectedParada.numeroPedido ? `#DM-${selectedParada.numeroPedido}` : `#${selectedParada.pedidoId?.slice(0, 8) || selectedParada.orden}`}
+                      </span>
+                      <span className="text-[#aaa9ba]">·</span>
+                      <span
+                        className={`font-semibold ${
+                          esEfectivo ? 'text-[#15803d]' : 'text-[#247f99]'
+                        }`}
+                      >
+                        {formatearMedioPago(selectedParada)}
+                      </span>
+                    </div>
+                    <strong className="text-[14px] font-extrabold font-mono text-[#2b2b3a]">
+                      Total: ${montoNum.toLocaleString('es-AR')}
+                    </strong>
+                  </div>
                 </div>
               );
             })()}
           </div>
         </div>
       )}
+
+      {/* Modal de Confirmación de Cobro en Efectivo contra Entrega */}
+      <Modal
+        isOpen={isCashModalOpen}
+        onClose={() => !procesando && setIsCashModalOpen(false)}
+        tag="RENDICIÓN DE COBRO CONTRA ENTREGA"
+        title={`Cobro en Efectivo - Pedido ${
+          selectedParada?.numeroPedido ? `#DM-${selectedParada.numeroPedido}` : ''
+        }`}
+      >
+        <form onSubmit={handleConfirmarCobroEfectivoSubmit} className="space-y-4">
+          <div className="p-3.5 bg-[#fafafd] rounded-[14px] border border-[#ececf2] text-[12px] space-y-1.5">
+            <p>
+              <strong>Comercio:</strong> {selectedParada?.puntoDeVenta?.nombreComercio}
+            </p>
+            <p>
+              <strong>Dirección:</strong>{' '}
+              {formatearDireccion(selectedParada?.puntoDeVenta?.direccion)}
+            </p>
+            <p className="pt-1 text-[13px] flex items-center justify-between border-t border-[#ececf2]">
+              <strong>Monto en efectivo a recibir:</strong>
+              <span className="text-xl font-extrabold font-mono text-[#166534]">
+                ${Number(selectedParada?.totalPedido || 0).toLocaleString('es-AR')}
+              </span>
+            </p>
+            <p className="text-[11px] text-[#15803d] flex items-center justify-between pt-1">
+              <span>Nuevo total recaudado en tu caja tras cobrar:</span>
+              <strong className="font-mono">
+                $
+                {(
+                  recaudadoEfectivo + Number(selectedParada?.totalPedido || 0)
+                ).toLocaleString('es-AR')}
+              </strong>
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+              N° de Recibo Oficial / Remito Entregado *
+            </label>
+            <input
+              type="text"
+              required
+              value={reciboNumero}
+              onChange={(e) => setReciboNumero(e.target.value)}
+              className="w-full border border-[#ececf2] rounded-[10px] p-2.5 text-[12px] font-mono text-[#2b2b3a] focus:outline-none focus:border-[#3fb8d9]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-semibold text-[#2b2b3a] mb-1">
+              Observaciones del distribuidor (opcional)
+            </label>
+            <input
+              type="text"
+              value={observacionesCobro}
+              onChange={(e) => setObservacionesCobro(e.target.value)}
+              placeholder="Ej: Cobrado en mano por titular del comercio"
+              className="w-full border border-[#ececf2] rounded-[10px] p-2.5 text-[12px] text-[#2b2b3a] focus:outline-none focus:border-[#3fb8d9]"
+            />
+          </div>
+
+          <div className="p-2.5 bg-[#f0fdf4] border border-[#bbf7d0] rounded-[10px] text-[11px] text-[#166534] flex items-center gap-2">
+            <Icon name="check" className="w-4 h-4 text-[#16a34a] shrink-0" />
+            <span>
+              Al confirmar el cobro, el monto se sumará al contador de dinero recaudado, el backend emitirá la Factura, descontará el stock y enviará el comprobante por correo al cliente.
+            </span>
+          </div>
+
+          <div className="pt-2 flex justify-end gap-2.5">
+            <Button
+              secondary
+              type="button"
+              disabled={procesando}
+              onClick={() => setIsCashModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={procesando}
+              className="bg-[#16a34a] hover:bg-[#15803d] text-white cursor-pointer"
+            >
+              {procesando ? 'Facturando y cobrando...' : 'Confirmar Cobro y Entregar'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

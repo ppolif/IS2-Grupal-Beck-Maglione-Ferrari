@@ -8,6 +8,7 @@ import com.DulceMayor.backend.dtos.persona.PuntoDeVentaResponse;
 import com.DulceMayor.backend.dtos.ruta.ParadaResponse;
 import com.DulceMayor.backend.dtos.ruta.RutaResponse;
 import com.DulceMayor.backend.entities.direccion.Direccion;
+import com.DulceMayor.backend.entities.facturacion.TipoPago;
 import com.DulceMayor.backend.entities.mayorista.Mayorista;
 import com.DulceMayor.backend.entities.pedido.EstadoPedido;
 import com.DulceMayor.backend.entities.pedido.Pedido;
@@ -73,6 +74,20 @@ public class RutaMapperHelper {
                 : "Dulce Mayor - Casa Central";
         DireccionResponse sucursalDireccion = resolverDireccionSucursal(sucursal);
 
+        double dineroRecaudadoEfectivo = 0.0;
+        double dineroPendienteEfectivo = 0.0;
+        if (ruta instanceof RutaDistribuidor) {
+            for (ParadaResponse p : paradas) {
+                if (p.esEfectivo() && p.totalPedido() != null) {
+                    if (p.completada()) {
+                        dineroRecaudadoEfectivo += p.totalPedido();
+                    } else {
+                        dineroPendienteEfectivo += p.totalPedido();
+                    }
+                }
+            }
+        }
+
         return new RutaResponse(
                 ruta.getId(),
                 ruta.getTipo(),
@@ -82,7 +97,9 @@ public class RutaMapperHelper {
                 empleadoMapper.aResumen(ruta.getResponsable()),
                 sucursalNombre,
                 sucursalDireccion,
-                paradas
+                paradas,
+                dineroRecaudadoEfectivo,
+                dineroPendienteEfectivo
         );
     }
 
@@ -143,7 +160,8 @@ public class RutaMapperHelper {
 
     /**
      * Proyecta las paradas de un distribuidor evaluando el estado del pedido asociado a cada parada
-     * (si el pedido ya se encuentra en {@link EstadoPedido#ENTREGADO}, la parada figura como completada).
+     * (si el pedido ya se encuentra en {@link EstadoPedido#ENTREGADO}, la parada figura como completada)
+     * e incluyendo el importe total y la forma de pago para contabilizar la recaudación en efectivo.
      */
     private List<ParadaResponse> mapearParadasDistribuidor(RutaDistribuidor ruta) {
         List<ParadaResponse> resultado = new ArrayList<>();
@@ -153,11 +171,20 @@ public class RutaMapperHelper {
             Pedido pedido = pedidos.get(i);
             boolean completada = pedido.getEstado() == EstadoPedido.ENTREGADO
                     || pedido.getEstado() == EstadoPedido.FACTURADO;
+            TipoPago tipoPago = pedido.getFormaDePago() != null
+                    ? pedido.getFormaDePago().getTipoPago()
+                    : null;
+            boolean esEfectivo = tipoPago == TipoPago.EFECTIVO;
+            Double totalPedido = pedido.getTotal();
             resultado.add(new ParadaResponse(
                     i + 1,
                     completada,
                     puntoDeVentaMapper.aResponse(pedido.getPuntoDeVenta()),
-                    pedido.getId()
+                    pedido.getId(),
+                    pedido.getNumeroPedido(),
+                    totalPedido,
+                    tipoPago,
+                    esEfectivo
             ));
         }
         return resultado;

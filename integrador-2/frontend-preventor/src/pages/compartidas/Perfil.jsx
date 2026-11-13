@@ -1,9 +1,13 @@
 /**
  * Pantalla de Perfil de Operador (Preventor / Distribuidor).
- * Consume los datos reales de sesión provistos por AuthContext.
+ * Consume los datos reales de sesión provistos por AuthContext y, para el Distribuidor,
+ * muestra el contador en tiempo real del dinero recaudado en efectivo en su ruta actual.
  */
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { rutaService } from '../../services/rutaService';
+import { recorridoService } from '../../services/recorridoService';
 
 export default function Perfil() {
   const { userData, debeCambiarClave, logout } = useAuth();
@@ -16,6 +20,39 @@ export default function Perfil() {
     email: 'operador@dulcemayor.com',
   };
   const isPreventor = usuarioActivo.rol === 'preventor';
+
+  const [resumenRuta, setResumenRuta] = useState(() => recorridoService.obtenerResumen());
+
+  useEffect(() => {
+    const handleUpdate = (event) => {
+      if (event?.detail) {
+        setResumenRuta(event.detail);
+      } else {
+        setResumenRuta(recorridoService.obtenerResumen());
+      }
+    };
+    window.addEventListener('dm-deliveries-updated', handleUpdate);
+    return () => window.removeEventListener('dm-deliveries-updated', handleUpdate);
+  }, []);
+
+  useEffect(() => {
+    if (isPreventor || debeCambiarClave) return;
+    let cancelado = false;
+    rutaService
+      .obtenerMiRutaDistribuidorDelDia()
+      .then((data) => {
+        if (!cancelado && data) {
+          const nuevoResumen = recorridoService.sincronizarRuta(data);
+          setResumenRuta(nuevoResumen);
+        }
+      })
+      .catch(() => {
+        // Si no tiene ruta asignada hoy, conserva el resumen actual
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [isPreventor, debeCambiarClave]);
 
   return (
     <div className="max-w-md mx-auto p-4 sm:p-6 space-y-6">
@@ -53,6 +90,56 @@ export default function Perfil() {
         <p className="text-[11px] text-[#aaa9ba] mt-0.5">
           {usuarioActivo.email}
         </p>
+
+        {/* Contadores y Recaudación en Efectivo exclusivos para Distribuidor */}
+        {!isPreventor && (
+          <>
+            <div className="grid grid-cols-2 gap-4 mt-6 pt-5 border-t border-[#f0f0f4]">
+              <div className="flex flex-col items-center">
+                <b className="text-2xl font-bold text-[#2b2b3a]">
+                  {resumenRuta.entregadosCount}
+                </b>
+                <span className="text-[11px] text-[#6b6b80] mt-0.5">
+                  Pedidos Entregados
+                </span>
+              </div>
+              <div className="flex flex-col items-center border-l border-[#f0f0f4]">
+                <b className="text-2xl font-bold text-[#3fb8d9]">
+                  {resumenRuta.pendientesCount}
+                </b>
+                <span className="text-[11px] text-[#6b6b80] mt-0.5">
+                  Pedidos Pendientes
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-5 p-4 bg-gradient-to-br from-[#f2fdf7] to-[#e6f9ef] border border-[#bbf7d0] rounded-[18px] text-center shadow-xs space-y-1">
+              <div className="flex items-center justify-center gap-1.5 text-[#15803d]">
+                <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">
+                  Recaudación en Efectivo (Ruta Actual)
+                </span>
+              </div>
+
+              <strong className="text-3xl font-extrabold text-[#166534] font-mono block">
+                ${Number(resumenRuta.recaudadoEfectivo || 0).toLocaleString('es-AR')}
+              </strong>
+
+              <p className="text-[11px] text-[#3d7a55]">
+                Efectivo cobrado en mano pendiente de rendición en tesorería.
+              </p>
+
+              {resumenRuta.pendienteEfectivo > 0 && (
+                <div className="pt-2 mt-2 border-t border-[#bbf7d0]/70 flex items-center justify-between text-[11px] text-[#2c6343]">
+                  <span>Pendiente por cobrar en ruta:</span>
+                  <strong className="font-semibold font-mono">
+                    ${Number(resumenRuta.pendienteEfectivo || 0).toLocaleString('es-AR')}
+                  </strong>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Options */}

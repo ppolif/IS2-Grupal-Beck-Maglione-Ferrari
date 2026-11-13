@@ -3701,6 +3701,10 @@ components:
         completada: {type: boolean}
         puntoDeVenta: {$ref: '#/components/schemas/PuntoDeVentaResponse'}
         pedidoId: {type: string, format: uuid, nullable: true}
+        numeroPedido: {type: integer, format: int64, nullable: true}
+        totalPedido: {type: number, format: double, nullable: true}
+        tipoPago: {$ref: '#/components/schemas/TipoPago', nullable: true}
+        esEfectivo: {type: boolean}
       description: Vista calculada a partir de la ruta; no es una entidad persistida.
     RutaResponse:
       type: object
@@ -3718,6 +3722,8 @@ components:
         paradas:
           type: array
           items: {$ref: '#/components/schemas/ParadaResponse'}
+        dineroRecaudadoEfectivo: {type: number, format: double}
+        dineroPendienteEfectivo: {type: number, format: double}
       description: 'Estado: PENDIENTE al crearse; REALIZADA cuando todas las paradas se completaron; INCOMPLETA si se cerró con paradas sin completar.'
     AvanceRutaResponse:
       type: object
