@@ -12,7 +12,8 @@ import java.util.List;
 /**
  * DTO de respuesta para una ruta (preventor o distribuidor) según {@code 04-openapi.yaml}.
  * Incluye los datos de la sucursal de salida ({@code sucursalOrigenNombre} y {@code sucursalOrigenDireccion})
- * para su representación y trazado vial en OpenStreetMap.
+ * para su representación y trazado vial en OpenStreetMap, así como los acumuladores de dinero recaudado
+ * y pendiente de cobro en efectivo para el distribuidor.
  */
 public record RutaResponse(
         String id,
@@ -23,7 +24,33 @@ public record RutaResponse(
         EmpleadoResumen responsable,
         String sucursalOrigenNombre,
         DireccionResponse sucursalOrigenDireccion,
-        List<ParadaResponse> paradas
+        List<ParadaResponse> paradas,
+        Double dineroRecaudadoEfectivo,
+        Double dineroPendienteEfectivo
 ) implements Identificable {
+    public RutaResponse(
+            String id,
+            TipoRuta tipo,
+            LocalDate fecha,
+            RutaEstado estado,
+            PuntoDeVentaResponse paradaActual,
+            EmpleadoResumen responsable,
+            String sucursalOrigenNombre,
+            DireccionResponse sucursalOrigenDireccion,
+            List<ParadaResponse> paradas) {
+        this(
+                id,
+                tipo,
+                fecha,
+                estado,
+                paradaActual,
+                responsable,
+                sucursalOrigenNombre,
+                sucursalOrigenDireccion,
+                paradas,
+                0.0,
+                0.0
+        );
+    }
 }
 

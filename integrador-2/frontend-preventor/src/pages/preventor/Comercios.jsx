@@ -1,18 +1,15 @@
 /**
  * Directorio de Comercios / Puntos de Venta para el Preventista.
  * Conectado con /api/v1/puntos-de-venta del backend.
- * Permite seleccionar el comercio activo para tomar pedidos desde el catálogo.
+ * Permite consultar la cartera de clientes y comercios asignados.
  */
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Button from '../../components/Button';
 import Icon from '../../components/Icon';
 import { comercioService } from '../../services/comercioService';
-import { useCart } from '../../context/CartContext';
 
 export default function Comercios() {
-  const { seleccionarCliente, clienteActual } = useCart();
-  const navigate = useNavigate();
   const [comercios, setComercios] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [cargando, setCargando] = useState(true);
@@ -39,11 +36,6 @@ export default function Comercios() {
     }
     cargarComercios();
   }, []);
-
-  const handleTomarPedido = (pdv) => {
-    seleccionarCliente(pdv);
-    navigate('/tienda');
-  };
 
   const filtered = comercios.filter((c) => {
     const term = searchTerm.toLowerCase();
@@ -72,7 +64,7 @@ export default function Comercios() {
             Comercios Asignados
           </h1>
           <p className="text-[12px] text-[#6b6b80]">
-            Puntos de venta habilitados en el sistema central para toma de pedidos.
+            Puntos de venta habilitados en el sistema central.
           </p>
         </div>
 
@@ -137,7 +129,6 @@ export default function Comercios() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filtered.map((c) => {
-                const isSelected = clienteActual?.id === c.id;
                 const titular = c.minorista ? `${c.minorista.nombre || ''} ${c.minorista.apellido || ''}` : 'Sin titular';
                 const doc = c.minorista?.cuit || c.minorista?.numeroDocumento || 'S/D';
                 const calle = c.direccion ? `${c.direccion.calle || ''} ${c.direccion.numero || ''}` : 'Sin dirección informada';
@@ -146,9 +137,7 @@ export default function Comercios() {
                 return (
                   <div
                     key={c.id}
-                    className={`bg-white rounded-[20px] p-5 border shadow-sm transition-all flex flex-col justify-between space-y-4 ${
-                      isSelected ? 'border-[#e86bc4] ring-2 ring-[#e86bc4]/20' : 'border-[#ececf2] hover:border-[#d9d9e6]'
-                    }`}
+                    className="bg-white rounded-[20px] p-5 border border-[#ececf2] hover:border-[#d9d9e6] shadow-sm transition-all flex flex-col justify-between space-y-4"
                   >
                     <div>
                       <div className="flex items-start justify-between gap-2 mb-2">
@@ -186,15 +175,10 @@ export default function Comercios() {
                         <span>Ver en mapa</span>
                       </Link>
 
-                      <Button
-                        onClick={() => handleTomarPedido(c)}
-                        className={`text-[11px] px-3.5 py-2 cursor-pointer ${
-                          isSelected ? 'bg-[#39855b] hover:bg-[#2c6e49]' : ''
-                        }`}
-                      >
-                        <Icon name="bag" className="w-3.5 h-3.5" />
-                        <span>{isSelected ? 'Comercio Activo ✓' : 'Tomar pedido'}</span>
-                      </Button>
+                      <span className="text-[11px] text-[#8e8ea0] flex items-center gap-1">
+                        <Icon name="mapPin" className="w-3 h-3 text-[#aaa9ba]" />
+                        <span>{localidad}</span>
+                      </span>
                     </div>
                   </div>
                 );

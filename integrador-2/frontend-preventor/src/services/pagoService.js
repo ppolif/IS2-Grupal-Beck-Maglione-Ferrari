@@ -45,4 +45,16 @@ export const pagoService = {
       body: JSON.stringify(data),
     });
   },
+
+  /**
+   * Registra el cobro en efectivo contra entrega realizado por el distribuidor.
+   * @param {Object} data - { pedidoId, monto, observacion }
+   * @returns {Promise<void>}
+   */
+  async registrarCobroEfectivo(data) {
+    return apiFetch('/pagos/efectivo/registrar-cobro', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };

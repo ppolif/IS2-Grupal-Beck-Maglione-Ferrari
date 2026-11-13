@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
 import Logo from '../components/Logo';
 import Icon from '../components/Icon';
 import { useAuth } from '../context/AuthContext';
+import { rutaService } from '../services/rutaService';
+import { recorridoService } from '../services/recorridoService';
 
 export default function DistribuidorLayout({ onLogout }) {
   const { userData, debeCambiarClave } = useAuth();
@@ -11,6 +14,40 @@ export default function DistribuidorLayout({ onLogout }) {
     avatar: 'DT',
     unidad: 'Móvil de Reparto',
   };
+
+  const [resumenRuta, setResumenRuta] = useState(() => recorridoService.obtenerResumen());
+
+  useEffect(() => {
+    const handleUpdate = (event) => {
+      if (event?.detail) {
+        setResumenRuta(event.detail);
+      } else {
+        setResumenRuta(recorridoService.obtenerResumen());
+      }
+    };
+
+    window.addEventListener('dm-deliveries-updated', handleUpdate);
+    return () => window.removeEventListener('dm-deliveries-updated', handleUpdate);
+  }, []);
+
+  useEffect(() => {
+    if (debeCambiarClave) return;
+    let cancelado = false;
+    rutaService
+      .obtenerMiRutaDistribuidorDelDia()
+      .then((data) => {
+        if (!cancelado && data) {
+          const nuevoResumen = recorridoService.sincronizarRuta(data);
+          setResumenRuta(nuevoResumen);
+        }
+      })
+      .catch(() => {
+        // Si aún no hay ruta generada, mantiene el resumen inicial en 0
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [debeCambiarClave]);
 
   const navItems = [
     { to: '/recorrido', label: 'Ruta de Entrega', icon: 'truck' },
@@ -22,7 +59,7 @@ export default function DistribuidorLayout({ onLogout }) {
     <div className="min-h-screen bg-[#edf0f8] flex flex-col">
       {/* Top Bar matching phone-top and responsive desktop navbar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-[#ececf2]">
-        <div className="max-w-[1280px] mx-auto h-[66px] px-4 sm:px-6 flex items-center justify-between">
+        <div className="max-w-[1280px] mx-auto h-[66px] px-4 sm:px-6 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3">
             <Logo />
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#247f99] bg-[#d9f7ff] px-2.5 py-0.5 rounded-full">
@@ -50,8 +87,19 @@ export default function DistribuidorLayout({ onLogout }) {
             ))}
           </nav>
 
-          {/* User Avatar & Logout */}
-          <div className="flex items-center gap-2">
+          {/* Contador de Dinero Recaudado en Efectivo + User Avatar & Logout */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div
+              className="flex items-center gap-1.5 bg-[#f0fdf4] border border-[#bbf7d0] px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-[12px] text-[#15803d] font-bold shadow-xs"
+              title="Dinero recaudado en efectivo en las entregas del día"
+            >
+              <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse shrink-0" />
+              <span className="hidden sm:inline">Recaudado:</span>
+              <strong className="text-[12px] sm:text-[13px] text-[#166534] font-extrabold font-mono">
+                ${Number(resumenRuta.recaudadoEfectivo || 0).toLocaleString('es-AR')}
+              </strong>
+            </div>
+
             <Link
               to="/perfil"
               className="flex items-center gap-2.5 p-1 rounded-full hover:opacity-85 transition-opacity"

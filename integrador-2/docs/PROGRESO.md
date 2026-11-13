@@ -189,4 +189,36 @@ Se implementó y conectó de extremo a extremo el sistema de notificaciones por 
 - **Pruebas automatizadas:**
   - `SitioPublicoControllerTest` y `ReporteYEstadisticaControllerTest` verifican catálogo público sin filtración de `stockActual`, cotización del dólar con fallback, presupuesto de chatbot con cálculo backend de subtotales/advertencias, control de acceso por rol en estadísticas y descarga de los 6 reportes en PDF y Excel.
 
+---
+
+## Paso 11: Contador de Dinero Recaudado en Efectivo para el Distribuidor (Backend + `frontend-preventor`)
+
+### 1. Qué se hizo
+- **Backend (`com.DulceMayor.backend.dtos.ruta`, `com.DulceMayor.backend.services.ruta`):**
+  - `ParadaResponse`: enriquecido con `numeroPedido`, `totalPedido`, `tipoPago` y `esEfectivo` para identificar en cada parada si el pedido se factura y cobra en efectivo contra entrega y su importe exacto.
+  - `RutaResponse`: enriquecido con los acumuladores `dineroRecaudadoEfectivo` y `dineroPendienteEfectivo`.
+  - `RutaMapperHelper`: proyecta los importes y medios de pago de cada pedido en `mapearParadasDistribuidor` y calcula en tiempo real el total recaudado en efectivo (pedidos entregados con `TipoPago.EFECTIVO`) y el saldo pendiente por cobrar en la ruta.
+  - `RutaDistribuidorService`: incorpora automáticamente pedidos nuevos pendientes de reparto (incluyendo pedidos en `EFECTIVO`) a la ruta activa del día del distribuidor y devuelve la `RutaResponse` actualizada en `AvanceRutaResponse` tras cada entrega.
+- **Frontend (`frontend-preventor`):**
+  - `recorridoService.js`: centraliza el cálculo y la sincronización en tiempo real (`CustomEvent('dm-deliveries-updated')` y `localStorage`) del dinero recaudado en efectivo y el avance de entregas a partir de la `RutaResponse` del backend.
+  - `DistribuidorLayout.jsx`: muestra en la barra superior un indicador permanente en tiempo real con el dinero recaudado en efectivo (`Recaudado: $...`).
+  - `Recorrido.jsx` y `Pedidos.jsx` (vista distribuidor): muestran tarjetas y contadores de **Dinero Recaudado en Efectivo** y **Por cobrar en efectivo**, detallan el medio de pago e importe en cada parada, y presentan el botón **"Cobrar en Efectivo ($...) y Entregar"** junto al modal de confirmación de cobro y facturación contra entrega.
+  - `Perfil.jsx`: muestra para el rol distribuidor los contadores de entregas y el módulo de **Recaudación en Efectivo (Ruta Actual)** conectado con la ruta activa del backend.
+
+---
+
+## Paso 12: Desacoplamiento de Pedidos en Pestaña Comercios y Selector Obligatorio de Punto de Venta en Carrito (`frontend-preventor`)
+
+### 1. Qué se hizo
+- **Pestaña Comercios (`Comercios.jsx`):**
+  - Se eliminó la acción y el botón "Tomar pedido" / "Comercio Activo" de las tarjetas de los comercios asignados.
+  - La sección se orienta exclusivamente a la consulta, búsqueda y visualización de la cartera de clientes y comercios asignados junto a la opción de registro de nuevos comercios y visualización en el mapa vial.
+- **Carrito de Preventa (`Carrito.jsx`):**
+  - Se incorporó la carga dinámica de puntos de venta disponibles (`comercioService.listarPuntosDeVenta`).
+  - Se implementó un selector desplegable obligatorio de **Punto de Venta Destino** (`<select id="pdv-select">`) en la cabecera del formulario de pedido.
+  - Si no se ha elegido un punto de venta, se destaca visualmente con aviso de obligatoriedad y el botón de confirmación queda bloqueado indicando *"Elegí un Punto de Venta para Completar"*.
+  - Una vez seleccionado, se despliega la tarjeta resumen con el nombre del comercio, titular, CUIT, dirección completa y teléfono, sincronizándose de forma transparente con el `CartContext`.
+  - Al completar un pedido y presionar *"Nuevo Pedido"*, se limpia la selección para exigir la elección del punto de venta en la siguiente orden.
+
+
 
